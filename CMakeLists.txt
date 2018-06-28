@@ -7,5 +7,5 @@ set(CMAKE_CXX_STANDARD 14)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
-add_executable(sc_dna src/main.cpp)
+add_executable(sc_dna src/main.cpp src/MathOp.cpp src/BinaryTree.cpp src/TreeNode.cpp)
 target_link_libraries(sc_dna ${CONAN_LIBS})
