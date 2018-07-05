@@ -2,11 +2,12 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
-
+#include <unordered_map>
+#include <string>
 
 
 #include "MathOp.h"
-#include "TreeNode.h"
+#include "Tree.h"
 
 using namespace std;
 
@@ -184,6 +185,43 @@ vector<double> combine_scores(vector<double> aic_vec)
 int main() {
 
 
+
+
+
+    unordered_map<string,int> c;
+    c["R1"]=1;
+
+//    string key = "R1";
+
+    // If key not found in map iterator to end is returned
+//    if (c.find(key) == c.end())
+//        cout << key << " not found\n\n";
+//    else
+//        c[key]=c[key]+5;
+    //cout <<c[key];
+
+    Tree t;
+    auto s1 = t.uniform_select();
+    auto s2 = t.uniform_select();
+    cout << c["R1"]<<endl;
+    t.random_insert(move(c));
+    t.random_insert({{"R2", 8}, {"R3", 2}});
+    t.random_insert({{"R2", 8}, {"R3", 2}});
+    t.random_insert({{"R2", 8}, {"R3", 2}});
+    t.random_insert({{"R2", 8}, {"R3", 2}});
+    t.random_insert({{"R2", 8}, {"R3", 2}});
+    cout << c["R1"]<<endl;
+    t.traverse_tree();
+    //t.destroy();
+
+
+/*
+    Node mynode;
+    int region_sizes[5] = {1,2,3,4,5};
+    int c_vals[5] = {2,2,2,2,2};
+    mynode.c_values = region_sizes;
+
+
     // trees testing
 
     int val = 5;
@@ -202,8 +240,11 @@ int main() {
     TreeNode<int>::traverse(root_node);
     //cout << root_node.value;
     // end of trees testing
+    delete root_node;
+    delete first_node;
+    root_node = nullptr;
+    first_node = nullptr;
 
-/*
 
     //TODO log normalize the log values before taking the exp values!
     // Afterwards make sure that the results before & after are the same
