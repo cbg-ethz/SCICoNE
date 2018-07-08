@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <string>
 
+#include <iterator>
+
 
 #include "MathOp.h"
 #include "Tree.h"
@@ -185,11 +187,21 @@ vector<double> combine_scores(vector<double> aic_vec)
 int main() {
 
 
-
-
-
     unordered_map<string,int> c;
     c["R1"]=1;
+    cout << c["R33"] << "r33val" <<endl;
+
+    unordered_map<string,int> c_parent;
+    c_parent["R1"]=2;
+    c_parent["R2"]=2;
+
+
+    for (auto it=c_parent.begin(); it!=c_parent.end(); ++it) {
+        if ( c[it->first] )
+            c[it->first] += it->second;
+        else
+            c[it->first] = it->second;
+    }
 
 //    string key = "R1";
 
@@ -198,19 +210,32 @@ int main() {
 //        cout << key << " not found\n\n";
 //    else
 //        c[key]=c[key]+5;
-    //cout <<c[key];
+//cout <<c[key];
 
+    // counts per region per cell
+    int D[5][5] = {{39,31,69,72,50},{37,28,58,30,32},{45,34,68,31,20},{49,46,34,46,35},{30,11,21,21,13}};
+
+
+    // ploidy matrix
+    int C[5][5] = {{2,2,3,3,3},{4,4,4,3,4},{3,3,3,2,2},{2,2,1,2,2},{2,2,2,2,2}};
+
+    // region sizes
+    int r[5] = {4,2,3,5,2};
+
+    cout << size(D);
+
+    // build tree
     Tree t;
     auto s1 = t.uniform_select();
     auto s2 = t.uniform_select();
-    cout << c["R1"]<<endl;
-    t.random_insert(move(c));
-    t.random_insert({{"R2", 8}, {"R3", 2}});
-    t.random_insert({{"R2", 8}, {"R3", 2}});
-    t.random_insert({{"R2", 8}, {"R3", 2}});
-    t.random_insert({{"R2", 8}, {"R3", 2}});
-    t.random_insert({{"R2", 8}, {"R3", 2}});
-    cout << c["R1"]<<endl;
+
+    t.random_insert({{"R1", 1}, {"R2", 1}});
+    t.insert_at(1,{{"R2", 1}, {"R3", 1}});
+    t.insert_at(1,{{"R2", 1}});
+    t.insert_at(2,{{"R1", -1}});
+    t.insert_at(2,{{"R4", -1}});
+
+
     t.traverse_tree();
     //t.destroy();
 

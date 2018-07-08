@@ -106,3 +106,9 @@ void Tree::random_insert(std::unordered_map<std::string, int>&& labels)
     insert_child(pos, std::move(labels));
 
 }
+
+void Tree::insert_at(u_int pos, std::unordered_map<std::string, int> && labels) {
+    Node* n = all_nodes[pos];
+    insert_child(n, std::move(labels));
+
+}
