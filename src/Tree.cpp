@@ -27,7 +27,8 @@ void Tree::traverse(Node* node) {
         std::cout<<"leaf: ";
     else
         std::cout<<"internal: ";
-    std::cout<<node->log_score<<std::endl;
+    print_node(*node);
+    //std::cout<<node->log_score<<std::endl;
     for (Node* temp = node->first_child; temp != nullptr; temp=temp->next) {
         traverse(temp);
     }
@@ -50,7 +51,7 @@ Node* Tree::uniform_select() {
     return all_nodes[rand_val-1];
 }
 
-bool Tree::is_leaf(Node* n) {
+bool Tree::is_leaf(Node* n) const{
     if (n->first_child == nullptr)
         return true;
     else
@@ -104,5 +105,20 @@ void Tree::random_insert(std::unordered_map<std::string, int>&& labels)
 {
     Node* pos = uniform_select();
     insert_child(pos, std::move(labels));
+
+}
+
+void Tree::insert_at(u_int pos, std::unordered_map<std::string, int> && labels) {
+
+    Node* n = all_nodes[pos];
+    insert_child(n, std::move(labels));
+
+}
+
+void Tree::print_node(Node& n) {
+    std::cout<<"node.";
+    std::cout<<std::endl;
+    for (auto i : n.c)
+        std::cout << " " << i.first << ":" << i.second << std::endl;
 
 }

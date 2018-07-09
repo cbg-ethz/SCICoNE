@@ -187,7 +187,6 @@ int main() {
 
 
 
-
     unordered_map<string,int> c;
     c["R1"]=1;
 
@@ -204,15 +203,15 @@ int main() {
     auto s1 = t.uniform_select();
     auto s2 = t.uniform_select();
     cout << c["R1"]<<endl;
-    t.random_insert(move(c));
-    t.random_insert({{"R2", 8}, {"R3", 2}});
-    t.random_insert({{"R2", 8}, {"R3", 2}});
-    t.random_insert({{"R2", 8}, {"R3", 2}});
-    t.random_insert({{"R2", 8}, {"R3", 2}});
-    t.random_insert({{"R2", 8}, {"R3", 2}});
-    cout << c["R1"]<<endl;
+    //t.random_insert(move(c));
+    t.random_insert({{"R1", 1}, {"R2", 1}});
+    t.insert_at(0,{{"R2", 1}, {"R3", 1}});
+    t.insert_at(0,{{"R2", 1}});
+    t.insert_at(1,{{"R1", -1}});
+    t.insert_at(1,{{"R4", -1}});
+
     t.traverse_tree();
-    //t.destroy();
+    t.destroy();
 
 
 /*

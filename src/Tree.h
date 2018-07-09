@@ -28,9 +28,10 @@ public:
     Node* root;
     std::vector<Node*> all_nodes; // for uniform selection
 
-    bool is_leaf(Node*);
+    bool is_leaf(Node*) const;
     Node* uniform_select();
     void random_insert(std::unordered_map<std::string, int>&&);
+    void insert_at(u_int pos, std::unordered_map<std::string, int>&&);
     void insert_child(Node*, std::unordered_map<std::string, int>&&);
     Tree();
 
@@ -39,8 +40,10 @@ public:
     virtual ~Tree();
     void traverse_tree();
     void destroy();
+    void print_node(Node&);
 private:
     void traverse(Node*);
+
 
 
 
