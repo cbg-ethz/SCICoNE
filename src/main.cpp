@@ -187,24 +187,6 @@ vector<double> combine_scores(vector<double> aic_vec)
 int main() {
 
 
-    unordered_map<string,int> c;
-    c["R1"]=1;
-
-
-    unordered_map<string,int> c_parent;
-    c_parent["R1"]=2;
-    c_parent["R2"]=2;
-
-
-
-    for (auto it=c_parent.begin(); it!=c_parent.end(); ++it) {
-        if ( c[it->first] )
-            c[it->first] += it->second;
-        else
-            c[it->first] = it->second;
-    }
-
-
 //    string key = "R1";
 
     // If key not found in map iterator to end is returned
@@ -215,8 +197,10 @@ int main() {
 //cout <<c[key];
 
     // counts per region per cell
-    int D[5][5] = {{39,31,69,72,50},{37,28,58,30,32},{45,34,68,31,20},{49,46,34,46,35},{30,11,21,21,13}};
+    int D[5][5] = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
 
+
+    int n = sizeof(D)/sizeof(D[0]);
 
     // ploidy matrix
 
@@ -224,19 +208,25 @@ int main() {
     // region sizes
     int r[5] = {4,2,3,5,2};
 
-    cout << size(D);
 
     // build tree
-    Tree t;
+    u_int ploidy = 2;
+    Tree t(ploidy);
     auto s1 = t.uniform_select();
     auto s2 = t.uniform_select();
 
 
-    t.random_insert({{"R1", 1}, {"R2", 1}});
-    t.insert_at(1,{{"R2", 1}, {"R3", 1}});
-    t.insert_at(1,{{"R2", 1}});
-    t.insert_at(2,{{"R1", -1}});
-    t.insert_at(2,{{"R4", -1}});
+    t.random_insert({{0, 1}, {1, 1}});
+    t.insert_at(1,{{1, 1}, {2, 1}});
+    t.insert_at(1,{{1, 1}});
+    t.insert_at(2,{{0, -1}});
+    t.insert_at(2,{{3, -1}});
+
+
+    t.compute_root_score(D[0],r);
+    double root_score = t.root->log_score;
+    int sum_d = std::accumulate(D[0], D[0] + std::size(D[0]), 0);
+    t.compute_score(t.root->first_child, D[0], sum_d, r, t.root->c, root_score);
 
 
     t.traverse_tree();

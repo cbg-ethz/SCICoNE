@@ -4,9 +4,10 @@
 
 #include "Tree.h"
 
-Tree::Tree()
+Tree::Tree(u_int ploidy)
 {
     root = new Node();
+    this->ploidy = ploidy;
     // creates a copy of the root ptr and stores it in the vector
     // TODO std::move can be used here
     all_nodes.push_back(root);
@@ -59,13 +60,15 @@ bool Tree::is_leaf(Node* n) const{
 }
 
 
-void Tree::insert_child(Node* pos, std::unordered_map<std::string, int>&& labels) {
+void Tree::insert_child(Node* pos, std::unordered_map<u_int, int>&& labels) {
 
     // create node
     Node* child = new Node();
     // move operator
+
     child->c_change = labels;
     child->c = child->c_change;
+
 
     all_nodes.push_back(child);
 
@@ -107,14 +110,14 @@ void Tree::destroy() {
     root = nullptr;
 }
 
-void Tree::random_insert(std::unordered_map<std::string, int>&& labels)
+void Tree::random_insert(std::unordered_map<u_int, int>&& labels)
 {
     Node* pos = uniform_select();
     insert_child(pos, std::move(labels));
 
 }
 
-void Tree::insert_at(u_int pos, std::unordered_map<std::string, int> && labels) {
+void Tree::insert_at(u_int pos, std::unordered_map<u_int, int> && labels) {
     Node* n = all_nodes[pos];
     insert_child(n, std::move(labels));
 
@@ -125,20 +128,22 @@ void Tree::print_node(Node& n) {
     std::cout<<std::endl;
     for (auto i : n.c_change)
         std::cout << " " << i.first << ":" << i.second << std::endl;
-
 }
 
-void Tree::compute_labels() {
 
-}
-
-void Tree::update_label(std::unordered_map<std::string, int> c_parent, Node *node) {
-    for (auto it=c_parent.begin(); it!=c_parent.end(); ++it) {
-        if ( node->c_change[it->first] )
-            node->c[it->first] = node->c_change[it->first] + it->second;
-        else
-            node->c[it->first] = it->second;
+void Tree::update_label(std::unordered_map<u_int, int>& c_parent, Node *node) {
+    // copy assignment
+    node->c = c_parent;
+    for (auto it=node->c_change.begin(); it!=node->c_change.end(); ++it) {
+            node->c[it->first] = node->c[it->first] + it->second;
     }
 
 
 }
+
+
+
+
+
+
+
