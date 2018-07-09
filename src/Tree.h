@@ -83,14 +83,17 @@ void Tree::compute_score(Node* node, int (&D)[N], int& sum_D, int (&r)[N], std::
 
     for (auto const &x : node->c_change)
     {
-        val += D[x.first] * (log(node->c[x.first])+ploidy);
-        val -= D[x.first] * (log(c_prev[x.first])+ploidy);
+        int cf = node->c[x.first];
+        val += D[x.first] * (log(cf+ploidy));
+
+        int cp_f = c_prev[x.first];
+        val -= D[x.first] * (log(cp_f+ploidy));
     }
     int z = compute_z(r, node->c);
     int z_prev = compute_z(r, c_prev);
 
-    val -= N*log(z);
-    val += N*log(z_prev);
+    val -= sum_D*log(z);
+    val += sum_D*log(z_prev);
 
     node->log_score = val;
 
