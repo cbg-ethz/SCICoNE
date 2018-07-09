@@ -58,11 +58,15 @@ bool Tree::is_leaf(Node* n) const{
         return false;
 }
 
+
 void Tree::insert_child(Node* pos, std::unordered_map<std::string, int>&& labels) {
 
     // create node
     Node* child = new Node();
-    child->c = labels;
+    // move operator
+    child->c_change = labels;
+    child->c = child->c_change;
+
     all_nodes.push_back(child);
 
 
@@ -71,6 +75,7 @@ void Tree::insert_child(Node* pos, std::unordered_map<std::string, int>&& labels
     if (is_leaf(pos))
     {
         pos->first_child = child;
+        update_label(pos->c, child);
     }
     else
     {
@@ -80,6 +85,7 @@ void Tree::insert_child(Node* pos, std::unordered_map<std::string, int>&& labels
                 continue;
             else // add to the last child
                 temp->next = child;
+                update_label(pos->c, child);
                 break;
 
         }
@@ -109,7 +115,6 @@ void Tree::random_insert(std::unordered_map<std::string, int>&& labels)
 }
 
 void Tree::insert_at(u_int pos, std::unordered_map<std::string, int> && labels) {
-
     Node* n = all_nodes[pos];
     insert_child(n, std::move(labels));
 
@@ -118,7 +123,22 @@ void Tree::insert_at(u_int pos, std::unordered_map<std::string, int> && labels) 
 void Tree::print_node(Node& n) {
     std::cout<<"node.";
     std::cout<<std::endl;
-    for (auto i : n.c)
+    for (auto i : n.c_change)
         std::cout << " " << i.first << ":" << i.second << std::endl;
+
+}
+
+void Tree::compute_labels() {
+
+}
+
+void Tree::update_label(std::unordered_map<std::string, int> c_parent, Node *node) {
+    for (auto it=c_parent.begin(); it!=c_parent.end(); ++it) {
+        if ( node->c_change[it->first] )
+            node->c[it->first] = node->c_change[it->first] + it->second;
+        else
+            node->c[it->first] = it->second;
+    }
+
 
 }
