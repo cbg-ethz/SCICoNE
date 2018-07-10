@@ -187,18 +187,11 @@ vector<double> combine_scores(vector<double> aic_vec)
 int main() {
 
 
-
     // counts per region per cell
     int D[5][5] = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
 
-
-    int n = sizeof(D)/sizeof(D[0]);
-
-
-
     // region sizes
     int r[5] = {4,2,3,5,2};
-
 
     // build tree
     u_int ploidy = 2; // diploid
@@ -211,9 +204,16 @@ int main() {
     t.insert_at(2,{{3, -1}});
 
 
+    vector<double> avg_scores;
 
-    t.compute_tree(D[0], r);
-    double avg_score = t.average_score();
+    int n = std::size(D);
+    for (int i = 0; i < n; ++i) {
+        t.compute_tree(D[i], r);
+        avg_scores.push_back(t.average_score());
+    }
+
+    // log likelihood of data given tree
+    double sum = std::accumulate(avg_scores.begin(), avg_scores.end(), 0.0);
 
 
     t.traverse_tree();
@@ -221,35 +221,6 @@ int main() {
 
 
 /*
-    Node mynode;
-    int region_sizes[5] = {1,2,3,4,5};
-    int c_vals[5] = {2,2,2,2,2};
-    mynode.c_values = region_sizes;
-
-
-    // trees testing
-
-    int val = 5;
-    TreeNode<int>* root_node = new TreeNode<int>(0);
-    TreeNode<int>* first_node = new TreeNode<int>(val);
-
-    root_node->insertChild(first_node);
-
-    //cout << root_node.value;
-    first_node->insertChild(new TreeNode<int> (4));
-    first_node->insertChild(new TreeNode<int> (3));
-
-
-    first_node->insertNextSibling(new TreeNode<int>(8));
-    first_node->insertNextSibling(new TreeNode<int>(9));
-    TreeNode<int>::traverse(root_node);
-    //cout << root_node.value;
-    // end of trees testing
-    delete root_node;
-    delete first_node;
-    root_node = nullptr;
-    first_node = nullptr;
-
 
     //TODO log normalize the log values before taking the exp values!
     // Afterwards make sure that the results before & after are the same
