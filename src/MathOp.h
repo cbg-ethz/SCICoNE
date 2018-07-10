@@ -21,10 +21,10 @@ public:
     double log_likelihood(vector<double>);
 
     template <class T>
-    double avg(vector<T>);
+    double vec_avg(vector<T>);
 
     template <class T>
-    double sum(vector<T>);
+    double vec_sum(vector<T>);
 
 
 

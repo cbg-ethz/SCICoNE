@@ -11,26 +11,29 @@ MathOp::~MathOp() {
 }
 
 template<class T>
-double MathOp::avg(std::vector<T> v) {
+double MathOp::vec_avg(std::vector<T> v) {
     float average = accumulate( v.begin(), v.end(), 0.0)/v.size();
     return average;
 }
 
 double MathOp::log_likelihood(std::vector<double> v)
 {
-    /*double ln_gamma = 0;
+    /*
+     * Returns the max likelihood value for the Poisson distribution
+     *
+     * double ln_gamma = 0;
     for (auto const &i : v)
     {
         ln_gamma += log(tgamma(i));
     }*/
     // max likelihood:  std::log(max_ll_val) * sum(v) - (v.size() * max_ll_val)
-    double max_ll_val = avg(v);
+    double max_ll_val = vec_avg(v);
     double term1,term2;
     // to avoid log(0) * 0
-    if (sum(v) == 0 && max_ll_val==0)
+    if (vec_sum(v) == 0 && max_ll_val==0)
         term1 = 0.0;
     else
-        term1 = std::log(max_ll_val) * sum(v);
+        term1 = std::log(max_ll_val) * vec_sum(v);
 
     term2 = (v.size() * max_ll_val);
     double ll =  term1 - term2;
@@ -40,6 +43,6 @@ double MathOp::log_likelihood(std::vector<double> v)
 }
 
 template<class T>
-double MathOp::sum(std::vector<T> v) {
+double MathOp::vec_sum(std::vector<T> v) {
     return accumulate( v.begin(), v.end(), 0.0);
 }

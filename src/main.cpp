@@ -15,6 +15,9 @@ using namespace std;
 
 vector<vector<double>> read_counts(const string path)
 {
+    /*
+     * Parses the input data into a double vector.
+     * */
     vector<vector<double>> mat;
 
     std::ifstream filein(path);
@@ -42,6 +45,9 @@ vector<vector<double>> read_counts(const string path)
 }
 
 void disp_vec(vector<vector<double>> vec) {
+/*
+ * displays the double vector
+ * */
 
     for (auto const &v1: vec) {
         for (auto const &v2: v1)
@@ -51,6 +57,11 @@ void disp_vec(vector<vector<double>> vec) {
 }
 
 vector<vector<double>> likelihood_ratio(vector<vector<double>> mat, double window_size) {
+    /*
+     *
+     * Computes the difference of the AIC_break and AIC_segment cases to tell whether to break or not
+     * */
+
     MathOp mo = MathOp();
     // the last breakpoint
     u_int bp_size = mat[0].size();
@@ -83,7 +94,7 @@ vector<vector<double>> likelihood_ratio(vector<vector<double>> mat, double windo
             vector<double> all_bins = vector<double>(vect.begin() + start, vect.begin() + end);
             /*cout << lbins.size() <<' ' << rbins.size() << ' ' << all_bins.size() << ' ' << i;
             cout << endl;
-            cout << avg(lbins) << ' ' << avg(rbins) << ' ' << avg(all_bins) <<endl;
+            cout << avg(lbins) << ' ' << avg(rbins) << ' ' << vec_avg(all_bins) <<endl;
             */
             // k is the degrees of freedom of the segment model
             u_int k_segment = 1;
@@ -112,6 +123,7 @@ vector<vector<double>> likelihood_ratio(vector<vector<double>> mat, double windo
 long double log_add(long double val1, long double val2)
 {
     /*
+     * Performs addition in the log space
      * uses the following identity:
      * log(a + b) = log(a * (1 + b/a)) = log a + log(1 + b/a)
      * make sure a > b
@@ -141,6 +153,13 @@ long double log_add(long double val1, long double val2)
 
 vector<double> combine_scores(vector<double> aic_vec)
 {
+
+    /*
+     * Combines cells.
+     * Computes the combined evidence that the breakpoint occurred in any k of m cells.
+     * Uses dynamic programming.
+     *
+     * */
 
     vector<double> row1(aic_vec.size(), 0.0);
     vector<double> row2;
@@ -186,6 +205,7 @@ vector<double> combine_scores(vector<double> aic_vec)
 
 int main() {
 
+    MathOp mo = MathOp();
 
     // counts per region per cell
     int D[5][5] = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
@@ -213,14 +233,14 @@ int main() {
     }
 
     // log likelihood of data given tree
-    double sum = std::accumulate(avg_scores.begin(), avg_scores.end(), 0.0);
+    double ll_dgt = mo.vec_sum(avg_scores);
 
 
     t.traverse_tree();
     t.destroy();
 
 
-/*
+
 
     //TODO log normalize the log values before taking the exp values!
     // Afterwards make sure that the results before & after are the same
@@ -252,6 +272,6 @@ int main() {
         cout <<endl;
 
     }
-*/
+
     return 0;
 }
