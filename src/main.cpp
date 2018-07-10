@@ -187,14 +187,6 @@ vector<double> combine_scores(vector<double> aic_vec)
 int main() {
 
 
-//    string key = "R1";
-
-    // If key not found in map iterator to end is returned
-//    if (c.find(key) == c.end())
-//        cout << key << " not found\n\n";
-//    else
-//        c[key]=c[key]+5;
-//cout <<c[key];
 
     // counts per region per cell
     int D[5][5] = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
@@ -202,7 +194,6 @@ int main() {
 
     int n = sizeof(D)/sizeof(D[0]);
 
-    // ploidy matrix
 
 
     // region sizes
@@ -210,11 +201,8 @@ int main() {
 
 
     // build tree
-    u_int ploidy = 2;
-    Tree t(ploidy);
-    auto s1 = t.uniform_select();
-    auto s2 = t.uniform_select();
-
+    u_int ploidy = 2; // diploid
+    Tree t(ploidy); // root is created
 
     t.random_insert({{0, 1}, {1, 1}});
     t.insert_at(1,{{1, 1}, {2, 1}});
@@ -223,10 +211,9 @@ int main() {
     t.insert_at(2,{{3, -1}});
 
 
-    t.compute_root_score(D[0],r);
-    double root_score = t.root->log_score;
-    int sum_d = std::accumulate(D[0], D[0] + std::size(D[0]), 0);
-    t.compute_score(t.root->first_child, D[0], sum_d, r, t.root->c, root_score);
+
+    t.compute_tree(D[0], r);
+    double avg_score = t.average_score();
 
 
     t.traverse_tree();
