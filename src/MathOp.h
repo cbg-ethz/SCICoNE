@@ -20,6 +20,10 @@ public:
     virtual ~MathOp();
     double log_likelihood(vector<double>);
 
+    long double log_add(long double val1, long double val2);
+    vector<double> combine_scores(vector<double> aic_vec);
+    vector<vector<double>> likelihood_ratio(vector<vector<double>> mat, double window_size);
+
     template <class T>
     double vec_avg(vector<T>);
 

@@ -56,151 +56,7 @@ void disp_vec(vector<vector<double>> vec) {
     }
 }
 
-vector<vector<double>> likelihood_ratio(vector<vector<double>> mat, double window_size) {
-    /*
-     *
-     * Computes the difference of the AIC_break and AIC_segment cases to tell whether to break or not
-     * */
 
-    MathOp mo = MathOp();
-    // the last breakpoint
-    u_int bp_size = mat[0].size();
-
-    //cout << bp_size << endl;
-    u_int n_cells = mat.size();
-
-    // u_int cell_no = 0;
-    vector<vector<double>> aic_vec;
-    for (int i = 0; i < bp_size; ++i) {
-
-        int start = i - window_size;
-        int end = i + window_size;
-
-        // end cannot be equal to bp_size because cellranger DNA is putting 0 to the end
-        if (start < 0 || end >= bp_size) {
-            //cout << "continue" << endl;
-            continue;
-        }
-
-        vector<double> aic_cell = vector<double>();
-
-        for (int j = 0; j < n_cells; ++j) {
-
-
-            vector<double> vect = mat[j];
-
-            vector<double> lbins = vector<double>(vect.begin() + start, vect.begin() + i);
-            vector<double> rbins = vector<double>(vect.begin() + i, vect.begin() + end);
-            vector<double> all_bins = vector<double>(vect.begin() + start, vect.begin() + end);
-            /*cout << lbins.size() <<' ' << rbins.size() << ' ' << all_bins.size() << ' ' << i;
-            cout << endl;
-            cout << avg(lbins) << ' ' << avg(rbins) << ' ' << vec_avg(all_bins) <<endl;
-            */
-            // k is the degrees of freedom of the segment model
-            u_int k_segment = 1;
-            double ll_segment = mo.log_likelihood(all_bins);
-            double aic_segment = 2 * k_segment - 2 * ll_segment;
-
-            // degrees of freedom is 2, lambda_r and lambda_l
-            u_int k_break = 2;
-            double ll_break = mo.log_likelihood(lbins) + mo.log_likelihood(rbins);
-            double aic_break = 2 * k_break - 2 * ll_break;
-
-            //cout << ll_break << ' ' << ll_segment << ' ' << aic_break << ' ' << aic_segment << endl;
-            double aic_p = aic_segment - aic_break;
-            //cout << aic_p << endl;
-
-
-
-            aic_cell.push_back(aic_p);
-        }
-        aic_vec.push_back(aic_cell);
-
-    }
-    return aic_vec;
-}
-
-long double log_add(long double val1, long double val2)
-{
-    /*
-     * Performs addition in the log space
-     * uses the following identity:
-     * log(a + b) = log(a * (1 + b/a)) = log a + log(1 + b/a)
-     * make sure a > b
-     * to avoid undefined values
-     */
-
-    // the input are in the log space
-    long double a = val1;
-    long double b = val2;
-
-    if (b>a)
-    {
-        long double temp = a;
-        a = b;
-        b = temp;
-    }
-
-    long double res = a + log(1+ exp(b-a));
-
-//    if (isinf(res))
-//        cout << "inf result detected";
-
-    return res;
-}
-
-
-
-vector<double> combine_scores(vector<double> aic_vec)
-{
-
-    /*
-     * Combines cells.
-     * Computes the combined evidence that the breakpoint occurred in any k of m cells.
-     * Uses dynamic programming.
-     *
-     * */
-
-    vector<double> row1(aic_vec.size(), 0.0);
-    vector<double> row2;
-    vector<double> res(1,0.0);
-
-    // iterate over n_cells
-    for (int i = 0; i < aic_vec.size(); ++i) {
-        row2.clear();
-        // inner computation of row2
-        for (int j = 0; j < aic_vec.size()-i; ++j) {
-            double value;
-            if (j==0)
-            {
-                value = row1[j] + aic_vec[j+i];
-            }
-            else
-            {
-                value = log_add(row2[j-1] , row1[j] + aic_vec[j+i]);
-
-            }
-
-            if (isinf(value))
-                cout << "inf value detected";
-
-            row2.push_back(value);
-
-        }
-        //cout << " row1 size: " << row1.size() << " row2 size: " << row2.size() << " max j: " << aic_vec.size()-i<<endl;
-        row1.clear();
-        row1 = row2;
-        double last = row2.back();
-
-
-        res.push_back(last);
-
-    }
-
-
-
-    return res;
-}
 
 
 int main() {
@@ -251,7 +107,7 @@ int main() {
 
     // compute the AIC scores
     u_int window_size = 3;
-    vector<vector<double>> aic_vec = likelihood_ratio(mat,window_size);
+    vector<vector<double>> aic_vec = mo.likelihood_ratio(mat,window_size);
 
 
     // dynamic programming
@@ -266,7 +122,7 @@ int main() {
     for (auto vec: aic_vec)
     {
         cout << i++ <<" --> ";
-        auto res = combine_scores(vec);
+        auto res = mo.combine_scores(vec);
         for (auto const &v2: vec)
             cout << v2 << ' ';
         cout <<endl;
