@@ -61,8 +61,6 @@ void disp_vec(vector<vector<double>> vec) {
 
 int main() {
 
-    MathOp mo = MathOp();
-
     // counts per region per cell
     int D[5][5] = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
 
@@ -89,7 +87,7 @@ int main() {
     }
 
     // log likelihood of data given tree
-    double ll_dgt = mo.vec_sum(avg_scores);
+    double ll_dgt = MathOp::vec_sum(avg_scores);
 
 
     t.traverse_tree();
@@ -107,7 +105,7 @@ int main() {
 
     // compute the AIC scores
     u_int window_size = 3;
-    vector<vector<double>> aic_vec = mo.likelihood_ratio(mat,window_size);
+    vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
 
 
     // dynamic programming
@@ -122,7 +120,7 @@ int main() {
     for (auto vec: aic_vec)
     {
         cout << i++ <<" --> ";
-        auto res = mo.combine_scores(vec);
+        auto res = MathOp::combine_scores(vec);
         for (auto const &v2: vec)
             cout << v2 << ' ';
         cout <<endl;

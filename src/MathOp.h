@@ -16,19 +16,19 @@ using namespace std;
 class MathOp {
 
 public:
-    MathOp();
-    virtual ~MathOp();
-    double log_likelihood(vector<double>);
+    MathOp() = delete;
+    virtual ~MathOp() = delete;
 
-    long double log_add(long double val1, long double val2);
-    vector<double> combine_scores(vector<double> aic_vec);
-    vector<vector<double>> likelihood_ratio(vector<vector<double>> mat, double window_size);
-
-    template <class T>
-    double vec_avg(vector<T>);
+    static double log_likelihood(vector<double>);
+    static long double log_add(long double val1, long double val2);
+    static vector<double> combine_scores(vector<double> aic_vec);
+    static vector<vector<double>> likelihood_ratio(vector<vector<double>> mat, double window_size);
 
     template <class T>
-    double vec_sum(vector<T>);
+    static double vec_avg(vector<T>);
+
+    template <class T>
+    static double vec_sum(vector<T>);
 
 
 

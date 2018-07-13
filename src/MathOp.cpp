@@ -4,11 +4,7 @@
 
 #include "MathOp.h"
 
-MathOp::MathOp() {}
 
-MathOp::~MathOp() {
-
-}
 
 template<class T>
 double MathOp::vec_avg(std::vector<T> v) {
@@ -53,7 +49,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> mat, doub
      * Computes the difference of the AIC_break and AIC_segment cases to tell whether to break or not
      * */
 
-    MathOp mo = MathOp();
+    //MathOp mo = MathOp();
     // the last breakpoint
     u_int bp_size = mat[0].size();
 
@@ -89,12 +85,12 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> mat, doub
             */
             // k is the degrees of freedom of the segment model
             u_int k_segment = 1;
-            double ll_segment = mo.log_likelihood(all_bins);
+            double ll_segment = log_likelihood(all_bins);
             double aic_segment = 2 * k_segment - 2 * ll_segment;
 
             // degrees of freedom is 2, lambda_r and lambda_l
             u_int k_break = 2;
-            double ll_break = mo.log_likelihood(lbins) + mo.log_likelihood(rbins);
+            double ll_break = log_likelihood(lbins) + log_likelihood(rbins);
             double aic_break = 2 * k_break - 2 * ll_break;
 
             //cout << ll_break << ' ' << ll_segment << ' ' << aic_break << ' ' << aic_segment << endl;
