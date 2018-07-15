@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <vector>
+#include <stack>
 #include <unordered_map>
 #include <random>
 #include <numeric>
@@ -19,6 +20,7 @@ struct Node{
     int z = 0;
     Node* first_child = nullptr;
     Node* next = nullptr;
+    Node* parent = nullptr;
 
     Node() = default;
     ~Node() = default;
@@ -59,7 +61,7 @@ public:
     void compute_root_score(int (&D)[N], int (&r)[N]);
 
     template<int N>
-    void compute_score(Node* node, int (&D)[N], int& sum_D, int (&r)[N], std::unordered_map<u_int,int>& c_prev, double& log_parent, int & z_parent);
+    void compute_score(Node* node, int (&D)[N], int& sum_D, int (&r)[N]);
 
 private:
 
@@ -70,8 +72,7 @@ private:
     int compute_z(int (&r)[N], std::unordered_map<u_int, int> &c);
 
     template<int N>
-    void tail_compute(Node *node, int (&D)[N], int &sum_D, int (&r)[N], std::unordered_map<u_int, int> &c_prev,
-                      double &log_parent, int & z_parent);
+    void compute_stack(Node *node, int (&D)[N], int &sum_D, int (&r)[N]);
 
 
 };
@@ -92,11 +93,11 @@ void Tree::compute_root_score(int (&D)[N], int (&r)[N]) {
 }
 
 template<int N>
-void Tree::compute_score(Node* node, int (&D)[N], int& sum_D, int (&r)[N], std::unordered_map<u_int,int>& c_prev, double& log_parent, int & z_parent) {
+void Tree::compute_score(Node* node, int (&D)[N], int& sum_D, int (&r)[N]) {
 
 
-    double val = log_parent;
-    int z = z_parent;
+    double val = node->parent->log_score;
+    int z = node->parent->z;
 
     for (auto const &x : node->c_change)
     {
@@ -106,18 +107,16 @@ void Tree::compute_score(Node* node, int (&D)[N], int& sum_D, int (&r)[N], std::
 
 
 
-        int cp_f = c_prev[x.first];
+        int cp_f = node->parent->c[x.first];
         val -= D[x.first] * (log(cp_f+ploidy));
 
-        cout << x.first<<endl;
-        cout <<x.second<<endl;
         z += r[x.first] * (cf - cp_f);
 
     }
 
 
     val -= sum_D*log(z);
-    val += sum_D*log(z_parent);
+    val += sum_D*log(node->parent->z);
 
     node->log_score = val;
     node->z = z;
@@ -133,19 +132,31 @@ void Tree::compute_tree(int (&D)[N], int (&r)[N]) {
     int root_z = root->z;
     //reuse the computed sum in each node
     int sum_d = std::accumulate(D, D + std::size(D), 0);
-    tail_compute(root->first_child, D, sum_d, r, root->c, root_score, root_z);
+    compute_stack(root->first_child, D, sum_d, r);
 
 }
 
 template<int N>
-void Tree::tail_compute(Node *node, int (&D)[N], int &sum_D, int (&r)[N], std::unordered_map<u_int, int> &c_prev,
-                        double &log_parent, int &z_parent)
+void Tree::compute_stack(Node *node, int (&D)[N], int &sum_D, int (&r)[N])
 {
-    compute_score(node, D, sum_D, r, c_prev, log_parent, z_parent);
-    //std::cout<<node->log_score<<std::endl;
-    for (Node* temp = node->first_child; temp != nullptr; temp=temp->next) {
-        tail_compute(temp, D, sum_D, r, node->c, node->log_score, node->z);
+    // stack based implementation
+    std::stack<Node*> stk;
+    stk.push(node);
+
+    while (!stk.empty()) {
+        Node* top = (Node*) stk.top();
+        stk.pop();
+        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
+            stk.push(temp);
+        }
+        compute_score(top, D, sum_D, r);
     }
+
+    // alternative recursive implementation
+//    compute_score(node, D, sum_D, r);
+//    for (Node* temp = node->first_child; temp != nullptr; temp=temp->next) {
+//        compute_stack(temp, D, sum_D, r);
+//    }
 }
 
 
@@ -209,11 +220,14 @@ void Tree::insert_child(Node* pos, std::unordered_map<u_int, int>&& labels) {
 
     // create node
     Node* child = new Node();
-    // move operator
 
+    // move operator
     child->c_change = labels;
+
+    // copy
     child->c = child->c_change;
 
+    child->parent = pos;
 
     all_nodes.push_back(child);
 

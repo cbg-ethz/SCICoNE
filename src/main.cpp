@@ -89,6 +89,7 @@ int main() {
     // log likelihood of data given tree
     double ll_dgt = MathOp::vec_sum(avg_scores);
 
+    cout<<ll_dgt<<endl;
 
     t.traverse_tree();
     t.destroy();
@@ -98,7 +99,7 @@ int main() {
 
     //TODO log normalize the log values before taking the exp values!
     // Afterwards make sure that the results before & after are the same
-
+/*
     // parse input
     vector<vector<double>> mat;
     mat = read_counts("/Users/mtuncel/git_repos/sc-dna/input_data/norm_counts.tsv");
@@ -126,6 +127,6 @@ int main() {
         cout <<endl;
 
     }
-
+*/
     return 0;
 }
