@@ -22,12 +22,17 @@ struct Node{
     Node* next = nullptr;
     Node* parent = nullptr;
 
+    // copy constructor
+    Node(const Node& source_node)
+    {
+        c = source_node.c;
+        c_change = source_node.c_change;
+        log_score = source_node.log_score;
+        z = source_node.z;
+        first_child = next = parent = nullptr;
+    }
     Node() = default;
     ~Node() = default;
-    /* TODO: have a move constructor to use on MCMC moves!
-     * the move constructor should preserve first_child, next, c_change
-     * the log score and c will be re-computed for each different tree
-     */
 };
 
 class Tree {
@@ -37,43 +42,36 @@ public:
     std::vector<Node*> all_nodes; // for uniform selection
     u_int ploidy; // to be added to values of the unordered map for each node
 
+    // constructor
+    Tree(u_int ploidy);
+    // copy constructor
+    Tree(const Tree& source, u_int ploidy);
+    // destructor
+    virtual ~Tree();
+
+    void copy_tree(const Tree& source_tree);
+
     bool is_leaf(Node*) const;
-    Node* uniform_select();
+    Node* uniform_select(bool with_root);
     void random_insert(std::unordered_map<u_int, int>&&);
     void insert_at(u_int pos, std::unordered_map<u_int, int>&&);
     void insert_child(Node*, std::unordered_map<u_int, int>&&);
-    Tree(u_int ploidy);
-
     double average_score();
-
-
-    virtual ~Tree();
     void traverse_tree();
     void destroy();
     void print_node(Node&);
-
     template<int N>
     void compute_tree(int (&D)[N], int (&r)[N]);
-
-
-
     template<int N>
     void compute_root_score(int (&D)[N], int (&r)[N]);
-
     template<int N>
     void compute_score(Node* node, int (&D)[N], int& sum_D, int (&r)[N]);
-
 private:
 
     void traverse(Node*);
     void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
-
-    template<int N>
-    int compute_z(int (&r)[N], std::unordered_map<u_int, int> &c);
-
     template<int N>
     void compute_stack(Node *node, int (&D)[N], int &sum_D, int (&r)[N]);
-
 
 };
 
@@ -152,7 +150,7 @@ void Tree::compute_stack(Node *node, int (&D)[N], int &sum_D, int (&r)[N])
         compute_score(top, D, sum_D, r);
     }
 
-    // alternative recursive implementation
+//    alternative recursive implementation
 //    compute_score(node, D, sum_D, r);
 //    for (Node* temp = node->first_child; temp != nullptr; temp=temp->next) {
 //        compute_stack(temp, D, sum_D, r);
@@ -191,7 +189,7 @@ void Tree::traverse(Node* node) {
     }
 }
 
-Node* Tree::uniform_select() {
+Node* Tree::uniform_select(bool with_root=true) {
     std::random_device rd;  //Will be used to obtain a seed for the random number engine
     std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
     int rand_val = 0;
@@ -201,7 +199,8 @@ Node* Tree::uniform_select() {
         rand_val = 1;
     else
     {
-        std::uniform_int_distribution<> dis(1, all_nodes.size());
+        // 1 is root, 2 is 1st
+        std::uniform_int_distribution<> dis(with_root?1:2, all_nodes.size());
         rand_val = dis(gen);
     }
 
@@ -224,7 +223,7 @@ void Tree::insert_child(Node* pos, std::unordered_map<u_int, int>&& labels) {
     // move operator
     child->c_change = labels;
 
-    // copy
+    // copy (not computed yet)
     child->c = child->c_change;
 
     child->parent = pos;
@@ -291,8 +290,13 @@ void Tree::print_node(Node& n) {
 
 
 void Tree::update_label(std::unordered_map<u_int, int>& c_parent, Node *node) {
+    /*
+     * Updates the child label (c) based on the parent c
+     * */
+
     // copy assignment
     node->c = c_parent;
+    // parent labels are passed to the child c here
     for (auto it=node->c_change.begin(); it!=node->c_change.end(); ++it) {
         node->c[it->first] = node->c[it->first] + it->second;
     }
@@ -325,6 +329,49 @@ double Tree::average_score() {
 
 
 }
+
+Tree::Tree(const Tree &source, u_int ploidy) {
+    if (source.root == nullptr)
+        root = nullptr;
+    else
+        copy_tree(source);
+}
+
+void Tree::copy_tree(const Tree& source_tree) {
+    /*
+     * TODO
+     * have a single copy node method (done)
+     * call it recursively (using stack)
+     * copy all the other attributes
+    */
+
+
+    this->all_nodes = source_tree.all_nodes;
+    this->ploidy = source_tree.ploidy;
+    this->root = source_tree.root;
+
+
+    for (Node* temp = source_tree.root->first_child; temp != nullptr; temp=temp->next)
+    {
+
+    }
+
+//    // stack based implementation
+//    std::stack<Node*> stk;
+//    stk.push(this->root);
+//
+//    while (!stk.empty()) {
+//        Node* top = (Node*) stk.top();
+//        stk.pop();
+//        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
+//            stk.push(temp);
+//        }
+//
+//        compute_score(top, D, sum_D, r);
+//    }
+
+
+ }
 
 
 #endif //SC_DNA_TREE_H
