@@ -14,8 +14,8 @@
 #include <limits>
 
 struct Node{
-    std::unordered_map<u_int,int> c;
-    std::unordered_map<u_int,int> c_change;
+    std::unordered_map<u_int,int> c = {};
+    std::unordered_map<u_int,int> c_change= {};
     double log_score = 0.0;
     int z = 0;
     Node* first_child = nullptr;
@@ -25,14 +25,17 @@ struct Node{
     // copy constructor
     Node(const Node& source_node)
     {
+
         c = source_node.c;
         c_change = source_node.c_change;
         log_score = source_node.log_score;
         z = source_node.z;
         first_child = next = parent = nullptr;
     }
-    Node() = default;
-    ~Node() = default;
+    Node()
+    {}
+    ~Node()
+    {}
 };
 
 class Tree {
@@ -45,17 +48,20 @@ public:
     // constructor
     Tree(u_int ploidy);
     // copy constructor
-    Tree(const Tree& source, u_int ploidy);
+    Tree(Tree& source, u_int ploidy);
     // destructor
     virtual ~Tree();
 
     void copy_tree(const Tree& source_tree);
+    void recursive_copy(const Node& source, Node *destination);
 
     bool is_leaf(Node*) const;
     Node* uniform_select(bool with_root);
     void random_insert(std::unordered_map<u_int, int>&&);
     void insert_at(u_int pos, std::unordered_map<u_int, int>&&);
-    void insert_child(Node*, std::unordered_map<u_int, int>&&);
+    void insert_child(Node *pos, std::unordered_map<u_int, int>&& labels);
+    Node* insert_child(Node *pos, Node source);
+
     double average_score();
     void traverse_tree();
     void destroy();
@@ -215,7 +221,41 @@ bool Tree::is_leaf(Node* n) const{
 }
 
 
+Node* Tree::insert_child(Node *pos, Node source) {
+    /*
+     * Creates a child node from the reference node and inserts it to the position pos
+     * */
+
+    Node *child = new Node(source);
+    child->parent = pos;
+    all_nodes.push_back(child);
+
+
+    // insert
+    if (is_leaf(pos))
+    {
+        pos->first_child = child;
+    }
+    else
+    {
+        // find the last child
+        for (Node* temp = pos->first_child; temp != nullptr; temp=temp->next) {
+            if (temp->next != nullptr)
+                continue;
+            else // add to the last child
+                temp->next = child;
+            break;
+        }
+    }
+    return child;
+
+}
+
 void Tree::insert_child(Node* pos, std::unordered_map<u_int, int>&& labels) {
+
+    /*
+     * Creates a child node from the labels and inserts it to the position pos
+     * */
 
     // create node
     Node* child = new Node();
@@ -330,11 +370,11 @@ double Tree::average_score() {
 
 }
 
-Tree::Tree(const Tree &source, u_int ploidy) {
+Tree::Tree(Tree &source, u_int ploidy) {
     if (source.root == nullptr)
-        root = nullptr;
+        this->root = nullptr;
     else
-        copy_tree(source);
+        this->copy_tree(source);
 }
 
 void Tree::copy_tree(const Tree& source_tree) {
@@ -346,15 +386,14 @@ void Tree::copy_tree(const Tree& source_tree) {
     */
 
 
-    this->all_nodes = source_tree.all_nodes;
+
     this->ploidy = source_tree.ploidy;
-    this->root = source_tree.root;
 
+    // copy the nodes
+    this->root = new Node(*source_tree.root);
 
-    for (Node* temp = source_tree.root->first_child; temp != nullptr; temp=temp->next)
-    {
+    recursive_copy(reinterpret_cast<const Node &>(source_tree.root), this->root);
 
-    }
 
 //    // stack based implementation
 //    std::stack<Node*> stk;
@@ -372,6 +411,19 @@ void Tree::copy_tree(const Tree& source_tree) {
 
 
  }
+
+void Tree::recursive_copy(const Node &source, Node *destination) {
+
+
+    for (Node* temp = source.first_child; temp != nullptr; temp=temp->next) {
+        auto child = insert_child(destination, *temp);
+        recursive_copy(*temp, child);
+    }
+
+
+}
+
+
 
 
 #endif //SC_DNA_TREE_H
