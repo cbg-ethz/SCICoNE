@@ -23,9 +23,8 @@ struct Node{
     Node* parent = nullptr;
 
     // copy constructor
-    Node(const Node& source_node)
+    Node(Node& source_node)
     {
-
         c = source_node.c;
         c_change = source_node.c_change;
         log_score = source_node.log_score;
@@ -53,7 +52,7 @@ public:
     virtual ~Tree();
 
     void copy_tree(const Tree& source_tree);
-    void recursive_copy(const Node& source, Node *destination);
+    void recursive_copy(Node *source, Node *destination);
 
     bool is_leaf(Node*) const;
     Node* uniform_select(bool with_root);
@@ -61,7 +60,6 @@ public:
     void insert_at(u_int pos, std::unordered_map<u_int, int>&&);
     void insert_child(Node *pos, std::unordered_map<u_int, int>&& labels);
     Node* insert_child(Node *pos, Node source);
-
     double average_score();
     void traverse_tree();
     void destroy();
@@ -306,6 +304,7 @@ void Tree::destroy() {
     }
     all_nodes.clear();
     root = nullptr;
+    std::cout<<"destroyed."<<std::endl;
 }
 
 void Tree::random_insert(std::unordered_map<u_int, int>&& labels)
@@ -391,8 +390,8 @@ void Tree::copy_tree(const Tree& source_tree) {
 
     // copy the nodes
     this->root = new Node(*source_tree.root);
-
-    recursive_copy(reinterpret_cast<const Node &>(source_tree.root), this->root);
+    this->all_nodes.push_back(root);
+    recursive_copy(source_tree.root, this->root);
 
 
 //    // stack based implementation
@@ -412,12 +411,16 @@ void Tree::copy_tree(const Tree& source_tree) {
 
  }
 
-void Tree::recursive_copy(const Node &source, Node *destination) {
+void Tree::recursive_copy(Node* source, Node *destination) {
+    /*
+     * Copies the tree from source to destination
+     * TODO implement it using stack & loop, not to use the function call stack
+     * TODO the order of insertion is different (although the tree is the same)
+     * */
 
-
-    for (Node* temp = source.first_child; temp != nullptr; temp=temp->next) {
+    for (Node* temp = source->first_child; temp != nullptr; temp=temp->next) {
         auto child = insert_child(destination, *temp);
-        recursive_copy(*temp, child);
+        recursive_copy(temp, child);
     }
 
 

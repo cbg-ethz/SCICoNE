@@ -91,11 +91,13 @@ int main() {
 
     cout<<ll_dgt<<endl;
 
-    Tree t_prime(ploidy);
-    t_prime.copy_tree(t);
+    Tree t_prime(t, ploidy);
+
 
     t.traverse_tree();
-    t.destroy();
+//    t_prime.traverse_tree();
+//    t.destroy();
+//    t_prime.destroy();
 
 
 
