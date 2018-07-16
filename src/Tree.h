@@ -9,33 +9,11 @@
 #include <vector>
 #include <stack>
 #include <unordered_map>
-#include <random>
 #include <numeric>
 #include <limits>
+#include "Node.h"
+#include "MathOp.h"
 
-struct Node{
-    std::unordered_map<u_int,int> c = {};
-    std::unordered_map<u_int,int> c_change= {};
-    double log_score = 0.0;
-    int z = 0;
-    Node* first_child = nullptr;
-    Node* next = nullptr;
-    Node* parent = nullptr;
-
-    // copy constructor
-    Node(Node& source_node)
-    {
-        c = source_node.c;
-        c_change = source_node.c_change;
-        log_score = source_node.log_score;
-        z = source_node.z;
-        first_child = next = parent = nullptr;
-    }
-    Node()
-    {}
-    ~Node()
-    {}
-};
 
 class Tree {
 
@@ -51,16 +29,22 @@ public:
     // destructor
     virtual ~Tree();
 
-    void copy_tree(const Tree& source_tree);
-    void recursive_copy(Node *source, Node *destination);
+
+
+    // moves
+    Node * prune_reattach();
 
     bool is_leaf(Node*) const;
     Node* uniform_select(bool with_root);
     void random_insert(std::unordered_map<u_int, int>&&);
     void insert_at(u_int pos, std::unordered_map<u_int, int>&&);
     void insert_child(Node *pos, std::unordered_map<u_int, int>&& labels);
-    Node* insert_child(Node *pos, Node source);
-    double average_score();
+    Node * insert_child(Node *pos, Node *source);
+    Node* insert_child(Node *pos, Node& source);
+
+    Node* remove(Node* pos);
+
+    double sum_score();
     void traverse_tree();
     void destroy();
     void print_node(Node&);
@@ -70,12 +54,15 @@ public:
     void compute_root_score(int (&D)[N], int (&r)[N]);
     template<int N>
     void compute_score(Node* node, int (&D)[N], int& sum_D, int (&r)[N]);
+    template<int N>
+    void compute_stack(Node *node, int (&D)[N], int &sum_D, int (&r)[N]);
 private:
 
     void traverse(Node*);
     void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
-    template<int N>
-    void compute_stack(Node *node, int (&D)[N], int &sum_D, int (&r)[N]);
+
+    void copy_tree(const Tree& source_tree);
+    void recursive_copy(Node *source, Node *destination);
 
 };
 
@@ -194,8 +181,7 @@ void Tree::traverse(Node* node) {
 }
 
 Node* Tree::uniform_select(bool with_root=true) {
-    std::random_device rd;  //Will be used to obtain a seed for the random number engine
-    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+
     int rand_val = 0;
     if (all_nodes.size() == 0)
         throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
@@ -203,9 +189,8 @@ Node* Tree::uniform_select(bool with_root=true) {
         rand_val = 1;
     else
     {
-        // 1 is root, 2 is 1st
-        std::uniform_int_distribution<> dis(with_root?1:2, all_nodes.size());
-        rand_val = dis(gen);
+        // 1 is root, 2 is 1st.
+        rand_val = MathOp::random_uniform(with_root?1:2,all_nodes.size());
     }
 
     return all_nodes[rand_val-1];
@@ -218,21 +203,17 @@ bool Tree::is_leaf(Node* n) const{
         return false;
 }
 
+Node * Tree::insert_child(Node *pos, Node *source) {
 
-Node* Tree::insert_child(Node *pos, Node source) {
-    /*
-     * Creates a child node from the reference node and inserts it to the position pos
-     * */
-
-    Node *child = new Node(source);
-    child->parent = pos;
-    all_nodes.push_back(child);
-
+    // set the parent from the child
+    source->parent = pos;
+    all_nodes.push_back(source);
 
     // insert
     if (is_leaf(pos))
     {
-        pos->first_child = child;
+        pos->first_child = source;
+        update_label(pos->c, source);
     }
     else
     {
@@ -241,11 +222,25 @@ Node* Tree::insert_child(Node *pos, Node source) {
             if (temp->next != nullptr)
                 continue;
             else // add to the last child
-                temp->next = child;
+                temp->next = source;
+            update_label(pos->c, source);
             break;
         }
     }
-    return child;
+    return source;
+
+}
+
+Node* Tree::insert_child(Node *pos, Node& source) {
+    /*
+     * Creates a child node from the reference node and inserts it to the position pos
+     * Does not preserve the link informations!
+     * This is used for copying purposes.
+     * */
+
+    Node *child = new Node(source);
+    return insert_child(pos,child);
+
 
 }
 
@@ -309,7 +304,7 @@ void Tree::destroy() {
 
 void Tree::random_insert(std::unordered_map<u_int, int>&& labels)
 {
-    Node* pos = uniform_select();
+    Node* pos = uniform_select(true);
     insert_child(pos, std::move(labels));
 
 }
@@ -344,7 +339,7 @@ void Tree::update_label(std::unordered_map<u_int, int>& c_parent, Node *node) {
 }
 
 
-double Tree::average_score() {
+double Tree::sum_score() {
 
     // init max with the smallest value possible
     double max = std::numeric_limits<double>::min();
@@ -362,7 +357,7 @@ double Tree::average_score() {
         sum_in_normal_space += scores[i];
     }
 
-    return log(sum_in_normal_space / all_nodes.size()) + max;
+    return log(sum_in_normal_space) + max;
 
 
 
@@ -423,6 +418,87 @@ void Tree::recursive_copy(Node* source, Node *destination) {
         recursive_copy(temp, child);
     }
 
+
+}
+
+Node * Tree::prune_reattach() {
+
+    Node* prune_pos;
+    prune_pos = uniform_select(false);
+
+    // copy all nodes
+    std::vector<Node*> destination_nodes = this->all_nodes;
+
+    // TODO remove all the descendents of the prune_pos
+
+    std::stack<Node*> stk;
+    stk.push(prune_pos);
+
+    while (!stk.empty()) {
+        Node *top = (Node *) stk.top();
+        stk.pop();
+        for (Node *temp = top->first_child; temp != nullptr; temp = temp->next) {
+            stk.push(temp);
+        }
+        destination_nodes.erase(std::remove(destination_nodes.begin(), destination_nodes.end(), top), destination_nodes.end());
+    }
+
+    int rand_val = 0;
+    rand_val = MathOp::random_uniform(1,destination_nodes.size());
+    Node* attach_pos = nullptr;
+    attach_pos = destination_nodes[rand_val -1];
+    attach_pos = all_nodes[5]; //TODO remove this after testing is complete
+    //do not recompute you attach at the same pos
+    if (prune_pos->parent != attach_pos)
+    {
+        /*
+         * 1. Remove prune_pos (done)
+         * 2. Insert prune_pos using insert_child function
+         * */
+        auto pruned_node = remove(prune_pos);
+        auto attached_node = insert_child(attach_pos, pruned_node);
+
+        return attached_node;
+    }
+    return nullptr;
+
+
+
+}
+
+Node *Tree::remove(Node *pos) {
+
+    /*
+     * Removes the element at the position but does not deallocate!
+     * The caller method has the responsibility to deallocate.
+     * */
+
+    assert(pos != root);
+
+    // if pos is the first child then pos' next is the new first child
+    if (pos == pos->parent->first_child)
+        pos->parent->first_child = pos->next;
+    // otherwise find the node among the childs and connect it's previous to its next
+    else
+    {
+        for (Node *temp = pos->parent->first_child; temp != nullptr; temp = temp->next)
+        {
+            if (temp->next == pos)
+            {
+                temp->next = temp->next->next;
+                break;
+            }
+
+        }
+    }
+
+    // remove from the all_nodes as well
+    all_nodes.erase(std::remove(all_nodes.begin(), all_nodes.end(), pos), all_nodes.end());
+
+    //remove the next link
+    pos->next = nullptr;
+
+    return pos;
 
 }
 

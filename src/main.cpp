@@ -78,24 +78,36 @@ int main() {
     t.insert_at(2,{{3, -1}});
 
 
-    vector<double> avg_scores;
+    vector<double> sum_scores;
 
     int n = std::size(D);
     for (int i = 0; i < n; ++i) {
         t.compute_tree(D[i], r);
-        avg_scores.push_back(t.average_score());
+        sum_scores.push_back(t.sum_score());
     }
 
     // log likelihood of data given tree
-    double ll_dgt = MathOp::vec_sum(avg_scores);
+    int m = 6; //number of nodes (compute it automatically TODO)
+    double ll_dgt = MathOp::vec_sum(sum_scores) ;
+    ll_dgt -= (n-1 + m) * log(n+1);
 
     cout<<ll_dgt<<endl;
 
     Tree t_prime(t, ploidy);
 
+    //t.remove(t.all_nodes[2]);
 
     t.traverse_tree();
-//    t_prime.traverse_tree();
+
+    auto attached_node = t_prime.prune_reattach();
+
+
+
+    if (attached_node != nullptr)
+        t_prime.compute_tree( D[4], r);
+    //t_prime.compute_stack(attached_node, D[4], n, r);
+
+    t_prime.traverse_tree();
 //    t.destroy();
 //    t_prime.destroy();
 

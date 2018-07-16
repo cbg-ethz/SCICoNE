@@ -190,3 +190,12 @@ vector<double> MathOp::combine_scores(vector<double> aic_vec)
 
     return res;
 }
+
+int MathOp::random_uniform(int min, int max) {
+    int rand_val = 0;
+    std::uniform_int_distribution<> dis(min,max);
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    rand_val = dis(gen);
+    return rand_val;
+}
