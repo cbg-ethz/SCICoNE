@@ -23,6 +23,8 @@ public:
 
     static double log_likelihood(vector<double>);
     static long double log_add(long double val1, long double val2);
+    static double log_sum(const vector<double>& vec);
+
     static vector<double> combine_scores(vector<double> aic_vec);
     static vector<vector<double>> likelihood_ratio(vector<vector<double>> mat, double window_size);
 

@@ -45,17 +45,15 @@ public:
     std::vector<double> get_scores();
     Tree& operator=(const Tree& other);
 
-
-    double sum_score();
     void traverse_tree();
     void destroy();
     void print_node(Node&);
 
-    void compute_tree(const vector<int> &D, vector<int>& r);
+    void compute_tree(const vector<int> &D, const vector<int>& r);
 
-    void compute_root_score(const vector<int> &D, int& sum_d, vector<int>& r);
+    void compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r);
 
-    void compute_stack(Node *node, const vector<int> &D, int &sum_D, vector<int>& r);
+    void compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r);
     u_int get_n_nodes() const;
     int counter = 0;
 
@@ -67,13 +65,13 @@ private:
     void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
-    void compute_score(Node* node, const vector<int> &D, int& sum_D, vector<int>& r);
+    void compute_score(Node* node, const vector<int> &D, int& sum_D, const vector<int>& r);
     Node* remove(Node* pos); // does not deallocate, TODO: have a delete method that calls this and deallocates
 
 };
 
 
-void Tree::compute_root_score(const vector<int> &D, int& sum_d, vector<int>& r) {
+void Tree::compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r) {
 
     int z = 0;
 
@@ -84,7 +82,7 @@ void Tree::compute_root_score(const vector<int> &D, int& sum_d, vector<int>& r) 
     root->z = z;
 }
 
-void Tree::compute_score(Node* node, const vector<int> &D, int& sum_D, vector<int>& r) {
+void Tree::compute_score(Node* node, const vector<int> &D, int& sum_D, const vector<int>& r) {
 
 
     double val = node->parent->log_score;
@@ -114,7 +112,7 @@ void Tree::compute_score(Node* node, const vector<int> &D, int& sum_D, vector<in
 }
 
 
-void Tree::compute_tree(const vector<int> &D, vector<int>& r) {
+void Tree::compute_tree(const vector<int> &D, const vector<int>& r) {
 
 
     //reuse the computed sum in each node
@@ -128,7 +126,7 @@ void Tree::compute_tree(const vector<int> &D, vector<int>& r) {
 
 }
 
-void Tree::compute_stack(Node *node, const vector<int> &D, int &sum_D, vector<int>& r)
+void Tree::compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r)
 {
     // stack based implementation
     std::stack<Node*> stk;
@@ -319,31 +317,6 @@ void Tree::update_label(std::unordered_map<u_int, int>& c_parent, Node *node) {
 
 }
 
-
-double Tree::sum_score() {
-
-    // init max with the smallest value possible
-    double max = std::numeric_limits<double>::min();
-
-    for (auto &v2: all_nodes)
-        if (v2->log_score > max)
-            max = v2->log_score;
-
-    double scores[all_nodes.size()];
-
-    double sum_in_normal_space = 0.0;
-    for (int i = 0; i < all_nodes.size(); ++i) {
-        scores[i] = all_nodes[i]->log_score - max;
-        scores[i] = exp(scores[i]);
-        sum_in_normal_space += scores[i];
-    }
-
-    return log(sum_in_normal_space) + max;
-
-
-
-
-}
 
 Tree::Tree(Tree &source, u_int ploidy) {
     if (source.root == nullptr)

@@ -16,14 +16,15 @@ private:
     Tree *t;
     Tree *t_prime;
     std::vector<std::vector<double>> t_scores;
+    std::vector<double> t_sums;
 
 public:
     Inference(u_int ploidy=2);
 
     virtual ~Inference();
 
-    template<int N>
-    void compute_t_table(int (&D)[N], int (&r)[N]);
+    void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
+
 
     void prune_reattach();
     void w_prune_reattach();
@@ -70,14 +71,17 @@ void Inference::prune_reattach() {
 
 }
 
-template<int N>
-void Inference::compute_t_table(int (&D)[N], int (&r)[N]) {
+void Inference::compute_t_table(const vector<vector<int>> &D, const vector<int>& r) {
 
-//    int n = std::size(D);
-//    for (int i = 0; i < n; ++i) {
-//        this->t->compute_tree(D[i], r);
-//        sum_scores.push_back(t.sum_score());
-//    }
+    int n = static_cast<int>(D.size());
+    for (int i = 0; i < n; ++i)
+    {
+        this->t->compute_tree(D[i], r);
+        auto scores_vec = this->t->get_scores();
+        this->t_scores.push_back(scores_vec);
+        this->t_sums.push_back(MathOp::log_sum(scores_vec));
+    }
+
 
 };
 

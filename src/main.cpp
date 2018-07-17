@@ -68,57 +68,64 @@ int main() {
     // region sizes
     vector<int> r = {4,2,3,5,2};
 
-    // build tree
-    u_int ploidy = 2; // diploid
-    Tree t(ploidy); // root is created
-
-
-    t.random_insert({{0, 1}, {1, 1}});
-    t.insert_at(1,{{1, 1}, {2, 1}});
-    t.insert_at(2,{{0, -1}});
-    t.insert_at(2,{{3, -1}});
-    t.insert_at(1,{{1, 1}});
-
-    vector<double> sum_scores;
-
-    int n = std::size(D);
-    for (int i = 0; i < n; ++i) {
-        t.compute_tree(D[i], r);
-        sum_scores.push_back(t.sum_score());
-    }
-
-    // log likelihood of data given tree
-    int m = 6; //number of nodes (compute it automatically TODO)
-    double ll_dgt = MathOp::vec_sum(sum_scores) ;
-    ll_dgt -= (n-1 + m) * log(n+1);
-
-    cout<<ll_dgt<<endl;
-
-    Tree t_prime(t, ploidy);
-
-    //t.remove(t.all_nodes[2]);
-
-    t.traverse_tree();
-
-    auto attached_node = t_prime.prune_reattach();
-
-
-    auto v1 = t.get_scores();
-    auto v2 = t_prime.get_scores();
-
-    t = t_prime;
-
-
-    if (attached_node != nullptr)
-        t_prime.compute_tree( D[4], r);
-    //t_prime.compute_stack(attached_node, D[4], n, r);
-
-
-    t_prime.traverse_tree();
-
 
     Inference mcmc;
     mcmc.test_initialize();
+    mcmc.compute_t_table(D,r);
+
+    cout<<"tayyar";
+
+
+//
+//    // build tree
+//    u_int ploidy = 2; // diploid
+//    Tree t(ploidy); // root is created
+//
+//
+//    t.random_insert({{0, 1}, {1, 1}});
+//    t.insert_at(1,{{1, 1}, {2, 1}});
+//    t.insert_at(2,{{0, -1}});
+//    t.insert_at(2,{{3, -1}});
+//    t.insert_at(1,{{1, 1}});
+//
+//    vector<double> sum_scores;
+//
+//    int n = std::size(D);
+//    for (int i = 0; i < n; ++i) {
+//        t.compute_tree(D[i], r);
+//        sum_scores.push_back(t.sum_score());
+//    }
+//
+//    // log likelihood of data given tree
+//    int m = 6; //number of nodes (compute it automatically TODO)
+//    double ll_dgt = MathOp::vec_sum(sum_scores) ;
+//    ll_dgt -= (n-1 + m) * log(n+1);
+//
+//    cout<<ll_dgt<<endl;
+//
+//    Tree t_prime(t, ploidy);
+//
+//    //t.remove(t.all_nodes[2]);
+//
+//    t.traverse_tree();
+//
+//    auto attached_node = t_prime.prune_reattach();
+//
+//
+//    auto v1 = t.get_scores();
+//    auto v2 = t_prime.get_scores();
+//
+//    t = t_prime;
+//
+//
+//    if (attached_node != nullptr)
+//        t_prime.compute_tree( D[4], r);
+//    //t_prime.compute_stack(attached_node, D[4], n, r);
+//
+//
+//    t_prime.traverse_tree();
+
+
 //    t.destroy();
 //    t_prime.destroy();
 

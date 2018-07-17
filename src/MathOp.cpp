@@ -199,3 +199,22 @@ int MathOp::random_uniform(int min, int max) {
     rand_val = dis(gen);
     return rand_val;
 }
+
+double MathOp::log_sum(const vector<double> &vec) {
+// performs normal sum in the log space
+
+    // init max with the smallest value possible
+    double max = std::numeric_limits<double>::min();
+
+    for (auto const &i: vec)
+        if (i > max)
+            max = i;
+
+    double sum_in_normal_space = 0.0;
+
+    for (auto const &i: vec)
+        sum_in_normal_space += exp(i-max);
+
+    return log(sum_in_normal_space) + max;
+
+}
