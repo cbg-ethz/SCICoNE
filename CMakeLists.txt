@@ -9,4 +9,5 @@ add_executable(sc_dna
         src/main.cpp
         src/MathOp.cpp
         src/MathOp.h
-        src/Tree.h src/Node.h)
+        src/Tree.h src/Node.h  src/Inference.h)
+#src/Inference.h

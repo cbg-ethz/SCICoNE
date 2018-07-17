@@ -29,6 +29,7 @@ public:
     // destructor
     virtual ~Tree();
 
+    // TODO overload the assignment operator!
 
 
     // moves
@@ -41,36 +42,42 @@ public:
     void insert_child(Node *pos, std::unordered_map<u_int, int>&& labels);
     Node * insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
+    std::vector<double> get_scores();
+    Tree& operator=(const Tree& other);
 
-    Node* remove(Node* pos);
 
     double sum_score();
     void traverse_tree();
     void destroy();
     void print_node(Node&);
     template<int N>
-    void compute_tree(int (&D)[N], int (&r)[N]);
+    void compute_tree(const vector<int> &D, int (&r)[N]);
     template<int N>
-    void compute_root_score(int (&D)[N], int (&r)[N]);
+    void compute_root_score(const vector<int> &D, int& sum_d, int (&r)[N]);
 
     template<int N>
-    void compute_stack(Node *node, int (&D)[N], int &sum_D, int (&r)[N]);
+    void compute_stack(Node *node, const vector<int> &D, int &sum_D, int (&r)[N]);
+    u_int get_n_nodes() const;
+    int counter = 0;
+
 private:
+
+
+    u_int n_nodes; //the number of nodes without the root
     void traverse(Node*);
     void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
     template<int N>
-    void compute_score(Node* node, int (&D)[N], int& sum_D, int (&r)[N]);
+    void compute_score(Node* node, const vector<int> &D, int& sum_D, int (&r)[N]);
+    Node* remove(Node* pos); // does not deallocate, TODO: have a delete method that calls this and deallocates
 
 };
 
 
 template<int N>
-void Tree::compute_root_score(int (&D)[N], int (&r)[N]) {
+void Tree::compute_root_score(const vector<int> &D, int& sum_d, int (&r)[N]) {
 
-    int sum_d;
-    sum_d = std::accumulate(D, D + std::size(D), 0);
     int z = 0;
 
     for (auto const &x : r)
@@ -81,7 +88,7 @@ void Tree::compute_root_score(int (&D)[N], int (&r)[N]) {
 }
 
 template<int N>
-void Tree::compute_score(Node* node, int (&D)[N], int& sum_D, int (&r)[N]) {
+void Tree::compute_score(Node* node, const vector<int> &D, int& sum_D, int (&r)[N]) {
 
 
     double val = node->parent->log_score;
@@ -112,20 +119,22 @@ void Tree::compute_score(Node* node, int (&D)[N], int& sum_D, int (&r)[N]) {
 
 
 template<int N>
-void Tree::compute_tree(int (&D)[N], int (&r)[N]) {
+void Tree::compute_tree(const vector<int> &D, int (&r)[N]) {
+
+
+    //reuse the computed sum in each node
+    int sum_d = std::accumulate(D.begin(), D.end(), 0);
 
     // for the root
-    compute_root_score(D,r);
+    compute_root_score(D, sum_d,r);
     double root_score = root->log_score;
     int root_z = root->z;
-    //reuse the computed sum in each node
-    int sum_d = std::accumulate(D, D + std::size(D), 0);
     compute_stack(root->first_child, D, sum_d, r);
 
 }
 
 template<int N>
-void Tree::compute_stack(Node *node, int (&D)[N], int &sum_D, int (&r)[N])
+void Tree::compute_stack(Node *node, const vector<int> &D, int &sum_D, int (&r)[N])
 {
     // stack based implementation
     std::stack<Node*> stk;
@@ -152,6 +161,7 @@ Tree::Tree(u_int ploidy)
 {
     root = new Node();
     this->ploidy = ploidy;
+    n_nodes = 0;
     // creates a copy of the root ptr and stores it in the vector
 
     all_nodes.push_back(root);
@@ -206,7 +216,13 @@ Node * Tree::insert_child(Node *pos, Node *source) {
 
     // set the parent from the child
     source->parent = pos;
+    // set the unique id
+    if (source->id == 0)
+        source->id = ++counter;
+    // if the id is set then keep it
+
     all_nodes.push_back(source);
+    n_nodes++;
 
     // insert
     if (is_leaf(pos))
@@ -394,6 +410,7 @@ void Tree::recursive_copy(Node* source, Node *destination) {
 }
 
 Node * Tree::prune_reattach() {
+    // returns the pruned node (which is the attached node)
 
     Node* prune_pos;
     prune_pos = uniform_select(false);
@@ -430,6 +447,9 @@ Node * Tree::prune_reattach() {
         auto pruned_node = remove(prune_pos);
         auto attached_node = insert_child(attach_pos, pruned_node);
 
+        // std sort the all_nodes vector to make sure the indices match between 2 trees
+                // e.g. node id 4 will always be at index 4
+        std::sort(this->all_nodes.begin(),this->all_nodes.end());
         return attached_node;
     }
     return nullptr;
@@ -470,11 +490,37 @@ Node *Tree::remove(Node *pos) {
     //remove the next link
     pos->next = nullptr;
 
+    n_nodes--;
     return pos;
 
 }
 
+u_int Tree::get_n_nodes() const {
+    return n_nodes;
+}
 
+Tree &Tree::operator=(const Tree &other) {
+
+    if (this->root != nullptr)
+        this->destroy();
+
+    if (other.root == nullptr)
+        this->root = nullptr;
+    else
+        this->copy_tree(other);
+
+
+    return *this;
+}
+
+std::vector<double> Tree::get_scores() {
+
+    vector<double> scores;
+
+    for (auto const &i : all_nodes)
+        scores.push_back(i->log_score);
+    return scores;
+}
 
 
 #endif //SC_DNA_TREE_H

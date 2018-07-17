@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 struct Node{
+    int id;
     std::unordered_map<u_int,int> c = {};
     std::unordered_map<u_int,int> c_change= {};
     double log_score = 0.0;
@@ -16,9 +17,34 @@ struct Node{
     Node* next = nullptr;
     Node* parent = nullptr;
 
+    bool operator<(const Node &rhs) const {
+        return id < rhs.id;
+    }
+
+    bool operator>(const Node &rhs) const {
+        return rhs < *this;
+    }
+
+    bool operator<=(const Node &rhs) const {
+        return !(rhs < *this);
+    }
+
+    bool operator>=(const Node &rhs) const {
+        return !(*this < rhs);
+    }
+
+    bool operator==(const Node &rhs) const {
+        return id == rhs.id;
+    }
+
+    bool operator!=(const Node &rhs) const {
+        return !(rhs == *this);
+    }
+
     // copy constructor
     Node(Node& source_node)
     {
+        id = source_node.id;
         c = source_node.c;
         c_change = source_node.c_change;
         log_score = source_node.log_score;

@@ -10,6 +10,7 @@
 
 #include "MathOp.h"
 #include "Tree.h"
+#include "Inference.h"
 
 using namespace std;
 
@@ -62,7 +63,7 @@ void disp_vec(vector<vector<double>> vec) {
 int main() {
 
     // counts per region per cell
-    int D[5][5] = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
+    vector<vector<int>> D = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
 
     // region sizes
     int r[5] = {4,2,3,5,2};
@@ -70,6 +71,7 @@ int main() {
     // build tree
     u_int ploidy = 2; // diploid
     Tree t(ploidy); // root is created
+
 
     t.random_insert({{0, 1}, {1, 1}});
     t.insert_at(1,{{1, 1}, {2, 1}});
@@ -101,12 +103,22 @@ int main() {
     auto attached_node = t_prime.prune_reattach();
 
 
+    auto v1 = t.get_scores();
+    auto v2 = t_prime.get_scores();
+
+    t = t_prime;
+
 
     if (attached_node != nullptr)
         t_prime.compute_tree( D[4], r);
     //t_prime.compute_stack(attached_node, D[4], n, r);
 
+
     t_prime.traverse_tree();
+
+
+    Inference mcmc;
+    mcmc.test_initialize();
 //    t.destroy();
 //    t_prime.destroy();
 
