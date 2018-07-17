@@ -218,3 +218,25 @@ double MathOp::log_sum(const vector<double> &vec) {
     return log(sum_in_normal_space) + max;
 
 }
+
+double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtract, const vector<double> &to_add) {
+/*
+ * computes the sum in the log space, replaces the old elements of the vector (subtracts) then adds the new ones
+ * */
+
+    double max = sum;
+
+    for (auto const &i: to_add)
+        if (i > max)
+            max = i;
+
+    double sum_in_normal_space = 0.0;
+
+    for (auto const &i: to_add)
+        sum_in_normal_space += exp(i-max);
+
+    for (auto const &i: to_subtract)
+        sum_in_normal_space -= exp(i-max);
+
+    return log(sum_in_normal_space) + max;
+}

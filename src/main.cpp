@@ -72,6 +72,7 @@ int main() {
     Inference mcmc;
     mcmc.test_initialize();
     mcmc.compute_t_table(D,r);
+    mcmc.prune_reattach(D,r);
 
     cout<<"tayyar";
 

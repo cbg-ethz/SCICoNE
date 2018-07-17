@@ -45,14 +45,12 @@ public:
     std::vector<double> get_scores();
     Tree& operator=(const Tree& other);
 
+    std::vector<int> get_children_ids(Node* node);
     void traverse_tree();
     void destroy();
     void print_node(Node&);
-
     void compute_tree(const vector<int> &D, const vector<int>& r);
-
     void compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r);
-
     void compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r);
     u_int get_n_nodes() const;
     int counter = 0;
@@ -74,7 +72,6 @@ private:
 void Tree::compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r) {
 
     int z = 0;
-
     for (auto const &x : r)
         z += x * this->ploidy;
 
@@ -94,15 +91,12 @@ void Tree::compute_score(Node* node, const vector<int> &D, int& sum_D, const vec
         int cf = node->c[x.first];
         val += D[x.first] * (log(cf+ploidy));
 
-
-
         int cp_f = node->parent->c[x.first];
         val -= D[x.first] * (log(cp_f+ploidy));
 
         z += r[x.first] * (cf - cp_f);
 
     }
-
 
     val -= sum_D*log(z);
     val += sum_D*log(node->parent->z);
@@ -483,10 +477,31 @@ Tree &Tree::operator=(const Tree &other) {
 std::vector<double> Tree::get_scores() {
 
     vector<double> scores;
-
     for (auto const &i : all_nodes)
         scores.push_back(i->log_score);
     return scores;
+}
+
+std::vector<int> Tree::get_children_ids(Node *node) {
+
+    vector<int> c_ids;
+
+    // stack based implementation
+    std::stack<Node*> stk;
+    stk.push(node);
+
+    while (!stk.empty()) {
+        Node* top = (Node*) stk.top();
+        stk.pop();
+        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
+            stk.push(temp);
+        }
+        c_ids.push_back(top->id);
+    }
+
+
+
+    return c_ids;
 }
 
 
