@@ -50,13 +50,12 @@ public:
     void traverse_tree();
     void destroy();
     void print_node(Node&);
-    template<int N>
-    void compute_tree(const vector<int> &D, int (&r)[N]);
-    template<int N>
-    void compute_root_score(const vector<int> &D, int& sum_d, int (&r)[N]);
 
-    template<int N>
-    void compute_stack(Node *node, const vector<int> &D, int &sum_D, int (&r)[N]);
+    void compute_tree(const vector<int> &D, vector<int>& r);
+
+    void compute_root_score(const vector<int> &D, int& sum_d, vector<int>& r);
+
+    void compute_stack(Node *node, const vector<int> &D, int &sum_D, vector<int>& r);
     u_int get_n_nodes() const;
     int counter = 0;
 
@@ -68,15 +67,13 @@ private:
     void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
-    template<int N>
-    void compute_score(Node* node, const vector<int> &D, int& sum_D, int (&r)[N]);
+    void compute_score(Node* node, const vector<int> &D, int& sum_D, vector<int>& r);
     Node* remove(Node* pos); // does not deallocate, TODO: have a delete method that calls this and deallocates
 
 };
 
 
-template<int N>
-void Tree::compute_root_score(const vector<int> &D, int& sum_d, int (&r)[N]) {
+void Tree::compute_root_score(const vector<int> &D, int& sum_d, vector<int>& r) {
 
     int z = 0;
 
@@ -87,8 +84,7 @@ void Tree::compute_root_score(const vector<int> &D, int& sum_d, int (&r)[N]) {
     root->z = z;
 }
 
-template<int N>
-void Tree::compute_score(Node* node, const vector<int> &D, int& sum_D, int (&r)[N]) {
+void Tree::compute_score(Node* node, const vector<int> &D, int& sum_D, vector<int>& r) {
 
 
     double val = node->parent->log_score;
@@ -118,8 +114,7 @@ void Tree::compute_score(Node* node, const vector<int> &D, int& sum_D, int (&r)[
 }
 
 
-template<int N>
-void Tree::compute_tree(const vector<int> &D, int (&r)[N]) {
+void Tree::compute_tree(const vector<int> &D, vector<int>& r) {
 
 
     //reuse the computed sum in each node
@@ -133,8 +128,7 @@ void Tree::compute_tree(const vector<int> &D, int (&r)[N]) {
 
 }
 
-template<int N>
-void Tree::compute_stack(Node *node, const vector<int> &D, int &sum_D, int (&r)[N])
+void Tree::compute_stack(Node *node, const vector<int> &D, int &sum_D, vector<int>& r)
 {
     // stack based implementation
     std::stack<Node*> stk;
