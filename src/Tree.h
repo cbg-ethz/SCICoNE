@@ -52,17 +52,16 @@ public:
     void compute_tree(int (&D)[N], int (&r)[N]);
     template<int N>
     void compute_root_score(int (&D)[N], int (&r)[N]);
-    template<int N>
-    void compute_score(Node* node, int (&D)[N], int& sum_D, int (&r)[N]);
+
     template<int N>
     void compute_stack(Node *node, int (&D)[N], int &sum_D, int (&r)[N]);
 private:
-
     void traverse(Node*);
     void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
-
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
+    template<int N>
+    void compute_score(Node* node, int (&D)[N], int& sum_D, int (&r)[N]);
 
 };
 
@@ -238,9 +237,9 @@ Node* Tree::insert_child(Node *pos, Node& source) {
      * This is used for copying purposes.
      * */
 
+    // struct copy constructor
     Node *child = new Node(source);
     return insert_child(pos,child);
-
 
 }
 
@@ -252,39 +251,11 @@ void Tree::insert_child(Node* pos, std::unordered_map<u_int, int>&& labels) {
 
     // create node
     Node* child = new Node();
-
     // move operator
     child->c_change = labels;
-
     // copy (not computed yet)
     child->c = child->c_change;
-
-    child->parent = pos;
-
-    all_nodes.push_back(child);
-
-
-
-    // insert
-    if (is_leaf(pos))
-    {
-        pos->first_child = child;
-        update_label(pos->c, child);
-    }
-    else
-    {
-        // find the last child
-        for (Node* temp = pos->first_child; temp != nullptr; temp=temp->next) {
-            if (temp->next != nullptr)
-                continue;
-            else // add to the last child
-                temp->next = child;
-            update_label(pos->c, child);
-            break;
-
-        }
-
-    }
+    insert_child(pos,child);
 
 }
 
@@ -383,7 +354,7 @@ void Tree::copy_tree(const Tree& source_tree) {
 
     this->ploidy = source_tree.ploidy;
 
-    // copy the nodes
+    // copy the nodes using struct copy constructor
     this->root = new Node(*source_tree.root);
     this->all_nodes.push_back(root);
     recursive_copy(source_tree.root, this->root);
@@ -411,6 +382,7 @@ void Tree::recursive_copy(Node* source, Node *destination) {
      * Copies the tree from source to destination
      * TODO implement it using stack & loop, not to use the function call stack
      * TODO the order of insertion is different (although the tree is the same)
+     * use either 2 stacks or a stack and a tuple
      * */
 
     for (Node* temp = source->first_child; temp != nullptr; temp=temp->next) {
@@ -447,7 +419,7 @@ Node * Tree::prune_reattach() {
     rand_val = MathOp::random_uniform(1,destination_nodes.size());
     Node* attach_pos = nullptr;
     attach_pos = destination_nodes[rand_val -1];
-    attach_pos = all_nodes[5]; //TODO remove this after testing is complete
+    // attach_pos = all_nodes[5]; //TODO remove this after testing is complete
     //do not recompute you attach at the same pos
     if (prune_pos->parent != attach_pos)
     {

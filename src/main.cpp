@@ -73,10 +73,9 @@ int main() {
 
     t.random_insert({{0, 1}, {1, 1}});
     t.insert_at(1,{{1, 1}, {2, 1}});
-    t.insert_at(1,{{1, 1}});
     t.insert_at(2,{{0, -1}});
     t.insert_at(2,{{3, -1}});
-
+    t.insert_at(1,{{1, 1}});
 
     vector<double> sum_scores;
 
