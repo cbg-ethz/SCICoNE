@@ -73,8 +73,8 @@ int main() {
     mcmc.test_initialize();
     mcmc.compute_t_table(D,r);
     mcmc.prune_reattach(D,r);
+    mcmc.destroy();
 
-    cout<<"tayyar";
 
 
 //

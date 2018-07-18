@@ -24,8 +24,8 @@ private:
 public:
     Inference(u_int ploidy=2);
 
-    virtual ~Inference();
-
+    ~Inference();
+    void destroy();
     void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
 
 
@@ -60,14 +60,13 @@ void Inference::test_initialize() {
 
 Inference::Inference(u_int ploidy) {
     t = new Tree(ploidy);
-    t_prime = new Tree(ploidy);
+    t_prime =nullptr;
 
 
 }
 
 Inference::~Inference() {
-    t->destroy();
-    t_prime->destroy();
+    destroy();
 }
 
 void Inference::prune_reattach(const vector<vector<int>> &D, const vector<int>& r) {
@@ -77,7 +76,7 @@ void Inference::prune_reattach(const vector<vector<int>> &D, const vector<int>& 
     {
         for (auto const &d: D)
         {
-            int sum_d = accumulate( d.begin(), d.end(), 0.0);;
+            int sum_d = accumulate( d.begin(), d.end(), 0.0);
             t_prime->compute_stack(attached_node, d, sum_d,r);
         }
         auto c_ids = t_prime->get_children_ids(attached_node);
@@ -108,6 +107,11 @@ void Inference::compute_t_table(const vector<vector<int>> &D, const vector<int>&
     }
 
 
+}
+
+void Inference::destroy() {
+    delete t;
+    delete t_prime;
 };
 
 #endif //SC_DNA_INFERENCE_H
