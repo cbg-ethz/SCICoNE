@@ -55,8 +55,7 @@ void Inference::test_initialize() {
     t->insert_at(2,{{3, -1}});
     t->insert_at(1,{{1, 1}});
 
-    // calls the copy constructor
-    *t_prime = *t;
+
 }
 
 Inference::Inference(u_int ploidy) {
@@ -131,6 +130,9 @@ void Inference::compute_t_table(const vector<vector<int>> &D, const vector<int>&
     for (int i = 0; i < n; ++i)
     {
         this->t->compute_tree(D[i], r);
+        // update t_prime
+        // calls the copy constructor
+        *t_prime = *t;
         auto scores_vec = this->t->get_scores();
         this->t_scores.push_back(scores_vec);
         this->t_sums.push_back(MathOp::log_sum(scores_vec));

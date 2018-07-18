@@ -8,7 +8,7 @@
 #include <unordered_map>
 
 struct Node{
-    int id;
+    int id = 0;
     std::unordered_map<u_int,int> c = {};
     std::unordered_map<u_int,int> c_change= {};
     double log_score = 0.0;
