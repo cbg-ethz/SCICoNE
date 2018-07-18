@@ -72,7 +72,7 @@ int main() {
     Inference mcmc;
     mcmc.test_initialize();
     mcmc.compute_t_table(D,r);
-    mcmc.prune_reattach(D,r);
+    mcmc.infer_mcmc(D,r);
     mcmc.destroy();
 
 
