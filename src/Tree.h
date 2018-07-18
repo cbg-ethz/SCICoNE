@@ -399,7 +399,7 @@ Node * Tree::prune_reattach() {
     rand_val = MathOp::random_uniform(1,destination_nodes.size());
     Node* attach_pos = nullptr;
     attach_pos = destination_nodes[rand_val -1];
-    // attach_pos = all_nodes[5]; //TODO remove this after testing is complete
+    attach_pos = all_nodes[5]; //TODO remove this after testing is complete
     //do not recompute you attach at the same pos
     if (prune_pos->parent != attach_pos)
     {

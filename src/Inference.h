@@ -27,9 +27,8 @@ public:
     ~Inference();
     void destroy();
     void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
-
-
     void prune_reattach(const vector<vector<int>> &D, const vector<int>& r);
+    bool comparison(int m);
     void w_prune_reattach();
 
     void swap();
@@ -75,12 +74,17 @@ void Inference::prune_reattach(const vector<vector<int>> &D, const vector<int>& 
 
     if (attached_node != nullptr)
     {
+        int j = 0;
         for (auto const &d: D)
         {
             int sum_d = accumulate( d.begin(), d.end(), 0.0);
+            for (auto val : d)
+                cout<<val<<"-";
+            cout<<endl;
+            attached_node->parent->log_score = t_scores[j][attached_node->parent->id];
             t_prime->compute_stack(attached_node, d, sum_d,r);
             t_prime_scores.push_back(t_prime->get_children_id_score(attached_node));
-
+            j++;
         }
         cout<<"new scores:"<<endl;
         for (auto map : t_prime_scores)
@@ -115,12 +119,7 @@ void Inference::prune_reattach(const vector<vector<int>> &D, const vector<int>& 
         }
 
     }
-
-
-
-
-
-
+    cout<<"end of prune reattach";
 
 }
 
@@ -146,6 +145,29 @@ void Inference::destroy() {
     t = nullptr;
     delete t_prime;
     t_prime = nullptr;
-};
+}
+
+bool Inference::comparison(int m) {
+
+    double log_post_t = 0.0;
+    double log_post_t_prime = 0.0;
+
+    double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
+    double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
+
+    int t_n = t->get_n_nodes();
+    // log1p(t_n) is used instead of log(t_n+1) to avoid precision loss
+    log_post_t = t_sum - (t_n -1 + m ) * log1p(t_n);
+
+
+
+
+
+
+
+    //TODO to be implemented
+    return false;
+}
+
 
 #endif //SC_DNA_INFERENCE_H

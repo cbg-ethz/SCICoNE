@@ -47,7 +47,8 @@ struct Node{
         id = source_node.id;
         c = source_node.c;
         c_change = source_node.c_change;
-        log_score = source_node.log_score;
+        // log scores are not copied since they rely on cells
+        log_score = 0.0;
         z = source_node.z;
         first_child = next = parent = nullptr;
     }
