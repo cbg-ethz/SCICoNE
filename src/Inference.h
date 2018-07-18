@@ -32,6 +32,7 @@ public:
     bool comparison(int m);
 
     void infer_mcmc(const vector<vector<int>> &D, const vector<int>& r);
+    void update_t_scores();
 
     void w_prune_reattach();
 
@@ -193,6 +194,9 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
                  * 3. perform a t=t_prime
                  *
                  * */
+                t_sums = t_prime_sums;
+                update_t_scores();
+                *t = *t_prime;
 
             }
             else
@@ -214,6 +218,15 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
     cout<<"n_accepted: "<<n_accepted<<endl;
     cout<<"n_rejected: "<<n_rejected<<endl;
 
+
+}
+
+void Inference::update_t_scores() {
+
+    for (unsigned k=0; k < t_scores.size(); k++)
+        for (unsigned i=0; i < t_scores[k].size(); i++)
+            if(t_prime_scores[k].find(i) != t_prime_scores[k].end()) // if found in hashmap
+                t_scores[k][i] = t_prime_scores[k][i];
 
 }
 
