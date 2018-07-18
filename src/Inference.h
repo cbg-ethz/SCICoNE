@@ -61,7 +61,6 @@ Inference::Inference(u_int ploidy) {
     t = new Tree(ploidy);
     t_prime =new Tree(ploidy);
 
-
 }
 
 Inference::~Inference() {
@@ -129,14 +128,13 @@ void Inference::compute_t_table(const vector<vector<int>> &D, const vector<int>&
     for (int i = 0; i < n; ++i)
     {
         this->t->compute_tree(D[i], r);
-        // update t_prime
-        // calls the copy constructor
-        *t_prime = *t;
         auto scores_vec = this->t->get_scores();
         this->t_scores.push_back(scores_vec);
         this->t_sums.push_back(MathOp::log_sum(scores_vec));
     }
-
+    // update t_prime
+    // calls the copy constructor
+    *t_prime = *t;
 
 }
 
@@ -156,8 +154,7 @@ bool Inference::comparison(int m) {
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
 
     int t_n = t->get_n_nodes();
-    // log1p(t_n) is used instead of log(t_n+1) to avoid precision loss
-    log_post_t = t_sum - (t_n -1 + m ) * log1p(t_n);
+    log_post_t = t_sum - (t_n -1 + m ) * log(t_n+1);
 
 
 
