@@ -232,11 +232,25 @@ double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtr
 
     double sum_in_normal_space = 0.0;
 
+    sum_in_normal_space += exp(sum-max);
+
     for (auto const &i: to_add)
-        sum_in_normal_space += exp(i-max);
+    {
+        auto temp = exp(i-max);
+        sum_in_normal_space += temp;
+    }
+
 
     for (auto const &i: to_subtract)
-        sum_in_normal_space -= exp(i-max);
+    {
+        auto temp = exp(i-max);
+        sum_in_normal_space -= temp;
+    }
 
-    return log(sum_in_normal_space) + max;
+
+    double res = log(sum_in_normal_space) + max;
+
+    assert(!isnan(res));
+
+    return res;
 }

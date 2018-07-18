@@ -13,6 +13,7 @@
 #include <limits>
 #include "Node.h"
 #include "MathOp.h"
+#include <tuple>
 
 
 class Tree {
@@ -43,9 +44,10 @@ public:
     Node * insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
     std::vector<double> get_scores();
+
     Tree& operator=(const Tree& other);
 
-    std::vector<int> get_children_ids(Node* node);
+    unordered_map<int, double> get_children_id_score(Node *node);
     void traverse_tree();
     void destroy();
     void print_node(Node&);
@@ -482,9 +484,12 @@ std::vector<double> Tree::get_scores() {
     return scores;
 }
 
-std::vector<int> Tree::get_children_ids(Node *node) {
+unordered_map<int, double> Tree::get_children_id_score(Node *node) {
 
-    vector<int> c_ids;
+    //TODO return a vector of tuple of <id,score>
+    //TODO or return a single unordered_map
+
+    unordered_map<int,double> id_score_pairs;
 
     // stack based implementation
     std::stack<Node*> stk;
@@ -496,12 +501,11 @@ std::vector<int> Tree::get_children_ids(Node *node) {
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
         }
-        c_ids.push_back(top->id);
+        // make sure the id is not in the map before
+        assert(id_score_pairs.find(top->id) == id_score_pairs.end());
+        id_score_pairs[top->id] = top->log_score;
     }
-
-
-
-    return c_ids;
+    return id_score_pairs;
 }
 
 
