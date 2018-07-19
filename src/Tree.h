@@ -273,6 +273,7 @@ void Tree::destroy() {
         elem = nullptr;
     }
     all_nodes.clear();
+    n_nodes = 0;
     root = nullptr;
     std::cout<<"destroyed."<<std::endl;
 }
@@ -332,6 +333,7 @@ void Tree::copy_tree(const Tree& source_tree) {
 
 
     this->ploidy = source_tree.ploidy;
+    this->counter = source_tree.counter;
 
     // copy the nodes using struct copy constructor
     this->root = new Node(*source_tree.root);
