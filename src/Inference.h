@@ -29,7 +29,7 @@ public:
     ~Inference();
     void destroy();
     void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
-    Node * prune_reattach(const vector<vector<int>> &D, const vector<int> &r);
+    Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r);
     bool comparison(int m);
 
     void infer_mcmc(const vector<vector<int>> &D, const vector<int>& r);
@@ -73,7 +73,7 @@ Inference::~Inference() {
     destroy();
 }
 
-Node * Inference::prune_reattach(const vector<vector<int>> &D, const vector<int> &r) {
+Node * Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r) {
     /*
      * Prunes and reattaches to t_prime
      * */
@@ -180,7 +180,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
     for (int i = 0; i < 500; ++i) {
 
         // apply the move to t_prime
-        Node* node = prune_reattach(D,r);
+        Node* node = apply_prune_reattach(D, r);
 
         if (node == nullptr)
             continue;
@@ -188,7 +188,6 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
         {
             // compare
             bool accepted = comparison(m);
-
             // update trees and the matrices
             if (accepted)
             {
@@ -203,7 +202,6 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
                 t_sums = t_prime_sums;
                 update_t_scores();
                 *t = *t_prime;
-
             }
             else
             {
@@ -215,16 +213,14 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
                  * 3. perform a t_prime=t
                  *
                  * */
+                t_prime_sums.clear();
+                t_prime_scores.clear();
+                *t_prime = *t;
             }
-
-
         }
-
     }
     cout<<"n_accepted: "<<n_accepted<<endl;
     cout<<"n_rejected: "<<n_rejected<<endl;
-
-
 }
 
 void Inference::update_t_scores() {
