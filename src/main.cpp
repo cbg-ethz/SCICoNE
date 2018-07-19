@@ -70,7 +70,7 @@ int main() {
 
 
     Inference mcmc;
-    mcmc.random_initialize();
+    mcmc.test_initialize();
     mcmc.compute_t_table(D,r);
     mcmc.infer_mcmc(D,r);
     mcmc.destroy();

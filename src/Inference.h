@@ -224,13 +224,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
             if (accepted)
             {
                 n_accepted++;
-                /*
-                 * TODO
-                 * 1. copy t_prime_sums to t_sums
-                 * 2. replace only the existing cols in t_scores with t_prime_scores
-                 * 3. perform a t=t_prime
-                 *
-                 * */
+
                 t_sums = t_prime_sums;
                 update_t_scores();
                 *t = *t_prime;
@@ -238,17 +232,10 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
             else
             {
                 n_rejected++;
-                /*
-                 * TODO
-                 * 1. delete t_prime_sums
-                 * 2. delete t_prime_scores
-                 * 3. perform a t_prime=t
-                 *
-                 * */
-                t_prime_sums.clear();
-                t_prime_scores.clear();
                 *t_prime = *t;
             }
+            t_prime_sums.clear();
+            t_prime_scores.clear();
         }
     }
     cout<<"n_accepted: "<<n_accepted<<endl;
