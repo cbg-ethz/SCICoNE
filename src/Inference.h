@@ -8,6 +8,7 @@
 #include "Tree.h"
 #include <vector>
 #include <random>
+#include <chrono>
 
 class Inference {
 /*
@@ -151,13 +152,18 @@ bool Inference::comparison(int m) {
 
     double acceptance_prob = exp(log_post_t_prime - log_post_t);
 
+    cout<<"acceptance prob: "<<acceptance_prob<<endl;
+
     if (acceptance_prob > 1)
         return true;
     else
     {
-        std::default_random_engine generator;
+        long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
+        static std::default_random_engine generator(seed);
         std::uniform_real_distribution<double> distribution(0.0,1.0);
         double rand_val = distribution(generator);
+
+        cout<<"rand_val: "<<rand_val<<endl;
 
         if (acceptance_prob > rand_val)
             return true;
@@ -171,7 +177,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
     int m = static_cast<int>(D.size());
     int n_accepted = 0;
     int n_rejected = 0;
-    for (int i = 0; i < 5000; ++i) {
+    for (int i = 0; i < 500; ++i) {
 
         // apply the move to t_prime
         Node* node = prune_reattach(D,r);
