@@ -270,7 +270,7 @@ void Tree::insert_child(Node* pos, std::unordered_map<u_int, int>&& labels) {
 void Tree::destroy() {
     for (auto elem: all_nodes)
     {
-        std::cout<<"deleting " << elem->log_score <<std::endl;
+        //std::cout<<"deleting " << elem->log_score <<std::endl;
         elem->first_child = elem->next = nullptr;
         elem->c.clear();
         delete elem;
@@ -279,7 +279,7 @@ void Tree::destroy() {
     all_nodes.clear();
     n_nodes = 0;
     root = nullptr;
-    std::cout<<"destroyed."<<std::endl;
+    //std::cout<<"destroyed."<<std::endl;
 }
 
 void Tree::random_insert(std::unordered_map<u_int, int>&& labels)

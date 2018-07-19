@@ -9,6 +9,8 @@
 #include <vector>
 #include <random>
 #include <chrono>
+#include <fstream>
+#include <string>
 
 class Inference {
 /*
@@ -22,6 +24,8 @@ private:
 
     std::vector<unordered_map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
+
+    std::string f_name;
 
 public:
     Inference(u_int ploidy=2);
@@ -49,6 +53,12 @@ public:
 
 void Inference::random_initialize() {
 
+    t->random_insert({{0, 1}, {1, 1}});
+    t->random_insert({{1, 1}, {2, 1}});
+    t->random_insert({{0, -1}});
+    t->random_insert({{3, -1}});
+    t->random_insert({{1, 1}});
+
 }
 
 void Inference::test_initialize() {
@@ -66,6 +76,12 @@ void Inference::test_initialize() {
 Inference::Inference(u_int ploidy) {
     t = new Tree(ploidy);
     t_prime =new Tree(ploidy);
+
+    std::ofstream outfile;
+    long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
+
+    f_name = std::to_string(seed) + ".txt";
+
 
 }
 
@@ -153,9 +169,15 @@ bool Inference::comparison(int m) {
     double acceptance_prob = exp(log_post_t_prime - log_post_t);
 
     cout<<"acceptance prob: "<<acceptance_prob<<endl;
+    std::ofstream outfile;
+    outfile.open(f_name, std::ios_base::app);
 
     if (acceptance_prob > 1)
+    {
+        outfile << log_post_t_prime << ',';
         return true;
+    }
+
     else
     {
         long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
@@ -166,18 +188,28 @@ bool Inference::comparison(int m) {
         cout<<"rand_val: "<<rand_val<<endl;
 
         if (acceptance_prob > rand_val)
+        {
+            outfile << log_post_t_prime << ',';
             return true;
+        }
+
         else
+        {
+            outfile << log_post_t << ',';
             return false;
+        }
+
     }
 }
 
 void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
 
+
+
     int m = static_cast<int>(D.size());
     int n_accepted = 0;
     int n_rejected = 0;
-    for (int i = 0; i < 500; ++i) {
+    for (int i = 0; i < 5000; ++i) {
 
         // apply the move to t_prime
         Node* node = apply_prune_reattach(D, r);
