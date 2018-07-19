@@ -224,31 +224,40 @@ double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtr
  * computes the sum in the log space, replaces the old elements of the vector (subtracts) then adds the new ones
  * */
 
+    // TODO sometimes (1 in 10-20 runs) returns NaN (because the values to subtract are very close to the max therefore the exp function is returning 0.99 , talk to Jack.
+
+
     double max = sum;
 
-    for (auto const &i: to_add)
+    for (auto i: to_add)
         if (i > max)
             max = i;
+
+    for (auto i: to_subtract)
+        if (i > max)
+            max = i;
+
 
     double sum_in_normal_space = 0.0;
 
     sum_in_normal_space += exp(sum-max);
 
-    for (auto const &i: to_add)
+    for (auto i: to_add)
     {
-        auto temp = exp(i-max);
+        double temp = exp(i-max);
         sum_in_normal_space += temp;
     }
 
 
-    for (auto const &i: to_subtract)
+    for (auto i: to_subtract)
     {
-        auto temp = exp(i-max);
+        double temp = exp(i-max);
         sum_in_normal_space -= temp;
     }
 
 
     double res = log(sum_in_normal_space) + max;
+
 
     assert(!isnan(res));
 
