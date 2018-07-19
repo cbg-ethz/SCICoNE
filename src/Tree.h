@@ -16,6 +16,11 @@
 #include <tuple>
 
 
+bool node_ptr_compare(Node* a, Node* b)
+{
+    return (*a < *b);
+}
+
 class Tree {
 
 public:
@@ -58,7 +63,6 @@ public:
     int counter = 0;
 
 private:
-
 
     u_int n_nodes; //the number of nodes without the root
     void traverse(Node*);
@@ -380,6 +384,10 @@ Node * Tree::prune_reattach() {
     Node* prune_pos = nullptr;
     prune_pos = uniform_select(false);
 
+    if (prune_pos->id == 0)
+        cout<<"debugging...";
+
+
     // copy all nodes
     std::vector<Node*> destination_nodes = this->all_nodes;
 
@@ -403,7 +411,7 @@ Node * Tree::prune_reattach() {
     attach_pos = destination_nodes[rand_val -1];
     //attach_pos = all_nodes[5]; //TODO remove this after testing is complete
     //do not recompute you attach at the same pos
-    if (prune_pos->parent != attach_pos)
+    if (prune_pos->parent->id != attach_pos->id)
     {
         /*
          * 1. Remove prune_pos (done)
@@ -414,11 +422,16 @@ Node * Tree::prune_reattach() {
 
         // std sort the all_nodes vector to make sure the indices match between 2 trees
                 // e.g. node id 4 will always be at index 4
-        std::sort(this->all_nodes.begin(),this->all_nodes.end());
+        //TODO: or never change the all_nodes vector after initialization
+
+        // TODO remove this sort, use perhaps a hashmap instead!
+        std::sort(this->all_nodes.begin(),this->all_nodes.end(), node_ptr_compare);
         return attached_node;
     }
-    return nullptr;
-
+    else
+    {
+        return prune_pos = attach_pos = nullptr;
+    }
 
 
 }
@@ -509,6 +522,10 @@ unordered_map<int, double> Tree::get_children_id_score(Node *node) {
     }
     return id_score_pairs;
 }
+
+
+
+
 
 
 #endif //SC_DNA_TREE_H
