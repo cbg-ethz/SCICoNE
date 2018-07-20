@@ -6,6 +6,7 @@
 #define SC_DNA_NODE_H
 
 #include <unordered_map>
+#include <iostream>
 
 struct Node{
     int id = 0;
@@ -56,6 +57,21 @@ struct Node{
     {}
     ~Node()
     {}
+
+
+    friend std::ostream& operator<<(std::ostream& os, Node& n) {
+        os << "node " << n.id << ": ";
+        for (auto i : n.c_change)
+            os << " " << i.first << ":" << i.second << ',';
+
+        if (n.parent == nullptr)
+            os << "parent: NULL";
+        else
+            os << "parent: " << n.parent->id;
+
+        return os;
+    }
+
 };
 
 #endif //SC_DNA_NODE_H

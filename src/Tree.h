@@ -53,19 +53,32 @@ public:
     Tree& operator=(const Tree& other);
 
     unordered_map<int, double> get_children_id_score(Node *node);
-    void traverse_tree();
     void destroy();
-    void print_node(Node&);
     void compute_tree(const vector<int> &D, const vector<int>& r);
     void compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r);
     void compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r);
     u_int get_n_nodes() const;
     int counter = 0;
 
+    friend std::ostream& operator<<(std::ostream& os, Tree& t) {
+
+        std::stack<Node*> stk;
+        stk.push(t.root); //start with the root
+
+        while (!stk.empty()) {
+            Node* top = (Node*) stk.top();
+            stk.pop();
+            for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
+                stk.push(temp);
+            }
+            os << *top << std::endl;
+        }
+        return os;
+    }
+
 private:
 
     u_int n_nodes; //the number of nodes without the root
-    void traverse(Node*);
     void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
@@ -163,22 +176,6 @@ Tree::Tree(u_int ploidy)
 
 Tree::~Tree() {
     destroy();
-}
-
-void Tree::traverse_tree() {
-    traverse(root);
-}
-
-void Tree::traverse(Node* node) {
-    if (is_leaf(node))
-        std::cout<<"leaf: ";
-    else
-        std::cout<<"internal: ";
-    print_node(*node);
-    //std::cout<<node->log_score<<std::endl;
-    for (Node* temp = node->first_child; temp != nullptr; temp=temp->next) {
-        traverse(temp);
-    }
 }
 
 Node* Tree::uniform_select(bool with_root=true) {
@@ -293,13 +290,6 @@ void Tree::insert_at(u_int pos, std::unordered_map<u_int, int> && labels) {
     Node* n = all_nodes[pos];
     insert_child(n, std::move(labels));
 
-}
-
-void Tree::print_node(Node& n) {
-    std::cout<<"node.";
-    std::cout<<std::endl;
-    for (auto i : n.c_change)
-        std::cout << " " << i.first << ":" << i.second << std::endl;
 }
 
 
