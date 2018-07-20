@@ -15,21 +15,19 @@
 class Inference {
 /*
  * Contains functionality to perform monte carlo markov chains (mcmc) inference
+ * //TODO use stack dynamic Trees for t & t_prime
  * */
 private:
     Tree *t;
     Tree *t_prime;
     std::vector<std::vector<double>> t_scores;
     std::vector<double> t_sums;
-
     std::vector<unordered_map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
-
     std::string f_name;
 
 public:
     Inference(u_int ploidy=2);
-
     ~Inference();
     void destroy();
     void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
@@ -37,6 +35,7 @@ public:
     bool comparison(int m);
 
     void infer_mcmc(const vector<vector<int>> &D, const vector<int>& r);
+    void write_best_tree();
     void update_t_scores();
 
     void w_prune_reattach();
@@ -44,7 +43,9 @@ public:
     void swap();
     void w_swap();
 
+    Tree *get_t() const;
 
+    Tree *get_t_prime() const;
     void random_initialize(); // randomly initializes a tree and copies it into the other
     void test_initialize(); // initializes the trees based on the test example
 };
@@ -79,7 +80,6 @@ Inference::Inference(u_int ploidy) {
 
     std::ofstream outfile;
     long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
-
     f_name = std::to_string(seed) + ".txt";
 
 
@@ -120,7 +120,16 @@ Node * Inference::apply_prune_reattach(const vector<vector<int>> &D, const vecto
             }
 
             auto res =MathOp::log_replace_sum(t_sums[i],old_vals,new_vals);
-            t_prime_sums.push_back(res);
+            if (isnan(res))
+            {
+                // reject t_prime
+                *t_prime = *t;
+                t_prime_sums.clear();
+                t_prime_scores.clear();
+                return nullptr;
+            }
+            else
+                t_prime_sums.push_back(res);
             i++;
         }
         return attached_node;
@@ -209,13 +218,18 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
     int m = static_cast<int>(D.size());
     int n_accepted = 0;
     int n_rejected = 0;
+    int n_attached_to_the_same_pos = 0;
     for (int i = 0; i < 5000; ++i) {
 
         // apply the move to t_prime
         Node* node = apply_prune_reattach(D, r);
 
         if (node == nullptr)
+        {
+            n_attached_to_the_same_pos++;
             continue;
+        }
+
         else
         {
             // compare
@@ -240,6 +254,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
     }
     cout<<"n_accepted: "<<n_accepted<<endl;
     cout<<"n_rejected: "<<n_rejected<<endl;
+    cout<<"n_attached_to_the_same_pos: "<<n_attached_to_the_same_pos<<endl;
 }
 
 void Inference::update_t_scores() {
@@ -249,6 +264,21 @@ void Inference::update_t_scores() {
             if(t_prime_scores[k].find(i) != t_prime_scores[k].end()) // if found in hashmap
                 t_scores[k][i] = t_prime_scores[k][i];
 
+}
+
+Tree *Inference::get_t() const {
+    return t;
+}
+
+Tree *Inference::get_t_prime() const {
+    return t_prime;
+}
+
+void Inference::write_best_tree() {
+    std::ofstream outfile;
+    outfile.open(f_name, std::ios_base::app);
+    outfile << "The resulting tree is: "<<std::endl;
+    outfile << *t;
 }
 
 

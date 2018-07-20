@@ -257,9 +257,7 @@ double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtr
 
 
     double res = log(sum_in_normal_space) + max;
-
-
-    assert(!isnan(res));
+    // the res value can be NaN!z
 
     return res;
 }
