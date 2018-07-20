@@ -144,7 +144,8 @@ void Inference::compute_t_table(const vector<vector<int>> &D, const vector<int>&
     for (int i = 0; i < n; ++i)
     {
         this->t->compute_tree(D[i], r);
-        auto scores_vec = this->t->get_scores();
+        vector<double> scores_vec = this->t->get_scores();
+
         this->t_scores.push_back(scores_vec);
         this->t_sums.push_back(MathOp::log_sum(scores_vec));
     }

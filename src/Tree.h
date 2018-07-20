@@ -35,9 +35,6 @@ public:
     // destructor
     virtual ~Tree();
 
-    // TODO overload the assignment operator!
-
-
     // moves
     Node * prune_reattach();
 
@@ -101,41 +98,45 @@ void Tree::compute_root_score(const vector<int> &D, int& sum_d, const vector<int
 void Tree::compute_score(Node* node, const vector<int> &D, int& sum_D, const vector<int>& r) {
 
 
-    double val = node->parent->log_score;
-    int z = node->parent->z;
-
-    for (auto const &x : node->c_change)
+    if (node->parent == nullptr)
     {
+        compute_root_score(D, sum_D,r);
+    }
+    else
 
-        int cf = node->c[x.first];
-        val += D[x.first] * (log(cf+ploidy));
+    {
+        double val = node->parent->log_score;
+        int z = node->parent->z;
 
-        int cp_f = node->parent->c[x.first];
-        val -= D[x.first] * (log(cp_f+ploidy));
+        for (auto const &x : node->c_change)
+        {
 
-        z += r[x.first] * (cf - cp_f);
+            int cf = node->c[x.first];
+            val += D[x.first] * (log(cf+ploidy));
 
+            int cp_f = node->parent->c[x.first];
+            val -= D[x.first] * (log(cp_f+ploidy));
+
+            z += r[x.first] * (cf - cp_f);
+
+        }
+
+        val -= sum_D*log(z);
+        val += sum_D*log(node->parent->z);
+
+        node->log_score = val;
+        node->z = z;
     }
 
-    val -= sum_D*log(z);
-    val += sum_D*log(node->parent->z);
 
-    node->log_score = val;
-    node->z = z;
 }
 
 
 void Tree::compute_tree(const vector<int> &D, const vector<int>& r) {
 
-
     //reuse the computed sum in each node
     int sum_d = std::accumulate(D.begin(), D.end(), 0);
-
-    // for the root
-    compute_root_score(D, sum_d,r);
-    double root_score = root->log_score;
-    int root_z = root->z;
-    compute_stack(root->first_child, D, sum_d, r);
+    compute_stack(root, D, sum_d, r);
 
 }
 
@@ -334,22 +335,6 @@ void Tree::copy_tree(const Tree& source_tree) {
     this->all_nodes.push_back(root);
     recursive_copy(source_tree.root, this->root);
 
-
-//    // stack based implementation
-//    std::stack<Node*> stk;
-//    stk.push(this->root);
-//
-//    while (!stk.empty()) {
-//        Node* top = (Node*) stk.top();
-//        stk.pop();
-//        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
-//            stk.push(temp);
-//        }
-//
-//        compute_score(top, D, sum_D, r);
-//    }
-
-
  }
 
 void Tree::recursive_copy(Node* source, Node *destination) {
@@ -485,7 +470,11 @@ std::vector<double> Tree::get_scores() {
 
     vector<double> scores;
     for (auto const &i : all_nodes)
+    {
+        assert(i->log_score != 0); // make sure no score is zero
         scores.push_back(i->log_score);
+    }
+
     return scores;
 }
 
