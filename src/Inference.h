@@ -31,7 +31,7 @@ public:
     ~Inference();
     void destroy();
     void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
-    Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r);
+    Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false);
     bool comparison(int m);
 
     void infer_mcmc(const vector<vector<int>> &D, const vector<int>& r);
@@ -98,12 +98,15 @@ Inference::~Inference() {
     destroy();
 }
 
-Node * Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r) {
+Node * Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted) {
     /*
-     * Prunes and reattaches to t_prime
+     * Applies prune and reattach to t_prime
+     * Updates the sums and scores tables partially
      * */
+
     using namespace std;
-    Node* attached_node = t_prime->prune_reattach();
+    // weighted = false
+    Node* attached_node = t_prime->prune_reattach(weighted);
 
     if (attached_node != nullptr)
     {
@@ -232,7 +235,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
     for (int i = 0; i < 100; ++i) {
 
         // apply the move to t_prime
-        Node* node = apply_prune_reattach(D, r);
+        Node* node = apply_prune_reattach(D, r, false);
 
         if (node == nullptr)
         {

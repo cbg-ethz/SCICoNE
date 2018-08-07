@@ -72,6 +72,7 @@ int main() {
     Inference mcmc;
     mcmc.initialize_example();
     mcmc.get_t()->compute_weights();
+    mcmc.get_t()->weighted_sample();
     mcmc.compute_t_table(D,r);
     disp_vec(mcmc.t_scores);
     mcmc.infer_mcmc(D,r);

@@ -15,6 +15,8 @@
 #include "Node.h"
 #include "MathOp.h"
 #include <tuple>
+#include <random>
+#include <chrono>
 
 
 bool node_ptr_compare(Node* a, Node* b)
@@ -37,10 +39,11 @@ public:
     virtual ~Tree();
 
     // moves
-    Node * prune_reattach();
+    Node * prune_reattach(bool weighted=false);
 
     bool is_leaf(Node*) const;
-    Node* uniform_select(bool with_root);
+    Node* uniform_sample(bool with_root=true);
+    Node* weighted_sample();
     void random_insert(std::unordered_map<u_int, int>&&);
     void insert_at(u_int pos, std::unordered_map<u_int, int>&&);
     void insert_child(Node *pos, std::unordered_map<u_int, int>&& labels);
@@ -187,7 +190,7 @@ Tree::~Tree() {
     destroy();
 }
 
-Node* Tree::uniform_select(bool with_root=true) {
+Node* Tree::uniform_sample(bool with_root) {
 
     int rand_val = 0;
     if (all_nodes.size() == 0)
@@ -291,7 +294,7 @@ void Tree::destroy() {
 
 void Tree::random_insert(std::unordered_map<u_int, int>&& labels)
 {
-    Node* pos = uniform_select(true);
+    Node* pos = uniform_sample(true);
     insert_child(pos, std::move(labels));
 
 }
@@ -362,20 +365,23 @@ void Tree::recursive_copy(Node* source, Node *destination) {
 
 }
 
-Node * Tree::prune_reattach() {
+Node * Tree::prune_reattach(bool weighted) {
     // returns the pruned node (which is the attached node)
 
     Node* prune_pos = nullptr;
-    prune_pos = uniform_select(false);
 
-    if (prune_pos->id == 0)
-        cout<<"debugging...";
+    if (weighted)
+        prune_pos = weighted_sample();
+    else
+        prune_pos = uniform_sample(false); //without the root
+
+
 
 
     // copy all nodes
     std::vector<Node*> destination_nodes = this->all_nodes;
 
-    // TODO prune all the descendents of the prune_pos
+    // TODO remove all the descendents of the prune_pos
 
     std::stack<Node*> stk;
     stk.push(prune_pos);
@@ -393,7 +399,7 @@ Node * Tree::prune_reattach() {
     rand_val = MathOp::random_uniform(1,destination_nodes.size());
     Node* attach_pos = nullptr;
     attach_pos = destination_nodes[rand_val -1];
-    //attach_pos = all_nodes[5]; //TODO prune this after testing is complete
+    //attach_pos = all_nodes[5]; //TODO remove this after testing is complete
     //do not recompute you attach at the same pos
     if (prune_pos->parent->id != attach_pos->id)
     {
@@ -408,7 +414,7 @@ Node * Tree::prune_reattach() {
                 // e.g. node id 4 will always be at index 4
         //TODO: or never change the all_nodes vector after initialization
 
-        // TODO prune this sort, use perhaps a hashmap instead!
+        // TODO remove this sort, use perhaps a hashmap instead!
         std::sort(this->all_nodes.begin(),this->all_nodes.end(), node_ptr_compare);
         return attached_node;
     }
@@ -547,6 +553,39 @@ void Tree::compute_weights() {
 
         top->n_descendents = n_descendents;
     }
+}
+
+Node *Tree::weighted_sample() {
+
+    if (all_nodes.size() == 0)
+        throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
+    else if (all_nodes.size() ==1)
+        throw std::length_error("there is only 1 element which is the root and root cannot be sampled");
+    else
+    {
+        // get the subvector
+        vector<Node*>::const_iterator first = all_nodes.begin() + 1;
+        vector<Node*>::const_iterator last = all_nodes.end();
+        vector<Node*> nodes_to_sample(first, last);
+
+        vector<float> weights;
+        for (auto const &x : nodes_to_sample)
+        {
+            float weight = (1.0f / x->n_descendents); // weights are inversely proportional to n_descendents
+            weights.push_back(weight);
+        }
+
+        long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
+        std::default_random_engine generator(seed);
+        std::discrete_distribution<> d(weights.begin(), weights.end());
+
+        unsigned sample = d(generator);
+
+        return nodes_to_sample[sample];
+
+    }
+
+
 }
 
 
