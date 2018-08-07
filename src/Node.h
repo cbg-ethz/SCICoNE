@@ -14,7 +14,7 @@ struct Node{
     std::unordered_map<u_int,int> c_change= {};
     double log_score = 0.0;
     int z = 0;
-    unsigned n_descendents = 0;
+    unsigned n_descendents = 1; // including itself
     Node* first_child = nullptr;
     Node* next = nullptr;
     Node* parent = nullptr;

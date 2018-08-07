@@ -8,6 +8,7 @@
 #include <iostream>
 #include <vector>
 #include <stack>
+#include <queue>
 #include <unordered_map>
 #include <numeric>
 #include <limits>
@@ -50,6 +51,7 @@ public:
     void compute_tree(const vector<int> &D, const vector<int>& r);
     void compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r);
     void compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r);
+    void compute_weights();
     u_int get_n_nodes() const;
     int counter = 0;
     friend std::ostream& operator<<(std::ostream& os, Tree& t);
@@ -62,7 +64,7 @@ private:
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
     void compute_score(Node* node, const vector<int> &D, int& sum_D, const vector<int>& r);
-    Node* remove(Node* pos); // does not deallocate, TODO: have a delete method that calls this and deallocates
+    Node* prune(Node *pos); // does not deallocate, TODO: have a delete method that calls this and deallocates
     Node* insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
 
@@ -143,6 +145,11 @@ void Tree::compute_tree(const vector<int> &D, const vector<int>& r) {
 
 void Tree::compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r)
 {
+    /*
+     * Computes the nodes scores in a top-down fashion
+     * time complexity: O(n), where n is the number of nodes
+     * */
+
     // stack based implementation
     std::stack<Node*> stk;
     stk.push(node);
@@ -207,6 +214,7 @@ Node * Tree::insert_child(Node *pos, Node *source) {
 
     // set the parent from the child
     source->parent = pos;
+
     // set the unique id
     if (source->id == 0)
         source->id = ++counter;
@@ -367,7 +375,7 @@ Node * Tree::prune_reattach() {
     // copy all nodes
     std::vector<Node*> destination_nodes = this->all_nodes;
 
-    // TODO remove all the descendents of the prune_pos
+    // TODO prune all the descendents of the prune_pos
 
     std::stack<Node*> stk;
     stk.push(prune_pos);
@@ -385,7 +393,7 @@ Node * Tree::prune_reattach() {
     rand_val = MathOp::random_uniform(1,destination_nodes.size());
     Node* attach_pos = nullptr;
     attach_pos = destination_nodes[rand_val -1];
-    //attach_pos = all_nodes[5]; //TODO remove this after testing is complete
+    //attach_pos = all_nodes[5]; //TODO prune this after testing is complete
     //do not recompute you attach at the same pos
     if (prune_pos->parent->id != attach_pos->id)
     {
@@ -393,14 +401,14 @@ Node * Tree::prune_reattach() {
          * 1. Remove prune_pos (done)
          * 2. Insert prune_pos using insert_child function
          * */
-        auto pruned_node = remove(prune_pos);
+        auto pruned_node = prune(prune_pos);
         auto attached_node = insert_child(attach_pos, pruned_node);
 
         // std sort the all_nodes vector to make sure the indices match between 2 trees
                 // e.g. node id 4 will always be at index 4
         //TODO: or never change the all_nodes vector after initialization
 
-        // TODO remove this sort, use perhaps a hashmap instead!
+        // TODO prune this sort, use perhaps a hashmap instead!
         std::sort(this->all_nodes.begin(),this->all_nodes.end(), node_ptr_compare);
         return attached_node;
     }
@@ -412,7 +420,7 @@ Node * Tree::prune_reattach() {
 
 }
 
-Node *Tree::remove(Node *pos) {
+Node *Tree::prune(Node *pos) {
 
     /*
      * Removes the element at the position but does not deallocate!
@@ -438,10 +446,10 @@ Node *Tree::remove(Node *pos) {
         }
     }
 
-    // remove from the all_nodes as well
+    // prune from the all_nodes as well
     all_nodes.erase(std::remove(all_nodes.begin(), all_nodes.end(), pos), all_nodes.end());
 
-    //remove the next link
+    //prune the next link
     pos->next = nullptr;
 
     n_nodes--;
@@ -503,9 +511,43 @@ unordered_map<int, double> Tree::get_children_id_score(Node *node) {
     return id_score_pairs;
 }
 
+void Tree::compute_weights() {
+
+    /*
+     * a bottom-up approach
+     * time complexity: O(n), where n is the number of nodes
+     * */
 
 
+    // stack to allow the bottom-up computations
+    std::stack<Node*> cmp_stack;
 
+
+    //stack for the tree traversal
+    std::stack<Node*> stk;
+    stk.push(root); //start with the root
+
+    while (!stk.empty()) {
+        Node* top = (Node*) stk.top();
+        stk.pop();
+        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
+            stk.push(temp);
+        }
+        cmp_stack.push(top);
+    }
+
+    while (!cmp_stack.empty())
+    {
+        Node* top = (Node*) cmp_stack.top();
+        cmp_stack.pop();
+        unsigned n_descendents = 1;
+
+        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next)
+            n_descendents += temp->n_descendents;
+
+        top->n_descendents = n_descendents;
+    }
+}
 
 
 #endif //SC_DNA_TREE_H
