@@ -43,11 +43,7 @@ public:
     void random_insert(std::unordered_map<u_int, int>&&);
     void insert_at(u_int pos, std::unordered_map<u_int, int>&&);
     void insert_child(Node *pos, std::unordered_map<u_int, int>&& labels);
-    Node * insert_child(Node *pos, Node *source);
-    Node* insert_child(Node *pos, Node& source);
     std::vector<double> get_scores();
-
-    Tree& operator=(const Tree& other);
 
     unordered_map<int, double> get_children_id_score(Node *node);
     void destroy();
@@ -56,22 +52,8 @@ public:
     void compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r);
     u_int get_n_nodes() const;
     int counter = 0;
-
-    friend std::ostream& operator<<(std::ostream& os, Tree& t) {
-
-        std::stack<Node*> stk;
-        stk.push(t.root); //start with the root
-
-        while (!stk.empty()) {
-            Node* top = (Node*) stk.top();
-            stk.pop();
-            for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
-                stk.push(temp);
-            }
-            os << *top << std::endl;
-        }
-        return os;
-    }
+    friend std::ostream& operator<<(std::ostream& os, Tree& t);
+    Tree& operator=(const Tree& other);
 
 private:
 
@@ -81,8 +63,27 @@ private:
     void recursive_copy(Node *source, Node *destination);
     void compute_score(Node* node, const vector<int> &D, int& sum_D, const vector<int>& r);
     Node* remove(Node* pos); // does not deallocate, TODO: have a delete method that calls this and deallocates
+    Node* insert_child(Node *pos, Node *source);
+    Node* insert_child(Node *pos, Node& source);
 
 };
+
+std::ostream& operator<<(std::ostream& os, Tree& t) {
+
+    std::stack<Node*> stk;
+    stk.push(t.root); //start with the root
+
+    while (!stk.empty()) {
+        Node* top = (Node*) stk.top();
+        stk.pop();
+        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
+            stk.push(temp);
+        }
+        os << *top << std::endl;
+    }
+    return os;
+}
+
 
 
 void Tree::compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r) {

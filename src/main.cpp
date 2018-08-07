@@ -70,8 +70,9 @@ int main() {
 
 
     Inference mcmc;
-    mcmc.random_initialize();
+    mcmc.initialize_example();
     mcmc.compute_t_table(D,r);
+    disp_vec(mcmc.t_scores);
     mcmc.infer_mcmc(D,r);
     mcmc.write_best_tree();
     cout<< *mcmc.get_t();

@@ -14,6 +14,7 @@ struct Node{
     std::unordered_map<u_int,int> c_change= {};
     double log_score = 0.0;
     int z = 0;
+    unsigned n_descendents = 0;
     Node* first_child = nullptr;
     Node* next = nullptr;
     Node* parent = nullptr;
@@ -59,19 +60,21 @@ struct Node{
     {}
 
 
-    friend std::ostream& operator<<(std::ostream& os, Node& n) {
-        os << "node " << n.id << ": ";
-        for (auto i : n.c_change)
-            os << " " << i.first << ":" << i.second << ',';
-
-        if (n.parent == nullptr)
-            os << "parent: NULL";
-        else
-            os << "parent: " << n.parent->id;
-
-        return os;
-    }
+    friend std::ostream& operator<<(std::ostream& os, Node& n);
 
 };
+
+std::ostream& operator<<(std::ostream& os, Node& n) {
+    os << "node " << n.id << ": ";
+    for (auto i : n.c_change)
+        os << " " << i.first << ":" << i.second << ',';
+
+    if (n.parent == nullptr)
+        os << "parent: NULL";
+    else
+        os << "parent: " << n.parent->id;
+
+    return os;
+}
 
 #endif //SC_DNA_NODE_H

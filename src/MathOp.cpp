@@ -225,8 +225,6 @@ double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtr
  * */
 
     // TODO sometimes (1 in 10-20 runs) returns NaN (because the values to subtract are very close to the max therefore the exp function is returning 0.99 , talk to Jack.
-
-
     double max = sum;
 
     for (auto i: to_add)
@@ -237,9 +235,7 @@ double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtr
         if (i > max)
             max = i;
 
-
     double sum_in_normal_space = 0.0;
-
     sum_in_normal_space += exp(sum-max);
 
     for (auto i: to_add)
@@ -248,16 +244,14 @@ double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtr
         sum_in_normal_space += temp;
     }
 
-
     for (auto i: to_subtract)
     {
         double temp = exp(i-max);
         sum_in_normal_space -= temp;
     }
 
-
     double res = log(sum_in_normal_space) + max;
-    // the res value can be NaN!z
+    // the res value can be NaN!
 
     return res;
 }
