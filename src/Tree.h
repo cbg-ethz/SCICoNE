@@ -39,7 +39,7 @@ public:
     virtual ~Tree();
 
     // moves
-    Node * prune_reattach(bool weighted=false);
+    Node* prune_reattach(bool weighted=false);
 
     bool is_leaf(Node*) const;
     Node* uniform_sample(bool with_root=true);

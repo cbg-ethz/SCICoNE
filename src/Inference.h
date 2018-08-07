@@ -31,6 +31,7 @@ public:
     ~Inference();
     void destroy();
     void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
+    void compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r);
     Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false);
     bool comparison(int m);
 
@@ -38,7 +39,6 @@ public:
     void write_best_tree();
     void update_t_scores();
 
-    void w_prune_reattach();
 
     void swap();
     void w_swap();
@@ -98,7 +98,7 @@ Inference::~Inference() {
     destroy();
 }
 
-Node * Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted) {
+Node* Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted) {
     /*
      * Applies prune and reattach to t_prime
      * Updates the sums and scores tables partially
@@ -110,15 +110,8 @@ Node * Inference::apply_prune_reattach(const vector<vector<int>> &D, const vecto
 
     if (attached_node != nullptr)
     {
-        int j = 0;
-        for (auto const &d: D)
-        {
-            int sum_d = accumulate( d.begin(), d.end(), 0.0);
-            attached_node->parent->log_score = t_scores[j][attached_node->parent->id];
-            t_prime->compute_stack(attached_node, d, sum_d,r);
-            t_prime_scores.push_back(t_prime->get_children_id_score(attached_node));
-            j++;
-        }
+        compute_t_prime_scores(attached_node, D, r);
+
         int i = 0;
         for (auto const &d: D)
         {
@@ -131,7 +124,7 @@ Node * Inference::apply_prune_reattach(const vector<vector<int>> &D, const vecto
                 new_vals.push_back(u_map.second);
             }
 
-            auto res =MathOp::log_replace_sum(t_sums[i],old_vals,new_vals);
+            double res =MathOp::log_replace_sum(t_sums[i],old_vals,new_vals);
             if (isnan(res))
             {
                 // reject t_prime
@@ -226,8 +219,6 @@ bool Inference::comparison(int m) {
 
 void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
 
-
-
     int m = static_cast<int>(D.size());
     int n_accepted = 0;
     int n_rejected = 0;
@@ -292,6 +283,19 @@ void Inference::write_best_tree() {
     outfile.open(f_name, std::ios_base::app);
     outfile << "The resulting tree is: "<<std::endl;
     outfile << *t;
+}
+
+void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r) {
+
+    int j = 0;
+    for (auto const &d: D)
+    {
+        int sum_d = accumulate( d.begin(), d.end(), 0.0);
+        attached_node->parent->log_score = t_scores[j][attached_node->parent->id];
+        t_prime->compute_stack(attached_node, d, sum_d,r);
+        t_prime_scores.push_back(t_prime->get_children_id_score(attached_node));
+        j++;
+    }
 }
 
 
