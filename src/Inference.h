@@ -17,7 +17,7 @@ class Inference {
  * Contains functionality to perform monte carlo markov chains (mcmc) inference
  * //TODO use stack dynamic Trees for t & t_prime
  * */
-private:
+public:
     Tree *t;
     Tree *t_prime;
     std::vector<std::vector<double>> t_scores;
@@ -47,7 +47,7 @@ public:
 
     Tree *get_t_prime() const;
     void random_initialize(); // randomly initializes a tree and copies it into the other
-    void test_initialize(); // initializes the trees based on the test example
+    void initialize_example(); // initializes the trees based on the test example
 };
 
 
@@ -62,14 +62,23 @@ void Inference::random_initialize() {
 
 }
 
-void Inference::test_initialize() {
+void Inference::initialize_example() {
 
     // build tree
+    // tree that generated the data
     t->random_insert({{0, 1}, {1, 1}});
     t->insert_at(1,{{1, 1}, {2, 1}});
     t->insert_at(2,{{0, -1}});
     t->insert_at(2,{{3, -1}});
     t->insert_at(1,{{1, 1}});
+
+
+    // 1532098496221375.txt
+//    t->random_insert({{0, 1}, {1,1}});
+//    t->insert_at(0,{{1,1},{2,1}});
+//    t->insert_at(1,{{3,-1}});
+//    t->insert_at(3,{{1,1}});
+//    t->insert_at(0,{{0,-1}});
 
 
 }
@@ -220,7 +229,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
     int n_accepted = 0;
     int n_rejected = 0;
     int n_attached_to_the_same_pos = 0;
-    for (int i = 0; i < 5000; ++i) {
+    for (int i = 0; i < 100; ++i) {
 
         // apply the move to t_prime
         Node* node = apply_prune_reattach(D, r);
