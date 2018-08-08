@@ -33,15 +33,16 @@ public:
     void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r);
     Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false);
+    void apply_swap(bool weighted=false);
     bool comparison(int m);
 
-    void infer_mcmc(const vector<vector<int>> &D, const vector<int>& r);
+    void infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs);
     void write_best_tree();
     void update_t_scores();
 
 
-    void swap();
-    void w_swap();
+
+
 
     Tree *get_t() const;
 
@@ -125,16 +126,9 @@ Node* Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector
             }
 
             double res =MathOp::log_replace_sum(t_sums[i],old_vals,new_vals);
-            if (isnan(res))
-            {
-                // reject t_prime
-                *t_prime = *t;
-                t_prime_sums.clear();
-                t_prime_scores.clear();
-                return nullptr;
-            }
-            else
-                t_prime_sums.push_back(res);
+            assert(!isnan(res));
+
+            t_prime_sums.push_back(res);
             i++;
         }
         return attached_node;
@@ -217,44 +211,77 @@ bool Inference::comparison(int m) {
     }
 }
 
-void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int>& r) {
+void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs) {
 
     int m = static_cast<int>(D.size());
     int n_accepted = 0;
     int n_rejected = 0;
     int n_attached_to_the_same_pos = 0;
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 500; ++i) {
 
-        // apply the move to t_prime
-        Node* node = apply_prune_reattach(D, r, false);
 
-        if (node == nullptr)
+
+        long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
+        std::default_random_engine generator(seed);
+        std::discrete_distribution<> d(move_probs.begin(), move_probs.end());
+
+        unsigned move_id = d(generator);
+
+        switch (move_id)
         {
-            n_attached_to_the_same_pos++;
-            continue;
+            case 0:
+            {
+                // prune & reattach
+                cout << "Prune and reattach" << endl;
+                Node *node = apply_prune_reattach(D, r, false);
+                if (node == nullptr) {
+                    n_attached_to_the_same_pos++;
+                    continue;
+                }
+                break;
+            }
+            case 1:
+            {
+                // weighted prune & reattach
+                cout<<"Weighted prune and reattach"<<endl;
+                Node* node = apply_prune_reattach(D, r, true); // weighted=true
+                if (node == nullptr)
+                {
+                    n_attached_to_the_same_pos++;
+                    continue;
+                }
+                break;
+            }
+            case 2:
+                // swap labels
+                cout<<"swap labels"<<endl;
+            case 3:
+                // weighted swap labels
+                cout<<"weighted swap labels"<<endl;
+                break;
+            default:
+                throw std::logic_error("undefined move index");
         }
 
+        // compare the trees
+        bool accepted = comparison(m);
+        // update trees and the matrices
+        if (accepted)
+        {
+            n_accepted++;
+
+            t_sums = t_prime_sums;
+            update_t_scores();
+            *t = *t_prime;
+        }
         else
         {
-            // compare
-            bool accepted = comparison(m);
-            // update trees and the matrices
-            if (accepted)
-            {
-                n_accepted++;
-
-                t_sums = t_prime_sums;
-                update_t_scores();
-                *t = *t_prime;
-            }
-            else
-            {
-                n_rejected++;
-                *t_prime = *t;
-            }
-            t_prime_sums.clear();
-            t_prime_scores.clear();
+            n_rejected++;
+            *t_prime = *t;
         }
+        t_prime_sums.clear();
+        t_prime_scores.clear();
+
     }
     cout<<"n_accepted: "<<n_accepted<<endl;
     cout<<"n_rejected: "<<n_rejected<<endl;
@@ -296,6 +323,14 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
         t_prime_scores.push_back(t_prime->get_children_id_score(attached_node));
         j++;
     }
+}
+
+void Inference::apply_swap(bool weighted) {
+
+    vector<Node*> swapped_nodes = t_prime->swap_labels(weighted);
+
+
+
 }
 
 
