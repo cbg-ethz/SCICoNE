@@ -69,7 +69,7 @@ int main() {
     vector<int> r = {4,2,3,5,2};
 
     // move probabilities
-    vector<float> move_probs = {1.0f,1.0f,0.0f,0.0f};
+    vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f};
 
     Inference mcmc;
     mcmc.initialize_example();

@@ -36,7 +36,7 @@ public:
 
 
     Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false);
-    void apply_swap(bool weighted=false);
+    void apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false);
     bool comparison(int m);
 
     void infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs);
@@ -203,7 +203,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     int n_accepted = 0;
     int n_rejected = 0;
     int n_attached_to_the_same_pos = 0;
-    for (int i = 0; i < 500; ++i) {
+    for (int i = 0; i < 50; ++i) {
 
 
 
@@ -241,9 +241,12 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
             case 2:
                 // swap labels
                 cout<<"swap labels"<<endl;
+                apply_swap(D,r, false); // weighted=false
+                break;
             case 3:
                 // weighted swap labels
                 cout<<"weighted swap labels"<<endl;
+                apply_swap(D,r, true); // weighted=true
                 break;
             default:
                 throw std::logic_error("undefined move index");
@@ -311,10 +314,15 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
     }
 }
 
-void Inference::apply_swap(bool weighted) {
+void Inference::apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted) {
 
     vector<Node*> swapped_nodes = t_prime->swap_labels(weighted);
 
+    for (auto const &node : swapped_nodes)
+    {
+        compute_t_prime_scores(node, D, r);
+    }
+    compute_t_prime_sums(D);
 
 
 }

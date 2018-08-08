@@ -625,14 +625,14 @@ std::vector<Node *> Tree::swap_labels(bool weighted) {
 
         do
             label2 = weighted_sample();
-        while (label1 != label2); // make sure you are not swapping the same labels
+        while (label1 == label2); // make sure you are not swapping the same labels
     }
     else
     {
         label1 = uniform_sample(false); //without the root
         do
             label2 = uniform_sample(false);
-        while (label1 != label2);
+        while (label1 == label2);
     }
 
     // perform std swap on unordered_maps
