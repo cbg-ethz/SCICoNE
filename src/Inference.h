@@ -32,6 +32,9 @@ public:
     void destroy();
     void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r);
+    void compute_t_prime_sums(const vector<vector<int>> &D);
+
+
     Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false);
     void apply_swap(bool weighted=false);
     bool comparison(int m);
@@ -112,25 +115,8 @@ Node* Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector
     if (attached_node != nullptr)
     {
         compute_t_prime_scores(attached_node, D, r);
+        compute_t_prime_sums(D);
 
-        int i = 0;
-        for (auto const &d: D)
-        {
-            vector<double> old_vals;
-            vector<double> new_vals;
-
-            for (auto &u_map : t_prime_scores[i])
-            {
-                old_vals.push_back(t_scores[i][u_map.first]);
-                new_vals.push_back(u_map.second);
-            }
-
-            double res =MathOp::log_replace_sum(t_sums[i],old_vals,new_vals);
-            assert(!isnan(res));
-
-            t_prime_sums.push_back(res);
-            i++;
-        }
         return attached_node;
     }
     else
@@ -331,6 +317,28 @@ void Inference::apply_swap(bool weighted) {
 
 
 
+}
+
+void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
+
+    int i = 0;
+    for (auto const &d: D)
+    {
+        vector<double> old_vals;
+        vector<double> new_vals;
+
+        for (auto &u_map : t_prime_scores[i])
+        {
+            old_vals.push_back(t_scores[i][u_map.first]);
+            new_vals.push_back(u_map.second);
+        }
+
+        double res =MathOp::log_replace_sum(t_sums[i],old_vals,new_vals);
+        assert(!isnan(res));
+
+        t_prime_sums.push_back(res);
+        i++;
+    }
 }
 
 
