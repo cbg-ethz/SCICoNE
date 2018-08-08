@@ -68,6 +68,8 @@ int main() {
     // region sizes
     vector<int> r = {4,2,3,5,2};
 
+    // move probabilities
+    vector<float> move_probs = {1.0f,1.0f,0.0f,0.0f};
 
     Inference mcmc;
     mcmc.initialize_example();
@@ -75,7 +77,7 @@ int main() {
     mcmc.get_t()->weighted_sample();
     mcmc.compute_t_table(D,r);
     disp_vec(mcmc.t_scores);
-    mcmc.infer_mcmc(D,r);
+    mcmc.infer_mcmc(D, r, move_probs);
     mcmc.write_best_tree();
     cout<< *mcmc.get_t();
 

@@ -40,6 +40,7 @@ public:
 
     // moves
     Node* prune_reattach(bool weighted=false);
+    std::vector<Node*> swap_labels(bool weighted=false);
 
     bool is_leaf(Node*) const;
     Node* uniform_sample(bool with_root=true);
@@ -70,6 +71,7 @@ private:
     Node* prune(Node *pos); // does not deallocate, TODO: have a delete method that calls this and deallocates
     Node* insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
+    bool is_ancestor(Node *target, Node *curr);
 
 };
 
@@ -586,6 +588,70 @@ Node *Tree::weighted_sample() {
     }
 
 
+}
+
+bool Tree::is_ancestor(Node *target, Node *curr) {
+    /*
+     * Returns true if the target node is an ancestor of the current node
+     * Complexity: O(n) where n is the number of ancestors of the curr node
+     * */
+    Node* p = curr;
+    while(p->parent != nullptr)
+    {
+        if (p == target)
+            return true;
+        p = p->parent;
+    }
+
+    return false;
+}
+
+std::vector<Node *> Tree::swap_labels(bool weighted) {
+
+    /*
+     * Swaps the labels between two nodes
+     * Requires more than 2 nodes to work
+     * */
+
+    if (all_nodes.size() <= 2)
+        throw std::logic_error("swapping labels does not make sense when they is only one node besides the root");
+
+    Node *label1, *label2;
+    label1 = label2 = nullptr;
+
+    if (weighted)
+    {
+        label1 = weighted_sample();
+
+        do
+            label2 = weighted_sample();
+        while (label1 != label2); // make sure you are not swapping the same labels
+    }
+    else
+    {
+        label1 = uniform_sample(false); //without the root
+        do
+            label2 = uniform_sample(false);
+        while (label1 != label2);
+    }
+
+    // perform std swap on unordered_maps
+    label1->c_change.swap(label2->c_change);
+
+    vector<Node*> return_nodes;
+
+
+    if (is_ancestor(label1, label2))
+        return_nodes.push_back(label1);
+    else if (is_ancestor(label2, label1))
+        return_nodes.push_back(label2);
+    else
+    {
+        return_nodes.push_back(label1);
+        return_nodes.push_back(label2);
+    }
+
+    return return_nodes;
 }
 
 
