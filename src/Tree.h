@@ -16,7 +16,7 @@
 #include "MathOp.h"
 #include <tuple>
 #include <random>
-#include <chrono>
+#include "SingletonRandomGenerator.h"
 
 
 bool node_ptr_compare(Node* a, Node* b)
@@ -40,7 +40,8 @@ public:
 
     // moves
     Node* prune_reattach(bool weighted=false);
-    std::vector<Node*> swap_labels(bool weighted=false);
+    std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
+
 
     bool is_leaf(Node*) const;
     Node* uniform_sample(bool with_root=true);
@@ -60,6 +61,9 @@ public:
     int counter = 0;
     friend std::ostream& operator<<(std::ostream& os, Tree& t);
     Tree& operator=(const Tree& other);
+
+    // Test moves
+    std::vector<Node*> swap_labels_worked_example(bool weighted=false);
 
 private:
 
@@ -577,8 +581,7 @@ Node *Tree::weighted_sample() {
             weights.push_back(weight);
         }
 
-        long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
-        std::default_random_engine generator(seed);
+        std::mt19937 &generator = SingletonRandomGenerator::get_generator();
         std::discrete_distribution<> d(weights.begin(), weights.end());
 
         unsigned sample = d(generator);
@@ -606,7 +609,7 @@ bool Tree::is_ancestor(Node *target, Node *curr) {
     return false;
 }
 
-std::vector<Node *> Tree::swap_labels(bool weighted) {
+std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) {
 
     /*
      * Swaps the labels between two nodes
@@ -629,10 +632,19 @@ std::vector<Node *> Tree::swap_labels(bool weighted) {
     }
     else
     {
-        label1 = uniform_sample(false); //without the root
-        do
-            label2 = uniform_sample(false);
-        while (label1 == label2);
+        if (validation_test_mode)
+        {
+            label1 = all_nodes[2]; //without the root
+            label2 = all_nodes[5];
+        }
+        else
+        {
+            label1 = uniform_sample(false); //without the root
+            do
+                label2 = uniform_sample(false);
+            while (label1 == label2);
+        }
+
     }
 
     // perform std swap on unordered_maps
@@ -653,6 +665,7 @@ std::vector<Node *> Tree::swap_labels(bool weighted) {
 
     return return_nodes;
 }
+
 
 
 #endif //SC_DNA_TREE_H

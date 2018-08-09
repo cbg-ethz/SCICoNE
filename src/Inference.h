@@ -6,6 +6,7 @@
 #define SC_DNA_INFERENCE_H
 
 #include "Tree.h"
+#include "SingletonRandomGenerator.h"
 #include <vector>
 #include <random>
 #include <chrono>
@@ -36,7 +37,7 @@ public:
 
 
     Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false);
-    void apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false);
+    void apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool test_mode=false);
     bool comparison(int m);
 
     void infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs);
@@ -51,7 +52,7 @@ public:
 
     Tree *get_t_prime() const;
     void random_initialize(); // randomly initializes a tree and copies it into the other
-    void initialize_example(); // initializes the trees based on the test example
+    void initialize_worked_example(); // initializes the trees based on the test example
 };
 
 
@@ -64,9 +65,11 @@ void Inference::random_initialize() {
     t->random_insert({{3, -1}});
     t->random_insert({{1, 1}});
 
+    t->compute_weights();
+
 }
 
-void Inference::initialize_example() {
+void Inference::initialize_worked_example() {
 
     // build tree
     // tree that generated the data
@@ -76,6 +79,7 @@ void Inference::initialize_example() {
     t->insert_at(2,{{3, -1}});
     t->insert_at(1,{{1, 1}});
 
+    t->compute_weights();
 
     // 1532098496221375.txt
 //    t->random_insert({{0, 1}, {1,1}});
@@ -175,10 +179,9 @@ bool Inference::comparison(int m) {
 
     else
     {
-        long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
-        static std::default_random_engine generator(seed);
+        std::mt19937 &gen = SingletonRandomGenerator::get_generator();
         std::uniform_real_distribution<double> distribution(0.0,1.0);
-        double rand_val = distribution(generator);
+        double rand_val = distribution(gen);
 
         cout<<"rand_val: "<<rand_val<<endl;
 
@@ -199,19 +202,19 @@ bool Inference::comparison(int m) {
 
 void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs) {
 
+
     int m = static_cast<int>(D.size());
     int n_accepted = 0;
     int n_rejected = 0;
     int n_attached_to_the_same_pos = 0;
-    for (int i = 0; i < 50; ++i) {
+    for (int i = 0; i < 500; ++i) {
 
 
 
-        long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
-        std::default_random_engine generator(seed);
+        std::mt19937 &gen = SingletonRandomGenerator::get_generator();
         std::discrete_distribution<> d(move_probs.begin(), move_probs.end());
 
-        unsigned move_id = d(generator);
+        unsigned move_id = d(gen);
 
         switch (move_id)
         {
@@ -314,9 +317,10 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
     }
 }
 
-void Inference::apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted) {
+void Inference::apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted, bool test_mode) {
 
-    vector<Node*> swapped_nodes = t_prime->swap_labels(weighted);
+    vector<Node*> swapped_nodes = t_prime->swap_labels(weighted, test_mode);
+
 
     for (auto const &node : swapped_nodes)
     {
@@ -343,6 +347,7 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
 
         double res =MathOp::log_replace_sum(t_sums[i],old_vals,new_vals);
         assert(!isnan(res));
+        // TODO sometimes it is nan, either fix it or reject t_prime as before (in the previous commits of 08.08.2018) when nan happens
 
         t_prime_sums.push_back(res);
         i++;
