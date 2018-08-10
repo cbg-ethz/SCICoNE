@@ -66,6 +66,7 @@ int main() {
     test_swap_label();
     test_weighted_sample();
     test_prune_reattach();
+    test_weighted_prune_reattach();
 
     // counts per region per cell
     vector<vector<int>> D = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};

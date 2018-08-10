@@ -103,6 +103,47 @@ void test_prune_reattach()
     cout<<"Prune and reattach validation test passed!"<<endl;
 }
 
+void test_weighted_prune_reattach()
+{
+    vector<vector<int>> D = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
+
+    // region sizes
+    vector<int> r = {4,2,3,5,2};
+
+    Inference mcmc;
+    mcmc.initialize_worked_example();
+    mcmc.compute_t_table(D,r);
+
+    mcmc.apply_prune_reattach(D,r,false,true);
+
+    const float epsilon = 0.001;
+
+    // get the subvector
+    vector<Node*>::const_iterator first = mcmc.t_prime->all_nodes.begin() + 1;
+    vector<Node*>::const_iterator last = mcmc.t_prime->all_nodes.end();
+    vector<Node*> nodes_to_sample(first, last);
+
+    vector<float> weights;
+    float zeta = 0.0f;
+    for (auto const &x : nodes_to_sample)
+    {
+        float weight = (1.0f / x->n_descendents); // weights are inversely proportional to n_descendents
+        weights.push_back(weight);
+        zeta += weight;
+    }
+
+
+    assert(abs(weights[0] - 0.2f)  <= epsilon);
+    assert(abs(weights[1] - 0.333f)  <= epsilon);
+    assert(abs(weights[2] - 1.0f)  <= epsilon);
+    assert(abs(weights[3] - 1.0f)  <= epsilon);
+    assert(abs(weights[4] - 0.25f)  <= epsilon);
+    assert(abs(zeta - 2.783f) <= epsilon);
+
+
+    cout<<"Weighted prune &reattaach validation test passed!"<<endl;
+
+}
 
 
 #endif //SC_DNA_VALIDATION_H
