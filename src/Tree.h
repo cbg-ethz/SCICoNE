@@ -39,7 +39,7 @@ public:
     virtual ~Tree();
 
     // moves
-    Node* prune_reattach(bool weighted=false);
+    Node* prune_reattach(bool weighted=false, bool validation_test_mode=false);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
 
 
@@ -371,15 +371,23 @@ void Tree::recursive_copy(Node* source, Node *destination) {
 
 }
 
-Node * Tree::prune_reattach(bool weighted) {
+Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     // returns the pruned node (which is the attached node)
 
     Node* prune_pos = nullptr;
 
-    if (weighted)
-        prune_pos = weighted_sample();
+    if (validation_test_mode)
+        prune_pos = all_nodes[2];
     else
-        prune_pos = uniform_sample(false); //without the root
+    {
+        if (weighted)
+            prune_pos = weighted_sample();
+        else
+            prune_pos = uniform_sample(false); //without the root
+    }
+
+
+
 
 
 
@@ -387,7 +395,7 @@ Node * Tree::prune_reattach(bool weighted) {
     // copy all nodes
     std::vector<Node*> destination_nodes = this->all_nodes;
 
-    // TODO remove all the descendents of the prune_pos
+    // remove all the descendents of the prune_pos
 
     std::stack<Node*> stk;
     stk.push(prune_pos);
@@ -404,8 +412,12 @@ Node * Tree::prune_reattach(bool weighted) {
     int rand_val = 0;
     rand_val = MathOp::random_uniform(1,destination_nodes.size());
     Node* attach_pos = nullptr;
-    attach_pos = destination_nodes[rand_val -1];
-    //attach_pos = all_nodes[5]; //TODO remove this after testing is complete
+
+    if (validation_test_mode)
+        attach_pos = all_nodes[5];
+    else
+        attach_pos = destination_nodes[rand_val -1];
+
     //do not recompute you attach at the same pos
     if (prune_pos->parent->id != attach_pos->id)
     {

@@ -36,7 +36,7 @@ public:
     void compute_t_prime_sums(const vector<vector<int>> &D);
 
 
-    Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false);
+    Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
     void apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool test_mode=false);
     bool comparison(int m);
 
@@ -106,7 +106,7 @@ Inference::~Inference() {
     destroy();
 }
 
-Node* Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted) {
+Node* Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted, bool validation_test_mode) {
     /*
      * Applies prune and reattach to t_prime
      * Updates the sums and scores tables partially
@@ -114,7 +114,7 @@ Node* Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector
 
     using namespace std;
     // weighted = false
-    Node* attached_node = t_prime->prune_reattach(weighted);
+    Node* attached_node = t_prime->prune_reattach(weighted, validation_test_mode);
 
     if (attached_node != nullptr)
     {
