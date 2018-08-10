@@ -34,7 +34,7 @@ public:
     // constructor
     Tree(u_int ploidy);
     // copy constructor
-    Tree(Tree& source, u_int ploidy);
+    Tree(Tree& source);
     // destructor
     virtual ~Tree();
 
@@ -328,7 +328,7 @@ void Tree::update_label(std::unordered_map<u_int, int>& c_parent, Node *node) {
 }
 
 
-Tree::Tree(Tree &source, u_int ploidy) {
+Tree::Tree(Tree &source) {
     if (source.root == nullptr)
         this->root = nullptr;
     else
