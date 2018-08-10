@@ -42,6 +42,52 @@ void test_swap_label()
 
 }
 
+void test_weighted_sample()
+{
+    /*
+     * Validation test for the weighted sampling
+     *
+     * */
+    Inference mcmc;
+    mcmc.initialize_worked_example();
+
+    const float epsilon = 0.001;
+
+    // get the subvector
+    vector<Node*>::const_iterator first = mcmc.t->all_nodes.begin() + 1;
+    vector<Node*>::const_iterator last = mcmc.t->all_nodes.end();
+    vector<Node*> nodes_to_sample(first, last);
+
+    vector<float> weights;
+    float zeta = 0.0f;
+    for (auto const &x : nodes_to_sample)
+    {
+        float weight = (1.0f / x->n_descendents); // weights are inversely proportional to n_descendents
+        weights.push_back(weight);
+        zeta += weight;
+    }
+
+
+    assert(abs(weights[0] - 0.2f)  <= epsilon);
+    assert(abs(weights[1] - 0.333f)  <= epsilon);
+    assert(abs(weights[2] - 1.0f)  <= epsilon);
+    assert(abs(weights[3] - 1.0f)  <= epsilon);
+    assert(abs(weights[4] - 1.0f)  <= epsilon);
+    assert(abs(zeta - 3.533f) <= epsilon);
+
+
+
+
+    cout<<"Weighted sample validation test passed!"<<endl;
+
+
+}
+
+void test_prune_reattach()
+{
+
+}
+
 
 
 #endif //SC_DNA_VALIDATION_H

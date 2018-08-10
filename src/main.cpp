@@ -64,6 +64,7 @@ void disp_vec(vector<vector<double>> vec) {
 int main() {
 
     test_swap_label();
+    test_weighted_sample();
 
     // counts per region per cell
     vector<vector<int>> D = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
@@ -72,7 +73,7 @@ int main() {
     vector<int> r = {4,2,3,5,2};
 
     // move probabilities
-    vector<float> move_probs = {0.0f,0.0f,1.0f,0.0f};
+    vector<float> move_probs = {0.0f,1.0f,0.0f,0.0f};
 
     Inference mcmc;
     mcmc.initialize_worked_example();
