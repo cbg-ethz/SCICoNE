@@ -52,6 +52,7 @@ struct Node{
         // log scores are not copied since they rely on cells
         log_score = 0.0;
         z = source_node.z;
+        n_descendents = source_node.n_descendents;
         first_child = next = parent = nullptr;
     }
     Node()

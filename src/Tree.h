@@ -416,6 +416,9 @@ Node * Tree::prune_reattach(bool weighted) {
         auto pruned_node = prune(prune_pos);
         auto attached_node = insert_child(attach_pos, pruned_node);
 
+        // recompute the weights after the tree structure is changed
+        this->compute_weights();
+
         // std sort the all_nodes vector to make sure the indices match between 2 trees
                 // e.g. node id 4 will always be at index 4
         //TODO: or never change the all_nodes vector after initialization
