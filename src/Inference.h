@@ -28,7 +28,7 @@ public:
     std::string f_name;
 
 public:
-    Inference(u_int ploidy=2);
+    Inference(u_int n_regions, u_int ploidy=2);
     ~Inference();
     void destroy();
     void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
@@ -91,9 +91,9 @@ void Inference::initialize_worked_example() {
 
 }
 
-Inference::Inference(u_int ploidy) {
-    t = new Tree(ploidy);
-    t_prime =new Tree(ploidy);
+Inference::Inference(u_int n_regions, u_int ploidy) {
+    t = new Tree(ploidy, n_regions);
+    t_prime =new Tree(ploidy, n_regions);
 
     std::ofstream outfile;
     long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time

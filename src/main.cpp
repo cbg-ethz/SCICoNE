@@ -77,7 +77,7 @@ int main() {
     // move probabilities
     vector<float> move_probs = {0.0f,1.0f,0.0f,0.0f};
 
-    Inference mcmc;
+    Inference mcmc(size(r));
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
     disp_vec(mcmc.t_scores);

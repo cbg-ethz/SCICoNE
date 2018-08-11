@@ -30,9 +30,10 @@ public:
     Node* root;
     std::vector<Node*> all_nodes; // for uniform selection
     u_int ploidy; // to be added to values of the unordered map for each node
+    u_int n_regions; // number of regions
 
     // constructor
-    Tree(u_int ploidy);
+    Tree(u_int ploidy, u_int n_regions);
     // copy constructor
     Tree(Tree& source);
     // destructor
@@ -41,6 +42,7 @@ public:
     // moves
     Node* prune_reattach(bool weighted=false, bool validation_test_mode=false);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
+    Node* add_remove_event(bool weighted=false, bool validation_test_mode=false);
 
 
     bool is_leaf(Node*) const;
@@ -62,8 +64,6 @@ public:
     friend std::ostream& operator<<(std::ostream& os, Tree& t);
     Tree& operator=(const Tree& other);
 
-    // Test moves
-    std::vector<Node*> swap_labels_worked_example(bool weighted=false);
 
 private:
 
@@ -180,10 +180,11 @@ void Tree::compute_stack(Node *node, const vector<int> &D, int &sum_D, const vec
 }
 
 
-Tree::Tree(u_int ploidy)
+Tree::Tree(u_int ploidy, u_int n_regions)
 {
     root = new Node();
     this->ploidy = ploidy;
+    this->n_regions = n_regions;
     n_nodes = 0;
     // creates a copy of the root ptr and stores it in the vector
 
@@ -634,53 +635,81 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
     if (all_nodes.size() <= 2)
         throw std::logic_error("swapping labels does not make sense when they is only one node besides the root");
 
-    Node *label1, *label2;
-    label1 = label2 = nullptr;
+    Node *node1, *node2;
+    node1 = node2 = nullptr;
 
     if (weighted)
     {
-        label1 = weighted_sample();
+        node1 = weighted_sample();
 
         do
-            label2 = weighted_sample();
-        while (label1 == label2); // make sure you are not swapping the same labels
+            node2 = weighted_sample();
+        while (node1 == node2); // make sure you are not swapping the same labels
     }
     else
     {
         if (validation_test_mode)
         {
-            label1 = all_nodes[2]; //without the root
-            label2 = all_nodes[5];
+            node1 = all_nodes[2]; //without the root
+            node2 = all_nodes[5];
         }
         else
         {
-            label1 = uniform_sample(false); //without the root
+            node1 = uniform_sample(false); //without the root
             do
-                label2 = uniform_sample(false);
-            while (label1 == label2);
+                node2 = uniform_sample(false);
+            while (node1 == node2);
         }
 
     }
 
     // perform std swap on unordered_maps
-    label1->c_change.swap(label2->c_change);
+    node1->c_change.swap(node2->c_change);
 
     vector<Node*> return_nodes;
 
 
-    if (is_ancestor(label1, label2))
-        return_nodes.push_back(label1);
-    else if (is_ancestor(label2, label1))
-        return_nodes.push_back(label2);
+    if (is_ancestor(node1, node2))
+        return_nodes.push_back(node1);
+    else if (is_ancestor(node2, node1))
+        return_nodes.push_back(node2);
     else
     {
-        return_nodes.push_back(label1);
-        return_nodes.push_back(label2);
+        return_nodes.push_back(node1);
+        return_nodes.push_back(node2);
     }
 
     return return_nodes;
 }
 
+Node *Tree::add_remove_event(bool weighted, bool validation_test_mode) {
+
+    Node* node;
+    u_int event;
+    bool sign;
+
+    if (weighted)
+        node = weighted_sample();
+    else
+        node = uniform_sample(false); //without the root
+
+    event = MathOp::random_uniform(0, n_regions-1);
+
+    std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+    std::bernoulli_distribution d(0.5);
+    sign = d(generator);
+
+
+    // todo have a function to assert the c_change is not all zeros!
+            /*
+             * Iterate over the c_change dict and check if all zeros
+             * */
+    node->c_change[event] += (sign? 1 : -1);
+
+
+
+    return nullptr;
+}
 
 
 #endif //SC_DNA_TREE_H

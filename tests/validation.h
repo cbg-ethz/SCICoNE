@@ -22,7 +22,7 @@ void test_swap_label()
     // region sizes
     vector<int> r = {4,2,3,5,2};
 
-    Inference mcmc;
+    Inference mcmc(std::size(r));
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
 
@@ -45,7 +45,9 @@ void test_weighted_sample()
      * Validation test for the weighted sampling
      *
      * */
-    Inference mcmc;
+    // region sizes
+    vector<int> r = {4,2,3,5,2};
+    Inference mcmc(std::size(r));
     mcmc.initialize_worked_example();
 
     const float epsilon = 0.001;
@@ -88,7 +90,7 @@ void test_prune_reattach()
     // region sizes
     vector<int> r = {4,2,3,5,2};
 
-    Inference mcmc;
+    Inference mcmc(std::size(r));
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
 
@@ -110,7 +112,7 @@ void test_weighted_prune_reattach()
     // region sizes
     vector<int> r = {4,2,3,5,2};
 
-    Inference mcmc;
+    Inference mcmc(std::size(r));
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
 
