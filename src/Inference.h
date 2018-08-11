@@ -37,6 +37,9 @@ public:
 
 
     Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
+    Node * apply_add_remove_event(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
+
+
     void apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool test_mode=false);
     bool comparison(int m);
 
@@ -207,7 +210,8 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     int n_accepted = 0;
     int n_rejected = 0;
     int n_attached_to_the_same_pos = 0;
-    for (int i = 0; i < 500; ++i) {
+    int n_empty_label_created = 0;
+    for (int i = 0; i < 5000; ++i) {
 
 
 
@@ -251,6 +255,17 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
                 cout<<"weighted swap labels"<<endl;
                 apply_swap(D,r, true); // weighted=true
                 break;
+            case 4:
+            {
+                // add or remove event
+                cout << "add or remove event" << endl;
+                Node *node = apply_add_remove_event(D, r, true); // weighted=true
+                if (node == nullptr) {
+                    n_empty_label_created++;
+                    continue;
+                }
+                break;
+            }
             default:
                 throw std::logic_error("undefined move index");
         }
@@ -278,6 +293,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     cout<<"n_accepted: "<<n_accepted<<endl;
     cout<<"n_rejected: "<<n_rejected<<endl;
     cout<<"n_attached_to_the_same_pos: "<<n_attached_to_the_same_pos<<endl;
+    cout<<"n_empty_label_created: "<<n_empty_label_created<<endl;
 }
 
 void Inference::update_t_scores() {
@@ -352,6 +368,27 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
         t_prime_sums.push_back(res);
         i++;
     }
+}
+
+Node *Inference::apply_add_remove_event(const vector<vector<int>> &D, const vector<int> &r, bool weighted,
+                                        bool validation_test_mode) {
+    /*
+     * Applies add/remove event to t_prime
+     * Updates the sums and scores tables partially
+     * */
+
+    // weighted = false
+    Node* attached_node = t_prime->add_remove_event(weighted, validation_test_mode);
+
+    if (attached_node != nullptr)
+    {
+        compute_t_prime_scores(attached_node, D, r);
+        compute_t_prime_sums(D);
+
+        return attached_node;
+    }
+    else
+        return nullptr;
 }
 
 

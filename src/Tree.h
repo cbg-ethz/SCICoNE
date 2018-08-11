@@ -18,6 +18,8 @@
 #include <random>
 #include "SingletonRandomGenerator.h"
 
+#include <algorithm> // std::remove
+
 
 bool node_ptr_compare(Node* a, Node* b)
 {
@@ -76,6 +78,8 @@ private:
     Node* insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
     bool is_ancestor(Node *target, Node *curr);
+
+    bool empty_hashmap(unordered_map<u_int, int> &dict);
 
 };
 
@@ -688,27 +692,49 @@ Node *Tree::add_remove_event(bool weighted, bool validation_test_mode) {
     u_int event;
     bool sign;
 
-    if (weighted)
-        node = weighted_sample();
+    if (validation_test_mode)
+        node = all_nodes[3];
     else
-        node = uniform_sample(false); //without the root
+    {
+        if (weighted)
+            node = weighted_sample();
+        else
+            node = uniform_sample(false); //without the root
+    }
 
-    event = MathOp::random_uniform(0, n_regions-1);
+    if (validation_test_mode)
+        event = 3;
+    else
+        event = MathOp::random_uniform(0, n_regions-1);
+
 
     std::mt19937 &generator = SingletonRandomGenerator::get_generator();
     std::bernoulli_distribution d(0.5);
-    sign = d(generator);
+    if (validation_test_mode)
+        sign = true;
+    else
+        sign = d(generator);
 
 
-    // todo have a function to assert the c_change is not all zeros!
-            /*
-             * Iterate over the c_change dict and check if all zeros
-             * */
     node->c_change[event] += (sign? 1 : -1);
 
+    // TODO: have a method to update_labels of the descendents of node and node itself
 
+    if (empty_hashmap(node->c_change))
+        return nullptr;
+    else
+        return node;
+}
 
-    return nullptr;
+bool Tree::empty_hashmap(unordered_map<u_int, int> &dict) {
+
+    for (auto const &it : dict)
+    {
+        if(it.second != 0)
+            return false;
+    }
+    return true;
+
 }
 
 
