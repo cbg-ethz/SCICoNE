@@ -28,11 +28,13 @@ void test_swap_label()
 
     mcmc.apply_swap(D,r,false,true);
 
-    assert(int(mcmc.t_prime_sums[0]) == -552);
-    assert(int(mcmc.t_prime_sums[1]) == -413);
-    assert(int(mcmc.t_prime_sums[2]) == -670);
-    assert(int(mcmc.t_prime_sums[3]) == -547);
-    assert(int(mcmc.t_prime_sums[4]) == -406);
+    const float epsilon = 0.001f;
+
+    assert(abs(mcmc.t_prime_sums[0] + 552.120f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[1] + 413.462f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[2] + 670.394f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[3] + 547.325f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[4] + 406.635f)  <= epsilon);
 
     cout<<"Swap label validation test passed!"<<endl;
 
@@ -96,11 +98,13 @@ void test_prune_reattach()
 
     mcmc.apply_prune_reattach(D,r,false,true);
 
-    assert(int(mcmc.t_prime_sums[0]) == -551);
-    assert(int(mcmc.t_prime_sums[1]) == -413);
-    assert(int(mcmc.t_prime_sums[2]) == -663);
-    assert(int(mcmc.t_prime_sums[3]) == -547);
-    assert(int(mcmc.t_prime_sums[4]) == -406);
+    const float epsilon = 0.001f;
+
+    assert(abs(mcmc.t_prime_sums[0] + 551.804f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[1] + 413.292f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[2] + 663.804f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[3] + 547.348f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[4] + 406.636f)  <= epsilon);
 
     cout<<"Prune and reattach validation test passed!"<<endl;
 }
@@ -161,11 +165,14 @@ void test_add_remove_event()
 
     mcmc.apply_add_remove_event(D,r,false,true);
 
-    assert(int(mcmc.t_prime_sums[0]) == -551);
-    assert(int(mcmc.t_prime_sums[1]) == -413);
-    assert(int(mcmc.t_prime_sums[2]) == -663);
-    assert(int(mcmc.t_prime_sums[3]) == -547);
-    assert(int(mcmc.t_prime_sums[4]) == -406);
+    const float epsilon = 0.001;
+
+    assert(abs(mcmc.t_prime_sums[0] + 553.442f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[1] + 413.804f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[2] + 663.925f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[3] + 547.326f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[4] + 406.665f)  <= epsilon);
+
 
     cout<<"Add / remove event validation test passed!"<<endl;
 }

@@ -322,13 +322,31 @@ void Inference::write_best_tree() {
 
 void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r) {
 
+    // if the t_prime_scores is empty then fill it with size(D) elements
+    // otherwise append the results to the first size(D) places in t_prime_scores
+    // size of t_prime_scores should always be size(D)
+
+    bool is_empty_table = t_prime_scores.empty();
+
     int j = 0;
     for (auto const &d: D)
     {
         int sum_d = accumulate( d.begin(), d.end(), 0.0);
         attached_node->parent->log_score = t_scores[j][attached_node->parent->id];
         t_prime->compute_stack(attached_node, d, sum_d,r);
-        t_prime_scores.push_back(t_prime->get_children_id_score(attached_node));
+
+        if (is_empty_table)
+            t_prime_scores.push_back(t_prime->get_children_id_score(attached_node));
+        else
+        {
+            // append the contents of second hashmap into the first
+            // note that they cannot have overlapping keys
+            for (auto const& map_item : t_prime->get_children_id_score(attached_node))
+            {
+                t_prime_scores[j][map_item.first] = map_item.second;
+            }
+        }
+
         j++;
     }
 }
@@ -340,6 +358,7 @@ void Inference::apply_swap(const vector<vector<int>> &D, const vector<int> &r, b
 
     for (auto const &node : swapped_nodes)
     {
+        t_prime->update_desc_labels(node);
         compute_t_prime_scores(node, D, r);
     }
     compute_t_prime_sums(D);

@@ -60,6 +60,7 @@ public:
     void compute_tree(const vector<int> &D, const vector<int>& r);
     void compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r);
     void compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r);
+    void update_desc_labels(Node* node);
     void compute_weights();
     u_int get_n_nodes() const;
     int counter = 0;
@@ -71,6 +72,7 @@ private:
 
     u_int n_nodes; //the number of nodes without the root
     void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
+
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
     void compute_score(Node* node, const vector<int> &D, int& sum_D, const vector<int>& r);
@@ -174,6 +176,7 @@ void Tree::compute_stack(Node *node, const vector<int> &D, int &sum_D, const vec
             stk.push(temp);
         }
         compute_score(top, D, sum_D, r);
+        // TODO: use a function pointer to compute_score or traverse or update_desc_labels because rest of the code is the same.
     }
 
 //    alternative recursive implementation
@@ -718,12 +721,14 @@ Node *Tree::add_remove_event(bool weighted, bool validation_test_mode) {
 
     node->c_change[event] += (sign? 1 : -1);
 
-    // TODO: have a method to update_labels of the descendents of node and node itself
-
     if (empty_hashmap(node->c_change))
         return nullptr;
     else
+    {
+        update_desc_labels(node); // to update the labels of the descendents
         return node;
+
+    }
 }
 
 bool Tree::empty_hashmap(unordered_map<u_int, int> &dict) {
@@ -735,6 +740,21 @@ bool Tree::empty_hashmap(unordered_map<u_int, int> &dict) {
     }
     return true;
 
+}
+
+void Tree::update_desc_labels(Node *node) {
+
+    std::stack<Node*> stk;
+    stk.push(node);
+
+    while (!stk.empty()) {
+        Node* top = (Node*) stk.top();
+        stk.pop();
+        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
+            stk.push(temp);
+        }
+        update_label(top->parent->c, top);
+    }
 }
 
 
