@@ -167,11 +167,11 @@ void test_add_remove_event()
 
     const float epsilon = 0.001;
 
-    assert(abs(mcmc.t_prime_sums[0] + 553.442f)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[1] + 413.804f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[0] + 553.134f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[1] + 411.720f)  <= epsilon);
     assert(abs(mcmc.t_prime_sums[2] + 663.925f)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[3] + 547.326f)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[4] + 406.665f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[3] + 547.325f)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[4] + 406.654f)  <= epsilon);
 
 
     cout<<"Add / remove event validation test passed!"<<endl;
