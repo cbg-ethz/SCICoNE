@@ -37,7 +37,7 @@ public:
 
 
     Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
-    Node * apply_add_remove_events(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false,
+    Node * apply_add_remove_events(float lambda_r, float lambda_c, const vector<vector<int>> &D, const vector<int> &r, bool weighted = false,
                                    bool validation_test_mode = false);
 
 
@@ -260,7 +260,8 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
             {
                 // add or remove event
                 cout << "add or remove event" << endl;
-                Node *node = apply_add_remove_events(D, r, true); // weighted=true
+                // pass 0.0f to the poisson distributions to have 1 event added/removed
+                Node *node = apply_add_remove_events(0.0f, 0.0f, D, r, true); // weighted=true
                 if (node == nullptr) {
                     n_empty_label_created++;
                     continue;
@@ -390,7 +391,7 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
     }
 }
 
-Node *Inference::apply_add_remove_events(const vector<vector<int>> &D, const vector<int> &r, bool weighted,
+Node *Inference::apply_add_remove_events(float lambda_r, float lambda_c, const vector<vector<int>> &D, const vector<int> &r, bool weighted,
                                          bool validation_test_mode) {
     /*
      * Applies add/remove event to t_prime
@@ -398,7 +399,7 @@ Node *Inference::apply_add_remove_events(const vector<vector<int>> &D, const vec
      * */
 
     // weighted = false
-    Node* attached_node = t_prime->add_remove_events(0.0f,0.0f,weighted, validation_test_mode);
+    Node* attached_node = t_prime->add_remove_events(lambda_r,lambda_c,weighted, validation_test_mode);
 
     if (attached_node != nullptr)
     {
