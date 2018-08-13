@@ -81,6 +81,9 @@ int main() {
     Inference mcmc(size(r));
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
+
+    mcmc.t->add_remove_events(false,false);
+
     disp_vec(mcmc.t_scores);
 
     mcmc.infer_mcmc(D, r, move_probs);

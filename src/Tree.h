@@ -17,6 +17,7 @@
 #include <tuple>
 #include <random>
 #include "SingletonRandomGenerator.h"
+#include <set>
 
 #include <algorithm> // std::remove
 
@@ -44,7 +45,8 @@ public:
     // moves
     Node* prune_reattach(bool weighted=false, bool validation_test_mode=false);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
-    Node* add_remove_event(bool weighted=false, bool validation_test_mode=false);
+    Node* add_remove_events(float lambda_r, float lambda_c, bool weighted=false, bool validation_test_mode=false);
+
 
 
     bool is_leaf(Node*) const;
@@ -689,47 +691,6 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
     return return_nodes;
 }
 
-Node *Tree::add_remove_event(bool weighted, bool validation_test_mode) {
-
-    Node* node;
-    u_int event;
-    bool sign;
-
-    if (validation_test_mode)
-        node = all_nodes[3];
-    else
-    {
-        if (weighted)
-            node = weighted_sample();
-        else
-            node = uniform_sample(false); //without the root
-    }
-
-    if (validation_test_mode)
-        event = 3;
-    else
-        event = MathOp::random_uniform(0, n_regions-1);
-
-
-    std::mt19937 &generator = SingletonRandomGenerator::get_generator();
-    std::bernoulli_distribution d(0.5);
-    if (validation_test_mode)
-        sign = true;
-    else
-        sign = d(generator);
-
-
-    node->c_change[event] += (sign? 1 : -1);
-
-    if (empty_hashmap(node->c_change))
-        return nullptr;
-    else
-    {
-        update_desc_labels(node); // to update the labels of the descendents
-        return node;
-
-    }
-}
 
 bool Tree::empty_hashmap(unordered_map<u_int, int> &dict) {
 
@@ -755,6 +716,75 @@ void Tree::update_desc_labels(Node *node) {
         }
         update_label(top->parent->c, top);
     }
+}
+
+Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, bool validation_test_mode) {
+
+    Node* node;
+
+    if (validation_test_mode)
+    {
+        node = all_nodes[3];
+        lambda_r = lambda_c = 0.0f;
+    }
+    else
+    {
+        if (weighted)
+            node = weighted_sample();
+        else
+            node = uniform_sample(false); //without the root
+    }
+    std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+
+
+    // n_regions from Poisson(lambda_R)+1
+    std::poisson_distribution<int> distribution(lambda_r); // the param is to be specified later
+    int n_regions_to_sample = distribution(generator) + 1;
+    // sample n_regions_to_sample distinct regions uniformly
+    int n_regions = this->n_regions;
+    int regions_sampled = 0;
+    std::set<int> distinct_regions;
+
+    // otherwise we cannot sample distinct uniform regions
+    assert(n_regions_to_sample <= n_regions);
+
+    while (regions_sampled < n_regions_to_sample)
+    {
+        int uniform_val = MathOp::random_uniform(0, n_regions-1);
+        if (validation_test_mode)
+            uniform_val =3;
+        if (distinct_regions.find(uniform_val) == distinct_regions.end())
+        {
+            distinct_regions.insert(uniform_val);
+            regions_sampled++;
+        }
+    }
+
+    // n_copies from Poisson(lambda_c)+1
+    std::poisson_distribution<int> copy_dist(lambda_c); // the param is to be specified later
+    // sign
+    std::bernoulli_distribution bernoulli(0.5);
+
+    for (auto elem : distinct_regions)
+    {
+        int n_copies = copy_dist(generator) + 1;
+        bool sign = bernoulli(generator);
+        if (validation_test_mode)
+            sign = true;
+        std::cout << elem << " , ";
+
+        node->c_change[elem] += (sign? n_copies : -n_copies);
+
+    }
+
+    if (empty_hashmap(node->c_change))
+        return nullptr;
+    else
+    {
+        update_desc_labels(node); // to update the labels of the descendents
+        return node;
+    }
+
 }
 
 

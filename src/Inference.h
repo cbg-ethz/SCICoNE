@@ -37,7 +37,8 @@ public:
 
 
     Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
-    Node * apply_add_remove_event(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
+    Node * apply_add_remove_events(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false,
+                                   bool validation_test_mode = false);
 
 
     void apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool test_mode=false);
@@ -259,7 +260,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
             {
                 // add or remove event
                 cout << "add or remove event" << endl;
-                Node *node = apply_add_remove_event(D, r, true); // weighted=true
+                Node *node = apply_add_remove_events(D, r, true); // weighted=true
                 if (node == nullptr) {
                     n_empty_label_created++;
                     continue;
@@ -389,15 +390,15 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
     }
 }
 
-Node *Inference::apply_add_remove_event(const vector<vector<int>> &D, const vector<int> &r, bool weighted,
-                                        bool validation_test_mode) {
+Node *Inference::apply_add_remove_events(const vector<vector<int>> &D, const vector<int> &r, bool weighted,
+                                         bool validation_test_mode) {
     /*
      * Applies add/remove event to t_prime
      * Updates the sums and scores tables partially
      * */
 
     // weighted = false
-    Node* attached_node = t_prime->add_remove_event(weighted, validation_test_mode);
+    Node* attached_node = t_prime->add_remove_events(0.0f,0.0f,weighted, validation_test_mode);
 
     if (attached_node != nullptr)
     {

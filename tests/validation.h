@@ -163,7 +163,7 @@ void test_add_remove_event()
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
 
-    mcmc.apply_add_remove_event(D,r,false,true);
+    mcmc.apply_add_remove_events(D, r, false, true);
 
     const float epsilon = 0.001;
 
