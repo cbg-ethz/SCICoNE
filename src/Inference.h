@@ -83,7 +83,7 @@ void Inference::initialize_worked_example() {
     t->insert_at(2,{{3, -1}});
     t->insert_at(1,{{1, 1}});
 
-    t->compute_weights();
+
 
     // 1532098496221375.txt
 //    t->random_insert({{0, 1}, {1,1}});
@@ -92,6 +92,15 @@ void Inference::initialize_worked_example() {
 //    t->insert_at(3,{{1,1}});
 //    t->insert_at(0,{{0,-1}});
 
+    // 1534177115108820.txt
+
+//    t->random_insert({{1,1},{2,1}}); //node 5
+//    t->insert_at(1,{{0,-1}}); //node 2
+//    t->insert_at(2,{{0,1}, {1,1}}); //node 3
+//    t->insert_at(3,{{1,1}}); //node 1
+//    t->insert_at(3,{{3,-1}}); //node 4
+
+    t->compute_weights();
 
 }
 
@@ -169,6 +178,14 @@ bool Inference::comparison(int m) {
     int tp_n = t_prime->get_n_nodes();
     log_post_t_prime = t_prime_sum - (tp_n -1 + m ) * log(tp_n+1);
 
+    if (log_post_t_prime > -2570)
+    {
+        cout<<"debug this move" <<endl;
+        cout <<*t <<endl;
+        cout <<*t_prime<<endl;
+    }
+
+
     double acceptance_prob = exp(log_post_t_prime - log_post_t);
 
     cout<<"acceptance prob: "<<acceptance_prob<<endl;
@@ -212,7 +229,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     int n_rejected = 0;
     int n_attached_to_the_same_pos = 0;
     int n_empty_label_created = 0;
-    for (int i = 0; i < 5000; ++i) {
+    for (int i = 0; i < 50000; ++i) {
 
 
 
@@ -258,6 +275,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
                 break;
             case 4:
             {
+                // TODO: start allowing this move after considering the forbidden states
                 // add or remove event
                 cout << "add or remove event" << endl;
                 // pass 0.0f to the poisson distributions to have 1 event added/removed
