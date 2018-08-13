@@ -77,7 +77,7 @@ private:
 
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
-    void compute_score(Node* node, const vector<int> &D, int& sum_D, const vector<int>& r);
+    void compute_score(Node *node, const vector<int> &D, int &sum_D, const vector<int> &r, float eta=0.0001f);
     Node* prune(Node *pos); // does not deallocate, TODO: have a delete method that calls this and deallocates
     Node* insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
@@ -115,7 +115,9 @@ void Tree::compute_root_score(const vector<int> &D, int& sum_d, const vector<int
     root->z = z;
 }
 
-void Tree::compute_score(Node* node, const vector<int> &D, int& sum_D, const vector<int>& r) {
+void Tree::compute_score(Node *node, const vector<int> &D, int &sum_D, const vector<int> &r, float eta) {
+
+
 
 
     if (node->parent == nullptr)
@@ -131,11 +133,12 @@ void Tree::compute_score(Node* node, const vector<int> &D, int& sum_D, const vec
         for (auto const &x : node->c_change)
         {
 
+            // if log zero then use eta value, not to have -infinity
             int cf = node->c[x.first];
-            val += D[x.first] * (log(cf+ploidy));
+            val += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)));
 
             int cp_f = node->parent->c[x.first];
-            val -= D[x.first] * (log(cp_f+ploidy));
+            val -= D[x.first] * (log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
 
             z += r[x.first] * (cf - cp_f);
 
@@ -765,13 +768,12 @@ Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, boo
     // sign
     std::bernoulli_distribution bernoulli(0.5);
 
-    for (auto elem : distinct_regions)
+    for (auto const& elem : distinct_regions)
     {
         int n_copies = copy_dist(generator) + 1;
         bool sign = bernoulli(generator);
         if (validation_test_mode)
             sign = true;
-        std::cout << elem << " , ";
 
         node->c_change[elem] += (sign? n_copies : -n_copies);
 
