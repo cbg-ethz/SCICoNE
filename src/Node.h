@@ -75,6 +75,14 @@ std::ostream& operator<<(std::ostream& os, Node& n) {
     else
         os << "parent: " << n.parent->id;
 
+    os << endl << "\t c values:";
+    for (auto i : n.c)
+        os << "\t  " << i.first << ":" << i.second << ',';
+
+    os << endl << "\t z value: " << n.z;
+    os << endl << "\t n_descendents: " << n.n_descendents;
+
+
     return os;
 }
 

@@ -118,8 +118,6 @@ void Tree::compute_root_score(const vector<int> &D, int& sum_d, const vector<int
 void Tree::compute_score(Node *node, const vector<int> &D, int &sum_D, const vector<int> &r, float eta) {
 
 
-
-
     if (node->parent == nullptr)
     {
         compute_root_score(D, sum_D,r);
@@ -135,9 +133,11 @@ void Tree::compute_score(Node *node, const vector<int> &D, int &sum_D, const vec
 
             // if log zero then use eta value, not to have -infinity
             int cf = node->c[x.first];
+
             val += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)));
 
             int cp_f = node->parent->c[x.first];
+
             val -= D[x.first] * (log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
 
             z += r[x.first] * (cf - cp_f);
@@ -400,11 +400,6 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     }
 
 
-
-
-
-
-
     // copy all nodes
     std::vector<Node*> destination_nodes = this->all_nodes;
 
@@ -424,12 +419,14 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
 
     int rand_val = 0;
     rand_val = MathOp::random_uniform(1,destination_nodes.size());
+
     Node* attach_pos = nullptr;
 
     if (validation_test_mode)
         attach_pos = all_nodes[5];
     else
         attach_pos = destination_nodes[rand_val -1];
+
 
     //do not recompute you attach at the same pos
     if (prune_pos->parent->id != attach_pos->id)
@@ -441,6 +438,8 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
         auto pruned_node = prune(prune_pos);
         auto attached_node = insert_child(attach_pos, pruned_node);
 
+        //update the c vectors of the attached node and its descendents
+        update_desc_labels(attached_node);
         // recompute the weights after the tree structure is changed
         this->compute_weights();
 
@@ -707,6 +706,11 @@ bool Tree::empty_hashmap(unordered_map<u_int, int> &dict) {
 }
 
 void Tree::update_desc_labels(Node *node) {
+
+    /*
+     * Updates the c vectors of the node and all of its descendents
+     * */
+
 
     std::stack<Node*> stk;
     stk.push(node);

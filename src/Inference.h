@@ -83,8 +83,6 @@ void Inference::initialize_worked_example() {
     t->insert_at(2,{{3, -1}});
     t->insert_at(1,{{1, 1}});
 
-
-
     // 1532098496221375.txt
 //    t->random_insert({{0, 1}, {1,1}});
 //    t->insert_at(0,{{1,1},{2,1}});
@@ -99,6 +97,49 @@ void Inference::initialize_worked_example() {
 //    t->insert_at(2,{{0,1}, {1,1}}); //node 3
 //    t->insert_at(3,{{1,1}}); //node 1
 //    t->insert_at(3,{{3,-1}}); //node 4
+
+    // 1534247428652244.txt
+//    t->random_insert({{1, 1}});
+//    t->insert_at(1,{{0, 1}, {1, 1}}); //2
+//    t->insert_at(1,{{1, 1}, {2, 1}}); //3
+//    t->insert_at(3,{{0, -1}}); // 4
+//    t->insert_at(3,{{3, -1}}); // 5
+
+    // 1534324966512223.txt
+//    t->random_insert({{0, 1}, {1, 1}});
+//    t->insert_at(1,{{1, 1}});
+//    t->insert_at(2,{{0, -1}});
+//    t->insert_at(3,{{1, 1}, {2, 1}});
+//    t->insert_at(4,{{3, -1}});
+
+    // 1534328749413447.txt CORRECT
+//    t->random_insert({{0, 1}, {1, 1}});
+//    t->insert_at(1,{{0, -1}});
+//    t->insert_at(2,{{1, 1}});
+//    t->insert_at(3,{{1, 1}, {2, 1}});
+//    t->insert_at(4,{{3, -1}});
+
+    // 1534341448328257.txt CORRECT
+//    t->random_insert({{0, 1}, {1, 1}}); //1
+//    t->insert_at(1,{{1, 1}}); // 2
+//    t->insert_at(1,{{1, 1}, {2, 1}}); // 3
+//    t->insert_at(3,{{0, -1}});
+//    t->insert_at(4,{{3, -1}});
+
+    // 1534342877601159.txt CORRECT
+//    t->random_insert({{0, 1}, {1, 1}}); //1
+//    t->insert_at(1,{{0, -1}}); // 2
+//    t->insert_at(2,{{1, 1}, {2, 1}}); // 3
+//    t->insert_at(3,{{3, -1}}); // 4
+//    t->insert_at(1,{{1, 1}}); //5
+
+    // debugging pruning from root bug
+//    t->insert_at(0,{{1, 1}, {2, 1}}); // 1
+//    t->insert_at(1,{{0, -1}}); // 2
+//    t->insert_at(2,{{1, 1}}); // 3
+//    t->insert_at(2,{{3, -1}}); // 4
+//    t->insert_at(0, {{0, 1}, {1, 1}}); // 5
+
 
     t->compute_weights();
 
@@ -165,7 +206,7 @@ void Inference::destroy() {
 }
 
 bool Inference::comparison(int m) {
-    // m is
+    // m is size(D)
 
     double log_post_t = 0.0;
     double log_post_t_prime = 0.0;
@@ -177,14 +218,6 @@ bool Inference::comparison(int m) {
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
     int tp_n = t_prime->get_n_nodes();
     log_post_t_prime = t_prime_sum - (tp_n -1 + m ) * log(tp_n+1);
-
-    if (log_post_t_prime > -2570)
-    {
-        cout<<"debug this move" <<endl;
-        cout <<*t <<endl;
-        cout <<*t_prime<<endl;
-    }
-
 
     double acceptance_prob = exp(log_post_t_prime - log_post_t);
 
@@ -351,7 +384,7 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
     int j = 0;
     for (auto const &d: D)
     {
-        int sum_d = accumulate( d.begin(), d.end(), 0.0);
+        int sum_d = accumulate( d.begin(), d.end(), 0);
         attached_node->parent->log_score = t_scores[j][attached_node->parent->id];
         t_prime->compute_stack(attached_node, d, sum_d,r);
 
