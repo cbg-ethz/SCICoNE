@@ -34,6 +34,7 @@ public:
     std::vector<Node*> all_nodes; // for uniform selection
     u_int ploidy; // to be added to values of the unordered map for each node
     u_int n_regions; // number of regions
+    double score; // log posterior score of the tree
 
     // constructor
     Tree(u_int ploidy, u_int n_regions);
@@ -198,6 +199,7 @@ Tree::Tree(u_int ploidy, u_int n_regions)
     this->ploidy = ploidy;
     this->n_regions = n_regions;
     n_nodes = 0;
+    score = 0.0;
     // creates a copy of the root ptr and stores it in the vector
 
     all_nodes.push_back(root);

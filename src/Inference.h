@@ -21,6 +21,7 @@ class Inference {
 public:
     Tree *t;
     Tree *t_prime;
+    Tree *best_tree;
     std::vector<std::vector<double>> t_scores;
     std::vector<double> t_sums;
     std::vector<unordered_map<int, double>> t_prime_scores;
@@ -34,7 +35,7 @@ public:
     void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<int>> &D);
-
+    double log_posterior(Tree t, int m);
 
     Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
     Node * apply_add_remove_events(float lambda_r, float lambda_c, const vector<vector<int>> &D, const vector<int> &r, bool weighted = false,
@@ -215,9 +216,15 @@ bool Inference::comparison(int m) {
     int t_n = t->get_n_nodes();
     log_post_t = t_sum - (t_n -1 + m ) * log(t_n+1);
 
+    // assign the tree score
+    t->score = log_post_t;
+
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
     int tp_n = t_prime->get_n_nodes();
     log_post_t_prime = t_prime_sum - (tp_n -1 + m ) * log(tp_n+1);
+
+    t_prime->score = log_post_t_prime;
+
 
     double acceptance_prob = exp(log_post_t_prime - log_post_t);
 
@@ -262,7 +269,10 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     int n_rejected = 0;
     int n_attached_to_the_same_pos = 0;
     int n_empty_label_created = 0;
-    for (int i = 0; i < 50000; ++i) {
+
+    best_tree->score = t->score; //start with the t
+
+    for (int i = 0; i < 5000; ++i) {
 
 
 
@@ -333,6 +343,8 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
             t_sums = t_prime_sums;
             update_t_scores();
             *t = *t_prime;
+            if (t_prime->score > best_tree->score)
+                best_tree->score = t_prime->score;
         }
         else
         {
@@ -347,6 +359,16 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     cout<<"n_rejected: "<<n_rejected<<endl;
     cout<<"n_attached_to_the_same_pos: "<<n_attached_to_the_same_pos<<endl;
     cout<<"n_empty_label_created: "<<n_empty_label_created<<endl;
+}
+
+double Inference::log_posterior(Tree t, int m) {
+
+    // TODO: implement this then call this to compute log posteriors
+    // TODO: set the log posterior of the best tree to the initial one first
+    // later updated it upon acceptance of t_primes
+
+
+    return 0;
 }
 
 void Inference::update_t_scores() {
