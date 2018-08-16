@@ -35,6 +35,8 @@ public:
     u_int ploidy; // to be added to values of the unordered map for each node
     u_int n_regions; // number of regions
     double score; // log posterior score of the tree
+    int counter = 0; // used as node id
+    u_int n_nodes; //the number of nodes without the root
 
     // constructor
     Tree(u_int ploidy, u_int n_regions);
@@ -66,14 +68,14 @@ public:
     void update_desc_labels(Node* node);
     void compute_weights();
     u_int get_n_nodes() const;
-    int counter = 0;
+
     friend std::ostream& operator<<(std::ostream& os, Tree& t);
     Tree& operator=(const Tree& other);
 
 
 private:
 
-    u_int n_nodes; //the number of nodes without the root
+
     void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
 
     void copy_tree(const Tree& source_tree);
@@ -92,6 +94,7 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
 
     std::stack<Node*> stk;
     stk.push(t.root); //start with the root
+    os << "Tree score: " << t.score << endl;
 
     while (!stk.empty()) {
         Node* top = (Node*) stk.top();
@@ -358,10 +361,11 @@ void Tree::copy_tree(const Tree& source_tree) {
      * copy all the other attributes
     */
 
-
-
     this->ploidy = source_tree.ploidy;
     this->counter = source_tree.counter;
+    this->score = source_tree.score;
+    this->n_regions = source_tree.n_regions;
+    this->n_nodes = source_tree.n_nodes;
 
     // copy the nodes using struct copy constructor
     this->root = new Node(*source_tree.root);

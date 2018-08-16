@@ -35,7 +35,7 @@ public:
     void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<int>> &D);
-    double log_posterior(Tree t, int m);
+    double log_posterior(double tree_sum, int m, int n);
 
     Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
     Node * apply_add_remove_events(float lambda_r, float lambda_c, const vector<vector<int>> &D, const vector<int> &r, bool weighted = false,
@@ -149,6 +149,7 @@ void Inference::initialize_worked_example() {
 Inference::Inference(u_int n_regions, u_int ploidy) {
     t = new Tree(ploidy, n_regions);
     t_prime =new Tree(ploidy, n_regions);
+    best_tree = new Tree(ploidy, n_regions);
 
     std::ofstream outfile;
     long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
@@ -193,6 +194,14 @@ void Inference::compute_t_table(const vector<vector<int>> &D, const vector<int>&
         this->t_scores.push_back(scores_vec);
         this->t_sums.push_back(MathOp::log_sum(scores_vec));
     }
+
+    int m = size(D);
+
+    double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
+    int t_n = t->get_n_nodes();
+    t->score = log_posterior(t_sum, m, t_n);
+
+
     // update t_prime
     // calls the copy constructor
     *t_prime = *t;
@@ -214,14 +223,14 @@ bool Inference::comparison(int m) {
 
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
     int t_n = t->get_n_nodes();
-    log_post_t = t_sum - (t_n -1 + m ) * log(t_n+1);
+    log_post_t = log_posterior(t_sum, m, t_n);
 
     // assign the tree score
     t->score = log_post_t;
 
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
     int tp_n = t_prime->get_n_nodes();
-    log_post_t_prime = t_prime_sum - (tp_n -1 + m ) * log(tp_n+1);
+    log_post_t_prime = log_posterior(t_prime_sum, m, tp_n);
 
     t_prime->score = log_post_t_prime;
 
@@ -272,7 +281,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
 
     best_tree->score = t->score; //start with the t
 
-    for (int i = 0; i < 5000; ++i) {
+    for (int i = 0; i < 500; ++i) {
 
 
 
@@ -344,7 +353,9 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
             update_t_scores();
             *t = *t_prime;
             if (t_prime->score > best_tree->score)
-                best_tree->score = t_prime->score;
+                *best_tree = *t_prime;
+
+
         }
         else
         {
@@ -361,14 +372,15 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     cout<<"n_empty_label_created: "<<n_empty_label_created<<endl;
 }
 
-double Inference::log_posterior(Tree t, int m) {
+double Inference::log_posterior(double tree_sum, int m, int n) {
 
     // TODO: implement this then call this to compute log posteriors
     // TODO: set the log posterior of the best tree to the initial one first
     // later updated it upon acceptance of t_primes
+    double log_posterior = 0.0;
+    log_posterior = tree_sum - (n -1 + m ) * log(n+1);
 
-
-    return 0;
+    return log_posterior;
 }
 
 void Inference::update_t_scores() {
@@ -392,7 +404,7 @@ void Inference::write_best_tree() {
     std::ofstream outfile;
     outfile.open(f_name, std::ios_base::app);
     outfile << "The resulting tree is: "<<std::endl;
-    outfile << *t;
+    outfile << *best_tree;
 }
 
 void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r) {
