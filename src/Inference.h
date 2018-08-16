@@ -288,6 +288,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     for (int i = 0; i < 1000; ++i) {
 
 
+        bool rejected_before_comparison = false;
 
         std::mt19937 &gen = SingletonRandomGenerator::get_generator();
         std::discrete_distribution<> d(move_probs.begin(), move_probs.end());
@@ -303,7 +304,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
                 Node *node = apply_prune_reattach(D, r, false);
                 if (node == nullptr) {
                     n_attached_to_the_same_pos++;
-                    continue;
+                    rejected_before_comparison = true;
                 }
                 break;
             }
@@ -315,7 +316,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
                 if (node == nullptr)
                 {
                     n_attached_to_the_same_pos++;
-                    continue;
+                    rejected_before_comparison = true;
                 }
                 break;
             }
@@ -347,7 +348,11 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
         }
 
         // compare the trees
-        bool accepted = comparison(m);
+        bool accepted;
+        if (rejected_before_comparison)
+            accepted = false;
+        else
+            accepted = comparison(m);
         // update trees and the matrices
         if (accepted)
         {
