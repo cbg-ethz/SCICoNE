@@ -141,6 +141,12 @@ void Inference::initialize_worked_example() {
 //    t->insert_at(2,{{3, -1}}); // 4
 //    t->insert_at(0, {{0, 1}, {1, 1}}); // 5
 
+    // score the -2596.33 tree
+//    t->random_insert({{0, 1}, {1, 1}}); //1
+//    t->insert_at(1,{{1, 1}}); // 2
+//    t->insert_at(1,{{0, -1}}); // 3
+//    t->insert_at(3,{{1, 1}, {2, 1}}); // 4
+//    t->insert_at(4,{{3, -1}}); // 5
 
     t->compute_weights();
 
@@ -149,6 +155,7 @@ void Inference::initialize_worked_example() {
 Inference::Inference(u_int n_regions, u_int ploidy) {
     t = new Tree(ploidy, n_regions);
     t_prime =new Tree(ploidy, n_regions);
+    best_tree = new Tree(ploidy, n_regions);
 
     std::ofstream outfile;
     long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
@@ -193,6 +200,12 @@ void Inference::compute_t_table(const vector<vector<int>> &D, const vector<int>&
         this->t_scores.push_back(scores_vec);
         this->t_sums.push_back(MathOp::log_sum(scores_vec));
     }
+
+    int m = size(D);
+    double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
+    int t_n = t->get_n_nodes();
+    t->score = log_posterior(t_sum, m, t_n);
+
     // update t_prime
     // calls the copy constructor
     *t_prime = *t;
@@ -270,9 +283,9 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     int n_attached_to_the_same_pos = 0;
     int n_empty_label_created = 0;
 
-    // best_tree->score = t->score; //start with the t
+     *best_tree = *t; //start with the t
 
-    for (int i = 0; i < 500; ++i) {
+    for (int i = 0; i < 1000; ++i) {
 
 
 
@@ -343,8 +356,8 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
             t_sums = t_prime_sums;
             update_t_scores();
             *t = *t_prime;
-//            if (t_prime->score > best_tree->score)
-//                best_tree->score = t_prime->score;
+            if (t_prime->score > best_tree->score)
+                *best_tree = *t_prime;
         }
         else
         {
@@ -393,7 +406,7 @@ void Inference::write_best_tree() {
     std::ofstream outfile;
     outfile.open(f_name, std::ios_base::app);
     outfile << "The resulting tree is: "<<std::endl;
-    outfile << *t;
+    outfile << *best_tree;
 }
 
 void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r) {

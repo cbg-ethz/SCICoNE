@@ -70,10 +70,10 @@ public:
     friend std::ostream& operator<<(std::ostream& os, Tree& t);
     Tree& operator=(const Tree& other);
 
-
+    u_int n_nodes; //the number of nodes without the root
 private:
 
-    u_int n_nodes; //the number of nodes without the root
+
     void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
 
     void copy_tree(const Tree& source_tree);
@@ -92,6 +92,8 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
 
     std::stack<Node*> stk;
     stk.push(t.root); //start with the root
+
+    os << "Tree score: " << t.score << endl;
 
     while (!stk.empty()) {
         Node* top = (Node*) stk.top();
@@ -362,6 +364,11 @@ void Tree::copy_tree(const Tree& source_tree) {
 
     this->ploidy = source_tree.ploidy;
     this->counter = source_tree.counter;
+    this->score = source_tree.score;
+    this->n_regions = source_tree.n_regions;
+
+
+    //this->n_nodes = source_tree.n_nodes; Do not set n_nodes since they will be incremented by each Node insertion!
 
     // copy the nodes using struct copy constructor
     this->root = new Node(*source_tree.root);
