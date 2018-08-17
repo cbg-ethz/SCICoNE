@@ -38,12 +38,13 @@ public:
     void compute_t_prime_sums(const vector<vector<int>> &D);
     double log_posterior(double tree_sum, int m, int n);
 
-    Node * apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
+    bool apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false,
+                              bool validation_test_mode = false);
     Node * apply_add_remove_events(float lambda_r, float lambda_c, const vector<vector<int>> &D, const vector<int> &r, bool weighted = false,
                                    bool validation_test_mode = false);
 
 
-    void apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool test_mode=false);
+    bool apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false, bool test_mode = false);
     Tree * comparison(int m);
 
     void infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs);
@@ -108,7 +109,8 @@ Inference::~Inference() {
     destroy();
 }
 
-Node* Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted, bool validation_test_mode) {
+bool Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted,
+                                     bool validation_test_mode) {
     /*
      * Applies prune and reattach to t_prime
      * Updates the sums and scores tables partially
@@ -123,10 +125,10 @@ Node* Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector
         compute_t_prime_scores(attached_node, D, r);
         compute_t_prime_sums(D);
 
-        return attached_node;
+        return true;
     }
     else
-        return nullptr;
+        return false;
 }
 
 void Inference::compute_t_table(const vector<vector<int>> &D, const vector<int>& r) {
@@ -237,8 +239,8 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
             {
                 // prune & reattach
                 cout << "Prune and reattach" << endl;
-                Node *node = apply_prune_reattach(D, r, false);
-                if (node == nullptr) {
+                bool prune_reattach_success = apply_prune_reattach(D, r, false);
+                if (not prune_reattach_success) {
                     n_attached_to_the_same_pos++;
                     rejected_before_comparison = true;
                 }
@@ -248,8 +250,8 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
             {
                 // weighted prune & reattach
                 cout<<"Weighted prune and reattach"<<endl;
-                Node* node = apply_prune_reattach(D, r, true); // weighted=true
-                if (node == nullptr)
+                bool weighted_prune_reattach_success = apply_prune_reattach(D, r, true); // weighted=true
+                if (not weighted_prune_reattach_success)
                 {
                     n_attached_to_the_same_pos++;
                     rejected_before_comparison = true;
@@ -257,15 +259,23 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
                 break;
             }
             case 2:
+            {
                 // swap labels
-                cout<<"swap labels"<<endl;
-                apply_swap(D,r, false); // weighted=false
+                cout << "swap labels" << endl;
+                bool swap_success = apply_swap(D, r, false); // weighted=false
+                if (not swap_success)
+                    rejected_before_comparison = true;
                 break;
+            }
             case 3:
+                {
                 // weighted swap labels
-                cout<<"weighted swap labels"<<endl;
-                apply_swap(D,r, true); // weighted=true
+                cout << "weighted swap labels" << endl;
+                bool weighted_swap_success = apply_swap(D, r, true); // weighted=true
+                if (not weighted_swap_success)
+                    rejected_before_comparison = true;
                 break;
+            }
             case 4:
             {
                 // TODO: start allowing this move after considering the forbidden states
@@ -386,10 +396,12 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
     }
 }
 
-void Inference::apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted, bool test_mode) {
+bool Inference::apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted, bool test_mode) {
 
     vector<Node*> swapped_nodes = t_prime->swap_labels(weighted, test_mode);
 
+    if (swapped_nodes.empty())
+        return false;
 
     for (auto const &node : swapped_nodes)
     {
@@ -397,6 +409,7 @@ void Inference::apply_swap(const vector<vector<int>> &D, const vector<int> &r, b
     }
     compute_t_prime_sums(D);
 
+    return true;
 
 }
 
