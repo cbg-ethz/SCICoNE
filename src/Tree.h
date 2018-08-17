@@ -839,7 +839,6 @@ bool Tree::subtree_contains_negative(Node* n) {
  * Returns true if any of the descendent nodes contain a value less than -ploidy in the c hashmap
  * */
     int a = -ploidy;
-    std::cout<<-ploidy;
     vector<Node*> descendents = get_descendents(n);
     for (auto const &elem : descendents)
         for (auto const &it : elem->c)
