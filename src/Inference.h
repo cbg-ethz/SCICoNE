@@ -12,6 +12,7 @@
 #include <chrono>
 #include <fstream>
 #include <string>
+#include <iomanip>
 
 class Inference {
 /*
@@ -43,7 +44,7 @@ public:
 
 
     void apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool test_mode=false);
-    bool comparison(int m);
+    Tree * comparison(int m);
 
     void infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs);
     void write_best_tree();
@@ -219,8 +220,12 @@ void Inference::destroy() {
     t_prime = nullptr;
 }
 
-bool Inference::comparison(int m) {
-    // m is size(D)
+Tree * Inference::comparison(int m) {
+    /*
+     * Returns the pointer to the accepted tree
+     * m is size(D)
+     * */
+
 
     double log_post_t = 0.0;
     double log_post_t_prime = 0.0;
@@ -242,14 +247,9 @@ bool Inference::comparison(int m) {
     double acceptance_prob = exp(log_post_t_prime - log_post_t);
 
     cout<<"acceptance prob: "<<acceptance_prob<<endl;
-    std::ofstream outfile;
-    outfile.open(f_name, std::ios_base::app);
 
     if (acceptance_prob > 1)
-    {
-        outfile << log_post_t_prime << ',';
-        return true;
-    }
+        return t_prime;
 
     else
     {
@@ -260,16 +260,9 @@ bool Inference::comparison(int m) {
         cout<<"rand_val: "<<rand_val<<endl;
 
         if (acceptance_prob > rand_val)
-        {
-            outfile << log_post_t_prime << ',';
-            return true;
-        }
-
+            return t_prime;
         else
-        {
-            outfile << log_post_t << ',';
-            return false;
-        }
+            return t;
 
     }
 }
@@ -282,6 +275,10 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     int n_rejected = 0;
     int n_attached_to_the_same_pos = 0;
     int n_empty_label_created = 0;
+
+    // for writing the posteriors on file
+    std::ofstream outfile;
+    outfile.open(f_name, std::ios_base::app);
 
      *best_tree = *t; //start with the t
 
@@ -348,13 +345,17 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
         }
 
         // compare the trees
-        bool accepted;
+        Tree* accepted;
         if (rejected_before_comparison)
-            accepted = false;
+            accepted = t;
         else
             accepted = comparison(m);
+
+        // print accepted log_posterior
+        outfile << std::setprecision(8) << accepted->score << ',';
+
         // update trees and the matrices
-        if (accepted)
+        if (accepted == t_prime)
         {
             n_accepted++;
 
@@ -411,7 +412,7 @@ void Inference::write_best_tree() {
     std::ofstream outfile;
     outfile.open(f_name, std::ios_base::app);
     outfile << "The resulting tree is: "<<std::endl;
-    outfile << *best_tree;
+    outfile << std::setprecision(8) << *best_tree;
 }
 
 void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r) {
