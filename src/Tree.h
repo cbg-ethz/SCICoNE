@@ -18,6 +18,7 @@
 #include <random>
 #include "SingletonRandomGenerator.h"
 #include <set>
+#include <iomanip>
 
 #include <algorithm> // std::remove
 
@@ -35,6 +36,8 @@ public:
     u_int ploidy; // to be added to values of the unordered map for each node
     u_int n_regions; // number of regions
     double score; // log posterior score of the tree
+    int counter = 0;
+    u_int n_nodes; //the number of nodes without the root
 
     // constructor
     Tree(u_int ploidy, u_int n_regions);
@@ -47,8 +50,6 @@ public:
     Node* prune_reattach(bool weighted=false, bool validation_test_mode=false);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node* add_remove_events(float lambda_r, float lambda_c, bool weighted=false, bool validation_test_mode=false);
-
-    bool is_valid_tree();
 
 
     bool is_leaf(Node*) const;
@@ -64,18 +65,21 @@ public:
     void compute_tree(const vector<int> &D, const vector<int>& r);
     void compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r);
     void compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r);
-    void update_desc_labels(Node* node);
+
     void compute_weights();
     u_int get_n_nodes() const;
-    int counter = 0;
+    vector<Node*> get_descendents(Node* n);
+
     friend std::ostream& operator<<(std::ostream& os, Tree& t);
     Tree& operator=(const Tree& other);
 
-    u_int n_nodes; //the number of nodes without the root
 private:
 
 
     void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
+    void update_desc_labels(Node* node);
+    bool subtree_contains_negative(Node* n);
+
 
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
@@ -91,18 +95,12 @@ private:
 
 std::ostream& operator<<(std::ostream& os, Tree& t) {
 
-    std::stack<Node*> stk;
-    stk.push(t.root); //start with the root
+    vector<Node*> nodes = t.get_descendents(t.root);
 
-    os << "Tree score: " << t.score << endl;
-
-    while (!stk.empty()) {
-        Node* top = (Node*) stk.top();
-        stk.pop();
-        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
-            stk.push(temp);
-        }
-        os << *top << std::endl;
+    os << "Tree score: " << setprecision(8) << t.score << endl;
+    for (auto const &x : nodes)
+    {
+        os << *x << std::endl;
     }
     return os;
 }
@@ -356,26 +354,19 @@ Tree::Tree(Tree &source) {
 void Tree::copy_tree(const Tree& source_tree) {
     /*
      * TODO
-     * have a single copy node method (done)
      * call it recursively (using stack)
-     * copy all the other attributes
     */
-
-
 
     this->ploidy = source_tree.ploidy;
     this->counter = source_tree.counter;
     this->score = source_tree.score;
     this->n_regions = source_tree.n_regions;
 
-
-    //this->n_nodes = source_tree.n_nodes; Do not set n_nodes since they will be incremented by each Node insertion!
-
     // copy the nodes using struct copy constructor
     this->root = new Node(*source_tree.root);
-    this->all_nodes.push_back(root);
-    recursive_copy(source_tree.root, this->root);
-
+    this->all_nodes.push_back(root); // all nodes cannot be copied since 2 trees cannot have nodes pointing to the same address
+    recursive_copy(source_tree.root, this->root); // the nodes of the source tree are inserted into the destination tree
+    this->n_nodes = source_tree.n_nodes; // copy this after the insertions are done (insertions change this value).
  }
 
 void Tree::recursive_copy(Node* source, Node *destination) {
@@ -537,9 +528,9 @@ std::vector<double> Tree::get_scores() {
 }
 
 unordered_map<int, double> Tree::get_children_id_score(Node *node) {
-
-    //TODO return a vector of tuple of <id,score>
-    //TODO or return a single unordered_map
+/*
+ * Returns the ids and the log scores of the descendent nodes
+ * */
 
     unordered_map<int,double> id_score_pairs;
 
@@ -808,9 +799,24 @@ Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, boo
 
 }
 
-bool Tree::is_valid_tree() {
+bool Tree::subtree_contains_negative(Node* n) {
 
     return false;
+}
+
+vector<Node *> Tree::get_descendents(Node *n) {
+    vector<Node *> descendents;
+
+    std::stack<Node*> stk;
+    stk.push(n);
+    while (!stk.empty()) {
+        Node* top = (Node*) stk.top();
+        stk.pop();
+        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next)
+            stk.push(temp);
+        descendents.push_back(top);
+    }
+    return descendents;
 }
 
 

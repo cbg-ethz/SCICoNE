@@ -352,6 +352,7 @@ void Inference::write_best_tree() {
     outfile.open(f_name, std::ios_base::app);
     outfile << "The resulting tree is: "<<std::endl;
     outfile << std::setprecision(8) << *best_tree;
+    std::cout << std::setprecision(8) << *best_tree;
 }
 
 void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r) {

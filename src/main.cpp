@@ -87,7 +87,6 @@ int main() {
 
     mcmc.infer_mcmc(D, r, move_probs);
     mcmc.write_best_tree();
-    cout<< *mcmc.get_t();
 
     mcmc.destroy();
 
