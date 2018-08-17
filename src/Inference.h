@@ -40,8 +40,9 @@ public:
 
     bool apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false,
                               bool validation_test_mode = false);
-    Node * apply_add_remove_events(float lambda_r, float lambda_c, const vector<vector<int>> &D, const vector<int> &r, bool weighted = false,
-                                   bool validation_test_mode = false);
+    bool apply_add_remove_events(float lambda_r, float lambda_c, const vector<vector<int>> &D, const vector<int> &r,
+                                 bool weighted = false,
+                                 bool validation_test_mode = false);
 
 
     bool apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false, bool test_mode = false);
@@ -215,7 +216,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     int n_accepted = 0;
     int n_rejected = 0;
     int n_attached_to_the_same_pos = 0;
-    int n_empty_label_created = 0;
+    int add_remove_move_rejected = 0;
 
     // for writing the posteriors on file
     std::ofstream outfile;
@@ -282,10 +283,10 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
                 // add or remove event
                 cout << "add or remove event" << endl;
                 // pass 0.0f to the poisson distributions to have 1 event added/removed
-                Node *node = apply_add_remove_events(0.0f, 0.0f, D, r, true); // weighted=true
-                if (node == nullptr) {
-                    n_empty_label_created++;
-                    continue;
+                bool add_remove_success = apply_add_remove_events(0.0f, 0.0f, D, r, true); // weighted=true
+                if (not add_remove_success) {
+                    add_remove_move_rejected++;
+                    rejected_before_comparison = true;
                 }
                 break;
             }
@@ -326,7 +327,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     cout<<"n_accepted: "<<n_accepted<<endl;
     cout<<"n_rejected: "<<n_rejected<<endl;
     cout<<"n_attached_to_the_same_pos: "<<n_attached_to_the_same_pos<<endl;
-    cout<<"n_empty_label_created: "<<n_empty_label_created<<endl;
+    cout<<"add_remove_move_rejected: "<<add_remove_move_rejected<<endl;
 }
 
 double Inference::log_posterior(double tree_sum, int m, int n) {
@@ -435,8 +436,9 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
     }
 }
 
-Node *Inference::apply_add_remove_events(float lambda_r, float lambda_c, const vector<vector<int>> &D, const vector<int> &r, bool weighted,
-                                         bool validation_test_mode) {
+bool Inference::apply_add_remove_events(float lambda_r, float lambda_c, const vector<vector<int>> &D,
+                                        const vector<int> &r, bool weighted,
+                                        bool validation_test_mode) {
     /*
      * Applies add/remove event to t_prime
      * Updates the sums and scores tables partially
@@ -450,10 +452,10 @@ Node *Inference::apply_add_remove_events(float lambda_r, float lambda_c, const v
         compute_t_prime_scores(attached_node, D, r);
         compute_t_prime_sums(D);
 
-        return attached_node;
+        return true;
     }
     else
-        return nullptr;
+        return false;
 }
 
 
