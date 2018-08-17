@@ -50,10 +50,6 @@ public:
     void write_best_tree();
     void update_t_scores();
 
-
-
-
-
     Tree *get_t() const;
 
     Tree *get_t_prime() const;
@@ -84,63 +80,6 @@ void Inference::initialize_worked_example() {
     t->insert_at(2,{{0, -1}});
     t->insert_at(2,{{3, -1}});
     t->insert_at(1,{{1, 1}});
-
-    // 1532098496221375.txt
-//    t->random_insert({{0, 1}, {1,1}});
-//    t->insert_at(0,{{1,1},{2,1}});
-//    t->insert_at(1,{{3,-1}});
-//    t->insert_at(3,{{1,1}});
-//    t->insert_at(0,{{0,-1}});
-
-    // 1534177115108820.txt
-
-//    t->random_insert({{1,1},{2,1}}); //node 5
-//    t->insert_at(1,{{0,-1}}); //node 2
-//    t->insert_at(2,{{0,1}, {1,1}}); //node 3
-//    t->insert_at(3,{{1,1}}); //node 1
-//    t->insert_at(3,{{3,-1}}); //node 4
-
-    // 1534247428652244.txt
-//    t->random_insert({{1, 1}});
-//    t->insert_at(1,{{0, 1}, {1, 1}}); //2
-//    t->insert_at(1,{{1, 1}, {2, 1}}); //3
-//    t->insert_at(3,{{0, -1}}); // 4
-//    t->insert_at(3,{{3, -1}}); // 5
-
-    // 1534324966512223.txt
-//    t->random_insert({{0, 1}, {1, 1}});
-//    t->insert_at(1,{{1, 1}});
-//    t->insert_at(2,{{0, -1}});
-//    t->insert_at(3,{{1, 1}, {2, 1}});
-//    t->insert_at(4,{{3, -1}});
-
-    // 1534328749413447.txt CORRECT
-//    t->random_insert({{0, 1}, {1, 1}});
-//    t->insert_at(1,{{0, -1}});
-//    t->insert_at(2,{{1, 1}});
-//    t->insert_at(3,{{1, 1}, {2, 1}});
-//    t->insert_at(4,{{3, -1}});
-
-    // 1534341448328257.txt CORRECT
-//    t->random_insert({{0, 1}, {1, 1}}); //1
-//    t->insert_at(1,{{1, 1}}); // 2
-//    t->insert_at(1,{{1, 1}, {2, 1}}); // 3
-//    t->insert_at(3,{{0, -1}});
-//    t->insert_at(4,{{3, -1}});
-
-    // 1534342877601159.txt CORRECT
-//    t->random_insert({{0, 1}, {1, 1}}); //1
-//    t->insert_at(1,{{0, -1}}); // 2
-//    t->insert_at(2,{{1, 1}, {2, 1}}); // 3
-//    t->insert_at(3,{{3, -1}}); // 4
-//    t->insert_at(1,{{1, 1}}); //5
-
-    // debugging pruning from root bug
-//    t->insert_at(0,{{1, 1}, {2, 1}}); // 1
-//    t->insert_at(1,{{0, -1}}); // 2
-//    t->insert_at(2,{{1, 1}}); // 3
-//    t->insert_at(2,{{3, -1}}); // 4
-//    t->insert_at(0, {{0, 1}, {1, 1}}); // 5
 
     // score the -2596.33 tree
 //    t->random_insert({{0, 1}, {1, 1}}); //1
@@ -453,7 +392,6 @@ void Inference::apply_swap(const vector<vector<int>> &D, const vector<int> &r, b
 
     for (auto const &node : swapped_nodes)
     {
-        t_prime->update_desc_labels(node);
         compute_t_prime_scores(node, D, r);
     }
     compute_t_prime_sums(D);
@@ -477,7 +415,6 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
 
         double res =MathOp::log_replace_sum(t_sums[i],old_vals,new_vals);
         assert(!isnan(res));
-        // TODO sometimes it is nan, either fix it or reject t_prime as before (in the previous commits of 08.08.2018) when nan happens
 
         t_prime_sums.push_back(res);
         i++;

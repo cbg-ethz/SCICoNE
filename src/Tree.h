@@ -48,6 +48,7 @@ public:
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node* add_remove_events(float lambda_r, float lambda_c, bool weighted=false, bool validation_test_mode=false);
 
+    bool is_valid_tree();
 
 
     bool is_leaf(Node*) const;
@@ -688,7 +689,7 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
 
     vector<Node*> return_nodes;
 
-
+    // TODO only compute the nodes in between
     if (is_ancestor(node1, node2))
         return_nodes.push_back(node1);
     else if (is_ancestor(node2, node1))
@@ -698,6 +699,11 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
         return_nodes.push_back(node1);
         return_nodes.push_back(node2);
     }
+
+    // updating the labels
+    for (auto const &node : return_nodes)
+        this->update_desc_labels(node);
+
 
     return return_nodes;
 }
@@ -800,6 +806,11 @@ Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, boo
         return node;
     }
 
+}
+
+bool Tree::is_valid_tree() {
+
+    return false;
 }
 
 
