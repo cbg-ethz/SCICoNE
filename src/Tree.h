@@ -78,8 +78,12 @@ private:
 
     void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
     void update_desc_labels(Node* node);
+
+    // Validation of trees
     bool is_valid_subtree(Node* node);
     bool subtree_contains_negative(Node* n);
+    bool zero_ploidy_changes(Node* n);
+    bool region_changes(Node *n, u_int region_id);
 
 
     void copy_tree(const Tree& source_tree);
@@ -698,7 +702,13 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
 
     // updating the labels
     for (auto const &node : return_nodes)
+    {
         this->update_desc_labels(node);
+
+        if (!is_valid_subtree(node))
+            return {}; // empty vector with list initialization
+
+    }
 
 
     return return_nodes;
@@ -737,7 +747,18 @@ void Tree::update_desc_labels(Node *node) {
 }
 
 bool Tree::is_valid_subtree(Node *node) {
-    return not subtree_contains_negative(node);
+    /*
+     * Returns true if the subtree is valid
+     * */
+
+    if (subtree_contains_negative(node))
+        return false;
+
+    if (zero_ploidy_changes(node))
+        return false;
+
+    return true;
+
 }
 
 Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, bool validation_test_mode) {
@@ -803,6 +824,11 @@ Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, boo
     else
     {
         update_desc_labels(node); // to update the labels of the descendents
+
+        // check if the subtrees are valid after updating the labels
+        if (!is_valid_subtree(node))
+            return nullptr;
+
         return node;
     }
 
@@ -840,6 +866,38 @@ vector<Node *> Tree::get_descendents(Node *n) {
         descendents.push_back(top);
     }
     return descendents;
+}
+
+bool Tree::zero_ploidy_changes(Node *n) {
+
+    vector<Node*> descendents = get_descendents(n);
+    vector<int> checked_regions;
+
+    for (auto const &node : descendents)
+        for (auto const &it : node->c)
+            if(it.second == -2 && (find(checked_regions.begin(), checked_regions.end(), it.first) == checked_regions.end()))
+            {
+                bool does_change = region_changes(node, it.first);
+                if (does_change)
+                    return true;
+                else
+                    checked_regions.push_back(it.first);
+            }
+    return false;
+}
+
+bool Tree::region_changes(Node *n, u_int region_id) {
+    /*
+     * Returns true if the region label changes in one of the descendents
+     * */
+
+    vector<Node*> descendents = get_descendents(n);
+
+    for (auto const &node : descendents)
+        if (node->c_change[region_id] != 0)
+            return true;
+    return false;
+
 }
 
 
