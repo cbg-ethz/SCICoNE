@@ -78,6 +78,7 @@ private:
 
     void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
     void update_desc_labels(Node* node);
+    bool is_valid_subtree(Node* node);
     bool subtree_contains_negative(Node* n);
 
 
@@ -441,6 +442,10 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
 
         //update the c vectors of the attached node and its descendents
         update_desc_labels(attached_node);
+
+        if (!is_valid_subtree(attached_node))
+            return nullptr;
+
         // recompute the weights after the tree structure is changed
         this->compute_weights();
 
@@ -731,6 +736,10 @@ void Tree::update_desc_labels(Node *node) {
     }
 }
 
+bool Tree::is_valid_subtree(Node *node) {
+    return not subtree_contains_negative(node);
+}
+
 Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, bool validation_test_mode) {
 
     Node* node;
@@ -800,11 +809,25 @@ Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, boo
 }
 
 bool Tree::subtree_contains_negative(Node* n) {
-
+/*
+ * Returns true if any of the descendent nodes contain a value less than -ploidy in the c hashmap
+ * */
+    int a = -ploidy;
+    std::cout<<-ploidy;
+    vector<Node*> descendents = get_descendents(n);
+    for (auto const &elem : descendents)
+        for (auto const &it : elem->c)
+            if (it.second < a)
+                return true;
     return false;
+
 }
 
 vector<Node *> Tree::get_descendents(Node *n) {
+    /*
+     * Returns the descendents of node* n in a list.
+     * Does preserve the order (e.g. parent is before the children)
+     * */
     vector<Node *> descendents;
 
     std::stack<Node*> stk;
