@@ -77,11 +77,11 @@ void Inference::initialize_worked_example() {
 
     // build tree
     // tree that generated the data
-    t->random_insert({{0, 1}, {1, 1}});
-    t->insert_at(1,{{1, 1}, {2, 1}});
-    t->insert_at(2,{{0, -1}});
-    t->insert_at(2,{{3, -1}});
-    t->insert_at(1,{{1, 1}});
+//    t->random_insert({{0, 1}, {1, 1}});
+//    t->insert_at(1,{{1, 1}, {2, 1}});
+//    t->insert_at(2,{{0, -1}});
+//    t->insert_at(2,{{3, -1}});
+//    t->insert_at(1,{{1, 1}});
 
     // score the -2596.33 tree
 //    t->random_insert({{0, 1}, {1, 1}}); //1
@@ -89,6 +89,14 @@ void Inference::initialize_worked_example() {
 //    t->insert_at(1,{{0, -1}}); // 3
 //    t->insert_at(3,{{1, 1}, {2, 1}}); // 4
 //    t->insert_at(4,{{3, -1}}); // 5
+
+    // score the -2592.239 tree
+    t->insert_at(0,{{3,-1}, {0,3}, {1,7}, {4,9}, {2,0}}); // 1
+    t->insert_at(1,{{1,8}, {2,9}, {4,-5}, {0,4}, {3,3}}); // 2
+    t->insert_at(2,{{4,3}, {2,-1}, {0,9}, {1,0}, {3,5}}); // 3
+    t->insert_at(3,{{3,7}, {1,8}, {2,11}, {0,-3}, {4,2}}); // 4
+    t->insert_at(4,{{1,5}, {2,3}, {4,9}, {3,-1}}); // 5
+
 
     t->compute_weights();
 
@@ -160,6 +168,8 @@ void Inference::destroy() {
     t = nullptr;
     delete t_prime;
     t_prime = nullptr;
+    delete best_tree;
+    best_tree = nullptr;
 }
 
 Tree * Inference::comparison(int m) {
@@ -224,7 +234,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
 
      *best_tree = *t; //start with the t
 
-    for (int i = 0; i < 10000; ++i) {
+    for (int i = 0; i < 100; ++i) {
 
 
         bool rejected_before_comparison = false;
