@@ -874,7 +874,8 @@ bool Tree::zero_ploidy_changes(Node *n) {
 
     for (auto const &node : descendents)
         for (auto const &it : node->c)
-            if(it.second == -2 && (find(checked_regions.begin(), checked_regions.end(), it.first) == checked_regions.end()))
+            // if the ploidy becomes 0, i.e. hashmap value = -2 for humans, then it cannot change due to biological constraints.
+            if(it.second == (-1 * ploidy) && (find(checked_regions.begin(), checked_regions.end(), it.first) == checked_regions.end()))
             {
                 bool does_change = region_changes(node, it.first);
                 if (does_change)
