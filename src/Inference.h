@@ -13,6 +13,7 @@
 #include <fstream>
 #include <string>
 #include <iomanip>
+#include <math.h>
 
 class Inference {
 /*
@@ -23,6 +24,7 @@ public:
     Tree *t;
     Tree *t_prime;
     Tree *best_tree;
+    u_int n_regions;
     std::vector<std::vector<double>> t_scores;
     std::vector<double> t_sums;
     std::vector<unordered_map<int, double>> t_prime_scores;
@@ -36,7 +38,7 @@ public:
     void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<int>> &D);
-    double log_posterior(double tree_sum, int m, int n);
+    double log_posterior(double tree_sum, int m, Tree &tree);
 
     bool apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false,
                               bool validation_test_mode = false);
@@ -77,11 +79,11 @@ void Inference::initialize_worked_example() {
 
     // build tree
     // tree that generated the data
-//    t->random_insert({{0, 1}, {1, 1}});
-//    t->insert_at(1,{{1, 1}, {2, 1}});
-//    t->insert_at(2,{{0, -1}});
-//    t->insert_at(2,{{3, -1}});
-//    t->insert_at(1,{{1, 1}});
+    t->random_insert({{0, 1}, {1, 1}});
+    t->insert_at(1,{{1, 1}, {2, 1}});
+    t->insert_at(2,{{0, -1}});
+    t->insert_at(2,{{3, -1}});
+    t->insert_at(1,{{1, 1}});
 
     // score the -2596.33 tree
 //    t->random_insert({{0, 1}, {1, 1}}); //1
@@ -91,11 +93,11 @@ void Inference::initialize_worked_example() {
 //    t->insert_at(4,{{3, -1}}); // 5
 
     // score the -2592.239 tree
-    t->insert_at(0,{{3,-1}, {0,3}, {1,7}, {4,9}, {2,0}}); // 1
-    t->insert_at(1,{{1,8}, {2,9}, {4,-5}, {0,4}, {3,3}}); // 2
-    t->insert_at(2,{{4,3}, {2,-1}, {0,9}, {1,0}, {3,5}}); // 3
-    t->insert_at(3,{{3,7}, {1,8}, {2,11}, {0,-3}, {4,2}}); // 4
-    t->insert_at(4,{{1,5}, {2,3}, {4,9}, {3,-1}}); // 5
+//    t->insert_at(0,{{3,-1}, {0,3}, {1,7}, {4,9}, {2,0}}); // 1
+//    t->insert_at(1,{{1,8}, {2,9}, {4,-5}, {0,4}, {3,3}}); // 2
+//    t->insert_at(2,{{4,3}, {2,-1}, {0,9}, {1,0}, {3,5}}); // 3
+//    t->insert_at(3,{{3,7}, {1,8}, {2,11}, {0,-3}, {4,2}}); // 4
+//    t->insert_at(4,{{1,5}, {2,3}, {4,9}, {3,-1}}); // 5
 
 
     t->compute_weights();
@@ -103,6 +105,7 @@ void Inference::initialize_worked_example() {
 }
 
 Inference::Inference(u_int n_regions, u_int ploidy) {
+    this->n_regions = n_regions;
     t = new Tree(ploidy, n_regions);
     t_prime =new Tree(ploidy, n_regions);
     best_tree = new Tree(ploidy, n_regions);
@@ -154,8 +157,7 @@ void Inference::compute_t_table(const vector<vector<int>> &D, const vector<int>&
 
     int m = size(D);
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
-    int t_n = t->get_n_nodes();
-    t->score = log_posterior(t_sum, m, t_n);
+    t->score = log_posterior(t_sum, m, *t);
 
     // update t_prime
     // calls the copy constructor
@@ -183,15 +185,13 @@ Tree * Inference::comparison(int m) {
     double log_post_t_prime = 0.0;
 
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
-    int t_n = t->get_n_nodes();
-    log_post_t = log_posterior(t_sum, m, t_n);
+    log_post_t = log_posterior(t_sum, m, *t);
 
     // assign the tree score
     t->score = log_post_t;
 
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
-    int tp_n = t_prime->get_n_nodes();
-    log_post_t_prime = log_posterior(t_prime_sum, m, tp_n);
+    log_post_t_prime = log_posterior(t_prime_sum, m, *t_prime);
 
     t_prime->score = log_post_t_prime;
 
@@ -340,13 +340,71 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     cout<<"add_remove_move_rejected: "<<add_remove_move_rejected<<endl;
 }
 
-double Inference::log_posterior(double tree_sum, int m, int n) {
+double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
 
-    // TODO: implement this then call this to compute log posteriors
-    // TODO: set the log posterior of the best tree to the initial one first
-    // later updated it upon acceptance of t_primes
+    // m: n_cells, n: n_nodes
+
+    int n = tree.get_n_nodes();
+
     double log_posterior = 0.0;
     log_posterior = tree_sum - (n -1 + m ) * log(n+1);
+
+    /*
+     * compute penalization term
+     * K: max region index
+     * V: the event vector (vector of labels) list of hashmap c_change
+     *
+     *
+     *
+     * compute K from v, v is c_change
+     * 1) compute all v! and put in hashmap
+     *
+     * */
+
+
+
+
+    unordered_map<int, double> vfact_hash;
+
+    int K = this->n_regions;
+    for (auto it = tree.all_nodes.begin()+1; it != tree.all_nodes.end(); ++it)
+    {
+        Node* node = *it;
+        unordered_map<u_int,int>& c_change = node->c_change;
+        int v = 0;
+        for (auto const &it : c_change)
+            v += it.second;
+
+        vfact_hash[v] = log(tgamma(abs(v)+1)); // log of factorial
+    }
+
+    vector<double> p_v;
+    for (auto it = tree.all_nodes.begin()+1; it != tree.all_nodes.end(); ++it)
+    {
+        Node* node = *it;
+        unordered_map<u_int,int>& c_change = node->c_change;
+        int v = 0;
+        for (auto const &it : c_change)
+            v += abs(it.second);
+        double pv_i = 0.0;
+
+        pv_i += vfact_hash[v];
+        pv_i -= v*log(2*K);
+
+        for (auto const &it : c_change)
+            pv_i -= log(tgamma(abs(it.second) + 1)); // +1 because we are using gamma func for factorial
+
+        p_v.push_back(pv_i);
+
+    }
+
+    assert(n==p_v.size());
+    double PV = 0.0;
+    PV += std::accumulate(p_v.begin(), p_v.end(), 0.0);
+    PV -= log(tgamma(n+1));
+
+
+    log_posterior += PV;
 
     return log_posterior;
 }
