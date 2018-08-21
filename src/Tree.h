@@ -33,7 +33,7 @@ class Tree {
 public:
     Node* root;
     std::vector<Node*> all_nodes; // for uniform selection
-    u_int ploidy; // to be added to values of the unordered map for each node
+    int ploidy; // to be added to values of the unordered map for each node
     u_int n_regions; // number of regions
     double score; // log posterior score of the tree
     int counter = 0;
@@ -342,10 +342,13 @@ void Tree::update_label(std::unordered_map<u_int, int>& c_parent, Node *node) {
     node->c = c_parent;
     // parent labels are passed to the child c here
     for (auto it=node->c_change.begin(); it!=node->c_change.end(); ++it) {
-        node->c[it->first] = node->c[it->first] + it->second;
+        int new_value = 0;
+        new_value = node->c[it->first] + it->second;
+        if (new_value == 0)
+            node->c.erase(it->first); //erase the zero instead of storing it, if not found by default it is already zero in unordered_map.
+        else
+            node->c[it->first] = new_value;
     }
-
-
 }
 
 
