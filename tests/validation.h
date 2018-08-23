@@ -27,9 +27,10 @@ void test_xxhash()
 {
 
     vector<int> r1 = {4,2,3,5,2};
-    vector<int> r2 = {4,2,3,5,2};
+    vector<int> r2 = {4,2,3,5};
     vector<int> r3 = {4,2,3,5,1};
 
+    r2.push_back(2);
 
     unsigned long long const r1_hash = XXH64(&r1[0], size(r1) * sizeof(r1[0]) , 0); // seed = 0
     unsigned long long const r2_hash = XXH64(&r2[0], size(r2) * sizeof(r2[0]), 0); // seed = 0

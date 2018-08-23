@@ -19,6 +19,7 @@
 #include "SingletonRandomGenerator.h"
 #include <set>
 #include <iomanip>
+#include "Utils.h"
 
 #include <algorithm> // std::remove
 
@@ -350,7 +351,23 @@ void Tree::update_label(std::map<u_int, int>& c_parent, Node *node) {
         else
             node->c[it->first] = new_value;
     }
+    // TODO: compute and store the hash
+    vector<int> keys_values = {};
+    for (auto const &it : node->c)  {
+        keys_values.push_back(it.first);
+        keys_values.push_back(it.second);
+    };
+    int size_for_hash = size(keys_values) * sizeof(keys_values[0]);
+    unsigned long long const c_hash = Utils::calcul_hash(&keys_values[0], size_for_hash);
+
+    cout <<"hash value" << endl;
+    cout << c_hash;
+    cout <<endl;
+
+    // TODO: insert the hashes to a set and check if it is there, if yes then compare 2 std::maps using ==, do this in the validation function!
+
 }
+
 
 
 Tree::Tree(Tree &source) {

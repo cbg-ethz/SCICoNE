@@ -9,6 +9,12 @@
 
 class SingletonRandomGenerator
 {
+    /*
+     *  Singleton random generator used throughout the program except for the xxhash part.
+     *  xxhash requires another seed than the seed used here.
+     * */
+
+
 public:
 
 
