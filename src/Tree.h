@@ -821,6 +821,9 @@ Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, boo
 
         node->c_change[elem] += (sign? n_copies : -n_copies);
 
+        if (node->c_change.at(elem) == 0)
+            node->c_change.erase(elem); //erase the zero instead of storing it
+
     }
 
     if (empty_hashmap(node->c_change))
