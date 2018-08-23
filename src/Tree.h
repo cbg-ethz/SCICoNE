@@ -9,7 +9,7 @@
 #include <vector>
 #include <stack>
 #include <queue>
-#include <unordered_map>
+#include <map>
 #include <numeric>
 #include <limits>
 #include "Node.h"
@@ -55,12 +55,12 @@ public:
     bool is_leaf(Node*) const;
     Node* uniform_sample(bool with_root=true);
     Node* weighted_sample();
-    void random_insert(std::unordered_map<u_int, int>&&);
-    void insert_at(u_int pos, std::unordered_map<u_int, int>&&);
-    void insert_child(Node *pos, std::unordered_map<u_int, int>&& labels);
+    void random_insert(std::map<u_int, int>&&);
+    void insert_at(u_int pos, std::map<u_int, int>&&);
+    void insert_child(Node *pos, std::map<u_int, int>&& labels);
     std::vector<double> get_scores();
 
-    unordered_map<int, double> get_children_id_score(Node *node);
+    map<int, double> get_children_id_score(Node *node);
     void destroy();
     void compute_tree(const vector<int> &D, const vector<int>& r);
     void compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r);
@@ -76,7 +76,7 @@ public:
 private:
 
 
-    void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
+    void update_label(std::map<u_int,int>& c_parent, Node* node);
     void update_desc_labels(Node* node);
 
     // Validation of trees
@@ -94,7 +94,7 @@ private:
     Node* insert_child(Node *pos, Node& source);
     bool is_ancestor(Node *target, Node *curr);
 
-    bool empty_hashmap(unordered_map<u_int, int> &dict);
+    bool empty_hashmap(map<u_int, int> &dict);
 
 };
 
@@ -288,7 +288,7 @@ Node* Tree::insert_child(Node *pos, Node& source) {
 
 }
 
-void Tree::insert_child(Node* pos, std::unordered_map<u_int, int>&& labels) {
+void Tree::insert_child(Node* pos, std::map<u_int, int>&& labels) {
 
     /*
      * Creates a child node from the labels and inserts it to the position pos
@@ -319,21 +319,21 @@ void Tree::destroy() {
     //std::cout<<"destroyed."<<std::endl;
 }
 
-void Tree::random_insert(std::unordered_map<u_int, int>&& labels)
+void Tree::random_insert(std::map<u_int, int>&& labels)
 {
     Node* pos = uniform_sample(true);
     insert_child(pos, std::move(labels));
 
 }
 
-void Tree::insert_at(u_int pos, std::unordered_map<u_int, int> && labels) {
+void Tree::insert_at(u_int pos, std::map<u_int, int> && labels) {
     Node* n = all_nodes[pos];
     insert_child(n, std::move(labels));
 
 }
 
 
-void Tree::update_label(std::unordered_map<u_int, int>& c_parent, Node *node) {
+void Tree::update_label(std::map<u_int, int>& c_parent, Node *node) {
     /*
      * Updates the child label (c) based on the parent c
      * */
@@ -345,7 +345,7 @@ void Tree::update_label(std::unordered_map<u_int, int>& c_parent, Node *node) {
         int new_value = 0;
         new_value = node->c[it->first] + it->second;
         if (new_value == 0)
-            node->c.erase(it->first); //erase the zero instead of storing it, if not found by default it is already zero in unordered_map.
+            node->c.erase(it->first); //erase the zero instead of storing it, if not found by default it is already zero in map.
         else
             node->c[it->first] = new_value;
     }
@@ -539,12 +539,12 @@ std::vector<double> Tree::get_scores() {
     return scores;
 }
 
-unordered_map<int, double> Tree::get_children_id_score(Node *node) {
+map<int, double> Tree::get_children_id_score(Node *node) {
 /*
  * Returns the ids and the log scores of the descendent nodes
  * */
 
-    unordered_map<int,double> id_score_pairs;
+    map<int,double> id_score_pairs;
 
     // stack based implementation
     std::stack<Node*> stk;
@@ -687,7 +687,7 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
 
     }
 
-    // perform std swap on unordered_maps
+    // perform std swap on maps
     node1->c_change.swap(node2->c_change);
 
     vector<Node*> return_nodes;
@@ -718,7 +718,7 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
 }
 
 
-bool Tree::empty_hashmap(unordered_map<u_int, int> &dict) {
+bool Tree::empty_hashmap(map<u_int, int> &dict) {
 
     for (auto const &it : dict)
     {

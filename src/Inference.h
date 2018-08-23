@@ -27,7 +27,7 @@ public:
     u_int n_regions;
     std::vector<std::vector<double>> t_scores;
     std::vector<double> t_sums;
-    std::vector<unordered_map<int, double>> t_prime_scores;
+    std::vector<map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
     std::string f_name;
 
@@ -364,13 +364,13 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
 
 
 
-    unordered_map<int, double> vfact_hash;
+    map<int, double> vfact_hash;
 
     int K = this->n_regions;
     for (auto it = tree.all_nodes.begin()+1; it != tree.all_nodes.end(); ++it)
     {
         Node* node = *it;
-        unordered_map<u_int,int>& c_change = node->c_change;
+        map<u_int,int>& c_change = node->c_change;
         int v = 0;
         for (auto const &it : c_change)
             v += it.second;
@@ -382,7 +382,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     for (auto it = tree.all_nodes.begin()+1; it != tree.all_nodes.end(); ++it)
     {
         Node* node = *it;
-        unordered_map<u_int,int>& c_change = node->c_change;
+        map<u_int,int>& c_change = node->c_change;
         int v = 0;
         for (auto const &it : c_change)
             v += abs(it.second);

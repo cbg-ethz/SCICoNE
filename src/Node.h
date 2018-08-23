@@ -5,13 +5,13 @@
 #ifndef SC_DNA_NODE_H
 #define SC_DNA_NODE_H
 
-#include <unordered_map>
+#include <map>
 #include <iostream>
 
 struct Node{
     int id = 0;
-    std::unordered_map<u_int,int> c = {};
-    std::unordered_map<u_int,int> c_change= {};
+    std::map<u_int,int> c = {};
+    std::map<u_int,int> c_change= {};
     double log_score = 0.0;
     int z = 0;
     unsigned n_descendents = 1; // including itself

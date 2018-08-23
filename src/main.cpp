@@ -2,7 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
-#include <unordered_map>
+#include <map>
 #include <string>
 
 #include <iterator>
@@ -81,7 +81,8 @@ int main() {
 
     Inference mcmc(size(r));
 
-    mcmc.initialize_worked_example();
+    // mcmc.initialize_worked_example();
+    mcmc.random_initialize();
     mcmc.compute_t_table(D,r);
     disp_vec(mcmc.t_scores);
 
