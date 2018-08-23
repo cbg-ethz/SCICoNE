@@ -139,11 +139,12 @@ void Tree::compute_score(Node *node, const vector<int> &D, int &sum_D, const vec
         {
 
             // if log zero then use eta value, not to have -infinity
-            int cf = node->c[x.first];
+            int cf = (node->c.count(x.first)?node->c[x.first]:0); // use count to check without initializing the not found element
+            // the above part can also be done by using map::at and exception handling
 
             val += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)));
 
-            int cp_f = node->parent->c[x.first];
+            int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
 
             val -= D[x.first] * (log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
 
