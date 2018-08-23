@@ -8,6 +8,7 @@
 
 #include "Inference.h"
 #include <vector>
+#include "xxhash.h"
 
 using namespace std;
 
@@ -21,6 +22,21 @@ const vector<int> r = {4,2,3,5,2};
 
 // error tolerance
 const float epsilon = 0.001f;
+
+void test_xxhash()
+{
+
+    vector<int> r1 = {4,2,3,5,2};
+    vector<int> r2 = {4,2,3,5,2};
+
+    unsigned long long const r1_hash = XXH64(&r1[0], size(r1), 0); // seed = 0
+    unsigned long long const r2_hash = XXH64(&r2[0], size(r2), 0); // seed = 0
+
+    assert(r1_hash == r2_hash);
+
+    cout<<"xxhash validation test passed!"<<endl;
+
+}
 
 void test_swap_label()
 {

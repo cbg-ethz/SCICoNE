@@ -13,6 +13,7 @@
 #include "Inference.h"
 #include "../tests/validation.h"
 
+
 using namespace std;
 
 vector<vector<double>> read_counts(const string path)
@@ -59,11 +60,9 @@ void disp_vec(vector<vector<double>> vec) {
 }
 
 
-
-
 int main() {
 
-
+    test_xxhash();
     test_swap_label();
     test_weighted_sample();
     test_prune_reattach();
