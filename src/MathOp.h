@@ -9,7 +9,7 @@
 #include <cmath>
 #include <vector>
 #include <numeric>
-#include <assert.h>
+#include <cassert>
 #include <random>
 
 
@@ -28,6 +28,8 @@ public:
 
     static vector<double> combine_scores(vector<double> aic_vec);
     static vector<vector<double>> likelihood_ratio(vector<vector<double>> mat, double window_size);
+
+    static double breakpoint_prior(double mu, int k, int m);
 
     static int random_uniform(int min, int max);
 

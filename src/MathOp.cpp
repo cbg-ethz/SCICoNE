@@ -252,3 +252,16 @@ double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtr
 
     return res;
 }
+
+double MathOp::breakpoint_prior(double mu, int k, int m) {
+    /*
+     * Returns the prior probability of having the breakpoint in k of the m cells.
+     * 1-mu is the prob. of being a breakpoint
+     * k is the n_cells that the breakpoint is present
+     * m is the total n_cells
+     * */
+
+
+
+    return 0;
+}
