@@ -234,7 +234,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
 
      *best_tree = *t; //start with the t
 
-    for (int i = 0; i < 500; ++i) {
+    for (int i = 0; i < 5000; ++i) {
 
 
         bool rejected_before_comparison = false;

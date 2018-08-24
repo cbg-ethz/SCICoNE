@@ -10,6 +10,7 @@
 #include <stack>
 #include <queue>
 #include <map>
+#include <unordered_map>
 #include <numeric>
 #include <limits>
 #include "Node.h"
@@ -80,7 +81,10 @@ private:
     void update_label(std::map<u_int,int>& c_parent, Node* node);
     void update_desc_labels(Node* node);
 
-    // Validation of trees
+    //validation of tree
+    bool is_redundant();
+
+    // Validation of subtrees
     bool is_valid_subtree(Node* node);
     bool subtree_contains_negative(Node* n);
     bool zero_ploidy_changes(Node* n);
@@ -351,21 +355,18 @@ void Tree::update_label(std::map<u_int, int>& c_parent, Node *node) {
         else
             node->c[it->first] = new_value;
     }
-    // TODO: compute and store the hash
+
+
+    // compute and store the hash
     vector<int> keys_values = {};
     for (auto const &it : node->c)  {
         keys_values.push_back(it.first);
         keys_values.push_back(it.second);
     };
     int size_for_hash = size(keys_values) * sizeof(keys_values[0]);
-    unsigned long long const c_hash = Utils::calcul_hash(&keys_values[0], size_for_hash);
+    unsigned long long c_hash = Utils::calcul_hash(&keys_values[0], size_for_hash);
 
-    cout <<"hash value" << endl;
-    cout << c_hash;
-    cout <<endl;
-
-    // TODO: insert the hashes to a set and check if it is there, if yes then compare 2 std::maps using ==, do this in the validation function!
-
+    node->c_hash = c_hash;
 }
 
 
@@ -468,7 +469,7 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
         //update the c vectors of the attached node and its descendents
         update_desc_labels(attached_node);
 
-        if (!is_valid_subtree(attached_node))
+        if (!is_valid_subtree(attached_node) || is_redundant())
             return nullptr;
 
         // recompute the weights after the tree structure is changed
@@ -730,6 +731,8 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
             return {}; // empty vector with list initialization
 
     }
+    if (is_redundant())
+        return {};
 
 
     return return_nodes;
@@ -850,7 +853,7 @@ Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, boo
         update_desc_labels(node); // to update the labels of the descendents
 
         // check if the subtrees are valid after updating the labels
-        if (!is_valid_subtree(node))
+        if (!is_valid_subtree(node) || is_redundant())
             return nullptr;
 
         return node;
@@ -921,6 +924,34 @@ bool Tree::region_changes(Node *n, u_int region_id) {
         if (node->c_change[region_id] != 0)
             return true;
     return false;
+
+}
+
+bool Tree::is_redundant() {
+    /*
+     * Returns true if any of the nodes have the same c maps.
+     * Worst case complexity O(n), where n: n_nodes
+     * */
+
+    unordered_map<unsigned long long, unsigned> hash_map;
+    for (unsigned i=0; i < all_nodes.size(); i++)
+    {
+        if (hash_map.count(all_nodes[i]->c_hash))
+        {
+            // found
+            unsigned hash_index = hash_map.at(all_nodes[i]->c_hash);
+            bool eq_comparison = all_nodes[i]->c == all_nodes[hash_index]->c;
+            return (eq_comparison);
+        }
+        else
+        {
+            // not found
+            hash_map[all_nodes[i]->c_hash] = i;
+        }
+    }
+
+    return false;
+
 
 }
 

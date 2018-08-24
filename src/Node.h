@@ -11,6 +11,7 @@
 struct Node{
     int id = 0;
     std::map<u_int,int> c = {};
+    unsigned long long c_hash = 0;
     std::map<u_int,int> c_change= {};
     double log_score = 0.0;
     int z = 0;
@@ -48,6 +49,7 @@ struct Node{
     {
         id = source_node.id;
         c = source_node.c;
+        c_hash = source_node.c_hash;
         c_change = source_node.c_change;
         // log scores are not copied since they rely on cells
         log_score = 0.0;
