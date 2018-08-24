@@ -11,7 +11,7 @@
 struct Node{
     int id = 0;
     std::map<u_int,int> c = {};
-    unsigned long long c_hash = 0;
+    uint64_t  c_hash = 0;
     std::map<u_int,int> c_change= {};
     double log_score = 0.0;
     int z = 0;

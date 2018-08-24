@@ -5,6 +5,7 @@
 #ifndef SC_DNA_UTILS_H
 
 #include "xxhash.h"
+#include <iostream>
 
 #define SC_DNA_UTILS_H
 
@@ -13,7 +14,7 @@ class Utils {
 
 public:
 
-    static unsigned long long calcul_hash(const void* buffer, size_t length);
+    static uint64_t calcul_hash(const void* buffer, size_t length);
 };
 
 

@@ -364,7 +364,7 @@ void Tree::update_label(std::map<u_int, int>& c_parent, Node *node) {
         keys_values.push_back(it.second);
     };
     int size_for_hash = size(keys_values) * sizeof(keys_values[0]);
-    unsigned long long c_hash = Utils::calcul_hash(&keys_values[0], size_for_hash);
+    uint64_t c_hash = Utils::calcul_hash(&keys_values[0], size_for_hash);
 
     node->c_hash = c_hash;
 }
@@ -933,7 +933,7 @@ bool Tree::is_redundant() {
      * Worst case complexity O(n), where n: n_nodes
      * */
 
-    unordered_map<unsigned long long, unsigned> hash_map;
+    unordered_map<uint64_t , unsigned> hash_map;
     for (unsigned i=0; i < all_nodes.size(); i++)
     {
         if (hash_map.count(all_nodes[i]->c_hash))

@@ -32,9 +32,9 @@ void test_xxhash()
 
     r2.push_back(2);
 
-    unsigned long long const r1_hash = XXH64(&r1[0], size(r1) * sizeof(r1[0]) , 0); // seed = 0
-    unsigned long long const r2_hash = XXH64(&r2[0], size(r2) * sizeof(r2[0]), 0); // seed = 0
-    unsigned long long const r3_hash = XXH64(&r3[0], size(r3) * sizeof(r3[0]), 0); // seed = 0
+    uint64_t const r1_hash = XXH64(&r1[0], size(r1) * sizeof(r1[0]) , 0); // seed = 0
+    uint64_t const r2_hash = XXH64(&r2[0], size(r2) * sizeof(r2[0]), 0); // seed = 0
+    uint64_t const r3_hash = XXH64(&r3[0], size(r3) * sizeof(r3[0]), 0); // seed = 0
 
     assert(r1_hash == r2_hash);
     assert(r1_hash != r3_hash);
