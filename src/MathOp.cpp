@@ -171,7 +171,7 @@ vector<double> MathOp::combine_scores(vector<double> aic_vec)
             }
 
             if (isinf(value))
-                cout << "inf value detected";
+                cerr << "inf value detected";
 
             row2.push_back(value);
 
@@ -253,7 +253,7 @@ double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtr
     return res;
 }
 
-double MathOp::breakpoint_prior(double mu, int k, int m) {
+double MathOp::breakpoint_log_prior(int k, int m, double mu) {
     /*
      * Returns the prior probability of having the breakpoint in k of the m cells.
      * 1-mu is the prob. of being a breakpoint
@@ -261,7 +261,32 @@ double MathOp::breakpoint_prior(double mu, int k, int m) {
      * m is the total n_cells
      * */
 
+    assert((mu >= 0) && (mu <= 1));
+    if (k == 0)
+        return log(1-mu);
+    else if (1 <= k && k <= m)
+    {
+        // compute the prior
+        double res = 0.0;
+        res += log(mu);
+        res += 2*log_n_choose_k(m,k);
+        res -= log(2*k-1);
+        res -= log_n_choose_k(2*m,2*k);
+        assert(!isnan(res));
+        return res;
+    }
+    else
+    {
+        throw domain_error("k should be less than m and bigger than or equal to zero!");
+    }
 
+}
 
-    return 0;
+double MathOp::log_n_choose_k(int n, int k) {
+    /*
+     * Returns the log of n choose k using lgamma function
+     * */
+    assert(n >= k);
+    return(lgamma(n+1) - lgamma(k+1) - lgamma(n-k+1));
+
 }

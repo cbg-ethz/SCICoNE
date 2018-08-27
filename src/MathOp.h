@@ -29,7 +29,8 @@ public:
     static vector<double> combine_scores(vector<double> aic_vec);
     static vector<vector<double>> likelihood_ratio(vector<vector<double>> mat, double window_size);
 
-    static double breakpoint_prior(double mu, int k, int m);
+    static double breakpoint_log_prior(int k, int m, double mu);
+    static double log_n_choose_k(int n, int k);
 
     static int random_uniform(int min, int max);
 
