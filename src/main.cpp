@@ -108,13 +108,14 @@ int main() {
 
     //auto n_aic_vec = log_normalize(aic_vec[0]);
     vector<vector<double>> sigma;
-    vector<double> priors;
+    vector<double> log_priors;
     int n_breakpoints = aic_vec.size();
     int n_cells = aic_vec[0].size();
     cout <<"n_breakpoints: " << n_breakpoints << " n_cells: " << n_cells <<endl;
     int i = 0;
     for (auto vec: aic_vec) // compute sigma matrix
     {
+        // for each breakpoint
         cout << i++ <<" --> ";
         auto res = MathOp::combine_scores(vec);
         sigma.push_back(res);
@@ -125,29 +126,42 @@ int main() {
     }
 
     for (int j = 0; j < n_cells; ++j) {
-        priors.push_back(MathOp::breakpoint_log_prior(j, n_cells,0.5));
+        log_priors.push_back(MathOp::breakpoint_log_prior(j, n_cells,0.5));
     }
 
-    vector<vector<double>> posterior;
-    //double posterior[n_breakpoints][n_cells];
+
+    vector<vector<double>> log_posterior;
 
     for (int k = 0; k < n_breakpoints; ++k) {
-        posterior.push_back(vector<double>());
+        log_posterior.push_back(vector<double>());
         for (int j = 0; j < n_cells; ++j) {
-            double val = priors[j] + sigma[k][j];
-            posterior[k].push_back(val);
-            //cout << posterior[k][j];
+            double val = log_priors[j] + sigma[k][j];
+            log_posterior[k].push_back(val);
         }
     }
+
+    // convert to real space
+    for (int k = 0; k < n_breakpoints; ++k) {
+        double max_log_posterior = *max_element(log_posterior[k].begin(), log_posterior[k].end());
+        for (int j = 0; j < n_cells; ++j) {
+            double val = exp(log_posterior[k][j] - max_log_posterior);
+            log_posterior[k][j] = val;
+        }
+    }
+
+
+
     int k_star = 2;
 
     vector<double> s_p;
 
     for (int l = 0; l < n_breakpoints; ++l)
     {
-        double sum_from_k_star = std::accumulate(posterior[l].begin()+k_star, posterior[l].end(), 0.0);
-        double sum_till_kstar = std::accumulate(posterior[l].begin(), posterior[l].begin()+k_star, 0.0);
-        s_p.push_back(sum_from_k_star / (sum_from_k_star + sum_till_kstar));
+        double sum_from_k_star = std::accumulate(log_posterior[l].begin()+k_star, log_posterior[l].end(), 0.0);
+        double sum_till_kstar = std::accumulate(log_posterior[l].begin(), log_posterior[l].begin()+k_star, 0.0);
+
+
+        s_p.push_back((sum_from_k_star) / (sum_from_k_star + sum_till_kstar));
     }
 
     std::ofstream output_file("./s_p.txt");

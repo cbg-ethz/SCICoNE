@@ -35,7 +35,7 @@ public:
     static int random_uniform(int min, int max);
 
     template <class T>
-    static double vec_avg(vector<T>);
+    static double vec_avg(vector<T> &);
 
     template <class T>
     static double vec_sum(vector<T>);

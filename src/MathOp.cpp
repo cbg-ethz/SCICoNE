@@ -7,7 +7,7 @@
 
 
 template<class T>
-double MathOp::vec_avg(std::vector<T> v) {
+double MathOp::vec_avg(vector<T> &v) {
     float average = accumulate( v.begin(), v.end(), 0.0)/v.size();
     return average;
 }
@@ -149,24 +149,24 @@ vector<double> MathOp::combine_scores(vector<double> aic_vec)
      * Uses dynamic programming.
      *
      * */
-
-    vector<double> row1(aic_vec.size(), 0.0);
+    uint64_t m = aic_vec.size();
+    vector<double> row1(m, 0.0);
     vector<double> row2;
     vector<double> res(1,0.0);
 
     // iterate over n_cells
-    for (int i = 0; i < aic_vec.size(); ++i) {
+    for (int j = 0; j < m; ++j) { // j : cells
         row2.clear();
         // inner computation of row2
-        for (int j = 0; j < aic_vec.size()-i; ++j) {
-            double value;
-            if (j==0)
+        for (int k = 0; k < m-j; ++k) {
+            double value=0.0;
+            if (k==0)
             {
-                value = row1[j] + aic_vec[j+i];
+                value = row1[k] + aic_vec[k+j];
             }
             else
             {
-                value = log_add(row2[j-1] , row1[j] + aic_vec[j+i]);
+                value = log_add(row2[k-1] , row1[k] + aic_vec[k+j]);
 
             }
 
@@ -176,11 +176,11 @@ vector<double> MathOp::combine_scores(vector<double> aic_vec)
             row2.push_back(value);
 
         }
-        //cout << " row1 size: " << row1.size() << " row2 size: " << row2.size() << " max j: " << aic_vec.size()-i<<endl;
+        //cout << " row1 size: " << row1.size() << " row2 size: " << row2.size() << " max j: " << aic_vec.size()-j<<endl;
         row1.clear();
         row1 = row2;
         double last = row2.back();
-
+        last -= log_n_choose_k(m,j);
 
         res.push_back(last);
 
