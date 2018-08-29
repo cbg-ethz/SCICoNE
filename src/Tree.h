@@ -52,7 +52,7 @@ public:
     Node* prune_reattach(bool weighted=false, bool validation_test_mode=false);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node* add_remove_events(float lambda_r, float lambda_c, bool weighted=false, bool validation_test_mode=false);
-
+    Node* delete_node();
 
     bool is_leaf(Node*) const;
     Node* uniform_sample(bool with_root=true);
@@ -455,8 +455,7 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     else
         attach_pos = destination_nodes[rand_val -1];
 
-
-    //do not recompute you attach at the same pos
+    //do not recompute if you attach at the same pos
     if (prune_pos->parent->id != attach_pos->id)
     {
         /*
@@ -476,10 +475,11 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
         this->compute_weights();
 
         // std sort the all_nodes vector to make sure the indices match between 2 trees
-                // e.g. node id 4 will always be at index 4
+        // compute t_prime_scores function
+        // e.g. node id 4 will always be at index 4
         //TODO: or never change the all_nodes vector after initialization
 
-        // TODO remove this sort, use perhaps a hashmap instead!
+        // TODO remove this sort, use perhaps a hashmap instead, or a map!
         std::sort(this->all_nodes.begin(),this->all_nodes.end(), node_ptr_compare);
         return attached_node;
     }
@@ -851,7 +851,6 @@ Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, boo
     else
     {
         update_desc_labels(node); // to update the labels of the descendents
-
         // check if the subtrees are valid after updating the labels
         if (!is_valid_subtree(node) || is_redundant())
             return nullptr;
@@ -953,6 +952,14 @@ bool Tree::is_redundant() {
     return false;
 
 
+}
+
+Node* Tree::delete_node() {
+
+    Node* tobe_deleted = uniform_sample(false); // TODO: replace it with the weighted scheme
+
+
+    return nullptr;
 }
 
 

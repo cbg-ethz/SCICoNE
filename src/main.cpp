@@ -64,9 +64,9 @@ int main() {
 
     test_xxhash();
     test_swap_label();
-    test_weighted_sample();
+    //test_weighted_sample();
     test_prune_reattach();
-    test_weighted_prune_reattach();
+    //test_weighted_prune_reattach();
     test_add_remove_event();
 
     // counts per region per cell
@@ -97,7 +97,7 @@ int main() {
     mat = read_counts("/Users/mtuncel/git_repos/sc-dna/input_data/norm_counts.tsv");
 
     // compute the AIC scores
-    u_int window_size = 3;
+    u_int window_size = 1;
     vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
 
 
@@ -151,17 +151,17 @@ int main() {
 
 
 
-    int k_star = 2;
+    int k_star = 4;
 
     vector<double> s_p;
 
     for (int l = 0; l < n_breakpoints; ++l)
     {
-        double sum_from_k_star = std::accumulate(log_posterior[l].begin()+k_star, log_posterior[l].end(), 0.0);
-        double sum_till_kstar = std::accumulate(log_posterior[l].begin(), log_posterior[l].begin()+k_star, 0.0);
+        double sp_num = std::accumulate(log_posterior[l].begin(), log_posterior[l].begin()+k_star-1, 0.0);
+        double sp_denom = std::accumulate(log_posterior[l].begin(), log_posterior[l].end(), 0.0);
+        double fraction = sp_num / sp_denom;
 
-
-        s_p.push_back((sum_from_k_star) / (sum_from_k_star + sum_till_kstar));
+        s_p.push_back(log(1 -  (sp_num) / (sp_denom)));
     }
 
     std::ofstream output_file("./s_p.txt");

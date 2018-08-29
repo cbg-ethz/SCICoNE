@@ -149,7 +149,7 @@ void Inference::compute_t_table(const vector<vector<int>> &D, const vector<int>&
     for (int i = 0; i < n; ++i)
     {
         this->t->compute_tree(D[i], r);
-        vector<double> scores_vec = this->t->get_scores();
+        vector<double> scores_vec = this->t->get_scores(); // get scores iterates over all_nodes on t. All nodes need to be sorted
 
         this->t_scores.push_back(scores_vec);
         this->t_sums.push_back(MathOp::log_sum(scores_vec));
@@ -174,7 +174,7 @@ void Inference::destroy() {
     best_tree = nullptr;
 }
 
-Tree * Inference::comparison(int m) {
+Tree* Inference::comparison(int m) {
     /*
      * Returns the pointer to the accepted tree
      * m is size(D)
@@ -234,7 +234,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
 
      *best_tree = *t; //start with the t
 
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 500; ++i) {
 
 
         bool rejected_before_comparison = false;
@@ -289,7 +289,6 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
             }
             case 4:
             {
-                // TODO: start allowing this move after considering the forbidden states
                 // add or remove event
                 cout << "add or remove event" << endl;
                 // pass 0.0f to the poisson distributions to have 1 event added/removed
@@ -446,7 +445,8 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
     for (auto const &d: D)
     {
         int sum_d = accumulate( d.begin(), d.end(), 0);
-        attached_node->parent->log_score = t_scores[j][attached_node->parent->id];
+        attached_node->parent->log_score = t_scores[j][attached_node->parent->id]; // the indices must match
+        // attached node->parent->id must match the all_nodes index
         t_prime->compute_stack(attached_node, d, sum_d,r);
 
         if (is_empty_table)
@@ -492,11 +492,15 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
 
         for (auto &u_map : t_prime_scores[i])
         {
-            old_vals.push_back(t_scores[i][u_map.first]);
+            old_vals.push_back(t_scores[i][u_map.first]); // again the indices should match
             new_vals.push_back(u_map.second);
         }
 
-        double res =MathOp::log_replace_sum(t_sums[i],old_vals,new_vals);
+        double res =MathOp::log_replace_sum(t_sums[i],old_vals,new_vals); // it takes t_sums[i]
+                // subtracts the olds and adds the news
+                // in case of delete, subtract an extra value
+                // in case of insert, add an extra value
+                // if the tree size changes, update it (tree.n_nodes). Posterior takes that into account
         assert(!isnan(res));
 
         t_prime_sums.push_back(res);
