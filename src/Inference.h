@@ -25,9 +25,9 @@ public:
     Tree *t_prime;
     Tree *best_tree;
     u_int n_regions;
-    std::vector<std::vector<double>> t_scores;
+    std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
-    std::vector<map<int, double>> t_prime_scores;
+    std::vector<std::map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
     std::string f_name;
 
@@ -149,7 +149,7 @@ void Inference::compute_t_table(const vector<vector<int>> &D, const vector<int>&
     for (int i = 0; i < n; ++i)
     {
         this->t->compute_tree(D[i], r);
-        vector<double> scores_vec = this->t->get_scores(); // get scores iterates over all_nodes on t. All nodes need to be sorted
+        std::map<int, double> scores_vec = this->t->get_children_id_score(this->t->root); // get scores iterates over all_nodes_vec on t. All nodes need to be sorted
 
         this->t_scores.push_back(scores_vec);
         this->t_sums.push_back(MathOp::log_sum(scores_vec));
@@ -366,7 +366,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     map<int, double> vfact_hash;
 
     int K = this->n_regions;
-    for (auto it = tree.all_nodes.begin()+1; it != tree.all_nodes.end(); ++it)
+    for (auto it = tree.all_nodes_vec.begin()+1; it != tree.all_nodes_vec.end(); ++it)
     {
         Node* node = *it;
         map<u_int,int>& c_change = node->c_change;
@@ -378,7 +378,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     }
 
     vector<double> p_v;
-    for (auto it = tree.all_nodes.begin()+1; it != tree.all_nodes.end(); ++it)
+    for (auto it = tree.all_nodes_vec.begin()+1; it != tree.all_nodes_vec.end(); ++it)
     {
         Node* node = *it;
         map<u_int,int>& c_change = node->c_change;
@@ -411,9 +411,9 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
 void Inference::update_t_scores() {
 
     for (unsigned k=0; k < t_scores.size(); k++)
-        for (unsigned i=0; i < t_scores[k].size(); i++)
-            if(t_prime_scores[k].find(i) != t_prime_scores[k].end()) // if found in hashmap
-                t_scores[k][i] = t_prime_scores[k][i];
+        for (auto const& x : t_scores[k])
+            if(t_prime_scores[k].find(x.first) != t_prime_scores[k].end()) // if found in map
+                t_scores[k][x.first] = t_prime_scores[k][x.first];
 
 }
 
@@ -446,7 +446,7 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
     {
         int sum_d = accumulate( d.begin(), d.end(), 0);
         attached_node->parent->log_score = t_scores[j][attached_node->parent->id]; // the indices must match
-        // attached node->parent->id must match the all_nodes index
+        // attached node->parent->id must match the all_nodes_vec index
         t_prime->compute_stack(attached_node, d, sum_d,r);
 
         if (is_empty_table)
