@@ -102,8 +102,8 @@ void test_weighted_sample()
     mcmc.initialize_worked_example();
 
     // get the subvector
-    vector<Node*>::const_iterator first = mcmc.t->all_nodes.begin() + 1;
-    vector<Node*>::const_iterator last = mcmc.t->all_nodes.end();
+    vector<Node*>::const_iterator first = mcmc.t->all_nodes_vec.begin() + 1;
+    vector<Node*>::const_iterator last = mcmc.t->all_nodes_vec.end();
     vector<Node*> nodes_to_sample(first, last);
 
     vector<float> weights;
@@ -164,9 +164,14 @@ void test_weighted_prune_reattach()
 
 
     // get the subvector
-    vector<Node*>::const_iterator first = mcmc.t_prime->all_nodes.begin() + 1;
-    vector<Node*>::const_iterator last = mcmc.t_prime->all_nodes.end();
+    vector<Node*>::const_iterator first = mcmc.t_prime->all_nodes_vec.begin() + 1;
+    vector<Node*>::const_iterator last = mcmc.t_prime->all_nodes_vec.end();
     vector<Node*> nodes_to_sample(first, last);
+
+    // re-ordering is needed since prune and reattach does not preserve the order in the all_nodes vector
+    std::sort(nodes_to_sample.begin(),nodes_to_sample.end(), [](Node* a, Node* b) { return *a < *b; });
+
+
 
     vector<float> weights;
     float zeta = 0.0f;
@@ -176,6 +181,7 @@ void test_weighted_prune_reattach()
         weights.push_back(weight);
         zeta += weight;
     }
+
 
 
     assert(abs(weights[0] - 0.2f)  <= epsilon);

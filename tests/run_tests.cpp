@@ -13,6 +13,7 @@ int main()
     std::cout<<"\n UNIT TESTS \n ";
 //     set a seed number for reproducibility
     SingletonRandomGenerator::get_generator(42);
+
     test_xxhash();
     test_swap_label();
     test_weighted_sample();
