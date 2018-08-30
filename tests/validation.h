@@ -23,6 +23,8 @@ const vector<int> r = {4,2,3,5,2};
 // error tolerance
 const float epsilon = 0.001f;
 
+
+
 void test_xxhash()
 {
 
@@ -40,6 +42,26 @@ void test_xxhash()
     assert(r1_hash != r3_hash);
 
     cout<<"xxhash validation test passed!"<<endl;
+
+}
+
+void test_reproducibility_five_moves()
+{
+
+    // if seed is not set, set it to 42
+    SingletonRandomGenerator::get_generator(42);
+
+    Inference mcmc(size(r));
+
+    mcmc.initialize_worked_example();
+    mcmc.compute_t_table(D,r);
+
+    // move probabilities
+    const vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f};
+    mcmc.infer_mcmc(D, r, move_probs, 500);
+
+    assert(abs(mcmc.best_tree->score + 2615.9176) <= epsilon);
+    cout<<"Reproducibility test with 5 moves and 500 iterations is passed!"<<endl;
 
 }
 
