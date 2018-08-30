@@ -3,6 +3,21 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# clion .idea folder
+.idea/
+
+# cmake-build-debug/
+cmake-build-debug/*
+
+# cachegrind
+cachegrind*
+
+# massif.out files
+massif*
+
+# cellranger output
+cr_out/*
+
 # C extensions
 *.so
 
