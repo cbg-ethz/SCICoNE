@@ -88,7 +88,7 @@ private:
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
     void compute_score(Node *node, const vector<int> &D, int &sum_D, const vector<int> &r, float eta=0.0001f);
-    Node* prune(Node *pos); // does not deallocate, TODO: have a delete method that calls this and deallocates
+    Node* prune(Node *pos); // does not deallocate,
     Node* insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
     bool is_ancestor(Node *target, Node *curr);

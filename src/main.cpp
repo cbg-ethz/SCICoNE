@@ -79,7 +79,6 @@ int main() {
     mcmc.initialize_worked_example();
     // mcmc.random_initialize();
     mcmc.compute_t_table(D,r);
-    disp_vec(mcmc.t_scores);
 
     mcmc.infer_mcmc(D, r, move_probs, 500);
     mcmc.write_best_tree();
