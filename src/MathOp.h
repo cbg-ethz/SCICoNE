@@ -11,6 +11,7 @@
 #include <numeric>
 #include <cassert>
 #include <random>
+#include <map>
 
 
 using namespace std;
@@ -23,7 +24,9 @@ public:
 
     static double log_likelihood(vector<double>);
     static long double log_add(long double val1, long double val2);
-    static double log_sum(const vector<double>& vec);
+    static double log_sum(const map<int, double> &map); // map version
+    static double log_sum(const vector<double> &vec); // vector version
+
     static double log_replace_sum(const double& sum, const vector<double>& to_subtract, const vector<double>& to_add);
 
     static vector<double> combine_scores(vector<double> aic_vec);

@@ -2,6 +2,7 @@
 // Created by Tuncel  Mustafa Anil on 6/19/18.
 //
 
+#include <map>
 #include "MathOp.h"
 #include "SingletonRandomGenerator.h"
 
@@ -200,8 +201,33 @@ int MathOp::random_uniform(int min, int max) {
     return rand_val;
 }
 
+double MathOp::log_sum(const map<int, double> &map) {
+/*
+ * Performs normal sum in the log space
+ * Takes a map as input
+ * */
+
+    // init max with the smallest value possible
+    double max = std::numeric_limits<double>::min();
+
+    for (auto const &i: map)
+        if (i.second > max)
+            max = i.second;
+
+    double sum_in_normal_space = 0.0;
+
+    for (auto const &i: map)
+        sum_in_normal_space += exp(i.second-max);
+
+    return log(sum_in_normal_space) + max;
+
+}
+
 double MathOp::log_sum(const vector<double> &vec) {
-// performs normal sum in the log space
+/*
+ * Performs normal sum in the log space
+ * Takes a vector as input
+ * */
 
     // init max with the smallest value possible
     double max = std::numeric_limits<double>::min();
@@ -216,8 +242,9 @@ double MathOp::log_sum(const vector<double> &vec) {
         sum_in_normal_space += exp(i-max);
 
     return log(sum_in_normal_space) + max;
-
 }
+
+
 
 double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtract, const vector<double> &to_add) {
 /*
@@ -290,3 +317,4 @@ double MathOp::log_n_choose_k(int n, int k) {
     return(lgamma(n+1) - lgamma(k+1) - lgamma(n-k+1));
 
 }
+
