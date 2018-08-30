@@ -11,7 +11,6 @@
 #include "MathOp.h"
 #include "Tree.h"
 #include "Inference.h"
-#include "../tests/validation.h"
 
 
 using namespace std;
@@ -62,12 +61,9 @@ void disp_vec(vector<vector<double>> vec) {
 
 int main() {
 
-    test_xxhash();
-    test_swap_label();
-    //test_weighted_sample();
-    test_prune_reattach();
-    //test_weighted_prune_reattach();
-    test_add_remove_event();
+    // set a seed number for reproducibility
+    SingletonRandomGenerator::get_generator(42);
+
 
     // counts per region per cell
     vector<vector<int>> D = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
@@ -80,12 +76,12 @@ int main() {
 
     Inference mcmc(size(r));
 
-    // mcmc.initialize_worked_example();
-    mcmc.random_initialize();
+    mcmc.initialize_worked_example();
+    // mcmc.random_initialize();
     mcmc.compute_t_table(D,r);
     disp_vec(mcmc.t_scores);
 
-    mcmc.infer_mcmc(D, r, move_probs);
+    mcmc.infer_mcmc(D, r, move_probs, 500);
     mcmc.write_best_tree();
 
     mcmc.destroy();
@@ -116,12 +112,12 @@ int main() {
     for (auto vec: aic_vec) // compute sigma matrix
     {
         // for each breakpoint
-        cout << i++ <<" --> ";
+//        cout << i++ <<" --> ";
         auto res = MathOp::combine_scores(vec);
         sigma.push_back(res);
-        for (auto const &v2: res)
-            cout << v2 << ' ';
-        cout <<endl;
+//        for (auto const &v2: res)
+//            cout << v2 << ' ';
+//        cout <<endl;
 
     }
 

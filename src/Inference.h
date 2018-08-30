@@ -50,7 +50,7 @@ public:
     bool apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false, bool test_mode = false);
     Tree * comparison(int m);
 
-    void infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs);
+    void infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters);
     void write_best_tree();
     void update_t_scores();
 
@@ -219,7 +219,7 @@ Tree* Inference::comparison(int m) {
     }
 }
 
-void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs) {
+void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters) {
 
 
     int m = static_cast<int>(D.size());
@@ -234,7 +234,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
 
      *best_tree = *t; //start with the t
 
-    for (int i = 0; i < 500; ++i) {
+    for (int i = 0; i < n_iters; ++i) {
 
 
         bool rejected_before_comparison = false;

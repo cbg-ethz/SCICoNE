@@ -8,6 +8,8 @@
 #include <map>
 #include <iostream>
 
+using namespace std;
+
 struct Node{
     int id = 0;
     std::map<u_int,int> c = {};
