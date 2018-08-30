@@ -25,16 +25,11 @@
 #include <algorithm> // std::remove
 
 
-bool node_ptr_compare(Node* a, Node* b)
-{
-    return (*a < *b);
-}
-
 class Tree {
 
 public:
     Node* root;
-    std::vector<Node*> all_nodes; // for uniform selection
+    std::vector<Node*> all_nodes_vec; // for random selection, destructor, insertion by position, iterating without order (e.g. for each node)
     int ploidy; // to be added to values of the unordered map for each node
     u_int n_regions; // number of regions
     double score; // log posterior score of the tree
@@ -60,7 +55,6 @@ public:
     void random_insert(std::map<u_int, int>&&);
     void insert_at(u_int pos, std::map<u_int, int>&&);
     void insert_child(Node *pos, std::map<u_int, int>&& labels);
-    std::vector<double> get_scores();
 
     map<int, double> get_children_id_score(Node *node);
     void destroy();
@@ -214,7 +208,7 @@ Tree::Tree(u_int ploidy, u_int n_regions)
     score = 0.0;
     // creates a copy of the root ptr and stores it in the vector
 
-    all_nodes.push_back(root);
+    all_nodes_vec.push_back(root);
 
 
 }
@@ -226,17 +220,17 @@ Tree::~Tree() {
 Node* Tree::uniform_sample(bool with_root) {
 
     int rand_val = 0;
-    if (all_nodes.size() == 0)
+    if (all_nodes_vec.size() == 0)
         throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
-    else if (all_nodes.size() ==1)
+    else if (all_nodes_vec.size() ==1)
         rand_val = 1;
     else
     {
         // 1 is root, 2 is 1st.
-        rand_val = MathOp::random_uniform(with_root?1:2,all_nodes.size());
+        rand_val = MathOp::random_uniform(with_root?1:2,all_nodes_vec.size());
     }
 
-    return all_nodes[rand_val-1];
+    return all_nodes_vec[rand_val-1];
 }
 
 bool Tree::is_leaf(Node* n) const{
@@ -256,7 +250,7 @@ Node * Tree::insert_child(Node *pos, Node *source) {
         source->id = ++counter;
     // if the id is set then keep it
 
-    all_nodes.push_back(source);
+    all_nodes_vec.push_back(source);
     n_nodes++;
 
     // insert
@@ -311,7 +305,7 @@ void Tree::insert_child(Node* pos, std::map<u_int, int>&& labels) {
 }
 
 void Tree::destroy() {
-    for (auto elem: all_nodes)
+    for (auto elem: all_nodes_vec)
     {
         //std::cout<<"deleting " << elem->log_score <<std::endl;
         elem->first_child = elem->next = nullptr;
@@ -319,7 +313,7 @@ void Tree::destroy() {
         delete elem;
         elem = nullptr;
     }
-    all_nodes.clear();
+    all_nodes_vec.clear();
     n_nodes = 0;
     root = nullptr;
     //std::cout<<"destroyed."<<std::endl;
@@ -333,7 +327,7 @@ void Tree::random_insert(std::map<u_int, int>&& labels)
 }
 
 void Tree::insert_at(u_int pos, std::map<u_int, int> && labels) {
-    Node* n = all_nodes[pos];
+    Node* n = all_nodes_vec[pos];
     insert_child(n, std::move(labels));
 
 }
@@ -391,7 +385,7 @@ void Tree::copy_tree(const Tree& source_tree) {
 
     // copy the nodes using struct copy constructor
     this->root = new Node(*source_tree.root);
-    this->all_nodes.push_back(root); // all nodes cannot be copied since 2 trees cannot have nodes pointing to the same address
+    this->all_nodes_vec.push_back(root); // all nodes cannot be copied since 2 trees cannot have nodes pointing to the same address
     recursive_copy(source_tree.root, this->root); // the nodes of the source tree are inserted into the destination tree
     this->n_nodes = source_tree.n_nodes; // copy this after the insertions are done (insertions change this value).
  }
@@ -418,7 +412,7 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     Node* prune_pos = nullptr;
 
     if (validation_test_mode)
-        prune_pos = all_nodes[2];
+        prune_pos = all_nodes_vec[2];
     else
     {
         if (weighted)
@@ -429,7 +423,7 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
 
 
     // copy all nodes
-    std::vector<Node*> destination_nodes = this->all_nodes;
+    std::vector<Node*> destination_nodes = this->all_nodes_vec;
 
     // remove all the descendents of the prune_pos
 
@@ -451,7 +445,7 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     Node* attach_pos = nullptr;
 
     if (validation_test_mode)
-        attach_pos = all_nodes[5];
+        attach_pos = all_nodes_vec[5];
     else
         attach_pos = destination_nodes[rand_val -1];
 
@@ -474,13 +468,6 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
         // recompute the weights after the tree structure is changed
         this->compute_weights();
 
-        // std sort the all_nodes vector to make sure the indices match between 2 trees
-        // compute t_prime_scores function
-        // e.g. node id 4 will always be at index 4
-        //TODO: or never change the all_nodes vector after initialization
-
-        // TODO remove this sort, use perhaps a hashmap instead, or a map!
-        std::sort(this->all_nodes.begin(),this->all_nodes.end(), node_ptr_compare);
         return attached_node;
     }
     else
@@ -517,8 +504,8 @@ Node *Tree::prune(Node *pos) {
         }
     }
 
-    // prune from the all_nodes as well
-    all_nodes.erase(std::remove(all_nodes.begin(), all_nodes.end(), pos), all_nodes.end());
+    // remove from the all_nodes_vec as well
+    all_nodes_vec.erase(std::remove(all_nodes_vec.begin(), all_nodes_vec.end(), pos), all_nodes_vec.end());
 
     //prune the next link
     pos->next = nullptr;
@@ -546,17 +533,7 @@ Tree &Tree::operator=(const Tree &other) {
     return *this;
 }
 
-std::vector<double> Tree::get_scores() {
 
-    vector<double> scores;
-    for (auto const &i : all_nodes)
-    {
-        assert(i->log_score != 0); // make sure no score is zero
-        scores.push_back(i->log_score);
-    }
-
-    return scores;
-}
 
 map<int, double> Tree::get_children_id_score(Node *node) {
 /*
@@ -622,15 +599,15 @@ void Tree::compute_weights() {
 
 Node *Tree::weighted_sample() {
 
-    if (all_nodes.size() == 0)
+    if (all_nodes_vec.size() == 0)
         throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
-    else if (all_nodes.size() ==1)
+    else if (all_nodes_vec.size() ==1)
         throw std::length_error("there is only 1 element which is the root and root cannot be sampled");
     else
     {
         // get the subvector
-        vector<Node*>::const_iterator first = all_nodes.begin() + 1;
-        vector<Node*>::const_iterator last = all_nodes.end();
+        vector<Node*>::const_iterator first = all_nodes_vec.begin() + 1;
+        vector<Node*>::const_iterator last = all_nodes_vec.end();
         vector<Node*> nodes_to_sample(first, last);
 
         vector<float> weights;
@@ -675,7 +652,7 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
      * Requires more than 2 nodes to work
      * */
 
-    if (all_nodes.size() <= 2)
+    if (all_nodes_vec.size() <= 2)
         throw std::logic_error("swapping labels does not make sense when they is only one node besides the root");
 
     Node *node1, *node2;
@@ -693,8 +670,8 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
     {
         if (validation_test_mode)
         {
-            node1 = all_nodes[2]; //without the root
-            node2 = all_nodes[5];
+            node1 = all_nodes_vec[2]; //without the root
+            node2 = all_nodes_vec[5];
         }
         else
         {
@@ -791,7 +768,7 @@ Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, boo
 
     if (validation_test_mode)
     {
-        node = all_nodes[3];
+        node = all_nodes_vec[3];
         lambda_r = lambda_c = 0.0f;
     }
     else
@@ -876,7 +853,7 @@ bool Tree::subtree_contains_negative(Node* n) {
 
 vector<Node *> Tree::get_descendents(Node *n) {
     /*
-     * Returns the descendents of node* n in a list.
+     * Returns the descendents of node* n in a list in a BFS fashion.
      * Does preserve the order (e.g. parent is before the children)
      * */
     vector<Node *> descendents;
@@ -933,19 +910,19 @@ bool Tree::is_redundant() {
      * */
 
     unordered_map<uint64_t , unsigned> hash_map;
-    for (unsigned i=0; i < all_nodes.size(); i++)
+    for (unsigned i=0; i < all_nodes_vec.size(); i++)
     {
-        if (hash_map.count(all_nodes[i]->c_hash))
+        if (hash_map.count(all_nodes_vec[i]->c_hash))
         {
             // found
-            unsigned hash_index = hash_map.at(all_nodes[i]->c_hash);
-            bool eq_comparison = all_nodes[i]->c == all_nodes[hash_index]->c;
+            unsigned hash_index = hash_map.at(all_nodes_vec[i]->c_hash);
+            bool eq_comparison = all_nodes_vec[i]->c == all_nodes_vec[hash_index]->c;
             return (eq_comparison);
         }
         else
         {
             // not found
-            hash_map[all_nodes[i]->c_hash] = i;
+            hash_map[all_nodes_vec[i]->c_hash] = i;
         }
     }
 
