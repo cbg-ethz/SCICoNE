@@ -42,7 +42,7 @@ public:
 
     bool apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false,
                               bool validation_test_mode = false);
-    bool apply_add_remove_events(float lambda_r, float lambda_c, const vector<vector<int>> &D, const vector<int> &r,
+    bool apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<int>> &D, const vector<int> &r,
                                  bool weighted = false,
                                  bool validation_test_mode = false);
 
@@ -223,7 +223,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     std::ofstream outfile;
     outfile.open(f_name, std::ios_base::app);
 
-     best_tree = t; //start with the t
+    best_tree = t; //start with the t
 
     for (int i = 0; i < n_iters; ++i) {
 
@@ -282,8 +282,8 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
             {
                 // add or remove event
                 cout << "add or remove event" << endl;
-                // pass 0.0f to the poisson distributions to have 1 event added/removed
-                bool add_remove_success = apply_add_remove_events(0.0f, 0.0f, D, r, true); // weighted=true
+                // pass 0.0 to the poisson distributions to have 1 event added/removed
+                bool add_remove_success = apply_add_remove_events(0.0, 0.0, D, r, true); // weighted=true
                 if (not add_remove_success) {
                     add_remove_move_rejected++;
                     rejected_before_comparison = true;
@@ -492,7 +492,7 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
     }
 }
 
-bool Inference::apply_add_remove_events(float lambda_r, float lambda_c, const vector<vector<int>> &D,
+bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<int>> &D,
                                         const vector<int> &r, bool weighted,
                                         bool validation_test_mode) {
     /*

@@ -161,5 +161,5 @@ int main() {
 
     std::ofstream output_file("./s_p.txt");
     for (const auto &e : s_p) output_file << e << "\n";
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -46,7 +46,8 @@ public:
     // moves
     Node* prune_reattach(bool weighted=false, bool validation_test_mode=false);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
-    Node* add_remove_events(float lambda_r, float lambda_c, bool weighted=false, bool validation_test_mode=false);
+    Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
+    Node* add_delete_node(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
     Node* delete_node();
 
     bool is_leaf(Node*) const;
@@ -64,7 +65,7 @@ public:
 
     void compute_weights();
     u_int get_n_nodes() const;
-    vector<Node*> get_descendents(Node* n);
+    vector<Node *> get_descendents(Node *n, bool with_n=true);
 
     friend std::ostream& operator<<(std::ostream& os, Tree& t);
     Tree& operator=(const Tree& other);
@@ -99,7 +100,7 @@ private:
 
 std::ostream& operator<<(std::ostream& os, Tree& t) {
 
-    vector<Node*> nodes = t.get_descendents(t.root);
+    vector<Node*> nodes = t.get_descendents(t.root, true);
 
     os << "Tree score: " << setprecision(8) << t.score << endl;
     for (auto const &x : nodes)
@@ -507,7 +508,7 @@ Node *Tree::prune(Node *pos) {
     // remove from the all_nodes_vec as well
     all_nodes_vec.erase(std::remove(all_nodes_vec.begin(), all_nodes_vec.end(), pos), all_nodes_vec.end());
 
-    //prune the next link
+    //remove the next link
     pos->next = nullptr;
 
     n_nodes--;
@@ -762,14 +763,14 @@ bool Tree::is_valid_subtree(Node *node) {
 
 }
 
-Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, bool validation_test_mode) {
+Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode) {
 
     Node* node;
 
     if (validation_test_mode)
     {
         node = all_nodes_vec[3];
-        lambda_r = lambda_c = 0.0f;
+        lambda_r = lambda_c = 0.0;
     }
     else
     {
@@ -842,7 +843,7 @@ bool Tree::subtree_contains_negative(Node* n) {
  * Returns true if any of the descendent nodes contain a value less than -ploidy in the c hashmap
  * */
     int a = -ploidy;
-    vector<Node*> descendents = get_descendents(n);
+    vector<Node*> descendents = get_descendents(n, true);
     for (auto const &elem : descendents)
         for (auto const &it : elem->c)
             if (it.second < a)
@@ -851,10 +852,12 @@ bool Tree::subtree_contains_negative(Node* n) {
 
 }
 
-vector<Node *> Tree::get_descendents(Node *n) {
+vector<Node *> Tree::get_descendents(Node *n, bool with_n) {
     /*
      * Returns the descendents of node* n in a list in a BFS fashion.
+     * If with_n, then the descendents contain the node itself, otherwise not.
      * Does preserve the order (e.g. parent is before the children)
+     *
      * */
     vector<Node *> descendents;
 
@@ -867,12 +870,16 @@ vector<Node *> Tree::get_descendents(Node *n) {
             stk.push(temp);
         descendents.push_back(top);
     }
+
+    if (!with_n)
+        descendents.erase(descendents.begin()); // erase the first node, which is n
+
     return descendents;
 }
 
 bool Tree::zero_ploidy_changes(Node *n) {
 
-    vector<Node*> descendents = get_descendents(n);
+    vector<Node*> descendents = get_descendents(n, true);
     vector<int> checked_regions;
 
     for (auto const &node : descendents)
@@ -894,7 +901,7 @@ bool Tree::region_changes(Node *n, u_int region_id) {
      * Returns true if the region label changes in one of the descendents
      * */
 
-    vector<Node*> descendents = get_descendents(n);
+    vector<Node*> descendents = get_descendents(n, true);
 
     for (auto const &node : descendents)
         if (node->c_change[region_id] != 0)
@@ -935,7 +942,44 @@ Node* Tree::delete_node() {
 
     Node* tobe_deleted = uniform_sample(false); // TODO: replace it with the weighted scheme
 
+    tobe_deleted = prune(tobe_deleted); // the node is pruned
+    Node* parent_of_deleted = tobe_deleted->parent;
 
+    // retrieve the first order children and prune & reattach them to parent_of_deleted
+    vector<Node*> first_order_children;
+    for (Node* temp = tobe_deleted->first_child; temp != nullptr; temp=temp->next)
+    {
+        first_order_children.push_back(temp);
+    }
+    for (Node* elem : first_order_children)
+    {
+        Node* pruned_child = prune(elem); // prune removes the next link, you cannot prune while iterating over children
+        pruned_child = insert_child(parent_of_deleted, pruned_child);
+    }
+
+
+    //update the c vectors of the parent and its new descendents
+    update_desc_labels(parent_of_deleted);
+
+    if (!is_valid_subtree(parent_of_deleted) || is_redundant())
+        return nullptr;
+
+    // recompute the weights after the tree structure is changed
+    this->compute_weights();
+
+    return parent_of_deleted; // return the node that is going to be used for the partial trees scoring
+
+}
+
+Node *Tree::add_delete_node(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode) {
+    /*
+     * TODO:
+     * compute chi vector
+     * compute omega vector
+     *
+     *
+     *
+     * */
     return nullptr;
 }
 
