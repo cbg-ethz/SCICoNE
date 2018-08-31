@@ -792,6 +792,7 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
 
     // otherwise we cannot sample distinct uniform regions
     assert(n_regions_to_sample <= n_regions);
+    // TODO: remove assert, have if smaller then reject the move!
 
     while (regions_sampled < n_regions_to_sample)
     {
@@ -817,7 +818,7 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
         if (validation_test_mode)
             sign = true;
 
-        node->c_change[elem] += (sign? n_copies : -n_copies);
+    node->c_change[elem] += (sign? n_copies : -n_copies);
 
         if (node->c_change.at(elem) == 0)
             node->c_change.erase(elem); //erase the zero instead of storing it
@@ -980,6 +981,56 @@ Node *Tree::add_delete_node(double lambda_r, double lambda_c, bool weighted, boo
      *
      *
      * */
+
+    vector<double> chi; // add weights
+    vector<double> omega; // delete weights
+    // iterate over all_nodes, use node->n_descendents-1 as n_children
+    // using all_nodes_vec is safe here since neither its order nor its size will change until the action and the node are chosen
+    for (auto const &node : all_nodes_vec)
+    {
+        double chi_val = pow(2, node->n_descendents-1);
+        chi.push_back(chi_val);
+    }
+
+    // sample the number of regions to be affected with Poisson(lambda_r)+1
+    std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+    // n_regions from Poisson(lambda_R)+1
+    std::poisson_distribution<int> distribution(lambda_r); // the param is to be specified later
+
+    // TODO: if r>K then reject the move. K: max region index
+    int K = this->n_regions;
+
+
+    // n_copies from Poisson(lambda_c)+1
+    std::poisson_distribution<int> copy_dist(lambda_c); // the param is to be specified later
+    // sign: + or -
+    std::bernoulli_distribution bernoulli(0.5);
+
+
+
+
+    vector<double> delete_weights;
+    for (auto const &node : all_nodes_vec)
+    {
+        int r = distribution(generator) + 1; // n_regions to sample
+
+        vector<int> c;
+
+        for (int j = 1; j < r; ++j)  // j starts from 1 because the root cannot be deleted
+        {
+            int n_copies = copy_dist(generator) + 1;
+            bool sign = bernoulli(generator);
+
+            c.push_back(sign? n_copies : -n_copies);
+        }
+
+        double res = 1.0;
+        // TODO implement the weights
+        // res *= pow(lambda_r,r-1) *
+    }
+
+
+
     return nullptr;
 }
 
