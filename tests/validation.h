@@ -60,7 +60,7 @@ void test_reproducibility_five_moves()
     const vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f};
     mcmc.infer_mcmc(D, r, move_probs, 500);
 
-    assert(abs(mcmc.best_tree->score + 2615.9176) <= epsilon);
+    assert(abs(mcmc.best_tree.score + 2615.9176) <= epsilon);
     cout<<"Reproducibility test with 5 moves and 500 iterations is passed!"<<endl;
 
 }
@@ -82,9 +82,9 @@ void test_swap_label()
 
     // compute the log posterior
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
-    double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, *mcmc.t_prime);
-    mcmc.t_prime->score = log_post_t_prime;
-    assert(abs(mcmc.t_prime->score + 2625.580f) <= epsilon);
+    double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, mcmc.t_prime);
+    mcmc.t_prime.score = log_post_t_prime;
+    assert(abs(mcmc.t_prime.score + 2625.580f) <= epsilon);
 
     cout<<"Swap label validation test passed!"<<endl;
 
@@ -102,8 +102,8 @@ void test_weighted_sample()
     mcmc.initialize_worked_example();
 
     // get the subvector
-    vector<Node*>::const_iterator first = mcmc.t->all_nodes_vec.begin() + 1;
-    vector<Node*>::const_iterator last = mcmc.t->all_nodes_vec.end();
+    vector<Node*>::const_iterator first = mcmc.t.all_nodes_vec.begin() + 1;
+    vector<Node*>::const_iterator last = mcmc.t.all_nodes_vec.end();
     vector<Node*> nodes_to_sample(first, last);
 
     vector<float> weights;
@@ -143,11 +143,11 @@ void test_prune_reattach()
     assert(abs(mcmc.t_prime_sums[3] + 547.348f)  <= epsilon);
     assert(abs(mcmc.t_prime_sums[4] + 406.636f)  <= epsilon);
 
-    assert(abs(mcmc.t_prime->score + 2615.918f) <= epsilon);
+    assert(abs(mcmc.t_prime.score + 2615.918f) <= epsilon);
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
-    double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, *mcmc.t_prime);
-    mcmc.t_prime->score = log_post_t_prime;
-    assert(abs(mcmc.t_prime->score + 2618.528f) <= epsilon);
+    double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, mcmc.t_prime);
+    mcmc.t_prime.score = log_post_t_prime;
+    assert(abs(mcmc.t_prime.score + 2618.528f) <= epsilon);
 
 
     cout<<"Prune and reattach validation test passed!"<<endl;
@@ -164,8 +164,8 @@ void test_weighted_prune_reattach()
 
 
     // get the subvector
-    vector<Node*>::const_iterator first = mcmc.t_prime->all_nodes_vec.begin() + 1;
-    vector<Node*>::const_iterator last = mcmc.t_prime->all_nodes_vec.end();
+    vector<Node*>::const_iterator first = mcmc.t_prime.all_nodes_vec.begin() + 1;
+    vector<Node*>::const_iterator last = mcmc.t_prime.all_nodes_vec.end();
     vector<Node*> nodes_to_sample(first, last);
 
     // re-ordering is needed since prune and reattach does not preserve the order in the all_nodes vector
@@ -212,9 +212,9 @@ void test_add_remove_event()
     assert(abs(mcmc.t_prime_sums[4] + 406.654f)  <= epsilon);
 
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
-    double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, *mcmc.t_prime);
-    mcmc.t_prime->score = log_post_t_prime;
-    assert(abs(mcmc.t_prime->score + 2620.015f) <= epsilon);
+    double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, mcmc.t_prime);
+    mcmc.t_prime.score = log_post_t_prime;
+    assert(abs(mcmc.t_prime.score + 2620.015f) <= epsilon);
 
     cout<<"Add / remove event validation test passed!"<<endl;
 }
