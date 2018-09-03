@@ -318,3 +318,13 @@ double MathOp::log_n_choose_k(int n, int k) {
 
 }
 
+double MathOp::n_choose_k(int n, int k) {
+    /*
+     * Returns the binomial coefficient, n choose k using the gamma function
+     * */
+    assert (n >= k);
+    double res = tgamma(n+1) / (tgamma(k+1) * tgamma(n-k+1));
+
+    return res;
+}
+
