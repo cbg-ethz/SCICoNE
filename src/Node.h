@@ -46,6 +46,8 @@ struct Node{
         return !(rhs == *this);
     }
 
+    int get_n_children();
+
     // copy constructor
     Node(Node& source_node)
     {
@@ -88,6 +90,16 @@ std::ostream& operator<<(std::ostream& os, Node& n) {
 
 
     return os;
+}
+
+int Node::get_n_children() {
+
+    int n_children = 0;
+    for (Node* temp = this->first_child; temp != nullptr; temp=temp->next)
+    {
+        n_children++;
+    }
+    return n_children;
 }
 
 #endif //SC_DNA_NODE_H
