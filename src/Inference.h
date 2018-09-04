@@ -543,6 +543,7 @@ bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const
     {
         compute_t_prime_scores(tobe_computed, D, r);
         compute_t_prime_sums(D);
+        return true;
     }
     else
         return false;
