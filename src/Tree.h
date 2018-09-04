@@ -42,50 +42,38 @@ public:
     Tree(Tree& source);
     // destructor
     virtual ~Tree();
-
     // moves
     Node* prune_reattach(bool weighted=false, bool validation_test_mode=false);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
     Node* add_delete_node(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
-    Node* delete_node();
-
-    bool is_leaf(Node*) const;
+    Node *delete_node(u_int64_t idx_tobe_deleted);
+    bool is_leaf(Node*) const; // TODO: make it a method of Node
     Node* uniform_sample(bool with_root=true);
     Node* weighted_sample();
     void random_insert(std::map<u_int, int>&&);
     void insert_at(u_int pos, std::map<u_int, int>&&);
     void insert_child(Node *pos, std::map<u_int, int>&& labels);
-
     map<int, double> get_children_id_score(Node *node);
     void destroy();
     void compute_tree(const vector<int> &D, const vector<int>& r);
     void compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r);
     void compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r);
-
     void compute_weights();
     u_int get_n_nodes() const;
     vector<Node *> get_descendents(Node *n, bool with_n=true);
-
     friend std::ostream& operator<<(std::ostream& os, Tree& t);
     Tree& operator=(const Tree& other);
-
 private:
-
-
     void update_label(std::map<u_int,int>& c_parent, Node* node);
     void update_desc_labels(Node* node);
-
     //validation of tree
     bool is_redundant();
-
     // Validation of subtrees
     bool is_valid_subtree(Node* node);
     bool subtree_contains_negative(Node* n);
     bool zero_ploidy_changes(Node* n);
     bool region_changes(Node *n, u_int region_id);
-
-
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
     void compute_score(Node *node, const vector<int> &D, int &sum_D, const vector<int> &r, float eta=0.0001f);
@@ -93,9 +81,7 @@ private:
     Node* insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
     bool is_ancestor(Node *target, Node *curr);
-
     bool empty_hashmap(map<u_int, int> &dict);
-
 };
 
 std::ostream& operator<<(std::ostream& os, Tree& t) {
@@ -155,6 +141,7 @@ void Tree::compute_score(Node *node, const vector<int> &D, int &sum_D, const vec
         val -= sum_D*log(z);
         val += sum_D*log(node->parent->z);
 
+        assert(!isnan(val));
         node->log_score = val;
         node->z = z;
     }
@@ -555,6 +542,8 @@ map<int, double> Tree::get_children_id_score(Node *node) {
         }
         // make sure the id is not in the map before
         assert(id_score_pairs.find(top->id) == id_score_pairs.end());
+        // make sure not NaN
+        assert(!isnan(top->log_score));
         id_score_pairs[top->id] = top->log_score;
     }
     return id_score_pairs;
@@ -744,6 +733,8 @@ void Tree::update_desc_labels(Node *node) {
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
         }
+        if (top == this->root) // delete move can cause this to happen (if a FO child of root is deleted) and top->parent will be NULL
+            continue;
         update_label(top->parent->c, top);
     }
 }
@@ -783,8 +774,8 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
 
 
     // n_regions from Poisson(lambda_R)+1
-    std::poisson_distribution<int> distribution(lambda_r); // the param is to be specified later
-    int n_regions_to_sample = distribution(generator) + 1;
+    std::poisson_distribution<int> poisson_dist(lambda_r); // the param is to be specified later
+    int n_regions_to_sample = poisson_dist(generator) + 1;
     // sample n_regions_to_sample distinct regions uniformly
     int n_regions = this->n_regions;
     int regions_sampled = 0;
@@ -939,9 +930,9 @@ bool Tree::is_redundant() {
 
 }
 
-Node* Tree::delete_node() {
+Node * Tree::delete_node(u_int64_t idx_tobe_deleted) {
 
-    Node* tobe_deleted = uniform_sample(false); // TODO: replace it with the weighted scheme
+    Node* tobe_deleted = all_nodes_vec[idx_tobe_deleted];
 
     tobe_deleted = prune(tobe_deleted); // the node is pruned
     Node* parent_of_deleted = tobe_deleted->parent;
@@ -959,28 +950,19 @@ Node* Tree::delete_node() {
     }
 
 
-    //update the c vectors of the parent and its new descendents
-    update_desc_labels(parent_of_deleted);
-
-    if (!is_valid_subtree(parent_of_deleted) || is_redundant())
-        return nullptr;
-
-    // recompute the weights after the tree structure is changed
-    this->compute_weights();
-
     return parent_of_deleted; // return the node that is going to be used for the partial trees scoring
 
 }
 
 Node *Tree::add_delete_node(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode) {
     /*
-     * TODO:
-     * compute chi vector
-     * compute omega vector
-     *
-     *
+     * Adds or deletes nodes move, that takes the mcmc transition probabilities into account.
+     * Returns the node to perform partial score computation on.
      *
      * */
+
+
+    Node* return_node = nullptr;
 
     vector<double> chi; // add weights
     vector<double> omega; // delete weights
@@ -988,50 +970,150 @@ Node *Tree::add_delete_node(double lambda_r, double lambda_c, bool weighted, boo
     // using all_nodes_vec is safe here since neither its order nor its size will change until the action and the node are chosen
     for (auto const &node : all_nodes_vec)
     {
-        double chi_val = pow(2, node->n_descendents-1);
+        double chi_val = pow(2, node->get_n_children()); // chi is to be computed for the n_first order children
         chi.push_back(chi_val);
     }
 
     // sample the number of regions to be affected with Poisson(lambda_r)+1
     std::mt19937 &generator = SingletonRandomGenerator::get_generator();
     // n_regions from Poisson(lambda_R)+1
-    std::poisson_distribution<int> distribution(lambda_r); // the param is to be specified later
+    std::poisson_distribution<int> poisson_r(lambda_r); // the param is to be specified later
 
-    // TODO: if r>K then reject the move. K: max region index
     int K = this->n_regions;
 
-
     // n_copies from Poisson(lambda_c)+1
-    std::poisson_distribution<int> copy_dist(lambda_c); // the param is to be specified later
-    // sign: + or -
-    std::bernoulli_distribution bernoulli(0.5);
+    std::poisson_distribution<int> poisson_c(lambda_c); // the param is to be specified later
+    // sign
+    std::bernoulli_distribution bernoulli_05(0.5);
 
+    for (auto const &node : all_nodes_vec) { // computes the omega vector
 
-
-
-    vector<double> delete_weights;
-    for (auto const &node : all_nodes_vec)
-    {
-        int r = distribution(generator) + 1; // n_regions to sample
+        int r = poisson_r(generator) + 1; // n_regions to sample
+        // if r>K then reject the move. K: max region index
+        if (r > K)
+            return nullptr;
 
         vector<int> c;
 
-        for (int j = 1; j < r; ++j)  // j starts from 1 because the root cannot be deleted
+        for (int j = 0; j < r; ++j)
         {
-            int n_copies = copy_dist(generator) + 1;
-            bool sign = bernoulli(generator);
-
-            c.push_back(sign? n_copies : -n_copies);
+            int n_copies = poisson_c(generator) + 1;
+            c.push_back(n_copies);
         }
 
-        double res = 1.0;
-        // TODO implement the weights
-        // res *= pow(lambda_r,r-1) *
+        double omega_val = 1.0;
+        omega_val *= pow(lambda_r, r - 1) * exp(-1 * lambda_r);
+        double sum_cj_minus = 0.0;
+
+        for (auto const &elem : c) {
+            sum_cj_minus += elem - 1;
+        }
+        omega_val *= pow(lambda_c, sum_cj_minus) * exp(-1 * r * lambda_c);
+
+        omega_val /= pow(2, r);
+        omega_val /= MathOp::n_choose_k(K, r);
+        omega_val /= tgamma(r);
+
+        double mul_cj_tgamma = 1.0;
+        for (auto const &elem : c) {
+            mul_cj_tgamma *= tgamma(elem);
+        }
+
+        omega_val /= mul_cj_tgamma;
+
+        omega.push_back(omega_val);
+    }
+
+    double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+    double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+
+    double normalization_term = sum_chi + sum_omega;
+    double p_chi = sum_chi / normalization_term;
+    double p_omega = sum_omega / normalization_term;
+
+    std::uniform_real_distribution<double> prob_dist(0.0,1.0);
+    double rand_val = prob_dist(generator); // to be btw. 0 and 1
+
+    if (rand_val < p_chi)
+    {
+        // add is chosen
+        cout <<"add node" <<endl;
+        std::discrete_distribution<> dd(chi.begin(), chi.end());
+        u_int pos_to_insert = dd(generator); // this is the index of the all_nodes_vector.
+
+        // create a map, fill it properly with r amount of labels
+        map<u_int, int> distinct_regions;
+
+        int r = poisson_r(generator) + 1; //n_regions to sample
+        // sample r distinct regions uniformly
+        int regions_sampled = 0;
+        // if r>K then reject the move. K: max region index
+        if (r > K)
+            return nullptr;
+
+        while (regions_sampled < r)
+        {
+            int uniform_val = MathOp::random_uniform(0, n_regions-1);
+
+            if (distinct_regions.find(uniform_val) == distinct_regions.end()) // not found
+            {
+                int n_copies = poisson_c(generator) + 1;
+                bool sign = bernoulli_05(generator);
+                distinct_regions[uniform_val] = (sign? n_copies : -n_copies); // key:region id, val: copy number change
+                regions_sampled++;
+            }
+        }
+
+        Node* parent = all_nodes_vec[pos_to_insert];
+        // retrieve the first order children of pos_to_insert node
+        vector<Node*> first_order_children;
+        for (Node* temp = parent->first_child; temp != nullptr; temp=temp->next)
+        {
+            first_order_children.push_back(temp);
+        }
+
+        this->insert_at(pos_to_insert, static_cast<map<u_int, int> &&>(distinct_regions)); // cast the expression to r_value
+        Node* new_node = all_nodes_vec.back(); // the last inserted elem, e.g. new node
+
+        // foreach first_order_child, with 0.5 prob. change their parent to become the last element.
+        // Change the parent with 0.5 prob
+        for (Node* elem : first_order_children)
+        {
+            bool rand = bernoulli_05(generator); // either true or false with 0.5 prob
+            if (rand)
+            {
+                // TODO: maybe encapsulate those 2 lines in a method called change_parent
+                Node* pruned_child = prune(elem); // prune from the old parent
+                pruned_child = insert_child(new_node, pruned_child); // insert into next parent
+            }
+        }
+        return_node = new_node;
+
+
+    }
+
+    else // delete is chosen
+    {
+        cout <<"delete node move" <<endl;
+        std::discrete_distribution<> dd(omega.begin()+1, omega.end()); // begin +1 because root cannot be deleted
+        u_int64_t idx_tobe_deleted = dd(generator)+1; // this is the index of the all_nodes_vector,
+                // +1 here again because the discrete distribution will consider omega.begin()+1 as 0
+        return_node = delete_node(idx_tobe_deleted); // returns the parent of the deleted node
+
     }
 
 
+    //update the c vectors of the parent and its new descendents
+    update_desc_labels(return_node);
+    // check if the subtrees are valid after updating the labels
+    if (!is_valid_subtree(return_node) || is_redundant())
+        return nullptr;
 
-    return nullptr;
+    // recompute the weights after the tree structure is changed
+    this->compute_weights();
+
+
+    return return_node;
 }
 
 

@@ -62,7 +62,7 @@ void disp_vec(vector<vector<double>> vec) {
 int main() {
 
     // set a seed number for reproducibility
-    SingletonRandomGenerator::get_generator(42);
+    //SingletonRandomGenerator::get_generator(42);
 
 
     // counts per region per cell
@@ -72,7 +72,7 @@ int main() {
     vector<int> r = {4,2,3,5,2};
 
     // move probabilities
-    vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f};
+    vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f};
 
     Inference mcmc(size(r));
 
@@ -80,7 +80,7 @@ int main() {
     // mcmc.random_initialize();
     mcmc.compute_t_table(D,r);
 
-    mcmc.infer_mcmc(D, r, move_probs, 500);
+    mcmc.infer_mcmc(D, r, move_probs, 50000);
     mcmc.write_best_tree();
 
     mcmc.destroy();

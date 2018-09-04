@@ -39,21 +39,17 @@ public:
     void compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<int>> &D);
     double log_posterior(double tree_sum, int m, Tree &tree);
-
     bool apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false,
                               bool validation_test_mode = false);
     bool apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<int>> &D, const vector<int> &r,
                                  bool weighted = false,
                                  bool validation_test_mode = false);
-
-
+    bool apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
     bool apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false, bool test_mode = false);
     Tree * comparison(int m);
-
     void infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters);
     void write_best_tree();
     void update_t_scores();
-
     void random_initialize(); // randomly initializes a tree and copies it into the other
     void initialize_worked_example(); // initializes the trees based on the test example
 };
@@ -145,7 +141,7 @@ void Inference::compute_t_table(const vector<vector<int>> &D, const vector<int>&
     for (int i = 0; i < n; ++i)
     {
         this->t.compute_tree(D[i], r);
-        std::map<int, double> scores_vec = this->t.get_children_id_score(this->t.root); // get scores iterates over all_nodes_vec on t. All nodes need to be sorted
+        std::map<int, double> scores_vec = this->t.get_children_id_score(this->t.root);
 
         this->t_scores.push_back(scores_vec);
         this->t_sums.push_back(MathOp::log_sum(scores_vec));
@@ -218,6 +214,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     int n_rejected = 0;
     int n_attached_to_the_same_pos = 0;
     int add_remove_move_rejected = 0;
+    int insert_delete_move_rejection = 0;
 
     // for writing the posteriors on file
     std::ofstream outfile;
@@ -288,6 +285,20 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
                     add_remove_move_rejected++;
                     rejected_before_comparison = true;
                 }
+                break;
+            }
+            case 5:
+            {
+                // insert delete node
+                cout << "insert/delete node" << endl;
+                bool insert_delete_success = apply_insert_delete_node(1.0, 1.0, D, r, false, false); // weighted=false
+                if (not insert_delete_success) {
+                    insert_delete_move_rejection++;
+                    rejected_before_comparison = true;
+                    cout << "insert/delete rejected before comparison" << endl;
+                }
+                else
+                    cout<< "insert/delete accepted!" << endl;
                 break;
             }
             default:
@@ -429,7 +440,9 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
     for (auto const &d: D)
     {
         int sum_d = accumulate( d.begin(), d.end(), 0);
-        attached_node->parent->log_score = t_scores[j][attached_node->parent->id]; // the indices must match
+
+        if (attached_node != t_prime.root)
+            attached_node->parent->log_score = t_scores[j][attached_node->parent->id]; // the indices must match
         // attached node->parent->id must match the all_nodes_vec index
         t_prime.compute_stack(attached_node, d, sum_d,r);
 
@@ -476,7 +489,8 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
 
         for (auto &u_map : t_prime_scores[i])
         {
-            old_vals.push_back(t_scores[i][u_map.first]); // again the indices should match
+            if (t_scores[i].count(u_map.first)) // add only if it is existing in the old vals
+                old_vals.push_back(t_scores[i][u_map.first]); // again the indices should match
             new_vals.push_back(u_map.second);
         }
 
@@ -513,6 +527,28 @@ bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const 
     else
         return false;
 }
+
+bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<int>> &D,
+                                         const vector<int> &r, bool weighted, bool validation_test_mode) {
+    /*
+     * Applies the insert/delete move on t_prime
+     * Updates the sums and scores tables partially
+     * */
+
+    // TODO: if root is the node to be computed, then compute all t_prime and t_prime sums
+
+    Node* tobe_computed = t_prime.add_delete_node(lambda_r, lambda_c, weighted, validation_test_mode);
+
+    if (tobe_computed != nullptr)
+    {
+        compute_t_prime_scores(tobe_computed, D, r);
+        compute_t_prime_sums(D);
+    }
+    else
+        return false;
+}
+
+
 
 
 #endif //SC_DNA_INFERENCE_H
