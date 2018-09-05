@@ -92,6 +92,16 @@ void Inference::initialize_worked_example() {
 //    t->insert_at(3,{{3,7}, {1,8}, {2,11}, {0,-3}, {4,2}}); // 4
 //    t->insert_at(4,{{1,5}, {2,3}, {4,9}, {3,-1}}); // 5
 
+//    t.insert_at(0,{{4,-1}}); // 1
+//    t.insert_at(1,{{1,1},{4,1}}); // 2
+//    t.insert_at(2,{{1,1},{0,1}}); // 3
+//    t.insert_at(3,{{2,1},{0,-1}}); // 4
+//    t.insert_at(4,{{4,1}}); // 5
+//    t.insert_at(3,{{2,1},{3,-1}}); // 6
+
+
+
+
 
     t.compute_weights();
 
@@ -182,8 +192,10 @@ Tree* Inference::comparison(int m) {
 
     t_prime.score = log_post_t_prime;
 
-
     double acceptance_prob = exp(log_post_t_prime - log_post_t);
+
+    if (log_post_t_prime > -2000.0)
+        cout<<"debug";
 
     cout<<"acceptance prob: "<<acceptance_prob<<endl;
 
@@ -411,7 +423,9 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
 }
 
 void Inference::update_t_scores() {
-
+    // TODO: consider the tree size changes
+    // iterate over t_prime_scores
+    // if index exists t_scores, update, else insert
     for (unsigned k=0; k < t_scores.size(); k++)
         for (auto const& x : t_scores[k])
             if(t_prime_scores[k].find(x.first) != t_prime_scores[k].end()) // if found in map
@@ -481,24 +495,48 @@ bool Inference::apply_swap(const vector<vector<int>> &D, const vector<int> &r, b
 
 void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
 
+    /*
+     * Computes the t_prime sums that represent the partial computed sub-tree
+     * Takes the structural changes and tree size changes into account.
+     * */
+
+
+    // In case of a delete node the removed node is also added to the old_vals
+    // in delete case: asdd all t_scores to old_vals and remove the ones not found in t_prime_scores
     int i = 0;
-    for (auto const &d: D)
+    bool is_delete_move = false;
+    int deleted_index = -1;
+    if (t_prime.all_nodes_vec.size() < t.all_nodes_vec.size()) // a node is deleted
     {
+        // find the index of the deleted
+        is_delete_move = true;
+        set<int> set_tprime_nodes;
+        for (auto item : t_prime.all_nodes_vec)
+            set_tprime_nodes.insert(item->id);
+        for (auto &item : t.all_nodes_vec)
+            if (set_tprime_nodes.count(item->id) == 0)
+                deleted_index = item->id;
+    }
+
+
+    for (auto const &d: D) {
         vector<double> old_vals;
         vector<double> new_vals;
 
-        for (auto &u_map : t_prime_scores[i])
-        {
-            if (t_scores[i].count(u_map.first)) // add only if it is existing in the old vals
+        for (auto &u_map : t_prime_scores[i]) {
+            if (t_scores[i].count(u_map.first)) // add only if it is existing in the old vals // for the insertion case
                 old_vals.push_back(t_scores[i][u_map.first]); // again the indices should match
             new_vals.push_back(u_map.second);
         }
 
-        double res =MathOp::log_replace_sum(t_sums[i],old_vals,new_vals); // it takes t_sums[i]
-                // subtracts the olds and adds the news
-                // in case of delete, subtract an extra value
-                // in case of insert, add an extra value
-                // if the tree size changes, update it (tree.n_nodes). Posterior takes that into account
+        if (is_delete_move)
+            old_vals.push_back(t_scores[i][deleted_index]);
+
+        double res = MathOp::log_replace_sum(t_sums[i], old_vals, new_vals); // it takes t_sums[i]
+        // subtracts the olds and adds the news
+        // in case of delete, subtract an extra value
+        // in case of insert, add an extra value
+        // if the tree size changes, update it (tree.n_nodes). Posterior takes that into account
         assert(!isnan(res));
 
         t_prime_sums.push_back(res);
@@ -508,7 +546,8 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
 
 bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<int>> &D,
                                         const vector<int> &r, bool weighted,
-                                        bool validation_test_mode) {
+                                        bool validation_test_mode)
+{
     /*
      * Applies add/remove event to t_prime
      * Updates the sums and scores tables partially
@@ -534,8 +573,6 @@ bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const
      * Applies the insert/delete move on t_prime
      * Updates the sums and scores tables partially
      * */
-
-    // TODO: if root is the node to be computed, then compute all t_prime and t_prime sums
 
     Node* tobe_computed = t_prime.add_delete_node(lambda_r, lambda_c, weighted, validation_test_mode);
 

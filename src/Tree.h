@@ -1084,7 +1084,7 @@ Node *Tree::add_delete_node(double lambda_r, double lambda_c, bool weighted, boo
             {
                 // TODO: maybe encapsulate those 2 lines in a method called change_parent
                 Node* pruned_child = prune(elem); // prune from the old parent
-                pruned_child = insert_child(new_node, pruned_child); // insert into next parent
+                insert_child(new_node, pruned_child); // insert into next parent
             }
         }
         return_node = new_node;
