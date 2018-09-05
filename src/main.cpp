@@ -80,7 +80,7 @@ int main() {
     // mcmc.random_initialize();
     mcmc.compute_t_table(D,r);
 
-    mcmc.infer_mcmc(D, r, move_probs, 50000);
+    mcmc.infer_mcmc(D, r, move_probs, 150000);
     mcmc.write_best_tree();
 
     mcmc.destroy();

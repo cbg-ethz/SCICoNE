@@ -78,30 +78,10 @@ void Inference::initialize_worked_example() {
     t.insert_at(2,{{3, -1}});
     t.insert_at(1,{{1, 1}});
 
-    // score the -2596.33 tree
-//    t->random_insert({{0, 1}, {1, 1}}); //1
-//    t->insert_at(1,{{1, 1}}); // 2
-//    t->insert_at(1,{{0, -1}}); // 3
-//    t->insert_at(3,{{1, 1}, {2, 1}}); // 4
-//    t->insert_at(4,{{3, -1}}); // 5
-
-    // score the -2592.239 tree
-//    t->insert_at(0,{{3,-1}, {0,3}, {1,7}, {4,9}, {2,0}}); // 1
-//    t->insert_at(1,{{1,8}, {2,9}, {4,-5}, {0,4}, {3,3}}); // 2
-//    t->insert_at(2,{{4,3}, {2,-1}, {0,9}, {1,0}, {3,5}}); // 3
-//    t->insert_at(3,{{3,7}, {1,8}, {2,11}, {0,-3}, {4,2}}); // 4
-//    t->insert_at(4,{{1,5}, {2,3}, {4,9}, {3,-1}}); // 5
-
-//    t.insert_at(0,{{4,-1}}); // 1
-//    t.insert_at(1,{{1,1},{4,1}}); // 2
-//    t.insert_at(2,{{1,1},{0,1}}); // 3
-//    t.insert_at(3,{{2,1},{0,-1}}); // 4
-//    t.insert_at(4,{{4,1}}); // 5
-//    t.insert_at(3,{{2,1},{3,-1}}); // 6
-
-
-
-
+    // Tree score: -2605.9655
+//    t.insert_at(0,{{0,1},{1,1}}); // 1
+//    t.insert_at(1,{{0,-1},{2,1}}); // 2
+//    t.insert_at(2,{{3,-1}}); // 3
 
     t.compute_weights();
 
@@ -333,7 +313,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
             n_accepted++;
 
             t_sums = t_prime_sums;
-            update_t_scores();
+            update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
             t = t_prime;
             if (t_prime.score > best_tree.score)
                 best_tree = t_prime;
@@ -423,13 +403,34 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
 }
 
 void Inference::update_t_scores() {
-    // TODO: consider the tree size changes
+    // TODO: reuse the delete index detection code
     // iterate over t_prime_scores
     // if index exists t_scores, update, else insert
-    for (unsigned k=0; k < t_scores.size(); k++)
-        for (auto const& x : t_scores[k])
-            if(t_prime_scores[k].find(x.first) != t_prime_scores[k].end()) // if found in map
-                t_scores[k][x.first] = t_prime_scores[k][x.first];
+
+    bool is_delete_move = false;
+    int deleted_index = -1;
+    if (t_prime.all_nodes_vec.size() < t.all_nodes_vec.size()) // a node is deleted
+    {
+        // find the index of the deleted
+        is_delete_move = true;
+        set<int> set_tprime_nodes;
+        for (auto item : t_prime.all_nodes_vec)
+            set_tprime_nodes.insert(item->id);
+        for (auto &item : t.all_nodes_vec)
+            if (set_tprime_nodes.count(item->id) == 0)
+                deleted_index = item->id;
+    }
+
+
+    for (unsigned k=0; k < t_prime_scores.size(); k++) // iterates over n_cells
+        for (auto const& x : t_prime_scores[k])
+        {
+            t_scores[k][x.first] = t_prime_scores[k][x.first]; // if found in t_scores[k] map, then updates. Else inserts.
+            if (is_delete_move)
+                t_scores[k].erase(deleted_index);
+        }
+
+
 
 }
 
@@ -502,8 +503,9 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
 
 
     // In case of a delete node the removed node is also added to the old_vals
-    // in delete case: asdd all t_scores to old_vals and remove the ones not found in t_prime_scores
-    int i = 0;
+    // in delete case: add all t_scores to old_vals and remove the ones not found in t_prime_scores
+    // TODO: same lines of code is also used in update_t_scores method, make it reusable
+
     bool is_delete_move = false;
     int deleted_index = -1;
     if (t_prime.all_nodes_vec.size() < t.all_nodes_vec.size()) // a node is deleted
@@ -518,7 +520,7 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
                 deleted_index = item->id;
     }
 
-
+    int i = 0;
     for (auto const &d: D) {
         vector<double> old_vals;
         vector<double> new_vals;
