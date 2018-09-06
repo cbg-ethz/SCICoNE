@@ -45,6 +45,9 @@ void test_xxhash()
 
 }
 
+// TODO write a reprodubilicity test case with 7 moves
+// TODO implement the validation tests on the worked examples
+
 void test_reproducibility_five_moves()
 {
 

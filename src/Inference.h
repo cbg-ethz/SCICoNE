@@ -594,7 +594,7 @@ bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const
 
     Node* tobe_computed;
     try {
-        tobe_computed = t_prime.add_delete_node(lambda_r, lambda_c, weighted, validation_test_mode);
+        tobe_computed = t_prime.insert_delete_node(lambda_r, lambda_c, weighted, validation_test_mode);
     }catch (const std::out_of_range& e)
     {
         std::cout << " an out of range error was caught during the insert/delete node move, with message '"

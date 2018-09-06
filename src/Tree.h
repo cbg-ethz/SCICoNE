@@ -46,7 +46,7 @@ public:
     Node* prune_reattach(bool weighted=false, bool validation_test_mode=false);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
-    Node* add_delete_node(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
+    Node* insert_delete_node(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
     Node *delete_node(u_int64_t idx_tobe_deleted);
     bool is_leaf(Node*) const; // TODO: make it a method of Node
     Node* uniform_sample(bool with_root=true);
@@ -981,7 +981,7 @@ Node * Tree::delete_node(u_int64_t idx_tobe_deleted) {
 
 }
 
-Node *Tree::add_delete_node(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode) {
+Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode) {
     /*
      * Adds or deletes nodes move, that takes the mcmc transition probabilities into account.
      * Returns the node to perform partial score computation on.
