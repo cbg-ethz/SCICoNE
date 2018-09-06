@@ -46,8 +46,9 @@ struct Node{
         return !(rhs == *this);
     }
 
-    int get_n_children();
-    bool is_leaf();
+    int get_n_children() const;
+    bool is_leaf() const;
+    vector<Node*> get_descendents(bool with_n=true) const;
 
     // copy constructor
     Node(Node& source_node)
@@ -93,7 +94,7 @@ std::ostream& operator<<(std::ostream& os, Node& n) {
     return os;
 }
 
-int Node::get_n_children() {
+int Node::get_n_children() const{
 
     int n_children = 0;
     for (Node* temp = this->first_child; temp != nullptr; temp=temp->next)
@@ -103,7 +104,7 @@ int Node::get_n_children() {
     return n_children;
 }
 
-bool Node::is_leaf() {
+bool Node::is_leaf() const{
     /*
      * Returns true if the node is a leaf node, e.g. has no children
      * */
@@ -111,6 +112,31 @@ bool Node::is_leaf() {
         return true;
     else
         return false;
+}
+
+vector<Node *> Node::get_descendents(bool with_n) const {
+    /*
+     * Returns the descendents of node* n in a list in a BFS fashion.
+     * If with_n, then the descendents contain the node itself, otherwise not.
+     * Does preserve the order (e.g. parent is before the children)
+     *
+     * */
+    vector<Node *> descendents;
+
+    std::stack<Node*> stk;
+    stk.push(const_cast<Node*> (this)); // because this pointer is constant
+    while (!stk.empty()) {
+        Node* top = stk.top();
+        stk.pop();
+        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next)
+            stk.push(temp);
+        descendents.push_back(top);
+    }
+
+    if (!with_n)
+        descendents.erase(descendents.begin()); // erase the first node, which is n
+
+    return descendents;
 }
 
 #endif //SC_DNA_NODE_H

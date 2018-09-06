@@ -15,3 +15,15 @@ unsigned long long Utils::calcul_hash(const void *buffer, size_t length) {
     return hash;
 
 }
+
+bool Utils::is_empty_map(std::map<u_int, int> &dict){
+    /*
+     * Returns true if the map is empty, e.g. all zero
+     * */
+    for (auto const &it : dict)
+    {
+        if(it.second != 0)
+            return false;
+    }
+    return true;
+}

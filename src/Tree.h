@@ -26,16 +26,16 @@
 
 
 class Tree {
-
+private:
+    u_int n_nodes; //the number of nodes without the root
+    int ploidy; // to be added to values of the unordered map for each node
+    int counter = 0;
 public:
     Node* root;
     std::vector<Node*> all_nodes_vec; // for random selection, destructor, insertion by position, iterating without order (e.g. for each node)
-    int ploidy; // to be added to values of the unordered map for each node
     u_int n_regions; // number of regions
     double score; // log posterior score of the tree
-    int counter = 0;
-    u_int n_nodes; //the number of nodes without the root
-
+public:
     // constructor
     Tree(u_int ploidy, u_int n_regions);
     // copy constructor
@@ -48,45 +48,42 @@ public:
     Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
     Node* insert_delete_node(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
     Node *delete_node(u_int64_t idx_tobe_deleted);
-
-    Node* uniform_sample(bool with_root=true);
-    Node* weighted_sample();
+    Node* uniform_sample(bool with_root=true) const;
+    Node* weighted_sample() const;
     void random_insert(std::map<u_int, int>&&);
     void insert_at(u_int pos, std::map<u_int, int>&&);
     void insert_child(Node *pos, std::map<u_int, int>&& labels);
     map<int, double> get_children_id_score(Node *node);
-    void destroy();
     void compute_tree(const vector<int> &D, const vector<int>& r);
-    void compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r);
     void compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r);
     void compute_weights();
     u_int get_n_nodes() const;
-    vector<Node *> get_descendents(Node *n, bool with_n=true);
     friend std::ostream& operator<<(std::ostream& os, Tree& t);
     Tree& operator=(const Tree& other);
 private:
     void update_label(std::map<u_int,int>& c_parent, Node* node);
     void update_desc_labels(Node* node);
     //validation of tree
-    bool is_redundant();
+    bool is_redundant() const;
     // Validation of subtrees
-    bool is_valid_subtree(Node* node);
-    bool subtree_contains_negative(Node* n);
-    bool zero_ploidy_changes(Node* n);
-    bool region_changes(Node *n, u_int region_id);
+    bool is_valid_subtree(Node* node) const;
+    bool subtree_contains_negative(Node* n) const;
+    bool zero_ploidy_changes(Node* n) const;
+    bool region_changes(Node *n, u_int region_id) const;
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
     void compute_score(Node *node, const vector<int> &D, int &sum_D, const vector<int> &r, float eta=0.0001f);
+    void compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r);
     Node* prune(Node *pos); // does not deallocate,
     Node* insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
-    bool is_ancestor(Node *target, Node *curr);
-    bool empty_hashmap(map<u_int, int> &dict);
+    bool is_ancestor(Node *target, Node *curr) const;
+    void destroy();
 };
 
 std::ostream& operator<<(std::ostream& os, Tree& t) {
 
-    vector<Node*> nodes = t.get_descendents(t.root, true);
+    vector<Node*> nodes = t.root->get_descendents(true);
 
     os << "Tree score: " << setprecision(8) << t.score << endl;
     for (auto const &x : nodes)
@@ -205,11 +202,11 @@ Tree::~Tree() {
     destroy();
 }
 
-Node* Tree::uniform_sample(bool with_root) {
+Node* Tree::uniform_sample(bool with_root) const{
 
     int rand_val = 0;
     if (all_nodes_vec.size() == 0)
-        throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree"); // TODO: catch it somewhere!
+        throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
     else if (all_nodes_vec.size() ==1)
         rand_val = 1;
     else
@@ -586,7 +583,7 @@ void Tree::compute_weights() {
     }
 }
 
-Node *Tree::weighted_sample() {
+Node *Tree::weighted_sample() const{
 
     if (all_nodes_vec.size() == 0)
         throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
@@ -618,7 +615,7 @@ Node *Tree::weighted_sample() {
 
 }
 
-bool Tree::is_ancestor(Node *target, Node *curr) {
+bool Tree::is_ancestor(Node *target, Node *curr) const{
     /*
      * Returns true if the target node is an ancestor of the current node
      * Complexity: O(n) where n is the number of ancestors of the curr node
@@ -704,18 +701,6 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
     return return_nodes;
 }
 
-
-bool Tree::empty_hashmap(map<u_int, int> &dict) {
-
-    for (auto const &it : dict)
-    {
-        if(it.second != 0)
-            return false;
-    }
-    return true;
-
-}
-
 void Tree::update_desc_labels(Node *node) {
 
     /*
@@ -738,7 +723,7 @@ void Tree::update_desc_labels(Node *node) {
     }
 }
 
-bool Tree::is_valid_subtree(Node *node) {
+bool Tree::is_valid_subtree(Node *node) const{
     /*
      * Returns true if the subtree is valid
      * */
@@ -822,7 +807,7 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
 
     }
 
-    if (empty_hashmap(node->c_change))
+    if (Utils::is_empty_map(node->c_change))
         return nullptr; //TODO: maybe throw certain exception here
     else
     {
@@ -836,12 +821,12 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
 
 }
 
-bool Tree::subtree_contains_negative(Node* n) {
+bool Tree::subtree_contains_negative(Node* n) const{
 /*
  * Returns true if any of the descendent nodes contain a value less than -ploidy in the c hashmap
  * */
     int a = -ploidy;
-    vector<Node*> descendents = get_descendents(n, true);
+    vector<Node*> descendents = n->get_descendents(true);
     for (auto const &elem : descendents)
         for (auto const &it : elem->c)
             if (it.second < a)
@@ -850,34 +835,9 @@ bool Tree::subtree_contains_negative(Node* n) {
 
 }
 
-vector<Node *> Tree::get_descendents(Node *n, bool with_n) {
-    /*
-     * Returns the descendents of node* n in a list in a BFS fashion.
-     * If with_n, then the descendents contain the node itself, otherwise not.
-     * Does preserve the order (e.g. parent is before the children)
-     *
-     * */
-    vector<Node *> descendents;
+bool Tree::zero_ploidy_changes(Node *n) const{
 
-    std::stack<Node*> stk;
-    stk.push(n);
-    while (!stk.empty()) {
-        Node* top = (Node*) stk.top();
-        stk.pop();
-        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next)
-            stk.push(temp);
-        descendents.push_back(top);
-    }
-
-    if (!with_n)
-        descendents.erase(descendents.begin()); // erase the first node, which is n
-
-    return descendents;
-}
-
-bool Tree::zero_ploidy_changes(Node *n) {
-
-    vector<Node*> descendents = get_descendents(n, true);
+    vector<Node*> descendents = n->get_descendents(true);
     vector<int> checked_regions;
 
     for (auto const &node : descendents)
@@ -894,12 +854,12 @@ bool Tree::zero_ploidy_changes(Node *n) {
     return false;
 }
 
-bool Tree::region_changes(Node *n, u_int region_id) {
+bool Tree::region_changes(Node *n, u_int region_id) const{
     /*
      * Returns true if the region label changes in one of the descendents
      * */
 
-    vector<Node*> descendents = get_descendents(n, true);
+    vector<Node*> descendents = n->get_descendents(true);
 
     for (auto const &node : descendents)
         if (node->c_change[region_id] != 0)
@@ -908,7 +868,7 @@ bool Tree::region_changes(Node *n, u_int region_id) {
 
 }
 
-bool Tree::is_redundant() {
+bool Tree::is_redundant() const {
     /*
      * Returns true if any of the nodes have the same c maps.
      * Worst case complexity O(n), where n: n_nodes
