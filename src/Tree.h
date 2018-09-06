@@ -550,8 +550,6 @@ map<int, double> Tree::get_children_id_score(Node *node) {
         }
         // make sure the id is not in the map before
         assert(id_score_pairs.find(top->id) == id_score_pairs.end());
-        // make sure not NaN
-        assert(!isnan(top->log_score));
         id_score_pairs[top->id] = top->log_score;
     }
     return id_score_pairs;
