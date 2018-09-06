@@ -209,7 +209,7 @@ Node* Tree::uniform_sample(bool with_root) {
 
     int rand_val = 0;
     if (all_nodes_vec.size() == 0)
-        throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
+        throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree"); // TODO: catch it somewhere!
     else if (all_nodes_vec.size() ==1)
         rand_val = 1;
     else
@@ -395,7 +395,15 @@ void Tree::recursive_copy(Node* source, Node *destination) {
 }
 
 Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
-    // returns the pruned node (which is the attached node)
+    /*
+     * Prunes a node and reattaches it to another node which is not among the descendents of the pruned node.
+     * Returns the pruned node (which also happens to be the attached node)
+     * Requires more than two nodes to perform.
+     *
+     * */
+
+    if (all_nodes_vec.size() <= 2)
+        throw std::logic_error("prune and reattach move does not make sense when they is only one node besides the root");
 
     Node* prune_pos = nullptr;
 
@@ -756,6 +764,12 @@ bool Tree::is_valid_subtree(Node *node) {
 
 Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode) {
 
+    /*
+     * Adds and removes events to a node.
+     * Throws logical error if the "n_regions_to_sample" value, (drawn from a poisson) is bigger than total number of regions available.
+     * Returns the pointer to the affacted node.
+     * */
+
     Node* node;
 
     if (validation_test_mode)
@@ -782,8 +796,9 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
     std::set<int> distinct_regions;
 
     // otherwise we cannot sample distinct uniform regions
-    assert(n_regions_to_sample <= n_regions);
-    // TODO: remove assert, have if smaller then reject the move!
+    if (n_regions_to_sample > n_regions)
+        throw std::logic_error("the number of distinct regions to sample cannot be bigger than the total number of distinct regions available");
+
 
     while (regions_sampled < n_regions_to_sample)
     {
@@ -817,13 +832,13 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
     }
 
     if (empty_hashmap(node->c_change))
-        return nullptr;
+        return nullptr; //TODO: maybe throw certain exception here
     else
     {
         update_desc_labels(node); // to update the labels of the descendents
         // check if the subtrees are valid after updating the labels
         if (!is_valid_subtree(node) || is_redundant())
-            return nullptr;
+            return nullptr; //TODO: maybe throw certain exception here
 
         return node;
     }
@@ -931,8 +946,22 @@ bool Tree::is_redundant() {
 }
 
 Node * Tree::delete_node(u_int64_t idx_tobe_deleted) {
+/*
+ * Deletes the node at the given index.
+ * Assigns the first order children of the deleted node to the parent of the deleted node.
+ * Throws out_of_range exception.
+ * Returns the pointer to the parent of the deleted node.
+ * */
 
-    Node* tobe_deleted = all_nodes_vec[idx_tobe_deleted];
+    Node* tobe_deleted;
+    try {
+        tobe_deleted = all_nodes_vec[idx_tobe_deleted];
+    } catch (const std::exception& e) {
+        std::cout << " a standard exception was caught while trying to access the index of the node to be deleted from all_nodes_vec, with message '"
+                  << e.what() << "'\n";
+        throw std::out_of_range("all_nodes_vec[idx_tobe_deleted] cannot be retrieved"); // rethrow it to handle it in apply_insert_delete_move method.
+    }
+
 
     tobe_deleted = prune(tobe_deleted); // the node is pruned
     Node* parent_of_deleted = tobe_deleted->parent;

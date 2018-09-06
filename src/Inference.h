@@ -110,9 +110,20 @@ bool Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector<
      * Updates the sums and scores tables partially
      * */
 
-    using namespace std;
-    // weighted = false
-    Node* attached_node = t_prime.prune_reattach(weighted, validation_test_mode);
+    Node* attached_node;
+    try {
+        attached_node = t_prime.prune_reattach(weighted, validation_test_mode);
+    }catch (const std::logic_error& e)
+    {
+        std::cout << " a logic error was caught during the prune and reattach move, with message '"
+                  << e.what() << "'\n";
+        return false; // reject the move
+    }
+    catch (const std::exception& e) { // caught by reference to base
+        std::cout << " a standard exception was caught during the prune and reattach move, with message '"
+                  << e.what() << "'\n";
+        return false;
+    }
 
     if (attached_node != nullptr)
     {
@@ -175,7 +186,7 @@ Tree* Inference::comparison(int m) {
     double acceptance_prob = exp(log_post_t_prime - log_post_t);
 
     if (log_post_t_prime > -2000.0)
-        cout<<"debug";
+        cout<<"debug"; // remove it afterwards
 
     cout<<"acceptance prob: "<<acceptance_prob<<endl;
 
@@ -479,9 +490,23 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
 
 bool Inference::apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted, bool test_mode) {
 
-    vector<Node*> swapped_nodes = t_prime.swap_labels(weighted, test_mode);
+    vector<Node*> swapped_nodes;
+    try {
+        swapped_nodes = t_prime.swap_labels(weighted, test_mode);
+    }catch (const std::logic_error& e)
+    {
+        std::cout << " a logic error was caught during the swap labels move, with message '"
+                  << e.what() << "'\n";
+        return false; // reject the move
+    }
+    catch (const std::exception& e) { // caught by reference to base
+        std::cout << " a standard exception was caught during the swap labels move, with message '"
+                  << e.what() << "'\n";
+        return false;
+    }
 
-    if (swapped_nodes.empty())
+
+    if (swapped_nodes.empty()) // it can be empty if an exception is thrown or the move is rejected
         return false;
 
     for (auto const &node : swapped_nodes)
@@ -556,7 +581,21 @@ bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const 
      * */
 
     // weighted = false
-    Node* attached_node = t_prime.add_remove_events(lambda_r,lambda_c,weighted, validation_test_mode);
+    Node* attached_node;
+
+    try {
+        attached_node = t_prime.add_remove_events(lambda_r,lambda_c,weighted, validation_test_mode);
+    }catch (const std::logic_error& e)
+    {
+        std::cout << " a logic error was caught during the add remove events move, with message '"
+                  << e.what() << "'\n";
+        return false; // reject the move
+    }
+    catch (const std::exception& e) { // caught by reference to base
+        std::cout << " a standard exception was caught during the add remove events move, with message '"
+                  << e.what() << "'\n";
+        return false;
+    }
 
     if (attached_node != nullptr)
     {
@@ -576,7 +615,19 @@ bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const
      * Updates the sums and scores tables partially
      * */
 
-    Node* tobe_computed = t_prime.add_delete_node(lambda_r, lambda_c, weighted, validation_test_mode);
+    Node* tobe_computed;
+    try {
+        tobe_computed = t_prime.add_delete_node(lambda_r, lambda_c, weighted, validation_test_mode);
+    }catch (const std::out_of_range& e)
+    {
+        std::cout << " an out of range error was caught during the insert/delete node move, with message '"
+                  << e.what() << "'\n";
+        return false; // reject the move
+    }catch (const std::exception& e) {
+        std::cout << " a standard exception was caught during the insert/delete node move, with message '"
+                  << e.what() << "'\n";
+        return false;
+    }
 
     if (tobe_computed != nullptr)
     {
