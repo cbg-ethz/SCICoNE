@@ -47,6 +47,7 @@ struct Node{
     }
 
     int get_n_children();
+    bool is_leaf();
 
     // copy constructor
     Node(Node& source_node)
@@ -100,6 +101,16 @@ int Node::get_n_children() {
         n_children++;
     }
     return n_children;
+}
+
+bool Node::is_leaf() {
+    /*
+     * Returns true if the node is a leaf node, e.g. has no children
+     * */
+    if (this->first_child == nullptr)
+        return true;
+    else
+        return false;
 }
 
 #endif //SC_DNA_NODE_H

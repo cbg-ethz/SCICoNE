@@ -48,7 +48,7 @@ public:
     Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
     Node* insert_delete_node(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
     Node *delete_node(u_int64_t idx_tobe_deleted);
-    bool is_leaf(Node*) const; // TODO: make it a method of Node
+
     Node* uniform_sample(bool with_root=true);
     Node* weighted_sample();
     void random_insert(std::map<u_int, int>&&);
@@ -221,13 +221,6 @@ Node* Tree::uniform_sample(bool with_root) {
     return all_nodes_vec[rand_val-1];
 }
 
-bool Tree::is_leaf(Node* n) const{
-    if (n->first_child == nullptr)
-        return true;
-    else
-        return false;
-}
-
 Node * Tree::insert_child(Node *pos, Node *source) {
 
     // set the parent from the child
@@ -242,7 +235,7 @@ Node * Tree::insert_child(Node *pos, Node *source) {
     n_nodes++;
 
     // insert
-    if (is_leaf(pos))
+    if (pos->is_leaf())
     {
         pos->first_child = source;
         update_label(pos->c, source);
