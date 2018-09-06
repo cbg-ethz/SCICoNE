@@ -52,7 +52,10 @@ public:
     void update_t_scores();
     void random_initialize(); // randomly initializes a tree and copies it into the other
     void initialize_worked_example(); // initializes the trees based on the test example
+private:
+    int deleted_node_idx();
 };
+
 
 
 
@@ -414,34 +417,20 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
 }
 
 void Inference::update_t_scores() {
-    // TODO: reuse the delete index detection code
+
     // iterate over t_prime_scores
     // if index exists t_scores, update, else insert
 
-    bool is_delete_move = false;
-    int deleted_index = -1;
-    if (t_prime.all_nodes_vec.size() < t.all_nodes_vec.size()) // a node is deleted
-    {
-        // find the index of the deleted
-        is_delete_move = true;
-        set<int> set_tprime_nodes;
-        for (auto item : t_prime.all_nodes_vec)
-            set_tprime_nodes.insert(item->id);
-        for (auto &item : t.all_nodes_vec)
-            if (set_tprime_nodes.count(item->id) == 0)
-                deleted_index = item->id;
-    }
+    int deleted_index = deleted_node_idx(); // if -1 then not deleted, otherwise the index of the deleted
 
 
     for (unsigned k=0; k < t_prime_scores.size(); k++) // iterates over n_cells
         for (auto const& x : t_prime_scores[k])
         {
             t_scores[k][x.first] = t_prime_scores[k][x.first]; // if found in t_scores[k] map, then updates. Else inserts.
-            if (is_delete_move)
+            if (deleted_index != -1)
                 t_scores[k].erase(deleted_index);
         }
-
-
 
 }
 
@@ -531,19 +520,7 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
     // in delete case: add all t_scores to old_vals and remove the ones not found in t_prime_scores
     // TODO: same lines of code is also used in update_t_scores method, make it reusable
 
-    bool is_delete_move = false;
-    int deleted_index = -1;
-    if (t_prime.all_nodes_vec.size() < t.all_nodes_vec.size()) // a node is deleted
-    {
-        // find the index of the deleted
-        is_delete_move = true;
-        set<int> set_tprime_nodes;
-        for (auto item : t_prime.all_nodes_vec)
-            set_tprime_nodes.insert(item->id);
-        for (auto &item : t.all_nodes_vec)
-            if (set_tprime_nodes.count(item->id) == 0)
-                deleted_index = item->id;
-    }
+    int deleted_index = deleted_node_idx(); // if -1 then not deleted, otherwise the index of the deleted
 
     int i = 0;
     for (auto const &d: D) {
@@ -556,7 +533,7 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
             new_vals.push_back(u_map.second);
         }
 
-        if (is_delete_move)
+        if (deleted_index != -1)
             old_vals.push_back(t_scores[i][deleted_index]);
 
         double res = MathOp::log_replace_sum(t_sums[i], old_vals, new_vals); // it takes t_sums[i]
@@ -639,7 +616,26 @@ bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const
         return false;
 }
 
+int Inference::deleted_node_idx() {
+    /*
+     * Finds and returns the index of the deleted node, should a node be deleted.
+     * Return -1 if not found.
+     * */
 
+    int deleted_index = -1;
+    if (t_prime.all_nodes_vec.size() < t.all_nodes_vec.size()) // a node is deleted
+    {
+        // find the index of the deleted
+        set<int> set_tprime_nodes;
+        for (auto item : t_prime.all_nodes_vec)
+            set_tprime_nodes.insert(item->id);
+        for (auto &item : t.all_nodes_vec)
+            if (set_tprime_nodes.count(item->id) == 0)
+                deleted_index = item->id;
+    }
+
+    return deleted_index;
+}
 
 
 #endif //SC_DNA_INFERENCE_H
