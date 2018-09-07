@@ -2,9 +2,9 @@
 // Created by Tuncel  Mustafa Anil on 6/19/18.
 //
 
-#include <map>
+
 #include "MathOp.h"
-#include "SingletonRandomGenerator.h"
+
 
 
 template<class T>
@@ -40,7 +40,7 @@ double MathOp::log_likelihood(std::vector<double> v)
 }
 
 template<class T>
-double MathOp::vec_sum(std::vector<T> v) {
+double MathOp::vec_sum(vector<T> &v) {
     return accumulate( v.begin(), v.end(), 0.0);
 }
 
@@ -326,5 +326,43 @@ double MathOp::n_choose_k(int n, int k) {
     double res = tgamma(n+1) / (tgamma(k+1) * tgamma(n-k+1));
 
     return res;
+}
+
+double MathOp::compute_omega(Node *node, double lambda_r, double lambda_c, double K) {
+    /*
+     * Computes the omega value used in assessing the delete node probabilities.
+     * Note: omega is named w on the original publication.
+     * */
+
+    int r_i = static_cast<int>(node->c_change.size());
+
+    if (r_i == 0)
+        return 0.0;
+    if (r_i > K)
+        throw std::logic_error("There are not r distinct regions to sample");
+
+    vector<int> c;
+    for (auto const& x : node->c_change)
+        c.push_back(abs(x.second));
+
+    double omega_val = 1.0;
+    omega_val *= pow(lambda_r, r_i - 1) * exp(-1 * lambda_r);
+    double sum_cj_minus = 0.0;
+
+    for (auto const &elem : c)
+        sum_cj_minus += elem - 1;
+    omega_val *= pow(lambda_c, sum_cj_minus);
+    omega_val *= exp(-1 * r_i * lambda_c);
+
+    omega_val /= pow(2, r_i);
+    omega_val /= MathOp::n_choose_k(K, r_i);
+    omega_val /= tgamma(r_i);
+
+    double mul_cj_tgamma = 1.0;
+    for (auto const &elem : c)
+        mul_cj_tgamma *= tgamma(elem);
+
+    omega_val /= mul_cj_tgamma;
+    return omega_val;
 }
 

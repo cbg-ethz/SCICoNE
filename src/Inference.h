@@ -348,7 +348,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
 }
 
 double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
-
+    // TODO: move to the mathop
     // m: n_cells, n: n_nodes
 
     int n = tree.get_n_nodes();

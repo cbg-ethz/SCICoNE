@@ -12,6 +12,14 @@
 #include <cassert>
 #include <random>
 #include <map>
+#include "SingletonRandomGenerator.h"
+
+#ifndef SC_DNA_NODE_H
+#include "Node.h"
+#endif //SC_DNA_NODE_H
+
+
+
 
 
 using namespace std;
@@ -42,7 +50,9 @@ public:
     static double vec_avg(vector<T> &);
 
     template <class T>
-    static double vec_sum(vector<T>);
+    static double vec_sum(vector<T> &);
+
+    static double compute_omega(Node *node, double lambda_r, double lambda_c, double K);
 
 
 

@@ -7,7 +7,6 @@
 
 #include <iostream>
 #include <vector>
-#include <stack>
 #include <queue>
 #include <map>
 #include <unordered_map>
@@ -941,9 +940,6 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
      *
      * */
 
-    // TODO: compute the other 2 vectors should the move be weighted
-
-
     Node* return_node = nullptr;
 
     vector<double> chi; // add weights
@@ -979,55 +975,20 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     // sign
     std::bernoulli_distribution bernoulli_05(0.5);
 
+
     for (auto const &node : all_nodes_vec) { // computes the omega vector
-
-        int r = poisson_r(generator) + 1; // n_regions to sample
-        // if r>K then reject the move. K: max region index
-        if (r > K)
-            return nullptr;
-
-        vector<int> c;
-
-        for (int j = 0; j < r; ++j)
-        {
-            int n_copies = poisson_c(generator) + 1;
-            c.push_back(n_copies);
-        }
-
-        double omega_val = 1.0;
-        omega_val *= pow(lambda_r, r - 1) * exp(-1 * lambda_r);
-        double sum_cj_minus = 0.0;
-
-        for (auto const &elem : c) {
-            sum_cj_minus += elem - 1;
-        }
-        omega_val *= pow(lambda_c, sum_cj_minus) * exp(-1 * r * lambda_c);
-
-        omega_val /= pow(2, r);
-        omega_val /= MathOp::n_choose_k(K, r);
-        omega_val /= tgamma(r);
-
-        double mul_cj_tgamma = 1.0;
-        for (auto const &elem : c) {
-            mul_cj_tgamma *= tgamma(elem);
-        }
-
-        omega_val /= mul_cj_tgamma;
-
+        double omega_val = MathOp::compute_omega(node, lambda_r, lambda_c, K);
         omega.push_back(omega_val);
-
         if (weighted)
             upsilon.push_back(omega_val/node->n_descendents);
     }
-
-
 
     double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
     double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
 
     double normalization_term = sum_chi + sum_omega;
     double p_chi = sum_chi / normalization_term;
-    double p_omega = sum_omega / normalization_term;
+    // double p_omega = sum_omega / normalization_term;
 
     std::uniform_real_distribution<double> prob_dist(0.0,1.0);
     double rand_val = prob_dist(generator); // to be btw. 0 and 1
@@ -1100,9 +1061,17 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     else // delete is chosen
     {
         cout <<"delete node move" <<endl;
-        std::discrete_distribution<> dd(omega.begin()+1, omega.end()); // begin +1 because root cannot be deleted
-        u_int64_t idx_tobe_deleted = dd(generator)+1; // this is the index of the all_nodes_vector,
-                // +1 here again because the discrete distribution will consider omega.begin()+1 as 0
+
+        std::discrete_distribution<>* dd;
+        if (weighted)
+            dd = new std::discrete_distribution<>(upsilon.begin()+1,upsilon.end());
+        else
+            dd = new std::discrete_distribution<>(omega.begin()+1,omega.end());
+
+        u_int64_t idx_tobe_deleted = (*dd)(generator) + 1; // this is the index of the all_nodes_vector,
+        // +1 here again because the discrete distribution will consider omega.begin()+1 as 0
+
+        delete dd;
         return_node = delete_node(idx_tobe_deleted); // returns the parent of the deleted node
 
     }
