@@ -297,7 +297,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
             {
                 // insert delete node
                 cout << "insert/delete node" << endl;
-                bool insert_delete_success = apply_insert_delete_node(1.0, 1.0, D, r, false, false); // weighted=false
+                bool insert_delete_success = apply_insert_delete_node(1.0, 1.0, D, r, true, false); // weighted=false
                 if (not insert_delete_success) {
                     insert_delete_move_rejection++;
                     rejected_before_comparison = true;

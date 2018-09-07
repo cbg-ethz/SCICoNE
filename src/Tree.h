@@ -53,7 +53,7 @@ public:
     void random_insert(std::map<u_int, int>&&);
     void insert_at(u_int pos, std::map<u_int, int>&&);
     void insert_child(Node *pos, std::map<u_int, int>&& labels);
-    map<int, double> get_children_id_score(Node *node);
+    map<int, double> get_children_id_score(Node *node); // TODO: can be a method of node instead
     void compute_tree(const vector<int> &D, const vector<int>& r);
     void compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r);
     void compute_weights();
@@ -66,9 +66,9 @@ private:
     //validation of tree
     bool is_redundant() const;
     // Validation of subtrees
-    bool is_valid_subtree(Node* node) const;
-    bool subtree_contains_negative(Node* n) const;
-    bool zero_ploidy_changes(Node* n) const;
+    bool is_valid_subtree(Node* node) const;// TODO: can be a method of node instead
+    bool subtree_contains_negative(Node* n) const;// TODO: can be a method of node instead
+    bool zero_ploidy_changes(Node* n) const;// TODO: can be a method of node instead
     bool region_changes(Node *n, u_int region_id) const;
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
@@ -941,17 +941,30 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
      *
      * */
 
+    // TODO: compute the other 2 vectors should the move be weighted
+
 
     Node* return_node = nullptr;
 
     vector<double> chi; // add weights
     vector<double> omega; // delete weights
+
+    vector<double> xi; // cost weighted chi
+    vector<double> upsilon; // cost weighted omega
+
     // iterate over all_nodes, use node->n_descendents-1 as n_children
     // using all_nodes_vec is safe here since neither its order nor its size will change until the action and the node are chosen
     for (auto const &node : all_nodes_vec)
     {
         double chi_val = pow(2, node->get_n_children()); // chi is to be computed for the n_first order children
         chi.push_back(chi_val);
+
+        if (weighted)
+        {
+            double xi_val = pow(2, node->get_n_children()+1) / (node->n_descendents+1);
+            xi.push_back(xi_val);
+        }
+
     }
 
     // sample the number of regions to be affected with Poisson(lambda_r)+1
@@ -1002,7 +1015,12 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
         omega_val /= mul_cj_tgamma;
 
         omega.push_back(omega_val);
+
+        if (weighted)
+            upsilon.push_back(omega_val/node->n_descendents);
     }
+
+
 
     double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
     double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
@@ -1018,8 +1036,15 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     {
         // add is chosen
         cout <<"add node" <<endl;
-        std::discrete_distribution<> dd(chi.begin(), chi.end());
-        u_int pos_to_insert = dd(generator); // this is the index of the all_nodes_vector.
+        std::discrete_distribution<>* dd;
+
+        if (weighted)
+            dd = new std::discrete_distribution<>(xi.begin(),xi.end());
+        else
+            dd = new std::discrete_distribution<>(chi.begin(),chi.end());
+
+        u_int pos_to_insert = (*dd)(generator); // this is the index of the all_nodes_vector.
+        delete dd;
 
         // create a map, fill it properly with r amount of labels
         map<u_int, int> distinct_regions;
