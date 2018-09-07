@@ -20,6 +20,7 @@ int main()
     test_prune_reattach();
     test_weighted_prune_reattach();
     test_add_remove_event();
+    test_insert_delete_weights();
     test_reproducibility_five_moves();
     return EXIT_SUCCESS;
 }
