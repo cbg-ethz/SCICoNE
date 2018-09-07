@@ -7,6 +7,7 @@
 
 #include <map>
 #include <iostream>
+#include <stack>
 
 using namespace std;
 
@@ -22,33 +23,33 @@ struct Node{
     Node* next = nullptr;
     Node* parent = nullptr;
 
-    bool operator<(const Node &rhs) const {
+    inline bool operator<(const Node &rhs) const {
         return id < rhs.id;
     }
 
-    bool operator>(const Node &rhs) const {
+    inline bool operator>(const Node &rhs) const {
         return rhs < *this;
     }
 
-    bool operator<=(const Node &rhs) const {
+    inline bool operator<=(const Node &rhs) const {
         return !(rhs < *this);
     }
 
-    bool operator>=(const Node &rhs) const {
+    inline bool operator>=(const Node &rhs) const {
         return !(*this < rhs);
     }
 
-    bool operator==(const Node &rhs) const {
+    inline bool operator==(const Node &rhs) const {
         return id == rhs.id;
     }
 
-    bool operator!=(const Node &rhs) const {
+    inline bool operator!=(const Node &rhs) const {
         return !(rhs == *this);
     }
 
-    int get_n_children() const;
-    bool is_leaf() const;
-    vector<Node*> get_descendents(bool with_n=true) const;
+    inline int get_n_children() const;
+    inline bool is_leaf() const;
+    inline vector<Node*> get_descendents(bool with_n=true) const;
 
     // copy constructor
     Node(Node& source_node)
@@ -73,7 +74,7 @@ struct Node{
 
 };
 
-std::ostream& operator<<(std::ostream& os, Node& n) {
+inline std::ostream& operator<<(std::ostream& os, Node& n) {
     os << "node " << n.id << ": ";
     for (auto i : n.c_change)
         os << " " << i.first << ":" << i.second << ',';
@@ -94,7 +95,7 @@ std::ostream& operator<<(std::ostream& os, Node& n) {
     return os;
 }
 
-int Node::get_n_children() const{
+inline int Node::get_n_children() const{
 
     int n_children = 0;
     for (Node* temp = this->first_child; temp != nullptr; temp=temp->next)
@@ -104,7 +105,7 @@ int Node::get_n_children() const{
     return n_children;
 }
 
-bool Node::is_leaf() const{
+inline bool Node::is_leaf() const{
     /*
      * Returns true if the node is a leaf node, e.g. has no children
      * */
@@ -114,7 +115,7 @@ bool Node::is_leaf() const{
         return false;
 }
 
-vector<Node *> Node::get_descendents(bool with_n) const {
+inline vector<Node *> Node::get_descendents(bool with_n) const {
     /*
      * Returns the descendents of node* n in a list in a BFS fashion.
      * If with_n, then the descendents contain the node itself, otherwise not.
