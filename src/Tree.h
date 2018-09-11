@@ -46,11 +46,13 @@ public:
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
     Node* insert_delete_node(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
-    Node *delete_node(u_int64_t idx_tobe_deleted);
+    Node* condense_split_node(double lambda_s, bool weighted = false, bool validation_test_mode = false);
+    Node* delete_node(u_int64_t idx_tobe_deleted);
+    Node* delete_node(Node* node);
     Node* uniform_sample(bool with_root=true) const;
     Node* weighted_sample() const;
     void random_insert(std::map<u_int, int>&&);
-    void insert_at(u_int pos, std::map<u_int, int>&&);
+    void insert_at(u_int pos, std::map<u_int, int>&&); // uses all_nodes_vec pos
     void insert_child(Node *pos, std::map<u_int, int>&& labels);
     map<int, double> get_children_id_score(Node *node); // TODO: can be a method of node instead
     void compute_tree(const vector<int> &D, const vector<int>& r);
@@ -218,6 +220,9 @@ Node* Tree::uniform_sample(bool with_root) const{
 }
 
 Node * Tree::insert_child(Node *pos, Node *source) {
+/*
+ * Inserts the source node to the pos node.
+ * */
 
     // set the parent from the child
     source->parent = pos;
@@ -304,6 +309,9 @@ void Tree::random_insert(std::map<u_int, int>&& labels)
 }
 
 void Tree::insert_at(u_int pos, std::map<u_int, int> && labels) {
+    /*
+     * Inserts the node by its all_nodes_vector position
+     * */
     Node* n = all_nodes_vec[pos];
     insert_child(n, std::move(labels));
 
@@ -911,26 +919,7 @@ Node * Tree::delete_node(u_int64_t idx_tobe_deleted) {
                   << e.what() << "'\n";
         throw std::out_of_range("all_nodes_vec[idx_tobe_deleted] cannot be retrieved"); // rethrow it to handle it in apply_insert_delete_move method.
     }
-
-
-    tobe_deleted = prune(tobe_deleted); // the node is pruned
-    Node* parent_of_deleted = tobe_deleted->parent;
-
-    // retrieve the first order children and prune & reattach them to parent_of_deleted
-    vector<Node*> first_order_children;
-    for (Node* temp = tobe_deleted->first_child; temp != nullptr; temp=temp->next)
-    {
-        first_order_children.push_back(temp);
-    }
-    for (Node* elem : first_order_children)
-    {
-        Node* pruned_child = prune(elem); // prune removes the next link, you cannot prune while iterating over children
-        pruned_child = insert_child(parent_of_deleted, pruned_child);
-    }
-
-
-    return parent_of_deleted; // return the node that is going to be used for the partial trees scoring
-
+    return delete_node(tobe_deleted);
 }
 
 Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode) {
@@ -1088,6 +1077,275 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
 
 
     return return_node;
+}
+
+Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_test_mode) {
+    /*
+     * Condenses two nodes into one or splits a node into two.
+     * */
+
+    Node* return_node = nullptr;
+
+    vector<double> chi; // split weights
+    vector<double> omega; // condense weights
+
+    vector<double> xi; // cost weighted chi
+    vector<double> upsilon; // cost weighted omega
+
+
+
+    std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+    // n_regions from Poisson(lambda_S)+1
+    std::poisson_distribution<int> poisson_s(lambda_s); // the param is to be specified later
+
+    int K = this->n_regions;
+    std::bernoulli_distribution bernoulli_05(0.5);
+
+    vector<Node*> descendents_of_root = this->root->get_descendents(false);
+
+    // compute chi and xi
+    for (auto const &node : descendents_of_root) // all nodes without the root
+    {
+        if (node->c_change.size() <= 1)
+            continue;
+        else
+        {
+            double chi_val = pow(2, node->get_n_children());
+            chi.push_back(chi_val);
+
+            if (weighted)
+            {
+                double xi_val = pow(2, node->get_n_children()+1) / (node->n_descendents+1);
+                xi.push_back(xi_val);
+            }
+        }
+    }
+
+    // compute omega and upsilon
+    /*
+     * 1. compute v_p and v_c
+     * 2. compute f(c)
+     * 3. compute omega
+     * */
+    for (auto const &node : descendents_of_root)
+    {
+        if (node->c_change.size() ==1)
+            continue; // cannot split
+        else
+        {
+            map<u_int,int> v_p;
+            map<u_int,int> v_c;
+
+            for (auto const& x : node->c_change) // for a node // TODO: make a method that takes 2 maps by reference and updates them, reuse it if split move is chosen
+            {
+                bool sign = bernoulli_05(generator);
+                int beta = 2 * sign -1;
+                int lambda = poisson_s(generator);
+
+
+                int v_k = x.second;
+                if (v_k % 2 == 0) // even value
+                    v_p[x.first] = v_k/2 + beta*(0.5 + lambda); // results in integer
+                else // odd value
+                    v_p[x.first] = v_k/2 + beta*lambda;
+
+                v_c[x.first] = v_k - v_p[x.first]; // v_c = v - v_p
+
+            }
+
+            if (Utils::is_empty_map(v_p) || Utils::is_empty_map(v_c)) // if one of them is an empty map then reject the move
+                throw std::logic_error("empty node created, condense split move will be rejected"); // TODO: handle it in the inference class apply method
+
+            double omega_val = 1.0; //TODO later compute this part in MathOp
+            for (auto const& x : node->c_change) // iterate over c_changes of node
+            {
+
+                if (node->c_change.size() ==1)
+                    continue; // this node won't be considered  in omega
+
+                int c = abs(v_p[x.first] - v_c[x.first]); // the absolute difference c btw n_copies in parent and child
+                double f_c = 1.0;
+
+                if (c % 2 == 0) // c is even
+                {
+                    f_c *= pow(lambda_s, c/2);
+                    f_c *= exp(-1*lambda_s);
+                    f_c /= 2*tgamma(c/2 +1); //tgamma +1 = factorial
+                }
+                else // c is odd
+                {
+                    f_c *= pow(lambda_s, (c-1)/2);
+                    f_c *= exp(-1*lambda_s);
+                    f_c /= 2*tgamma((c-1)/2 + 1);
+                }
+                omega_val *= f_c;
+            }
+
+            omega.push_back(omega_val);
+            if (weighted)
+                upsilon.push_back(omega_val / node->n_descendents);
+
+        }
+    }
+
+    double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+    double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+
+    double normalization_term = sum_chi + sum_omega;
+    double p_chi = sum_chi / normalization_term;
+
+    std::uniform_real_distribution<double> prob_dist(0.0,1.0);
+    double rand_val = prob_dist(generator); // to be btw. 0 and 1
+
+    if (rand_val < p_chi)
+    {
+        // split is chosen
+        cout <<"split node" <<endl;
+        std::discrete_distribution<>* dd;
+
+        if (weighted)
+            dd = new std::discrete_distribution<>(xi.begin(),xi.end());
+        else
+            dd = new std::discrete_distribution<>(chi.begin(),chi.end());
+
+        u_int pos_to_insert = (*dd)(generator); // this is the index of the descendents_of_root.
+        delete dd;
+
+        Node* parent = descendents_of_root[pos_to_insert]; // this node will be split
+
+        if (parent->c_change.size() == 1)
+            throw logic_error("Nodes with single events in a single region cannot be split");
+
+        // compute v_p and v_c
+        map<u_int,int> v_p;
+        map<u_int,int> v_c;
+
+        for (auto const& x : parent->c_change) // for a node // TODO: make a method that takes 2 maps by reference and updates them, reuse it if split move is chosen
+        {
+            bool sign = bernoulli_05(generator);
+            int beta = 2 * sign -1;
+            int lambda = poisson_s(generator);
+            int v_k = x.second;
+            if (v_k % 2 == 0) // even value
+                v_p[x.first] = v_k/2 + beta*(0.5 + lambda); // results in integer
+            else // odd value
+                v_p[x.first] = v_k/2 + beta*lambda;
+            v_c[x.first] = v_k - v_p[x.first]; // v_c = v - v_p
+
+            // make sure no zero values are created
+            if (v_p.at(x.first) == 0)
+                v_p.erase(x.first);
+            if (v_c.at(x.first) == 0)
+                v_c.erase(x.first);
+
+
+        }
+        parent->c_change = v_p; // the parent c_change becomes v_p
+
+        // retrieve the first order children of parent, because some will be passed to the new children
+        vector<Node*> first_order_children;
+        for (Node* temp = parent->first_child; temp != nullptr; temp=temp->next)
+        {
+            first_order_children.push_back(temp);
+        }
+
+        this->insert_child(parent, static_cast<map<u_int,int>&&>(v_c)); // insert the child with v_c
+        Node* new_node = all_nodes_vec.back(); // the last inserted elem, e.g. new node
+
+        // foreach first_order_child, with 0.5 prob. change their parent to become the last element.
+        // Change the parent with 0.5 prob
+        for (Node* elem : first_order_children)
+        {
+            bool rand = bernoulli_05(generator); // either true or false with 0.5 prob
+            if (rand)
+            {
+                Node* pruned_child = prune(elem); // prune from the old parent
+                insert_child(new_node, pruned_child); // insert into next parent
+            }
+        }
+
+        return_node = parent;
+
+    }
+    else
+    {
+        // condense is chosen
+        // condense is delete with its c_change values passed to the parent
+        cout << "condense node move" <<endl;
+
+        std::discrete_distribution<>* dd;
+        if (weighted)
+            dd = new std::discrete_distribution<>(upsilon.begin(),upsilon.end());
+        else
+            dd = new std::discrete_distribution<>(omega.begin(),omega.end());
+
+        u_int64_t idx_tobe_deleted = (*dd)(generator); // this is the index of the descendents_of_root,
+
+        delete dd;
+
+        Node* tobe_deleted = descendents_of_root[idx_tobe_deleted]; // this node will be split
+
+        // check if suitable for condensing
+        if (Utils::is_empty_map(tobe_deleted->c_change) || Utils::is_empty_map(tobe_deleted->parent->c_change)) // if one of them is an empty map then reject the move
+            throw std::logic_error("cannot condense an node with an empty node");
+
+        map<u_int,int> condensed_c_change = tobe_deleted->parent->c_change;
+
+        for (auto const& x : tobe_deleted->c_change)
+        {
+            int new_val = x.second;
+            if (condensed_c_change.count(x.first))
+                new_val += condensed_c_change[x.first];
+
+            if (new_val == 0)
+                throw std::logic_error("Any of the events cannot cancel completely upon condense");
+            condensed_c_change[x.first] = new_val;
+        }
+
+        tobe_deleted->parent->c_change = condensed_c_change;
+
+        return_node = delete_node(tobe_deleted); // returns the parent of the deleted node
+
+    }
+
+    //update the c vectors of the parent and its new descendents
+    update_desc_labels(return_node);
+    // check if the subtrees are valid after updating the labels
+    if (!is_valid_subtree(return_node) || is_redundant())
+        return nullptr;
+
+    // recompute the weights after the tree structure is changed
+    this->compute_weights();
+
+    return return_node;
+}
+
+Node* Tree::delete_node(Node *node) {
+    /*
+     * Deletes the node.
+     * Assigns the first order children of the deleted node to the parent of the deleted node.
+     * Returns the pointer to the parent of the deleted node.
+     * */
+
+    Node* tobe_deleted = node;
+
+    tobe_deleted = prune(tobe_deleted); // the node is pruned
+    Node* parent_of_deleted = tobe_deleted->parent;
+
+    // retrieve the first order children and prune & reattach them to parent_of_deleted
+    vector<Node*> first_order_children;
+    for (Node* temp = tobe_deleted->first_child; temp != nullptr; temp=temp->next)
+    {
+        first_order_children.push_back(temp);
+    }
+    for (Node* elem : first_order_children)
+    {
+        Node* pruned_child = prune(elem); // prune removes the next link, you cannot prune while iterating over children
+        pruned_child = insert_child(parent_of_deleted, pruned_child);
+    }
+
+
+    return parent_of_deleted; // return the node that is going to be used for the partial trees scoring
 }
 
 

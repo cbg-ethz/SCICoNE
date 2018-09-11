@@ -45,6 +45,7 @@ public:
                                  bool weighted = false,
                                  bool validation_test_mode = false);
     bool apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
+    bool apply_condense_split(double lambda_s, const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
     bool apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false, bool test_mode = false);
     Tree * comparison(int m);
     void infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters);
@@ -221,6 +222,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     int n_attached_to_the_same_pos = 0;
     int add_remove_move_rejected = 0;
     int insert_delete_move_rejection = 0;
+    int condense_split_move_rejection = 0;
 
     // for writing the posteriors on file
     std::ofstream outfile;
@@ -307,6 +309,21 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
                     cout<< "insert/delete accepted!" << endl;
                 break;
             }
+            case 6:
+            {
+                // condense split move
+                cout << "condense split move " <<endl;
+                bool condense_split_success = apply_condense_split(1.0,D,r,false,false);
+                if (not condense_split_success)
+                {
+                    condense_split_move_rejection++;
+                    rejected_before_comparison = true;
+                    cout << "condense/split move is rejected before comparison"<<endl;
+                }
+                else
+                    cout << "condense/split accepted!"<<endl;
+                break;
+            }
             default:
                 throw std::logic_error("undefined move index");
         }
@@ -345,6 +362,7 @@ void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, c
     cout<<"n_rejected: "<<n_rejected<<endl;
     cout<<"n_attached_to_the_same_pos: "<<n_attached_to_the_same_pos<<endl;
     cout<<"add_remove_move_rejected: "<<add_remove_move_rejected<<endl;
+    cout<<"condense/split rejected: " << condense_split_move_rejection<<endl;
 }
 
 double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
@@ -635,6 +653,33 @@ int Inference::deleted_node_idx() {
     }
 
     return deleted_index;
+}
+
+bool Inference::apply_condense_split(double lambda_s, const vector<vector<int>> &D, const vector<int> &r, bool weighted,
+                                     bool validation_test_mode) {
+    /*
+     * Applies the condense/delete move on t_prime
+     * Updates the sums and scores tables partially
+     * */
+
+    Node* tobe_computed;
+    try
+    {
+        tobe_computed = t_prime.condense_split_node(lambda_s,weighted,validation_test_mode);
+    }catch (const std::exception& e) {
+        std::cout << " a standard exception was caught during the split/condense node move, with message '"
+                  << e.what() << "'\n";
+        return false;
+    }
+
+    if (tobe_computed != nullptr)
+    {
+        compute_t_prime_scores(tobe_computed, D, r);
+        compute_t_prime_sums(D);
+        return true;
+    }
+    else
+        return false;
 }
 
 
