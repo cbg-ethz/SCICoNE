@@ -218,7 +218,7 @@ int main() {
     // mcmc.random_initialize();
     mcmc.compute_t_table(D_real,r_real);
 
-    mcmc.infer_mcmc(D_real, r_real, move_probs, 50);
+    mcmc.infer_mcmc(D_real, r_real, move_probs, 50000);
     mcmc.write_best_tree();
 
     mcmc.destroy();
