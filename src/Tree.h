@@ -55,8 +55,8 @@ public:
     void insert_at(u_int pos, std::map<u_int, int>&&); // uses all_nodes_vec pos
     void insert_child(Node *pos, std::map<u_int, int>&& labels);
     map<int, double> get_children_id_score(Node *node); // TODO: can be a method of node instead
-    void compute_tree(const vector<int> &D, const vector<int>& r);
-    void compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r);
+    void compute_tree(const vector<double> &D, const vector<int> &r);
+    void compute_stack(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r);
     void compute_weights();
     u_int get_n_nodes() const;
     friend std::ostream& operator<<(std::ostream& os, Tree& t);
@@ -73,8 +73,8 @@ private:
     bool region_changes(Node *n, u_int region_id) const;
     void copy_tree(const Tree& source_tree);
     void recursive_copy(Node *source, Node *destination);
-    void compute_score(Node *node, const vector<int> &D, int &sum_D, const vector<int> &r, float eta=0.0001f);
-    void compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r);
+    void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta = 0.0001f);
+    void compute_root_score(double &sum_d, const vector<int> &r);
     Node* prune(Node *pos); // does not deallocate,
     Node* insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
@@ -96,7 +96,7 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
 
 
 
-void Tree::compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r) {
+void Tree::compute_root_score(double &sum_d, const vector<int> &r) {
 
     int z = 0;
     for (auto const &x : r)
@@ -106,12 +106,12 @@ void Tree::compute_root_score(const vector<int> &D, int& sum_d, const vector<int
     root->z = z;
 }
 
-void Tree::compute_score(Node *node, const vector<int> &D, int &sum_D, const vector<int> &r, float eta) {
+void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta) {
 
 
     if (node->parent == nullptr)
     {
-        compute_root_score(D, sum_D,r);
+        compute_root_score(sum_D, r);
     }
     else
 
@@ -148,15 +148,15 @@ void Tree::compute_score(Node *node, const vector<int> &D, int &sum_D, const vec
 }
 
 
-void Tree::compute_tree(const vector<int> &D, const vector<int>& r) {
+void Tree::compute_tree(const vector<double> &D, const vector<int> &r) {
 
     //reuse the computed sum in each node
-    int sum_d = std::accumulate(D.begin(), D.end(), 0);
+    double sum_d = std::accumulate(D.begin(), D.end(), 0.0);
     compute_stack(root, D, sum_d, r);
 
 }
 
-void Tree::compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r)
+void Tree::compute_stack(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r)
 {
     /*
      * Computes the nodes scores in a top-down fashion

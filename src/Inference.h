@@ -35,20 +35,24 @@ public:
     Inference(u_int n_regions, u_int ploidy=2);
     ~Inference();
     void destroy();
-    void compute_t_table(const vector<vector<int>> &D, const vector<int>& r);
-    void compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r);
-    void compute_t_prime_sums(const vector<vector<int>> &D);
+    void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
+    void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
+    void compute_t_prime_sums(const vector<vector<double>> &D);
     double log_posterior(double tree_sum, int m, Tree &tree);
-    bool apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false,
+    bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted = false,
                               bool validation_test_mode = false);
-    bool apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<int>> &D, const vector<int> &r,
+    bool apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<double>> &D,
+                                 const vector<int> &r,
                                  bool weighted = false,
                                  bool validation_test_mode = false);
-    bool apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
-    bool apply_condense_split(double lambda_s, const vector<vector<int>> &D, const vector<int> &r, bool weighted=false, bool validation_test_mode=false);
-    bool apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted = false, bool test_mode = false);
+    bool apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<double>> &D,
+                                  const vector<int> &r, bool weighted = false, bool validation_test_mode = false);
+    bool apply_condense_split(double lambda_s, const vector<vector<double>> &D, const vector<int> &r,
+                              bool weighted = false, bool validation_test_mode = false);
+    bool apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted = false,
+                    bool test_mode = false);
     Tree * comparison(int m);
-    void infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters);
+    void infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters);
     void write_best_tree();
     void update_t_scores();
     void random_initialize(); // randomly initializes a tree and copies it into the other
@@ -107,7 +111,7 @@ Inference::~Inference() {
     destroy();
 }
 
-bool Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector<int> &r, bool weighted,
+bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                                      bool validation_test_mode) {
     /*
      * Applies prune and reattach to t_prime
@@ -140,7 +144,7 @@ bool Inference::apply_prune_reattach(const vector<vector<int>> &D, const vector<
         return false;
 }
 
-void Inference::compute_t_table(const vector<vector<int>> &D, const vector<int>& r) {
+void Inference::compute_t_table(const vector<vector<double>> &D, const vector<int> &r) {
 
     int n = static_cast<int>(D.size());
     for (int i = 0; i < n; ++i)
@@ -213,7 +217,8 @@ Tree* Inference::comparison(int m) {
     }
 }
 
-void Inference::infer_mcmc(const vector<vector<int>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters) {
+void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs,
+                           int n_iters) {
 
 
     int m = static_cast<int>(D.size());
@@ -461,7 +466,7 @@ void Inference::write_best_tree() {
     std::cout << std::setprecision(8) << best_tree;
 }
 
-void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<int>> &D, const vector<int> &r) {
+void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r) {
 
     // if the t_prime_scores is empty then fill it with size(D) elements
     // otherwise append the results to the first size(D) places in t_prime_scores
@@ -472,7 +477,7 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
     int j = 0;
     for (auto const &d: D)
     {
-        int sum_d = accumulate( d.begin(), d.end(), 0);
+        double sum_d = accumulate( d.begin(), d.end(), 0.0);
 
         if (attached_node != t_prime.root)
             attached_node->parent->log_score = t_scores[j][attached_node->parent->id]; // the indices must match
@@ -495,7 +500,7 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
     }
 }
 
-bool Inference::apply_swap(const vector<vector<int>> &D, const vector<int> &r, bool weighted, bool test_mode) {
+bool Inference::apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted, bool test_mode) {
 
     vector<Node*> swapped_nodes;
     try {
@@ -526,7 +531,7 @@ bool Inference::apply_swap(const vector<vector<int>> &D, const vector<int> &r, b
 
 }
 
-void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
+void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
 
     /*
      * Computes the t_prime sums that represent the partial computed sub-tree
@@ -566,7 +571,7 @@ void Inference::compute_t_prime_sums(const vector<vector<int>> &D) {
     }
 }
 
-bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<int>> &D,
+bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<double>> &D,
                                         const vector<int> &r, bool weighted,
                                         bool validation_test_mode)
 {
@@ -603,7 +608,7 @@ bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const 
         return false;
 }
 
-bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<int>> &D,
+bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<double>> &D,
                                          const vector<int> &r, bool weighted, bool validation_test_mode) {
     /*
      * Applies the insert/delete move on t_prime
@@ -655,7 +660,8 @@ int Inference::deleted_node_idx() {
     return deleted_index;
 }
 
-bool Inference::apply_condense_split(double lambda_s, const vector<vector<int>> &D, const vector<int> &r, bool weighted,
+bool Inference::apply_condense_split(double lambda_s, const vector<vector<double>> &D, const vector<int> &r,
+                                     bool weighted,
                                      bool validation_test_mode) {
     /*
      * Applies the condense/delete move on t_prime

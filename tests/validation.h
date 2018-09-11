@@ -15,7 +15,7 @@ using namespace std;
 // number of cells
 const int m = 5;
 // counts per region per cell
-const vector<vector<int>> D = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
+const vector<vector<double>> D = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
 
 // region sizes
 const vector<int> r = {4,2,3,5,2};

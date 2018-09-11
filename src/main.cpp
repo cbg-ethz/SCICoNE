@@ -76,25 +76,13 @@ int main() {
     //SingletonRandomGenerator::get_generator(42);
 
 
-    // counts per region per cell
-    vector<vector<int>> D = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
+//    // counts per region per cell
+//    vector<vector<int>> D = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
+//
+//    // region sizes
+//    vector<int> r = {4,2,3,5,2};
 
-    // region sizes
-    vector<int> r = {4,2,3,5,2};
 
-    // move probabilities
-    vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
-
-    Inference mcmc(size(r));
-
-    mcmc.initialize_worked_example();
-    // mcmc.random_initialize();
-    mcmc.compute_t_table(D,r);
-
-    mcmc.infer_mcmc(D, r, move_probs, 150);
-    mcmc.write_best_tree();
-
-    mcmc.destroy();
 
 
 
@@ -219,6 +207,21 @@ int main() {
         double sum_row = std::accumulate(row.begin(),row.end(),0.0);
         N_real.push_back(sum_row);
     }
+
+
+    // move probabilities
+    vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
+
+    Inference mcmc(size(r_real));
+
+    mcmc.initialize_worked_example();
+    // mcmc.random_initialize();
+    mcmc.compute_t_table(D_real,r_real);
+
+    mcmc.infer_mcmc(D_real, r_real, move_probs, 50);
+    mcmc.write_best_tree();
+
+    mcmc.destroy();
 
 
 //    std::ofstream output_file("./s_p.txt");
