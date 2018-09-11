@@ -383,10 +383,28 @@ void Tree::recursive_copy(Node* source, Node *destination) {
      * use either 2 stacks or a stack and a tuple
      * */
 
+//    deque<pair<Node*,Node*>> to_copy;
+
     for (Node* temp = source->first_child; temp != nullptr; temp=temp->next) {
-        auto child = insert_child(destination, *temp);
+//        to_copy.push_back({destination,temp});
+        Node* child = insert_child(destination, *temp);
         recursive_copy(temp, child);
     }
+//    while(!to_copy.empty())
+//    {
+//        pair<Node*,Node*> top = to_copy.back();
+//        to_copy.pop_back();
+//
+//        Node* new_destination = insert_child(top.first, *top.second);
+//
+//        for (Node* temp = top.second->first_child; temp != nullptr; temp=temp->next)
+//        {
+//            to_copy.push_back({new_destination,temp});
+//        }
+//
+//
+//    }
+
 
 
 }
