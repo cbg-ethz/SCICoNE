@@ -91,7 +91,7 @@ int main() {
     // mcmc.random_initialize();
     mcmc.compute_t_table(D,r);
 
-    mcmc.infer_mcmc(D, r, move_probs, 50000);
+    mcmc.infer_mcmc(D, r, move_probs, 150);
     mcmc.write_best_tree();
 
     mcmc.destroy();
@@ -142,6 +142,7 @@ int main() {
     int k_star = 4;
 
     vector<long double> s_p;
+    vector<bool> is_breakpoint; // boolean mask for the breakpoints
     for (int l = 0; l < n_breakpoints; ++l)
     {
         posterior.push_back(vector<long double>());
@@ -163,10 +164,64 @@ int main() {
         long double sp_denom = std::accumulate(posterior[l].begin(), posterior[l].end(), 0.0);
         long double fraction = sp_num / sp_denom;
 
-        s_p.push_back(-1*log( 1- (1-fraction)));
+        long double sp_val = 1-fraction;
+
+        if (sp_val > 0.4)
+            is_breakpoint.push_back(true);
+        else
+            is_breakpoint.push_back(false);
+
+        s_p.push_back(sp_val);
     }
 
-    std::ofstream output_file("./s_p.txt");
-    for (const auto &e : s_p) output_file << e << "\n";
+    // create D, r and N matrices
+    vector<vector<double>> D_real; // the D matrix created from the real data
+
+    for (vector<double> &row : mat)
+    {
+        vector<double> new_row;
+        double cum_val = 0.0;
+        for (int i = 0; i < row.size(); ++i)
+        {
+            cum_val += row[i];
+            if (is_breakpoint[i]) // breakpoint
+            {
+                new_row.push_back(cum_val);
+                cum_val = 0.0;
+            }
+        }
+        if (cum_val != 0.0) // consider the last bin as well
+            new_row.push_back(cum_val);
+        D_real.push_back(new_row);
+    }
+
+    vector<int> r_real; // the r matrix from the real data
+    int region_size = 0;
+    for (bool elem : is_breakpoint)
+    {
+        region_size++;
+        if (elem) //breakpoint
+        {
+            r_real.push_back(region_size);
+            region_size = 0;
+        }
+    }
+    if (region_size != 0)
+        r_real.push_back(region_size);
+
+    int sum_r_real = std::accumulate(r_real.rbegin(), r_real.rend(), 0);
+    assert(sum_r_real == is_breakpoint.size());
+
+    vector<double> N_real; // the N matrix
+
+    for (vector<double> &row : D_real)
+    {
+        double sum_row = std::accumulate(row.begin(),row.end(),0.0);
+        N_real.push_back(sum_row);
+    }
+
+
+//    std::ofstream output_file("./s_p.txt");
+//    for (const auto &e : s_p) output_file << e << "\n";
     return EXIT_SUCCESS;
 }
