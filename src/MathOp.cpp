@@ -208,7 +208,7 @@ double MathOp::log_sum(const map<int, double> &map) {
  * */
 
     // init max with the smallest value possible
-    double max = std::numeric_limits<double>::min();
+    double max = numeric_limits<double>::lowest();
 
     for (auto const &i: map)
         if (i.second > max)
@@ -230,7 +230,7 @@ double MathOp::log_sum(const vector<double> &vec) {
  * */
 
     // init max with the smallest value possible
-    double max = std::numeric_limits<double>::min();
+    double max = std::numeric_limits<double>::lowest();
 
     for (auto const &i: vec)
         if (i > max)
