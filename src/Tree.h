@@ -1344,6 +1344,7 @@ Node* Tree::delete_node(Node *node) {
         pruned_child = insert_child(parent_of_deleted, pruned_child);
     }
 
+    delete tobe_deleted; // deallocate it.
 
     return parent_of_deleted; // return the node that is going to be used for the partial trees scoring
 }
