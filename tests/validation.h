@@ -37,9 +37,9 @@ void test_xxhash()
 
     r2.push_back(2);
 
-    uint64_t const r1_hash = XXH64(&r1[0], size(r1) * sizeof(r1[0]) , 0); // seed = 0
-    uint64_t const r2_hash = XXH64(&r2[0], size(r2) * sizeof(r2[0]), 0); // seed = 0
-    uint64_t const r3_hash = XXH64(&r3[0], size(r3) * sizeof(r3[0]), 0); // seed = 0
+    uint64_t const r1_hash = XXH64(&r1[0], r1.size() * sizeof(r1[0]) , 0); // seed = 0
+    uint64_t const r2_hash = XXH64(&r2[0], r2.size() * sizeof(r2[0]), 0); // seed = 0
+    uint64_t const r3_hash = XXH64(&r3[0], r3.size() * sizeof(r3[0]), 0); // seed = 0
 
     assert(r1_hash == r2_hash);
     assert(r1_hash != r3_hash);
@@ -57,7 +57,7 @@ void test_reproducibility_five_moves()
     // if seed is not set, set it to 42
     SingletonRandomGenerator::get_generator(42);
 
-    Inference mcmc(size(r));
+    Inference mcmc(r.size());
 
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
@@ -74,7 +74,7 @@ void test_reproducibility_five_moves()
 void test_swap_label()
 {
 
-    Inference mcmc(std::size(r));
+    Inference mcmc(r.size());
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
 
@@ -104,7 +104,7 @@ void test_weighted_sample()
      *
      * */
 
-    Inference mcmc(std::size(r));
+    Inference mcmc(r.size());
     mcmc.initialize_worked_example();
 
     // get the subvector
@@ -140,11 +140,11 @@ void test_insert_delete_weights()
      * Validation test for the weights of the insert_delete node move.
      * */
 
-    Inference mcmc(std::size(r));
+    Inference mcmc(r.size());
     std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
 
-    Tree t(ploidy, std::size(r));
+    Tree t(ploidy, r.size());
     t.random_insert({{0, 1}, {1, 1}}); // 1
     t.insert_at(1,{{3,1}});  // 2
     t.insert_at(2,{{1, 1}, {2, 1}}); // 3
@@ -164,7 +164,7 @@ void test_insert_delete_weights()
         t_sums.push_back(MathOp::log_sum(scores_vec));
     }
 
-    int m = size(D);
+    int m = D.size();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
     t.score = mcmc.log_posterior(t_sum, m, t);
 
@@ -217,7 +217,7 @@ void test_insert_delete_weights()
 void test_prune_reattach()
 {
 
-    Inference mcmc(std::size(r));
+    Inference mcmc(r.size());
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
 
@@ -242,7 +242,7 @@ void test_prune_reattach()
 void test_weighted_prune_reattach()
 {
 
-    Inference mcmc(std::size(r));
+    Inference mcmc(r.size());
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
 
@@ -285,7 +285,7 @@ void test_weighted_prune_reattach()
 void test_add_remove_event()
 {
 
-    Inference mcmc(std::size(r));
+    Inference mcmc(r.size());
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
 

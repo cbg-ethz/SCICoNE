@@ -156,7 +156,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
         this->t_sums.push_back(MathOp::log_sum(scores_vec));
     }
 
-    int m = size(D);
+    int m = D.size();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
     t.score = log_posterior(t_sum, m, t);
 

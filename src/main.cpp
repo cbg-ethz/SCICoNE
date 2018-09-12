@@ -11,7 +11,7 @@
 #include "MathOp.h"
 #include "Tree.h"
 #include "Inference.h"
-
+#include <gperftools/profiler.h>
 
 using namespace std;
 
@@ -83,7 +83,7 @@ int main() {
 //    vector<int> r = {4,2,3,5,2};
 
 
-
+    ProfilerStart("gperftools_cnv_trees.log");
 
 
     // parse input
@@ -153,11 +153,8 @@ int main() {
         long double fraction = sp_num / sp_denom;
 
         long double sp_val = 1-fraction;
-
-        if (sp_val > 0.4)
-            is_breakpoint.push_back(true);
-        else
-            is_breakpoint.push_back(false);
+        double breakpoint_threshold = 0.4;
+        is_breakpoint.push_back(sp_val > breakpoint_threshold);
 
         s_p.push_back(sp_val);
     }
@@ -212,17 +209,18 @@ int main() {
     // move probabilities
     vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
 
-    Inference mcmc(size(r_real));
+    Inference mcmc(r_real.size());
 
     mcmc.initialize_worked_example();
     // mcmc.random_initialize();
     mcmc.compute_t_table(D_real,r_real);
 
-    mcmc.infer_mcmc(D_real, r_real, move_probs, 50000);
+    mcmc.infer_mcmc(D_real, r_real, move_probs, 1500);
     mcmc.write_best_tree();
 
     mcmc.destroy();
 
+    ProfilerStop();
 
 //    std::ofstream output_file("./s_p.txt");
 //    for (const auto &e : s_p) output_file << e << "\n";

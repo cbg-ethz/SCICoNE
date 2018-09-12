@@ -342,7 +342,7 @@ void Tree::update_label(std::map<u_int, int>& c_parent, Node *node) {
         keys_values.push_back(it.first);
         keys_values.push_back(it.second);
     };
-    int size_for_hash = size(keys_values) * sizeof(keys_values[0]);
+    int size_for_hash = keys_values.size() * sizeof(keys_values[0]);
     uint64_t c_hash = Utils::calcul_hash(&keys_values[0], size_for_hash);
 
     node->c_hash = c_hash;
