@@ -198,8 +198,8 @@ void test_insert_delete_weights()
         xi.push_back(xi_val);
     }
 
-    double sum_chi = MathOp::vec_sum(chi);
-    double sum_xi = MathOp::vec_sum(xi);
+    double sum_chi = accumulate(chi.begin(), chi.end(), 0.0);
+    double sum_xi = accumulate(xi.begin(), xi.end(), 0.0);
 
 
     assert(abs(omega[0] - 0.916e-03) <=epsilon_sens);

@@ -564,7 +564,7 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
         // in case of delete, subtract an extra value
         // in case of insert, add an extra value
         // if the tree size changes, update it (tree.n_nodes). Posterior takes that into account
-        assert(!isnan(res));
+        assert(!std::isnan(res));
 
         t_prime_sums.push_back(res);
         i++;

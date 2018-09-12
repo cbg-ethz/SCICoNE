@@ -139,7 +139,7 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
         val -= sum_D*log(z);
         val += sum_D*log(node->parent->z);
 
-        assert(!isnan(val));
+        assert(!std::isnan(val));
         node->log_score = val;
         node->z = z;
     }

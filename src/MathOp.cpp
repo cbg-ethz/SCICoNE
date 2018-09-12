@@ -35,7 +35,7 @@ double MathOp::log_likelihood(std::vector<double> v)
     term2 = (v.size() * max_ll_val);
     double ll =  term1 - term2;
 
-    assert(!isnan(ll));
+    assert(!std::isnan(ll));
     return ll;
 }
 
@@ -133,7 +133,7 @@ long double MathOp::log_add(long double val1, long double val2)
     // log1p(x) is used instead of log(1+x) to avoid precision loss
     long double res = a + log1p(exp(b-a));
 
-//    if (isinf(res))
+//    if (std::isinf(res))
 //        cout << "inf result detected";
 
     return res;
@@ -171,7 +171,7 @@ vector<double> MathOp::combine_scores(vector<double> aic_vec)
 
             }
 
-            if (isinf(value))
+            if (std::isinf(value))
                 cerr << "inf value detected";
 
             row2.push_back(value);
@@ -275,7 +275,7 @@ double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtr
     to_log_add.push_back(subtracted_res);
 
     double res = log_sum(to_log_add);
-    assert(!isnan(res));
+    assert(!std::isnan(res));
 
     return res;
 }
@@ -299,7 +299,7 @@ double MathOp::breakpoint_log_prior(int k, int m, double mu) {
         res += 2*log_n_choose_k(m,k);
         res -= log(2*k-1);
         res -= log_n_choose_k(2*m,2*k);
-        assert(!isnan(res));
+        assert(!std::isnan(res));
         return res;
     }
     else

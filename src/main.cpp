@@ -89,7 +89,7 @@ int main() {
 
     // parse input
     vector<vector<double>> mat;
-    mat = read_counts("/Users/mtuncel/git_repos/sc-dna/input_data/norm_counts.tsv");
+    mat = read_counts("../input_data/norm_counts.tsv");
 
     // compute the AIC scores
     u_int window_size = 1;
@@ -216,7 +216,7 @@ int main() {
     // mcmc.random_initialize();
     mcmc.compute_t_table(D_real,r_real);
 
-    mcmc.infer_mcmc(D_real, r_real, move_probs, 5000);
+    mcmc.infer_mcmc(D_real, r_real, move_probs, 100000);
     mcmc.write_best_tree();
 
     mcmc.destroy();
