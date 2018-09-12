@@ -11,9 +11,11 @@
 #include "MathOp.h"
 #include "Tree.h"
 #include "Inference.h"
-#include <gperftools/profiler.h>
+
+#include <chrono> // for measuring the execution time
 
 using namespace std;
+using namespace std::chrono;
 
 vector<vector<double>> read_counts(const string path)
 {
@@ -82,8 +84,7 @@ int main() {
 //    // region sizes
 //    vector<int> r = {4,2,3,5,2};
 
-
-    ProfilerStart("gperftools_cnv_trees.log");
+    auto start = std::chrono::high_resolution_clock::now(); // start the clock
 
 
     // parse input
@@ -215,12 +216,21 @@ int main() {
     // mcmc.random_initialize();
     mcmc.compute_t_table(D_real,r_real);
 
-    mcmc.infer_mcmc(D_real, r_real, move_probs, 1500);
+    mcmc.infer_mcmc(D_real, r_real, move_probs, 5000);
     mcmc.write_best_tree();
 
     mcmc.destroy();
 
-    ProfilerStop();
+    auto stop = high_resolution_clock::now();
+
+    // Get duration. Substart timepoints to
+    // get durarion. To cast it to proper unit
+    // use duration cast method
+    auto duration = duration_cast<microseconds>(stop - start);
+
+    cout << "\n\nTime taken by function: "
+         << duration.count() << " microseconds" << endl;
+
 
 //    std::ofstream output_file("./s_p.txt");
 //    for (const auto &e : s_p) output_file << e << "\n";
