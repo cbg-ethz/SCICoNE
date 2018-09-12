@@ -72,7 +72,7 @@ private:
     bool zero_ploidy_changes(Node* n) const;// TODO: can be a method of node instead
     bool region_changes(Node *n, u_int region_id) const;
     void copy_tree(const Tree& source_tree);
-    void recursive_copy(Node *source, Node *destination);
+    void copy_tree_nodes(Node *destination, Node *source);
     void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta = 0.0001f);
     void compute_root_score(double &sum_d, const vector<int> &r);
     Node* prune(Node *pos); // does not deallocate,
@@ -371,45 +371,32 @@ void Tree::copy_tree(const Tree& source_tree) {
     // copy the nodes using struct copy constructor
     this->root = new Node(*source_tree.root);
     this->all_nodes_vec.push_back(root); // all nodes cannot be copied since 2 trees cannot have nodes pointing to the same address
-    recursive_copy(source_tree.root, this->root); // the nodes of the source tree are inserted into the destination tree
+    copy_tree_nodes(this->root, source_tree.root); // the nodes of the source tree are inserted into the destination tree
     this->n_nodes = source_tree.n_nodes; // copy this after the insertions are done (insertions change this value).
  }
 
-void Tree::recursive_copy(Node* source, Node *destination) {
+void Tree::copy_tree_nodes(Node *destination, Node *source) {
     /*
-     * Copies the tree from source to destination
-     * TODO implement it using stack & loop, not to use the function call stack
-     * TODO the order of insertion is different (although the tree is the same)
-     * use either 2 stacks or a stack and a tuple
+     * Copies the tree from source to destination in a BFS fashion
+     * Uses a queue of Node* pairs to keep the copying order.
      * */
 
-//    deque<pair<Node*,Node*>> to_copy;
+    deque<pair<Node*,Node*>> to_copy;
 
-    for (Node* temp = source->first_child; temp != nullptr; temp=temp->next) {
-//        to_copy.push_back({destination,temp});
-        Node* child = insert_child(destination, *temp);
-        recursive_copy(temp, child);
+    for (Node* temp = source->first_child; temp != nullptr; temp=temp->next) // initialize with the first children
+        to_copy.push_back({destination,temp});
+
+    while(!to_copy.empty())
+    {
+        pair<Node*,Node*> top = to_copy.back();
+        to_copy.pop_back();
+        Node* new_destination = insert_child(top.first, *top.second);
+        for (Node* temp = top.second->first_child; temp != nullptr; temp=temp->next)
+            to_copy.push_back({new_destination,temp});
     }
-//    while(!to_copy.empty())
-//    {
-//        pair<Node*,Node*> top = to_copy.back();
-//        to_copy.pop_back();
-//
-//        Node* new_destination = insert_child(top.first, *top.second);
-//
-//        for (Node* temp = top.second->first_child; temp != nullptr; temp=temp->next)
-//        {
-//            to_copy.push_back({new_destination,temp});
-//        }
-//
-//
-//    }
-
-
-
 }
 
-Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
+Node* Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     /*
      * Prunes a node and reattaches it to another node which is not among the descendents of the pruned node.
      * Returns the pruned node (which also happens to be the attached node)

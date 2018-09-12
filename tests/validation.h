@@ -76,7 +76,11 @@ void test_swap_label()
 
     Inference mcmc(r.size());
     mcmc.initialize_worked_example();
-    mcmc.compute_t_table(D,r);
+    mcmc.compute_t_table(D,r); // t prime is copied from t, order is changed
+
+    // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+    std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
+
 
     mcmc.apply_swap(D,r,false,true);
 
@@ -221,6 +225,9 @@ void test_prune_reattach()
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
 
+    // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+    std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
+
     mcmc.apply_prune_reattach(D,r,false,true);
 
     assert(abs(mcmc.t_prime_sums[0] + 551.804)  <= epsilon);
@@ -245,6 +252,9 @@ void test_weighted_prune_reattach()
     Inference mcmc(r.size());
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
+
+    // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+    std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
 
     mcmc.apply_prune_reattach(D,r,false,true);
 
@@ -287,7 +297,11 @@ void test_add_remove_event()
 
     Inference mcmc(r.size());
     mcmc.initialize_worked_example();
-    mcmc.compute_t_table(D,r);
+    mcmc.compute_t_table(D,r); // assignment operator changes the order
+
+    // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+    std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
+
 
     mcmc.apply_add_remove_events(0.0, 0.0, D, r, false, true);
 
