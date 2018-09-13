@@ -548,7 +548,9 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
     int i = 0;
     for (auto const &d: D) {
         vector<double> old_vals;
+        old_vals.reserve(t_scores[i].size()); // the max possible size
         vector<double> new_vals;
+        old_vals.reserve(t_scores[i].size());
 
         for (auto &u_map : t_prime_scores[i]) {
             if (t_scores[i].count(u_map.first)) // add only if it is existing in the old vals // for the insertion case
