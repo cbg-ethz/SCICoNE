@@ -167,10 +167,12 @@ int main( int argc, char* argv[] ) {
 
 
         long double sp_num = std::accumulate(posterior[l].begin(), posterior[l].begin()+k_star-1, 0.0);
+        sp_num *= exp(max_num);
         long double sp_denom = std::accumulate(posterior[l].begin(), posterior[l].end(), 0.0);
-        long double fraction = sp_num / sp_denom;
+        sp_denom *= exp(max_denom);
+        long double fraction = (sp_num / sp_denom);
 
-        long double sp_val = 1-fraction;
+        long double sp_val = 1.0-fraction;
         double breakpoint_threshold = 0.4;
         is_breakpoint.push_back(sp_val > breakpoint_threshold);
 
