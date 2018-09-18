@@ -61,15 +61,15 @@ public:
     u_int get_n_nodes() const;
     friend std::ostream& operator<<(std::ostream& os, Tree& t);
     Tree& operator=(const Tree& other);
-private:
-    void update_label(std::map<u_int,int>& c_parent, Node* node);
-    void update_desc_labels(Node* node);
     //validation of tree
     bool is_redundant() const;
     // Validation of subtrees
     bool is_valid_subtree(Node* node) const;// TODO: can be a method of node instead
     bool subtree_contains_negative(Node* n) const;// TODO: can be a method of node instead
     bool zero_ploidy_changes(Node* n) const;// TODO: can be a method of node instead
+private:
+    void update_label(std::map<u_int,int>& c_parent, Node* node);
+    void update_desc_labels(Node* node);
     bool region_changes(Node *n, u_int region_id) const;
     void copy_tree(const Tree& source_tree);
     void copy_tree_nodes(Node *destination, Node *source);
@@ -222,6 +222,7 @@ Node* Tree::uniform_sample(bool with_root) const{
 Node * Tree::insert_child(Node *pos, Node *source) {
 /*
  * Inserts the source node to the pos node.
+ * Updates the labels by calling update_label with the parent node.
  * */
 
     // set the parent from the child
@@ -959,15 +960,11 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
 
     // sample the number of regions to be affected with Poisson(lambda_r)+1
     std::mt19937 &generator = SingletonRandomGenerator::get_generator();
-    // n_regions from Poisson(lambda_R)+1
-    std::poisson_distribution<int> poisson_r(lambda_r); // the param is to be specified later
+
+    // 0.5 prob bernoulli
+    std::bernoulli_distribution bernoulli_05(0.5);
 
     int K = this->n_regions;
-
-    // n_copies from Poisson(lambda_c)+1
-    std::poisson_distribution<int> poisson_c(lambda_c); // the param is to be specified later
-    // sign
-    std::bernoulli_distribution bernoulli_05(0.5);
 
 
     for (auto const &node : all_nodes_vec) { // computes the omega vector
@@ -1001,28 +998,11 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
         u_int pos_to_insert = (*dd)(generator); // this is the index of the all_nodes_vector.
         delete dd;
 
+        // create the map
         // create a map, fill it properly with r amount of labels
         map<u_int, int> distinct_regions;
 
-        int r = poisson_r(generator) + 1; //n_regions to sample
-        // sample r distinct regions uniformly
-        int regions_sampled = 0;
-        // if r>K then reject the move. K: max region index
-        if (r > K)
-            return nullptr;
-
-        while (regions_sampled < r)
-        {
-            int uniform_val = MathOp::random_uniform(0, n_regions-1);
-
-            if (distinct_regions.find(uniform_val) == distinct_regions.end()) // not found
-            {
-                int n_copies = poisson_c(generator) + 1;
-                bool sign = bernoulli_05(generator);
-                distinct_regions[uniform_val] = (sign? n_copies : -n_copies); // key:region id, val: copy number change
-                regions_sampled++;
-            }
-        }
+        Utils::initialize_labels_map(distinct_regions,K,lambda_r, lambda_c); // modifies the distinct_regions
 
         Node* parent = all_nodes_vec[pos_to_insert];
         // retrieve the first order children of pos_to_insert node

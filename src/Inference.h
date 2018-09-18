@@ -18,13 +18,14 @@
 class Inference {
 /*
  * Contains functionality to perform monte carlo markov chains (mcmc) inference
- * //TODO use stack dynamic Trees for t & t_prime
+ *
  * */
 public:
     Tree t;
     Tree t_prime;
     Tree best_tree;
     u_int n_regions;
+    int ploidy;
     std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
     std::vector<std::map<int, double>> t_prime_scores;
@@ -32,7 +33,7 @@ public:
     std::string f_name;
 
 public:
-    Inference(u_int n_regions, u_int ploidy=2);
+    Inference(u_int n_regions, int ploidy = 2);
     ~Inference();
     void destroy();
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
@@ -55,7 +56,7 @@ public:
     void infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters);
     void write_best_tree();
     void update_t_scores();
-    void random_initialize(); // randomly initializes a tree and copies it into the other
+    void random_initialize(u_int n_nodes, u_int n_regions, double lambda_r, double lambda_c, int max_iters=10000); // randomly initializes a tree and copies it into the other
     void initialize_worked_example(); // initializes the trees based on the test example
 private:
     int deleted_node_idx();
@@ -64,15 +65,54 @@ private:
 
 
 
-void Inference::random_initialize() {
+void Inference::random_initialize(u_int n_nodes, u_int n_regions, double lambda_r, double lambda_c, int max_iters) {
 
-    t.random_insert({{0, 1}, {1, 1}});
-    t.random_insert({{1, 1}, {2, 1}});
-    t.random_insert({{0, -1}});
-    t.random_insert({{3, -1}});
-    t.random_insert({{1, 1}});
+    Tree *random_tree;
+    int i = 0;
+    while(true)
+    {
+        i++;
+        random_tree = new Tree(ploidy, n_regions);
+        for (int i = 0; i < n_nodes; ++i)
+        {
+            /*
+             * Create a c_change hashmap using poisson and bernoulli
+             *
+             * */
+            // create the map
+            // create a map, fill it properly with r amount of labels
+            map<u_int, int> distinct_regions;
+            try {
+                Utils::initialize_labels_map(distinct_regions,n_regions,lambda_r, lambda_c); // modifies the distinct_regions
+            }catch (const std::out_of_range& e)
+            {
+                std::cout << " an out of range error was caught during the initialize labels map method, with message '"
+                          << e.what() << "'\n";
+                delete random_tree; // delete the tree
+                random_tree = new Tree(ploidy, n_regions);
+                break;
+            }
+            random_tree->random_insert(static_cast<map<u_int, int> &&>(distinct_regions));
+        }
+        if (random_tree->get_n_nodes() == 0)
+            continue;
 
+        if (i > max_iters)
+        {
+            throw runtime_error("a valid tree cannot be found after " + to_string(max_iters)  + " iterations. Please re-set the lambda_r, lambda_c and n_nodes variables.");
+        }
+
+        bool is_valid_tree = random_tree->is_valid_subtree(random_tree->root);
+        bool is_redundant = random_tree->is_redundant();
+        if (!is_valid_tree || is_redundant)
+            delete random_tree;
+        else
+            break;
+    }
+
+    t = *random_tree;
     t.compute_weights();
+
 
 }
 
@@ -95,11 +135,10 @@ void Inference::initialize_worked_example() {
 
 }
 
-Inference::Inference(u_int n_regions, u_int ploidy): t(ploidy, n_regions), t_prime(ploidy, n_regions), best_tree(ploidy, n_regions)  {
+Inference::Inference(u_int n_regions, int ploidy): t(ploidy, n_regions), t_prime(ploidy, n_regions), best_tree(ploidy, n_regions)  {
+
     this->n_regions = n_regions;
-
-
-
+    this->ploidy = ploidy;
     std::ofstream outfile;
     long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
     f_name = std::to_string(seed) + ".txt";

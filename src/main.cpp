@@ -76,7 +76,7 @@ void disp_vec(vector<vector<double>>& vec) {
 
 int main( int argc, char* argv[] ) {
 
-    int mcmc_iters = 10000; // the default value is 10000 iterations.
+    int mcmc_iters = 30000; // the default value is 10000 iterations.
     // argument parsing
     int c;
     while( ( c = getopt (argc, argv, "i:") ) != -1 )
@@ -106,7 +106,7 @@ int main( int argc, char* argv[] ) {
 
     // parse input
     vector<vector<double>> mat;
-    mat = read_counts("../input_data/norm_counts.tsv");
+    mat = read_counts("../input_data/CCGP3ANXX6_chr1_norm_counts.tsv");
 
     // compute the AIC scores
     u_int window_size = 1;
@@ -231,8 +231,20 @@ int main( int argc, char* argv[] ) {
 
     Inference mcmc(r_real.size());
 
-    mcmc.initialize_worked_example();
-    // mcmc.random_initialize();
+//    mcmc.initialize_worked_example();
+    u_int n_nodes = 35;
+    double lambda_r = 1.0;
+    double lambda_c = 0.2;
+    int n_regions = D_real[0].size()-1;
+    try {
+        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 5000);
+    }catch (const std::runtime_error& e)
+    {
+        std::cerr << " a runtime error was caught during the random tree initialize function, with message '"
+                  << e.what() << "'\n";
+        return EXIT_FAILURE; // reject the move
+    }
+
     mcmc.compute_t_table(D_real,r_real);
 
     mcmc.infer_mcmc(D_real, r_real, move_probs, mcmc_iters);
