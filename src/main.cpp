@@ -76,7 +76,8 @@ void disp_vec(vector<vector<double>>& vec) {
 
 int main( int argc, char* argv[] ) {
 
-    int mcmc_iters = 30000; // the default value is 10000 iterations.
+    int mcmc_iters = 5000; // the default value is 10000 iterations.
+
     // argument parsing
     int c;
     while( ( c = getopt (argc, argv, "i:") ) != -1 )
@@ -86,20 +87,12 @@ int main( int argc, char* argv[] ) {
             case 'i':
                 if(optarg) mcmc_iters = std::atoi(optarg) ;
                 break;
-
         }
     }
 
 
     // set a seed number for reproducibility
     //SingletonRandomGenerator::get_generator(42);
-
-
-//    // counts per region per cell
-//    vector<vector<int>> D = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
-//
-//    // region sizes
-//    vector<int> r = {4,2,3,5,2};
 
     auto start = std::chrono::high_resolution_clock::now(); // start the clock
 
@@ -167,16 +160,19 @@ int main( int argc, char* argv[] ) {
 
 
         long double sp_num = std::accumulate(posterior[l].begin(), posterior[l].begin()+k_star-1, 0.0);
-        sp_num *= exp(max_num);
+        sp_num  = log(sp_num) + max_num;
         long double sp_denom = std::accumulate(posterior[l].begin(), posterior[l].end(), 0.0);
-        sp_denom *= exp(max_denom);
-        long double fraction = (sp_num / sp_denom);
+        sp_denom = log(sp_denom) + max_denom;
 
-        long double sp_val = 1.0-fraction;
-        double breakpoint_threshold = 0.4;
-        is_breakpoint.push_back(sp_val > breakpoint_threshold);
+        long double sp_val = sp_denom-sp_num;
 
         s_p.push_back(sp_val);
+
+        std::ofstream output_file("./CCGP3ANXX6_chr1_s_p.txt");
+        for (const auto &e : s_p) output_file << e << "\n";
+
+        double breakpoint_threshold = 0.4;
+        is_breakpoint.push_back(sp_val > breakpoint_threshold);
     }
 
     // create D, r and N matrices
@@ -237,13 +233,16 @@ int main( int argc, char* argv[] ) {
     double lambda_c = 0.2;
     int n_regions = D_real[0].size()-1;
     try {
-        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 5000);
+        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 5000); // creates a random tree
     }catch (const std::runtime_error& e)
     {
         std::cerr << " a runtime error was caught during the random tree initialize function, with message '"
                   << e.what() << "'\n";
         return EXIT_FAILURE; // reject the move
     }
+
+    // TODO: each cell needs to be assigned to a node and the map values must be kept
+    // n_cells = D.real.size()
 
     mcmc.compute_t_table(D_real,r_real);
 
@@ -259,11 +258,10 @@ int main( int argc, char* argv[] ) {
     // use duration cast method
     auto duration = duration_cast<microseconds>(stop - start);
 
-    cout << "\n\nTime taken by function: "
+    cout << "\n\nTime taken by the main function: "
          << duration.count() << " microseconds" << endl;
 
 
-//    std::ofstream output_file("./s_p.txt");
-//    for (const auto &e : s_p) output_file << e << "\n";
+
     return EXIT_SUCCESS;
 }

@@ -13,8 +13,8 @@ include_directories(src)
 include_directories(include)
 
 add_executable(sc_dna
-        src/main.cpp
         src/MathOp.cpp
+        src/main.cpp
         src/MathOp.h
         src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h)
 

@@ -28,7 +28,8 @@ bool Utils::is_empty_map(std::map<u_int, int> &dict){
     return true;
 }
 
-void Utils::initialize_labels_map(std::map<u_int, int> &distinct_regions, int n_regions, double lambda_r, double lambda_c)
+void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions, int n_regions, double lambda_r,
+                                         double lambda_c)
 {
     /*
      * Initializes an empty map to represent the c_change attribute of a node.

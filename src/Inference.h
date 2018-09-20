@@ -83,7 +83,7 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, double lambda_
             // create a map, fill it properly with r amount of labels
             map<u_int, int> distinct_regions;
             try {
-                Utils::initialize_labels_map(distinct_regions,n_regions,lambda_r, lambda_c); // modifies the distinct_regions
+                Utils::random_initialize_labels_map(distinct_regions, n_regions, lambda_r, lambda_c); // modifies the distinct_regions
             }catch (const std::out_of_range& e)
             {
                 std::cout << " an out of range error was caught during the initialize labels map method, with message '"

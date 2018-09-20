@@ -20,7 +20,8 @@ public:
 
     static uint64_t calcul_hash(const void* buffer, size_t length);
     static bool is_empty_map(std::map<u_int, int>& dict);
-    static void initialize_labels_map(std::map<u_int, int> &distinct_regions, int n_regions, double lambda_r, double lambda_c);
+    static void random_initialize_labels_map(std::map<u_int, int> &distinct_regions, int n_regions, double lambda_r,
+                                             double lambda_c);
 };
 
 
