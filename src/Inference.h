@@ -14,6 +14,7 @@
 #include <string>
 #include <iomanip>
 #include <math.h>
+#include <array>
 
 class Inference {
 /*
@@ -21,6 +22,7 @@ class Inference {
  *
  * */
 public:
+    // TODO: store n_cells as well and use whenever required
     Tree t;
     Tree t_prime;
     Tree best_tree;
@@ -402,6 +404,57 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         t_prime_scores.clear();
 
     }
+
+    // re-compute the best tree to assign cells to nodes
+    t_scores.clear();
+    t_sums.clear();
+    t = best_tree;
+    this->compute_t_table(D,r);
+
+    std::ofstream cell_node_ids_file(f_name + "_cell_node_ids");
+    std::ofstream cell_node_cnvs_file(f_name + "_cell_node_cnvs");
+    std::ofstream region_sizes_file(f_name + "_region_sizes");
+
+    for (const auto &r_it : r) region_sizes_file << r_it << "\n";
+
+
+    // create a hashmap of nodes for constant access by id
+    unordered_map<uint64_t , Node*> hash_map;
+    for (unsigned i=0; i < t.all_nodes_vec.size(); i++)
+    {
+        hash_map[t.all_nodes_vec[i]->id] = t.all_nodes_vec[i];
+    }
+
+    size_t n_cells = t_scores.size();
+
+    vector<vector<int>> cell_regions(n_cells, vector<int>(this->n_regions)); //fill ctor
+
+    for (int j = 0; j < n_cells; ++j) {
+        // t_scores[i] is the map
+        pair<const int, double> max_pair = *max_element(t_scores[j].begin(), t_scores[j].end(), [] (const pair<const int, double>& p1, const pair<const int, double>& p2)
+                {
+                    return p1.second < p2.second;
+                }) ;
+        cell_node_ids_file << j << '\t' << max_pair.first << '\n';
+
+        Node* max_node = hash_map[max_pair.first];
+
+        for (auto const& x : max_node->c) // iterate over map
+        {
+            cell_regions[j][x.first] = x.second;
+        }
+
+    }
+    for (int k = 0; k < n_cells; ++k) {
+        for (int i = 0; i < n_regions; ++i) {
+            cell_node_cnvs_file << cell_regions[k][i] << '\t';
+        }
+        cell_node_cnvs_file << '\n';
+    }
+
+
+
+
     cout<<"n_accepted: "<<n_accepted<<endl;
     cout<<"n_rejected: "<<n_rejected<<endl;
     cout<<"n_attached_to_the_same_pos: "<<n_attached_to_the_same_pos<<endl;
@@ -499,7 +552,7 @@ void Inference::update_t_scores() {
 
 void Inference::write_best_tree() {
     std::ofstream outfile;
-    outfile.open(f_name, std::ios_base::app);
+    outfile.open(f_name+".tree", std::ios_base::app);
     outfile << "The resulting tree is: "<<std::endl;
     outfile << std::setprecision(8) << best_tree;
     std::cout << std::setprecision(8) << best_tree;
