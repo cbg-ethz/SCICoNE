@@ -21,9 +21,11 @@ using namespace std::chrono;
 
 vector<vector<double>> read_counts(const string path)
 {
+    //TODO: change this, use std::arr and do not copy, pass by reference instead.
     /*
      * Parses the input data into a double vector.
      * */
+
     vector<vector<double>> mat;
 
     std::ifstream filein(path);
@@ -77,16 +79,25 @@ void disp_vec(vector<vector<double>>& vec) {
 int main( int argc, char* argv[] ) {
 
     int mcmc_iters = 5000; // the default value is 10000 iterations.
+    size_t n = 0;
+    size_t m = 0;
 
     // argument parsing
     int c;
-    while( ( c = getopt (argc, argv, "i:") ) != -1 )
+    while( ( c = getopt (argc, argv, "i:n:m:") ) != -1 )
     {
         switch(c)
         {
             case 'i':
-                if(optarg) mcmc_iters = std::atoi(optarg) ;
+                if(optarg) mcmc_iters = std::atoi(optarg);
                 break;
+            case 'n':
+                if(optarg) n = std::atoi(optarg);
+                break;
+            case 'm':
+                if(optarg) m = std::atoi(optarg);
+                break;
+            // TODO: have a default case, default:
         }
     }
 
@@ -97,8 +108,8 @@ int main( int argc, char* argv[] ) {
     auto start = std::chrono::high_resolution_clock::now(); // start the clock
 
 
-    // parse input
-    vector<vector<double>> mat;
+    // parse input, using the fill constructor
+    vector<vector<double>> mat(n, vector<double>(m)); // TODO: use a 2D std array instead
     mat = read_counts("../input_data/CCGP3ANXX6_chr1_norm_counts.tsv");
 
     // compute the AIC scores
@@ -132,10 +143,6 @@ int main( int argc, char* argv[] ) {
             log_posterior[k].push_back(val);
         }
     }
-
-    cout<<"log posterior: \n";
-    disp_vec(log_posterior);
-
 
     vector<vector<long double>> posterior;
     int k_star = 4;
@@ -171,7 +178,7 @@ int main( int argc, char* argv[] ) {
         std::ofstream output_file("./CCGP3ANXX6_chr1_s_p.txt");
         for (const auto &e : s_p) output_file << e << "\n";
 
-        double breakpoint_threshold = 0.4;
+        double breakpoint_threshold = 650.0;
         is_breakpoint.push_back(sp_val > breakpoint_threshold);
     }
 
@@ -228,12 +235,12 @@ int main( int argc, char* argv[] ) {
     Inference mcmc(r_real.size());
 
 //    mcmc.initialize_worked_example();
-    u_int n_nodes = 35;
+    u_int n_nodes = 15;
     double lambda_r = 1.0;
     double lambda_c = 0.2;
     int n_regions = D_real[0].size()-1;
     try {
-        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 5000); // creates a random tree
+        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree
     }catch (const std::runtime_error& e)
     {
         std::cerr << " a runtime error was caught during the random tree initialize function, with message '"
