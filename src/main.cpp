@@ -19,14 +19,11 @@
 using namespace std;
 using namespace std::chrono;
 
-vector<vector<double>> read_counts(const string path)
+void read_counts(vector<vector<double>> &mat, const string path)
 {
-    //TODO: change this, use std::arr and do not copy, pass by reference instead.
     /*
-     * Parses the input data into a double vector.
+     * Parses the input data into a default filled double vector of vector.
      * */
-
-    vector<vector<double>> mat;
 
     std::ifstream filein(path);
 
@@ -34,22 +31,17 @@ vector<vector<double>> read_counts(const string path)
     for (std::string line; std::getline(filein, line); )
     {
 
-        // push an empty vector
-        mat.push_back(vector<double>());
-
         std::istringstream fline(line);
         j = 0;
         for(;;) {
             double val;
             fline >> val;
             if (!fline) break;
-            mat[i].push_back(val);
+            mat[i][j] = val;
             j++;
         }
         i++;
-
     }
-    return mat;
 }
 
 void disp_vec(vector<vector<long double>>& vec) {
@@ -110,7 +102,19 @@ int main( int argc, char* argv[] ) {
 
     // parse input, using the fill constructor
     vector<vector<double>> mat(n, vector<double>(m)); // TODO: use a 2D std array instead
-    mat = read_counts("../input_data/CCGP3ANXX6_chr1_norm_counts.tsv");
+    read_counts(mat, "../input_data/CCGP3ANXX6_chr1_norm_counts.tsv");
+
+    auto stop = high_resolution_clock::now();
+
+    // Get duration. Substart timepoints to
+    // get durarion. To cast it to proper unit
+    // use duration cast method
+    auto duration = duration_cast<microseconds>(stop - start);
+
+    cout << "\n\nTime taken by the read_counts function on first sample lane 6 dna data: "
+         << duration.count() << " microseconds" << endl;
+
+
 
     // compute the AIC scores
     u_int window_size = 1;
@@ -258,15 +262,6 @@ int main( int argc, char* argv[] ) {
 
     mcmc.destroy();
 
-    auto stop = high_resolution_clock::now();
-
-    // Get duration. Substart timepoints to
-    // get durarion. To cast it to proper unit
-    // use duration cast method
-    auto duration = duration_cast<microseconds>(stop - start);
-
-    cout << "\n\nTime taken by the main function: "
-         << duration.count() << " microseconds" << endl;
 
 
 
