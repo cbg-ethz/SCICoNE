@@ -44,7 +44,7 @@ double MathOp::vec_sum(vector<T> &v) {
     return accumulate( v.begin(), v.end(), 0.0);
 }
 
-vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> mat, double window_size) {
+vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>>& mat, double window_size) {
     /*
      *
      * Computes the difference of the AIC_break and AIC_segment cases to tell whether to break or not
@@ -52,13 +52,14 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> mat, doub
 
     //MathOp mo = MathOp();
     // the last breakpoint
-    u_int bp_size = mat[0].size();
+    size_t bp_size = mat[0].size();
 
     //cout << bp_size << endl;
-    u_int n_cells = mat.size();
+    size_t n_cells = mat.size();
 
     // u_int cell_no = 0;
-    vector<vector<double>> aic_vec;
+    vector<vector<double>> aic_vec(bp_size,vector<double>(n_cells)); // fill constructor
+
     for (int i = 0; i < bp_size; ++i) {
 
         int start = i - window_size;
@@ -70,16 +71,11 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> mat, doub
             continue;
         }
 
-        vector<double> aic_cell = vector<double>();
-
         for (int j = 0; j < n_cells; ++j) {
 
-
-            vector<double> vect = mat[j];
-
-            vector<double> lbins = vector<double>(vect.begin() + start, vect.begin() + i);
-            vector<double> rbins = vector<double>(vect.begin() + i, vect.begin() + end);
-            vector<double> all_bins = vector<double>(vect.begin() + start, vect.begin() + end);
+            vector<double> lbins = vector<double>(mat[j].begin() + start, mat[j].begin() + i);
+            vector<double> rbins = vector<double>(mat[j].begin() + i, mat[j].begin() + end);
+            vector<double> all_bins = vector<double>(mat[j].begin() + start, mat[j].begin() + end);
             /*cout << lbins.size() <<' ' << rbins.size() << ' ' << all_bins.size() << ' ' << i;
             cout << endl;
             cout << avg(lbins) << ' ' << avg(rbins) << ' ' << vec_avg(all_bins) <<endl;
@@ -98,12 +94,8 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> mat, doub
             double aic_p = aic_segment - aic_break;
             //cout << aic_p << endl;
 
-
-
-            aic_cell.push_back(aic_p);
+            aic_vec[i][j] = aic_p;
         }
-        aic_vec.push_back(aic_cell);
-
     }
     return aic_vec;
 }

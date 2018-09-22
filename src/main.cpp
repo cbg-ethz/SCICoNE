@@ -97,28 +97,30 @@ int main( int argc, char* argv[] ) {
     // set a seed number for reproducibility
     //SingletonRandomGenerator::get_generator(42);
 
-    auto start = std::chrono::high_resolution_clock::now(); // start the clock
 
 
     // parse input, using the fill constructor
-    vector<vector<double>> mat(n, vector<double>(m)); // TODO: use a 2D std array instead
+    vector<vector<double>> mat(n, vector<double>(m));
     read_counts(mat, "../input_data/CCGP3ANXX6_chr1_norm_counts.tsv");
 
+
+
+
+
+
+    // compute the AIC scores
+    u_int window_size = 1;
+    auto start = std::chrono::high_resolution_clock::now(); // start the clock
+    vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
     auto stop = high_resolution_clock::now();
 
     // Get duration. Substart timepoints to
     // get durarion. To cast it to proper unit
     // use duration cast method
     auto duration = duration_cast<microseconds>(stop - start);
-
-    cout << "\n\nTime taken by the read_counts function on first sample lane 6 dna data: "
+    cout << "\n\nTime taken by the MathOp::likelihood_ratio function on first sample lane 6 dna data: "
          << duration.count() << " microseconds" << endl;
 
-
-
-    // compute the AIC scores
-    u_int window_size = 1;
-    vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
 
     vector<vector<double>> sigma;
 
