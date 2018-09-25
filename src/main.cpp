@@ -184,7 +184,7 @@ int main( int argc, char* argv[] ) {
         std::ofstream output_file("./CCGP3ANXX6_chr1_s_p.txt");
         for (const auto &e : s_p) output_file << e << "\n";
 
-        double breakpoint_threshold = 650.0;
+        double breakpoint_threshold = 150.0;
         is_breakpoint.push_back(sp_val > breakpoint_threshold);
     }
 
@@ -254,8 +254,6 @@ int main( int argc, char* argv[] ) {
         return EXIT_FAILURE; // reject the move
     }
 
-    // TODO: each cell needs to be assigned to a node and the map values must be kept
-    // n_cells = D.real.size()
 
     mcmc.compute_t_table(D_real,r_real);
 

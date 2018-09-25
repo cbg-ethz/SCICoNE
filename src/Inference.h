@@ -143,7 +143,7 @@ Inference::Inference(u_int n_regions, int ploidy): t(ploidy, n_regions), t_prime
     this->ploidy = ploidy;
     std::ofstream outfile;
     long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
-    f_name = std::to_string(seed) + ".txt";
+    f_name = std::to_string(seed);
 
 
 }
@@ -271,8 +271,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     int condense_split_move_rejection = 0;
 
     // for writing the posteriors on file
-    std::ofstream outfile;
-    outfile.open(f_name, std::ios_base::app);
+    std::ofstream mcmc_scores_file;
+    mcmc_scores_file.open(f_name + ".txt", std::ios_base::app);
 
     best_tree = t; //start with the t
 
@@ -382,7 +382,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             accepted = comparison(m);
 
         // print accepted log_posterior
-        outfile << std::setprecision(8) << accepted->score << ',';
+        mcmc_scores_file << std::setprecision(8) << accepted->score << ',';
 
         // update trees and the matrices
         if (accepted == &t_prime)
@@ -411,9 +411,9 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     t = best_tree;
     this->compute_t_table(D,r);
 
-    std::ofstream cell_node_ids_file(f_name + "_cell_node_ids");
-    std::ofstream cell_node_cnvs_file(f_name + "_cell_node_cnvs");
-    std::ofstream region_sizes_file(f_name + "_region_sizes");
+    std::ofstream cell_node_ids_file(f_name + "_cell_node_ids.txt");
+    std::ofstream cell_node_cnvs_file(f_name + "_cell_node_cnvs.txt");
+    std::ofstream region_sizes_file(f_name + "_region_sizes.txt");
 
     for (const auto &r_it : r) region_sizes_file << r_it << "\n";
 
@@ -552,7 +552,7 @@ void Inference::update_t_scores() {
 
 void Inference::write_best_tree() {
     std::ofstream outfile;
-    outfile.open(f_name+".tree", std::ios_base::app);
+    outfile.open(f_name+"_tree.txt", std::ios_base::app);
     outfile << "The resulting tree is: "<<std::endl;
     outfile << std::setprecision(8) << best_tree;
     std::cout << std::setprecision(8) << best_tree;
