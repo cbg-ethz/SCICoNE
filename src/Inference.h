@@ -272,7 +272,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
     // for writing the posteriors on file
     std::ofstream mcmc_scores_file;
-    mcmc_scores_file.open(f_name + ".txt", std::ios_base::app);
+    mcmc_scores_file.open(f_name + "_markov_chain.txt", std::ios_base::app);
 
     best_tree = t; //start with the t
 
