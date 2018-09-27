@@ -22,9 +22,9 @@ add_executable(tests tests/run_tests.cpp src/MathOp.cpp
         src/MathOp.h
         src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h tests/validation.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h)
 
-add_executable(simulations simulations/simulations_main.cpp src/MathOp.cpp
+add_executable(simulations simulations/run_simulations.cpp src/MathOp.cpp
         src/MathOp.h
-        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/simulations_main.cpp)
+        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/run_simulations.cpp simulations/Simulation.cpp simulations/Simulation.h)
 
 
 #src/Inference.h
