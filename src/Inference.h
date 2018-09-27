@@ -60,6 +60,7 @@ public:
     void update_t_scores();
     void random_initialize(u_int n_nodes, u_int n_regions, double lambda_r, double lambda_c, int max_iters=10000); // randomly initializes a tree and copies it into the other
     void initialize_worked_example(); // initializes the trees based on the test example
+    vector<vector<int>> assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r);
 private:
     int deleted_node_idx();
 };
@@ -208,7 +209,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
 }
 
 void Inference::destroy() {
-
+    // nothing to deallocate
 }
 
 Tree* Inference::comparison(int m) {
@@ -404,54 +405,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         t_prime_scores.clear();
 
     }
-
-    // re-compute the best tree to assign cells to nodes by the maximum score
-    t_scores.clear();
-    t_sums.clear();
-    t = best_tree;
-    this->compute_t_table(D,r);
-
-    std::ofstream cell_node_ids_file(f_name + "_cell_node_ids.txt");
-    std::ofstream cell_node_cnvs_file(f_name + "_cell_node_cnvs.txt");
-    std::ofstream region_sizes_file(f_name + "_region_sizes.txt");
-
-    for (const auto &r_it : r) region_sizes_file << r_it << "\n";
-
-
-    // create a hashmap of nodes for constant access by id
-    unordered_map<uint64_t , Node*> hash_map;
-    for (unsigned i=0; i < t.all_nodes_vec.size(); i++)
-    {
-        hash_map[t.all_nodes_vec[i]->id] = t.all_nodes_vec[i];
-    }
-
-    size_t n_cells = t_scores.size();
-
-    vector<vector<int>> cell_regions(n_cells, vector<int>(this->n_regions)); //fill ctor
-
-    for (int j = 0; j < n_cells; ++j) {
-        // t_scores[i] is the map
-        pair<const int, double> max_pair = *max_element(t_scores[j].begin(), t_scores[j].end(), [] (const pair<const int, double>& p1, const pair<const int, double>& p2)
-                {
-                    return p1.second < p2.second;
-                }) ;
-        cell_node_ids_file << j << '\t' << max_pair.first << '\n';
-
-        Node* max_node = hash_map[max_pair.first];
-
-        for (auto const& x : max_node->c) // iterate over map
-        {
-            cell_regions[j][x.first] = x.second;
-        }
-
-    }
-    for (int k = 0; k < n_cells; ++k) {
-        for (int i = 0; i < n_regions; ++i) {
-            cell_node_cnvs_file << cell_regions[k][i] << '\t';
-        }
-        cell_node_cnvs_file << '\n';
-    }
-
 
 
 
@@ -780,6 +733,65 @@ bool Inference::apply_condense_split(double lambda_s, const vector<vector<double
     }
     else
         return false;
+}
+
+vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r) {
+
+
+    /*
+     * re-computes the best tree to assigns cells to nodes by the maximum score
+     * Writes the cell-node_ids, region sizes, and the inferred CNVs files.
+     * Returns the inferred CNVs matrix
+     * */
+
+    t_scores.clear();
+    t_sums.clear();
+    t = best_tree;
+    this->compute_t_table(D,r);
+
+    std::ofstream cell_node_ids_file(f_name + "_cell_node_ids.txt");
+    std::ofstream cell_node_cnvs_file(f_name + "_cell_node_cnvs.txt");
+    std::ofstream region_sizes_file(f_name + "_region_sizes.txt");
+
+    for (const auto &r_it : r) region_sizes_file << r_it << "\n";
+
+
+    // create a hashmap of nodes for constant access by id
+    unordered_map<uint64_t , Node*> hash_map;
+    for (unsigned i=0; i < t.all_nodes_vec.size(); i++)
+    {
+        hash_map[t.all_nodes_vec[i]->id] = t.all_nodes_vec[i];
+    }
+
+    size_t n_cells = t_scores.size();
+
+    vector<vector<int>> cell_regions(n_cells, vector<int>(this->n_regions)); //fill ctor
+
+    for (int j = 0; j < n_cells; ++j) {
+        // t_scores[i] is the map
+        pair<const int, double> max_pair = *max_element(t_scores[j].begin(), t_scores[j].end(), [] (const pair<const int, double>& p1, const pair<const int, double>& p2)
+        {
+            return p1.second < p2.second;
+        }) ;
+        cell_node_ids_file << j << '\t' << max_pair.first << '\n';
+
+        Node* max_node = hash_map[max_pair.first];
+
+        for (auto const& x : max_node->c) // iterate over map
+        {
+            cell_regions[j][x.first] = x.second;
+        }
+
+    }
+    for (int k = 0; k < n_cells; ++k) {
+        for (int i = 0; i < n_regions; ++i) {
+            cell_node_cnvs_file << cell_regions[k][i] << '\t';
+        }
+        cell_node_cnvs_file << '\n';
+    }
+
+
+    return cell_regions;
 }
 
 

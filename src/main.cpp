@@ -259,9 +259,8 @@ int main( int argc, char* argv[] ) {
     mcmc.compute_t_table(D_real,r_real);
 
     mcmc.infer_mcmc(D_real, r_real, move_probs, mcmc_iters);
+    mcmc.assign_cells_to_nodes(D_real, r_real); // returns the inferred CNVs
     mcmc.write_best_tree();
-
-    mcmc.destroy();
 
 
 
