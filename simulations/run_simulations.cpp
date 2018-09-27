@@ -27,14 +27,17 @@ int main(int argc, char* argv[])
     vector<int> region_sizes(n_regions); // sampling the region sizes
 
     Simulation sim(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy);
-    sim.infer_cnvs(50000); // n_iters: 50000
+    double delta_random_init = sim.random_cnvs_inference();
+    cout << "delta from random method: " << delta_random_init << endl;
+    sim.infer_cnvs(1500); // n_iters: 50000
+    cout << "delta from our method: " << sim.delta_vec[0] << endl;
 
     cout <<'d';
     //simulate(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, D, region_sizes); // initializes D and region_sizes
 
     // initialize the tree and infer the CNV profiles
 
-
+    return EXIT_SUCCESS;
 
 
 }

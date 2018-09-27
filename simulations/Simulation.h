@@ -122,7 +122,10 @@ public:
 
         vector<vector<int>> inferred_cnvs = mcmc.assign_cells_to_nodes(D, region_sizes);
 
-        // compute the Frobenious norm of the difference of the inferred CNVs and the ground truth
+        // add back the ploidy
+
+
+        // compute the Frobenius norm of the difference of the inferred CNVs and the ground truth
 
         double delta = 0.0;
         for (int i = 0; i < inferred_cnvs.size(); ++i)
@@ -134,6 +137,50 @@ public:
         }
         delta = sqrt(delta);
         delta_vec.push_back(delta);
+    }
+
+    double random_cnvs_inference()
+    {
+        /*
+         * Randomly initializes the CNVs matrix within the range of CNV values as ground truth
+         * Returns the Frobenius norm between the random initialized matrix and the ground truth
+         * */
+        // init max with the smallest value possible, and min with max value possible
+        int max = numeric_limits<int>::lowest();
+        int min = numeric_limits<int>::max();
+
+        for (int i = 0; i < ground_truth.size(); ++i)  // set min and max
+        {
+            for (int j = 0; j < ground_truth[0].size(); ++j)
+            {
+                if (ground_truth[i][j] > max)
+                    max = ground_truth[i][j];
+                if (ground_truth[i][j] < min)
+                    min = ground_truth[i][j];
+            }
+        }
+        // randomly assign the cnvs between min and max
+        vector<vector<int>> random_cnvs(ground_truth.size(), vector<int>(ground_truth[0].size())); //fill constructor
+        for (int i = 0; i < random_cnvs.size(); ++i) {
+            for (int j = 0; j < random_cnvs[0].size(); ++j) {
+                random_cnvs[i][j] = MathOp::random_uniform(min,max);
+            }
+        }
+
+        // compute frobenius norm btw. ground truth and random_cnvs
+        double delta = 0.0;
+        for (int i = 0; i < random_cnvs.size(); ++i)
+        {
+            for (int j = 0; j < random_cnvs[0].size(); ++j)
+            {
+                delta += pow(random_cnvs[i][j] - ground_truth[i][j] , 2 );
+            }
+        }
+        delta = sqrt(delta);
+        return delta;
+
+
+
     }
 
 
