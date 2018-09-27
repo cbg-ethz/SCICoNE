@@ -741,7 +741,7 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
     /*
      * re-computes the best tree to assigns cells to nodes by the maximum score
      * Writes the cell-node_ids, region sizes, and the inferred CNVs files.
-     * Returns the inferred CNVs matrix
+     * Returns the inferred CNVs matrix (with the ploidy added)
      * */
 
     t_scores.clear();
@@ -765,7 +765,7 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
 
     size_t n_cells = t_scores.size();
 
-    vector<vector<int>> cell_regions(n_cells, vector<int>(this->n_regions)); //fill ctor
+    vector<vector<int>> cell_regions(n_cells, vector<int>(this->n_regions, ploidy)); //fill ctor, initialise with ploidy
 
     for (int j = 0; j < n_cells; ++j) {
         // t_scores[i] is the map
@@ -779,7 +779,7 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
 
         for (auto const& x : max_node->c) // iterate over map
         {
-            cell_regions[j][x.first] = x.second;
+            cell_regions[j][x.first] = x.second + ploidy;
         }
 
     }
