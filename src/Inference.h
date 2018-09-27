@@ -405,7 +405,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
     }
 
-    // re-compute the best tree to assign cells to nodes
+    // re-compute the best tree to assign cells to nodes by the maximum score
     t_scores.clear();
     t_sums.clear();
     t = best_tree;

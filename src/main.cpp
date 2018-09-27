@@ -101,7 +101,7 @@ int main( int argc, char* argv[] ) {
 
     // parse input, using the fill constructor
     vector<vector<double>> mat(n, vector<double>(m));
-    read_counts(mat, "../input_data/CCGP3ANXX6_chr1_norm_counts.tsv");
+    read_counts(mat, "../input_data/CCGL1ANXX_1_chr1_norm_counts.tsv");
 
 
 
@@ -181,12 +181,13 @@ int main( int argc, char* argv[] ) {
 
         s_p.push_back(sp_val);
 
-        std::ofstream output_file("./CCGP3ANXX6_chr1_s_p.txt");
-        for (const auto &e : s_p) output_file << e << "\n";
-
         double breakpoint_threshold = 150.0;
         is_breakpoint.push_back(sp_val > breakpoint_threshold);
     }
+
+//    std::ofstream output_file("./CCGL1ANXX_1_chr1_s_p.txt");
+//    for (const auto &e : s_p) output_file << e << "\n";
+
 
     // create D, r and N matrices
     vector<vector<double>> D_real; // the D matrix created from the real data
@@ -242,7 +243,7 @@ int main( int argc, char* argv[] ) {
 
 //    mcmc.initialize_worked_example();
     u_int n_nodes = 15;
-    double lambda_r = 1.0;
+    double lambda_r = 0.1;
     double lambda_c = 0.2;
     int n_regions = D_real[0].size()-1;
     try {
