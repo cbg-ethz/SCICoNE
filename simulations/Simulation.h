@@ -29,6 +29,7 @@ public:
     vector<int> region_sizes;
     vector<vector<int>> ground_truth;
 
+    vector<double> delta_vec;
 
 
 public:
@@ -119,7 +120,20 @@ public:
         mcmc.compute_t_table(D,region_sizes);
         mcmc.infer_mcmc(D,region_sizes, move_probs, n_iters);
 
+        vector<vector<int>> inferred_cnvs = mcmc.assign_cells_to_nodes(D, region_sizes);
 
+        // compute the Frobenious norm of the difference of the inferred CNVs and the ground truth
+
+        double delta = 0.0;
+        for (int i = 0; i < inferred_cnvs.size(); ++i)
+        {
+            for (int j = 0; j < inferred_cnvs[0].size(); ++j)
+            {
+                delta += pow(inferred_cnvs[i][j] - ground_truth[i][j] , 2 );
+            }
+        }
+        delta = sqrt(delta);
+        delta_vec.push_back(delta);
     }
 
 

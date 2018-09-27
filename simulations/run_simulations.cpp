@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
     vector<int> region_sizes(n_regions); // sampling the region sizes
 
     Simulation sim(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy);
-
+    sim.infer_cnvs(50000); // n_iters: 50000
 
     cout <<'d';
     //simulate(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, D, region_sizes); // initializes D and region_sizes
