@@ -28,9 +28,10 @@ int main(int argc, char* argv[])
 
     Simulation sim(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy);
     double delta_random_init = sim.random_cnvs_inference();
-    cout << "delta from random method: " << delta_random_init << endl;
+
     sim.infer_cnvs(1500); // n_iters: 50000
     cout << "delta from our method: " << sim.delta_vec[0] << endl;
+    cout << "delta from random method: " << delta_random_init << endl;
 
     cout <<'d';
     //simulate(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, D, region_sizes); // initializes D and region_sizes
