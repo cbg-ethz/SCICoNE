@@ -72,6 +72,8 @@ int main(int argc, char* argv[])
 
     cout << "delta from random method: " << delta_random_init << endl;
 
+    sim.write_d_vector();
+
     //simulate(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, D, region_sizes); // initializes D and region_sizes
 
     // initialize the tree and infer the CNV profiles

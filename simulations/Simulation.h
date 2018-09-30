@@ -17,6 +17,8 @@ class Simulation {
 
 public:
 
+    std::string unique_f_name;
+
     Tree tree;
     int n_regions;
     int n_nodes;
@@ -44,6 +46,12 @@ public:
               n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions), ground_truth(n_cells, vector<int>(n_regions,ploidy)), D(n_cells, vector<double>(n_regions)),
               region_sizes(n_regions)
     {
+
+        // set unique_f_name
+        long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
+        unique_f_name = std::to_string(seed);
+
+
         Inference mcmc(n_regions);
         mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree
 
@@ -180,6 +188,17 @@ public:
         return delta;
 
 
+
+    }
+
+    void write_d_vector()
+    {
+        /*
+         * Writes the d vector to file.
+         * */
+
+        std::ofstream delta_vec_file(to_string(n_regions) + "regions_" + to_string(n_reads) + "_reads_" + unique_f_name +  "_deltas.csv");
+        for (const auto &d : delta_vec) delta_vec_file << d << ',';
 
     }
 
