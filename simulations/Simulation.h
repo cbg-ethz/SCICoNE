@@ -197,7 +197,7 @@ public:
          * Writes the d vector to file.
          * */
 
-        std::ofstream delta_vec_file(to_string(n_regions) + "regions_" + to_string(n_reads) + "_reads_" + unique_f_name +  "_deltas.csv");
+        std::ofstream delta_vec_file(to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_" + unique_f_name +  "_deltas.csv");
         for (const auto &d : delta_vec) delta_vec_file << d << ',';
 
     }
