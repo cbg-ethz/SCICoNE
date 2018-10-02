@@ -9,8 +9,8 @@ parameters
 
 n_regions = [25,50,100]
 n_reads = [10000, 100000, 1000000]
-n_repetitions = 3#100
-n_iters = 300 #1000000 # 1 million iters for each setting
+n_repetitions = 100
+n_iters = 1000000 # 1 million iters for each setting
 
 
 SIM_OUTPUT= "simulations_output"
