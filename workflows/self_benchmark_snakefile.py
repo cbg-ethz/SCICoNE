@@ -33,7 +33,12 @@ rule run_sim:
     params:
         sim_bin = config["simulations_bin"],
         n_repetitions = n_repetitions,
-        n_iters = n_iters
+        n_iters = n_iters,
+        scratch = config["cnv_trees"]["scratch"],
+        mem = config["cnv_trees"]["mem"],
+        time = config["cnv_trees"]["time"]
+    threads:
+        config["cnv_trees"]["threads"]
     output:
         # files = rules.all.input.read_region_sims
         SIM_OUTPUT+'/'+time+'_'+'{regions}'+'regions_'+ '{reads}'+'reads'+'_deltas.csv'

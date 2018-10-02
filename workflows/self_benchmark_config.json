@@ -2,5 +2,12 @@
     "simulations_bin":"../bin/simulations",
     "parameters":
     {
+    },
+    "cnv_trees":
+    {
+        "threads":1,
+        "scratch":"20000",
+        "mem":"6000",
+        "time":"1440",
     }
 }
