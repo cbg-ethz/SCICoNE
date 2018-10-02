@@ -65,7 +65,7 @@ public:
 
         // assign cells uniformly to the nodes
         for (int i = 0; i < n_cells; ++i) {
-            int uniform_val = MathOp::random_uniform(0, mcmc.t.n_regions);
+            int uniform_val = MathOp::random_uniform(0, mcmc.t.get_n_nodes());
 
             Node* uniform_node = mcmc.t.all_nodes_vec[uniform_val];
 
