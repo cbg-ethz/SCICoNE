@@ -109,7 +109,7 @@ int main( int argc, char* argv[] ) {
 
 
     // compute the AIC scores
-    u_int window_size = 1;
+    u_int window_size = 5;
     auto start = std::chrono::high_resolution_clock::now(); // start the clock
     vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
     auto stop = high_resolution_clock::now();
@@ -185,8 +185,8 @@ int main( int argc, char* argv[] ) {
         is_breakpoint.push_back(sp_val > breakpoint_threshold);
     }
 
-//    std::ofstream output_file("./CCGL1ANXX_1_chr1_s_p.txt");
-//    for (const auto &e : s_p) output_file << e << "\n";
+    std::ofstream output_file("./CCGL1ANXX_1_chr1_s_p_window_size_5.txt");
+    for (const auto &e : s_p) output_file << e << "\n";
 
 
     // create D, r and N matrices
