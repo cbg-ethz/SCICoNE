@@ -13,9 +13,11 @@ n_repetitions = 100
 n_iters = 1000000 # 1 million iters for each setting
 
 
+# TODO: have rules to compile the code
+
 SIM_OUTPUT= "simulations_output"
 
-time = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
+time = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
 
 '''
 rules
@@ -24,7 +26,7 @@ rules
 
 rule all:
     input:
-        read_region_sims = expand(SIM_OUTPUT+'/'+time+'_'+'{regions}'+'regions_'+ '{reads}'+'reads'+'_deltas.csv', regions=n_regions,reads=n_reads)
+        read_region_sims = expand(SIM_OUTPUT + '_' + time +'/'+'{regions}'+'regions_'+ '{reads}'+'reads'+ '/'+ '{rep_id}' +'_deltas.csv', regions=n_regions,reads=n_reads, rep_id=[x for x in range(0,n_repetitions)])
     output:
     shell:
 	    "echo STATUS:SUCCESS. All of the rules are ran through."
@@ -41,9 +43,9 @@ rule run_sim:
         config["cnv_trees"]["threads"]
     output:
         # files = rules.all.input.read_region_sims
-        SIM_OUTPUT+'/'+time+'_'+'{regions}'+'regions_'+ '{reads}'+'reads'+'_deltas.csv'
+        SIM_OUTPUT+ '_' + time +'/'+'{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_deltas.csv'
     shell:
-        "{params.sim_bin} --n_regions {wildcards.regions} --n_reads {wildcards.reads} --n_iters {params.n_iters} --n_rep {params.n_repetitions}; ls -tp {wildcards.regions}regions_{wildcards.reads}reads_*_deltas.csv | grep -v / | head -n1 | xargs -I '{{}}' mv '{{}}' {output}"
+        "{params.sim_bin} --n_regions {wildcards.regions} --n_reads {wildcards.reads} --n_iters {params.n_iters} --n_rep 1; ls -tp {wildcards.regions}regions_{wildcards.reads}reads_*_deltas.csv | grep -v / | head -n1 | xargs -I '{{}}' mv '{{}}' {output}"
 
 
 
