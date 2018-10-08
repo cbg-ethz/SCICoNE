@@ -140,6 +140,11 @@ public:
         // compute the Frobenius avg. of the difference of the inferred CNVs and the ground truth
         double delta = MathOp::frobenius_avg(inferred_cnvs, ground_truth);
         delta_vec.push_back(delta);
+
+
+        if (verbosity > 1)
+            mcmc.write_best_tree();
+
     }
 
 //    double random_cnvs_inference(vector<vector<int>>& ground_truth)
