@@ -63,7 +63,7 @@ public:
         // move probabilities
         vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
         Inference mcmc(n_regions, ploidy, verbosity);
-        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree
+        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree, mcmc.t
 
         // create the D matrix from the tree, initialize ground truth & region sizes
         vector<vector<double>> D(n_cells, vector<double>(n_regions));
@@ -129,6 +129,9 @@ public:
             }
 
         }
+
+
+        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // re-creates a random tree as mcmc.t
 
         // compute the initial tree using D and region sizes
         mcmc.compute_t_table(D,region_sizes);
