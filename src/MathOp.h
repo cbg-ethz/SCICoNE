@@ -55,6 +55,7 @@ public:
     static double compute_omega(Node *node, double lambda_r, double lambda_c, double K);
 
 
+    static double frobenius_avg(vector<vector<int>>& mat, vector<vector<int>>& ground_truth);
 
 };
 

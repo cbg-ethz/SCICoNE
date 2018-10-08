@@ -355,3 +355,24 @@ double MathOp::compute_omega(Node *node, double lambda_r, double lambda_c, doubl
     return omega_val;
 }
 
+double MathOp::frobenius_avg(vector<vector<int>> &mat, vector<vector<int>> &ground_truth) {
+    /*
+     * Computes and returns the Frobenius average of 2 matrices
+     * */
+
+    double delta = 0.0;
+    int n = mat.size();
+    int m = mat[0].size();
+    for (int i = 0; i < n; ++i)
+    {
+        for (int j = 0; j < m; ++j)
+        {
+            delta += pow(mat[i][j] - ground_truth[i][j] , 2 );
+        }
+    }
+    delta /= (n * m); //take the avg
+    delta = sqrt(delta);
+
+    return delta;
+}
+

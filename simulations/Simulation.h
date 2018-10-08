@@ -133,17 +133,8 @@ public:
         // add back the ploidy
 
 
-        // compute the Frobenius norm of the difference of the inferred CNVs and the ground truth
-
-        double delta = 0.0;
-        for (int i = 0; i < inferred_cnvs.size(); ++i)
-        {
-            for (int j = 0; j < inferred_cnvs[0].size(); ++j)
-            {
-                delta += pow(inferred_cnvs[i][j] - ground_truth[i][j] , 2 );
-            }
-        }
-        delta = sqrt(delta);
+        // compute the Frobenius avg. of the difference of the inferred CNVs and the ground truth
+        double delta = MathOp::frobenius_avg(inferred_cnvs, ground_truth);
         delta_vec.push_back(delta);
     }
 
@@ -175,16 +166,8 @@ public:
             }
         }
 
-        // compute frobenius norm btw. ground truth and random_cnvs
-        double delta = 0.0;
-        for (int i = 0; i < random_cnvs.size(); ++i)
-        {
-            for (int j = 0; j < random_cnvs[0].size(); ++j)
-            {
-                delta += pow(random_cnvs[i][j] - ground_truth[i][j] , 2 );
-            }
-        }
-        delta = sqrt(delta);
+        // compute frobenius avg btw. ground truth and random_cnvs
+        double delta = MathOp::frobenius_avg(random_cnvs, ground_truth);
         return delta;
 
 
