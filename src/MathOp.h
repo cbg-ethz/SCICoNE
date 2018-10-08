@@ -30,7 +30,7 @@ public:
     MathOp() = delete;
     virtual ~MathOp() = delete;
 
-    static double breakpoint_log_likelihood(vector<double>);
+    static double breakpoint_log_likelihood(vector<double> v, double nu=1.0);
     static long double log_add(long double val1, long double val2);
     static double log_sum(const map<int, double> &map); // map version
     static double log_sum(const vector<double> &vec); // vector version

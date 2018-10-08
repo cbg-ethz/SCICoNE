@@ -13,26 +13,23 @@ double MathOp::vec_avg(vector<T> &v) {
     return average;
 }
 
-double MathOp::breakpoint_log_likelihood(std::vector<double> v)
+double MathOp::breakpoint_log_likelihood(std::vector<double> v, double nu)
 {
     /*
-     * Returns the max likelihood value for the Poisson distribution
+     * Returns the max likelihood value for the Negative binomial distribution with mean: lambda and overdispersion: nu
+     * Mean lambda is inferred by maximum likelihood approach.
      *
-     * double ln_gamma = 0;
-    for (auto const &i : v)
-    {
-        ln_gamma += log(tgamma(i));
-    }*/
-    // max likelihood:  std::log(max_ll_val) * sum(v) - (v.size() * max_ll_val)
-    double max_ll_val = vec_avg(v);
+     */
+    // max likelihood:  std::log(lambda) * sum(v) - (v.size() * lambda)
+    double lambda = vec_avg(v);
     double term1,term2;
     // to avoid log(0) * 0
-    if (vec_sum(v) == 0 && max_ll_val==0)
+    if (vec_sum(v) == 0 && lambda==0)
         term1 = 0.0;
     else
-        term1 = std::log(max_ll_val) * vec_sum(v);
+        term1 = (log(lambda) - log(lambda+nu)) * vec_sum(v);
 
-    term2 = (v.size() * max_ll_val);
+    term2 = (v.size() * nu * log(lambda+nu));
     double ll =  term1 - term2;
 
     assert(!std::isnan(ll));
