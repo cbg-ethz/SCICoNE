@@ -56,12 +56,12 @@ int main(int argc, char* argv[])
 
 
     // create the D matrix
-    vector<vector<double>> D(n_cells, vector<double>(n_regions)); // initialize with the default value
-
-    vector<int> region_sizes(n_regions); // sampling the region sizes
+//    vector<vector<double>> D(n_cells, vector<double>(n_regions)); // initialize with the default value
+//
+//    vector<int> region_sizes(n_regions); // sampling the region sizes
 
     Simulation sim(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy);
-    double delta_random_init = sim.random_cnvs_inference();
+    //double delta_random_init = sim.random_cnvs_inference();
 
 
     for (int i = 0; i < n_repetitions; ++i)
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
         cout << "delta from our method: " << sim.delta_vec[i] << endl;
     }
 
-    cout << "delta from random method: " << delta_random_init << endl;
+    // cout << "delta from random method: " << delta_random_init << endl;
 
     sim.write_d_vector();
 

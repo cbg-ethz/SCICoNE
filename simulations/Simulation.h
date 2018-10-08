@@ -20,6 +20,7 @@ public:
     std::string unique_f_name;
 
     Tree tree;
+    int ploidy;
     int n_regions;
     int n_nodes;
     double lambda_r;
@@ -27,10 +28,6 @@ public:
     int n_cells;
     int n_reads;
     int max_region_size;
-    vector<vector<double>> D;
-    vector<int> region_sizes;
-    vector<vector<int>> ground_truth;
-
     vector<double> delta_vec;
 
 
@@ -42,9 +39,9 @@ public:
               n_nodes(n_nodes),
               lambda_r(lambda_r),
               lambda_c(lambda_c),
+              ploidy(ploidy),
               n_cells(n_cells),
-              n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions), ground_truth(n_cells, vector<int>(n_regions,ploidy)), D(n_cells, vector<double>(n_regions)),
-              region_sizes(n_regions)
+              n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions)
     {
 
         // set unique_f_name
@@ -54,6 +51,25 @@ public:
 
         Inference mcmc(n_regions);
         mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree
+
+
+
+
+
+    }
+
+    void infer_cnvs(int n_iters)
+    {
+        // move probabilities
+        vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
+        Inference mcmc(n_regions);
+        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree
+
+        // create the D matrix from the tree, initialize ground truth & region sizes
+        vector<vector<double>> D(n_cells, vector<double>(n_regions));
+        vector<int> region_sizes(n_regions);
+        vector<vector<int>> ground_truth(n_cells, vector<int>(n_regions,ploidy));
+
 
         vector<vector<double>> p_read_region_cell(n_cells, vector<double>(n_regions)); // initialize with the default value
 
@@ -114,23 +130,11 @@ public:
 
         }
 
-
-
-    }
-
-    void infer_cnvs(int n_iters)
-    {
-        // move probabilities
-        vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
-        Inference mcmc(n_regions);
-        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree
-
+        // compute the initial tree using D and region sizes
         mcmc.compute_t_table(D,region_sizes);
         mcmc.infer_mcmc(D,region_sizes, move_probs, n_iters);
 
         vector<vector<int>> inferred_cnvs = mcmc.assign_cells_to_nodes(D, region_sizes);
-
-        // add back the ploidy
 
 
         // compute the Frobenius avg. of the difference of the inferred CNVs and the ground truth
@@ -138,41 +142,41 @@ public:
         delta_vec.push_back(delta);
     }
 
-    double random_cnvs_inference()
-    {
-        /*
-         * Randomly initializes the CNVs matrix within the range of CNV values as ground truth
-         * Returns the Frobenius norm between the random initialized matrix and the ground truth
-         * */
-        // init max with the smallest value possible, and min with max value possible
-        int max = numeric_limits<int>::lowest();
-        int min = numeric_limits<int>::max();
-
-        for (int i = 0; i < ground_truth.size(); ++i)  // set min and max
-        {
-            for (int j = 0; j < ground_truth[0].size(); ++j)
-            {
-                if (ground_truth[i][j] > max)
-                    max = ground_truth[i][j];
-                if (ground_truth[i][j] < min)
-                    min = ground_truth[i][j];
-            }
-        }
-        // randomly assign the cnvs between min and max
-        vector<vector<int>> random_cnvs(ground_truth.size(), vector<int>(ground_truth[0].size())); //fill constructor
-        for (int i = 0; i < random_cnvs.size(); ++i) {
-            for (int j = 0; j < random_cnvs[0].size(); ++j) {
-                random_cnvs[i][j] = MathOp::random_uniform(min,max);
-            }
-        }
-
-        // compute frobenius avg btw. ground truth and random_cnvs
-        double delta = MathOp::frobenius_avg(random_cnvs, ground_truth);
-        return delta;
-
-
-
-    }
+//    double random_cnvs_inference(vector<vector<int>>& ground_truth)
+//    {
+//        /*
+//         * Randomly initializes the CNVs matrix within the range of CNV values as ground truth
+//         * Returns the Frobenius norm between the random initialized matrix and the ground truth
+//         * */
+//        // init max with the smallest value possible, and min with max value possible
+//        int max = numeric_limits<int>::lowest();
+//        int min = numeric_limits<int>::max();
+//
+//        for (int i = 0; i < ground_truth.size(); ++i)  // set min and max
+//        {
+//            for (int j = 0; j < ground_truth[0].size(); ++j)
+//            {
+//                if (ground_truth[i][j] > max)
+//                    max = ground_truth[i][j];
+//                if (ground_truth[i][j] < min)
+//                    min = ground_truth[i][j];
+//            }
+//        }
+//        // randomly assign the cnvs between min and max
+//        vector<vector<int>> random_cnvs(ground_truth.size(), vector<int>(ground_truth[0].size())); //fill constructor
+//        for (int i = 0; i < random_cnvs.size(); ++i) {
+//            for (int j = 0; j < random_cnvs[0].size(); ++j) {
+//                random_cnvs[i][j] = MathOp::random_uniform(min,max);
+//            }
+//        }
+//
+//        // compute frobenius avg btw. ground truth and random_cnvs
+//        double delta = MathOp::frobenius_avg(random_cnvs, ground_truth);
+//        return delta;
+//
+//
+//
+//    }
 
     void write_d_vector()
     {
