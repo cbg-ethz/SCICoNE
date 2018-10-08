@@ -25,6 +25,7 @@ int main(int argc, char* argv[])
     int n_repetitions = 100;
     int max_region_size = 10;
     int ploidy = 2;
+    int verbosity = 0;
 
 
     cxxopts::Options options("Mcmc simulations", "simulates cnv values, infers them and benchmarks");
@@ -32,7 +33,8 @@ int main(int argc, char* argv[])
             ("n_regions", "Number of regions", cxxopts::value(n_regions))
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
             ("n_rep", "Number of repetitions", cxxopts::value(n_repetitions))
-            ("n_reads", "Number of reads", cxxopts::value(n_reads));
+            ("n_reads", "Number of reads", cxxopts::value(n_reads))
+            ("verbosity", "verbosity", cxxopts::value(verbosity));
 
     auto result = options.parse(argc, argv);
 
@@ -52,7 +54,10 @@ int main(int argc, char* argv[])
     {
         n_repetitions = result["n_rep"].as<int>();
     }
-
+    if (result.count("verbosity"))
+    {
+        verbosity = result["verbosity"].as<int>();
+    }
 
 
     // create the D matrix
@@ -60,13 +65,13 @@ int main(int argc, char* argv[])
 //
 //    vector<int> region_sizes(n_regions); // sampling the region sizes
 
-    Simulation sim(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy);
+    Simulation sim(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy, verbosity);
     //double delta_random_init = sim.random_cnvs_inference();
 
 
     for (int i = 0; i < n_repetitions; ++i)
     {
-        sim.infer_cnvs(n_iters); // n_iters: 50000
+        sim.infer_cnvs(n_iters, verbosity); // n_iters: 50000
         cout << "delta from our method: " << sim.delta_vec[i] << endl;
     }
 

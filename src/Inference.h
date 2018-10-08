@@ -33,9 +33,10 @@ public:
     std::vector<std::map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
     std::string f_name;
+    int verbosity;
 
 public:
-    Inference(u_int n_regions, int ploidy = 2);
+    Inference(u_int n_regions, int ploidy = 2, int verbosity = 2);
     ~Inference();
     void destroy();
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
@@ -89,8 +90,9 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, double lambda_
                 Utils::random_initialize_labels_map(distinct_regions, n_regions, lambda_r, lambda_c); // modifies the distinct_regions
             }catch (const std::out_of_range& e)
             {
-                std::cout << " an out of range error was caught during the initialize labels map method, with message '"
-                          << e.what() << "'\n";
+                if (verbosity > 0)
+                    std::cout << " an out of range error was caught during the initialize labels map method, with message '"
+                              << e.what() << "'\n";
                 delete random_tree; // delete the tree
                 random_tree = new Tree(ploidy, n_regions);
                 break;
@@ -138,10 +140,11 @@ void Inference::initialize_worked_example() {
 
 }
 
-Inference::Inference(u_int n_regions, int ploidy): t(ploidy, n_regions), t_prime(ploidy, n_regions), best_tree(ploidy, n_regions)  {
+Inference::Inference(u_int n_regions, int ploidy, int verbosity): t(ploidy, n_regions), t_prime(ploidy, n_regions), best_tree(ploidy, n_regions)  {
 
     this->n_regions = n_regions;
     this->ploidy = ploidy;
+    this->verbosity = verbosity;
     std::ofstream outfile;
     long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
     f_name = std::to_string(seed);
@@ -165,13 +168,15 @@ bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vect
         attached_node = t_prime.prune_reattach(weighted, validation_test_mode);
     }catch (const std::logic_error& e)
     {
-        std::cout << " a logic error was caught during the prune and reattach move, with message '"
-                  << e.what() << "'\n";
+        if (verbosity > 0)
+            std::cout << " a logic error was caught during the prune and reattach move, with message '"
+                      << e.what() << "'\n";
         return false; // reject the move
     }
     catch (const std::exception& e) { // caught by reference to base
-        std::cout << " a standard exception was caught during the prune and reattach move, with message '"
-                  << e.what() << "'\n";
+        if (verbosity > 0)
+            std::cout << " a standard exception was caught during the prune and reattach move, with message '"
+                      << e.what() << "'\n";
         return false;
     }
 
@@ -235,10 +240,8 @@ Tree* Inference::comparison(int m) {
 
     double acceptance_prob = exp(log_post_t_prime - log_post_t);
 
-    if (log_post_t_prime > -2000.0)
-        cout<<"debug"; // remove it afterwards
-
-    cout<<"acceptance prob: "<<acceptance_prob<<endl;
+    if (verbosity > 0)
+        cout<<"acceptance prob: "<<acceptance_prob<<endl;
 
     if (acceptance_prob > 1)
         return &t_prime;
@@ -249,7 +252,8 @@ Tree* Inference::comparison(int m) {
         std::uniform_real_distribution<double> distribution(0.0,1.0);
         double rand_val = distribution(gen);
 
-        cout<<"rand_val: "<<rand_val<<endl;
+        if (verbosity > 0)
+            cout<<"rand_val: "<<rand_val<<endl;
 
         if (acceptance_prob > rand_val)
             return &t_prime;
@@ -273,7 +277,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
     // for writing the posteriors on file
     std::ofstream mcmc_scores_file;
-    mcmc_scores_file.open(f_name + "_markov_chain.txt", std::ios_base::app);
+    if (verbosity > 1)
+        mcmc_scores_file.open(f_name + "_markov_chain.txt", std::ios_base::app);
 
     best_tree = t; //start with the t
 
@@ -292,7 +297,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 0:
             {
                 // prune & reattach
-                cout << "Prune and reattach" << endl;
+                if (verbosity > 0)
+                    cout << "Prune and reattach" << endl;
                 bool prune_reattach_success = apply_prune_reattach(D, r, false);
                 if (not prune_reattach_success) {
                     n_attached_to_the_same_pos++;
@@ -303,7 +309,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 1:
             {
                 // weighted prune & reattach
-                cout<<"Weighted prune and reattach"<<endl;
+                if (verbosity > 0)
+                    cout<<"Weighted prune and reattach"<<endl;
                 bool weighted_prune_reattach_success = apply_prune_reattach(D, r, true); // weighted=true
                 if (not weighted_prune_reattach_success)
                 {
@@ -315,7 +322,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 2:
             {
                 // swap labels
-                cout << "swap labels" << endl;
+                if (verbosity > 0)
+                    cout << "swap labels" << endl;
                 bool swap_success = apply_swap(D, r, false); // weighted=false
                 if (not swap_success)
                     rejected_before_comparison = true;
@@ -324,7 +332,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 3:
                 {
                 // weighted swap labels
-                cout << "weighted swap labels" << endl;
+                if (verbosity > 0)
+                    cout << "weighted swap labels" << endl;
                 bool weighted_swap_success = apply_swap(D, r, true); // weighted=true
                 if (not weighted_swap_success)
                     rejected_before_comparison = true;
@@ -333,7 +342,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 4:
             {
                 // add or remove event
-                cout << "add or remove event" << endl;
+                if (verbosity > 0)
+                    cout << "add or remove event" << endl;
                 // pass 0.0 to the poisson distributions to have 1 event added/removed
                 bool add_remove_success = apply_add_remove_events(0.0, 0.0, D, r, true); // weighted=true
                 if (not add_remove_success) {
@@ -345,30 +355,36 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 5:
             {
                 // insert delete node
-                cout << "insert/delete node" << endl;
+                if (verbosity > 0)
+                    cout << "insert/delete node" << endl;
                 bool insert_delete_success = apply_insert_delete_node(1.0, 1.0, D, r, true, false); // weighted=false
                 if (not insert_delete_success) {
                     insert_delete_move_rejection++;
                     rejected_before_comparison = true;
-                    cout << "insert/delete rejected before comparison" << endl;
+                    if (verbosity > 0)
+                        cout << "insert/delete rejected before comparison" << endl;
                 }
                 else
-                    cout<< "insert/delete accepted!" << endl;
+                    if (verbosity > 0)
+                        cout<< "insert/delete accepted!" << endl;
                 break;
             }
             case 6:
             {
                 // condense split move
-                cout << "condense split move " <<endl;
+                if (verbosity > 0)
+                    cout << "condense split move " <<endl;
                 bool condense_split_success = apply_condense_split(1.0,D,r,false,false);
                 if (not condense_split_success)
                 {
                     condense_split_move_rejection++;
                     rejected_before_comparison = true;
-                    cout << "condense/split move is rejected before comparison"<<endl;
+                    if (verbosity > 0)
+                        cout << "condense/split move is rejected before comparison"<<endl;
                 }
                 else
-                    cout << "condense/split accepted!"<<endl;
+                    if (verbosity > 0)
+                        cout << "condense/split accepted!"<<endl;
                 break;
             }
             default:
@@ -407,12 +423,15 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     }
 
 
+    if (verbosity > 0)
+    {
+        cout<<"n_accepted: "<<n_accepted<<endl;
+        cout<<"n_rejected: "<<n_rejected<<endl;
+        cout<<"n_attached_to_the_same_pos: "<<n_attached_to_the_same_pos<<endl;
+        cout<<"add_remove_move_rejected: "<<add_remove_move_rejected<<endl;
+        cout<<"condense/split rejected: " << condense_split_move_rejection<<endl;
+    }
 
-    cout<<"n_accepted: "<<n_accepted<<endl;
-    cout<<"n_rejected: "<<n_rejected<<endl;
-    cout<<"n_attached_to_the_same_pos: "<<n_attached_to_the_same_pos<<endl;
-    cout<<"add_remove_move_rejected: "<<add_remove_move_rejected<<endl;
-    cout<<"condense/split rejected: " << condense_split_move_rejection<<endl;
 }
 
 double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
@@ -552,13 +571,15 @@ bool Inference::apply_swap(const vector<vector<double>> &D, const vector<int> &r
         swapped_nodes = t_prime.swap_labels(weighted, test_mode);
     }catch (const std::logic_error& e)
     {
-        std::cout << " a logic error was caught during the swap labels move, with message '"
-                  << e.what() << "'\n";
+        if (verbosity > 0)
+            std::cout << " a logic error was caught during the swap labels move, with message '"
+                      << e.what() << "'\n";
         return false; // reject the move
     }
     catch (const std::exception& e) { // caught by reference to base
-        std::cout << " a standard exception was caught during the swap labels move, with message '"
-                  << e.what() << "'\n";
+        if (verbosity > 0)
+            std::cout << " a standard exception was caught during the swap labels move, with message '"
+                      << e.what() << "'\n";
         return false;
     }
 
@@ -634,13 +655,15 @@ bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const 
         attached_node = t_prime.add_remove_events(lambda_r,lambda_c,weighted, validation_test_mode);
     }catch (const std::logic_error& e)
     {
-        std::cout << " a logic error was caught during the add remove events move, with message '"
-                  << e.what() << "'\n";
+        if (verbosity > 0)
+            std::cout << " a logic error was caught during the add remove events move, with message '"
+                      << e.what() << "'\n";
         return false; // reject the move
     }
     catch (const std::exception& e) { // caught by reference to base
-        std::cout << " a standard exception was caught during the add remove events move, with message '"
-                  << e.what() << "'\n";
+        if (verbosity > 0)
+            std::cout << " a standard exception was caught during the add remove events move, with message '"
+                      << e.what() << "'\n";
         return false;
     }
 
@@ -667,12 +690,14 @@ bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const
         tobe_computed = t_prime.insert_delete_node(lambda_r, lambda_c, weighted, validation_test_mode);
     }catch (const std::out_of_range& e)
     {
-        std::cout << " an out of range error was caught during the insert/delete node move, with message '"
-                  << e.what() << "'\n";
+        if (verbosity > 0)
+            std::cout << " an out of range error was caught during the insert/delete node move, with message '"
+                      << e.what() << "'\n";
         return false; // reject the move
     }catch (const std::exception& e) {
-        std::cout << " a standard exception was caught during the insert/delete node move, with message '"
-                  << e.what() << "'\n";
+        if (verbosity > 0)
+            std::cout << " a standard exception was caught during the insert/delete node move, with message '"
+                      << e.what() << "'\n";
         return false;
     }
 
@@ -720,8 +745,9 @@ bool Inference::apply_condense_split(double lambda_s, const vector<vector<double
     {
         tobe_computed = t_prime.condense_split_node(lambda_s,weighted,validation_test_mode);
     }catch (const std::exception& e) {
-        std::cout << " a standard exception was caught during the split/condense node move, with message '"
-                  << e.what() << "'\n";
+        if (verbosity > 0)
+            std::cout << " a standard exception was caught during the split/condense node move, with message '"
+                      << e.what() << "'\n";
         return false;
     }
 
@@ -749,12 +775,18 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
     t = best_tree;
     this->compute_t_table(D,r);
 
-    std::ofstream cell_node_ids_file(f_name + "_cell_node_ids.txt");
-    std::ofstream cell_node_cnvs_file(f_name + "_cell_node_cnvs.txt");
-    std::ofstream region_sizes_file(f_name + "_region_sizes.txt");
+    std::ofstream cell_node_ids_file;
+    std::ofstream cell_node_cnvs_file;
+    std::ofstream region_sizes_file;
 
-    for (const auto &r_it : r) region_sizes_file << r_it << "\n";
+    if (verbosity > 1)
+    {
+        cell_node_ids_file.open(f_name + "_cell_node_ids.txt");
+        cell_node_cnvs_file.open(f_name + "_cell_node_cnvs.txt");
+        region_sizes_file.open(f_name + "_region_sizes.txt");
 
+        for (const auto &r_it : r) region_sizes_file << r_it << "\n";
+    }
 
     // create a hashmap of nodes for constant access by id
     unordered_map<uint64_t , Node*> hash_map;
@@ -773,7 +805,8 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
         {
             return p1.second < p2.second;
         }) ;
-        cell_node_ids_file << j << '\t' << max_pair.first << '\n';
+        if (verbosity > 1)
+            cell_node_ids_file << j << '\t' << max_pair.first << '\n';
 
         Node* max_node = hash_map[max_pair.first];
 
@@ -785,9 +818,11 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
     }
     for (int k = 0; k < n_cells; ++k) {
         for (int i = 0; i < n_regions; ++i) {
-            cell_node_cnvs_file << cell_regions[k][i] << '\t';
+            if (verbosity > 1)
+                cell_node_cnvs_file << cell_regions[k][i] << '\t';
         }
-        cell_node_cnvs_file << '\n';
+        if (verbosity > 1)
+            cell_node_cnvs_file << '\n';
     }
 
 

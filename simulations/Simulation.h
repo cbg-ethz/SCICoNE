@@ -34,7 +34,7 @@ public:
 public:
     // constructor
     Simulation(int n_regions, int n_nodes, double lambda_r, double lambda_c, int n_cells, int n_reads,
-               int max_region_size, int ploidy)
+               int max_region_size, int ploidy, int verbosity)
             : n_regions(n_regions),
               n_nodes(n_nodes),
               lambda_r(lambda_r),
@@ -49,7 +49,7 @@ public:
         unique_f_name = std::to_string(seed);
 
 
-        Inference mcmc(n_regions);
+        Inference mcmc(n_regions, ploidy, verbosity);
         mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree
 
 
@@ -58,11 +58,11 @@ public:
 
     }
 
-    void infer_cnvs(int n_iters)
+    void infer_cnvs(int n_iters, int verbosity)
     {
         // move probabilities
         vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
-        Inference mcmc(n_regions);
+        Inference mcmc(n_regions, ploidy, verbosity);
         mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree
 
         // create the D matrix from the tree, initialize ground truth & region sizes

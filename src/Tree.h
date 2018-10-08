@@ -987,7 +987,6 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     if (rand_val < p_chi)
     {
         // add is chosen
-        cout <<"add node" <<endl;
         std::discrete_distribution<>* dd;
 
         if (weighted)
@@ -1034,7 +1033,6 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
 
     else // delete is chosen
     {
-        cout <<"delete node move" <<endl;
 
         std::discrete_distribution<>* dd;
         if (weighted)
@@ -1185,7 +1183,6 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
     if (rand_val < p_chi)
     {
         // split is chosen
-        cout <<"split node" <<endl;
         std::discrete_distribution<>* dd;
 
         if (weighted)
@@ -1256,7 +1253,6 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
     {
         // condense is chosen
         // condense is delete with its c_change values passed to the parent
-        cout << "condense node move" <<endl;
 
         std::discrete_distribution<>* dd;
         if (weighted)
