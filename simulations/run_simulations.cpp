@@ -27,6 +27,8 @@ int main(int argc, char* argv[])
     int ploidy = 2;
     int verbosity = 0;
 
+    string f_name_postfix = "";
+
 
     cxxopts::Options options("Mcmc simulations", "simulates cnv values, infers them and benchmarks");
     options.add_options()
@@ -34,7 +36,8 @@ int main(int argc, char* argv[])
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
             ("n_rep", "Number of repetitions", cxxopts::value(n_repetitions))
             ("n_reads", "Number of reads", cxxopts::value(n_reads))
-            ("verbosity", "verbosity", cxxopts::value(verbosity));
+            ("verbosity", "verbosity", cxxopts::value(verbosity))
+            ("postfix", "postfix", cxxopts::value(f_name_postfix));
 
     auto result = options.parse(argc, argv);
 
@@ -58,6 +61,10 @@ int main(int argc, char* argv[])
     {
         verbosity = result["verbosity"].as<int>();
     }
+    if (result.count("postfix"))
+    {
+        f_name_postfix = result["postfix"].as<string>();
+    }
 
 
     // create the D matrix
@@ -77,7 +84,7 @@ int main(int argc, char* argv[])
 
     // cout << "delta from random method: " << delta_random_init << endl;
 
-    sim.write_d_vector();
+    sim.write_d_vector(f_name_postfix);
 
     //simulate(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, D, region_sizes); // initializes D and region_sizes
 
