@@ -36,6 +36,7 @@ int main(int argc, char* argv[])
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
             ("n_rep", "Number of repetitions", cxxopts::value(n_repetitions))
             ("n_reads", "Number of reads per cell", cxxopts::value(n_reads))
+            ("ploidy", "ploidy", cxxopts::value(ploidy))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
             ("postfix", "postfix", cxxopts::value(f_name_postfix));
 
@@ -56,6 +57,10 @@ int main(int argc, char* argv[])
     if (result.count("n_rep"))
     {
         n_repetitions = result["n_rep"].as<int>();
+    }
+    if (result.count("ploidy"))
+    {
+        ploidy = result["ploidy"].as<int>();
     }
     if (result.count("verbosity"))
     {

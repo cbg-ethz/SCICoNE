@@ -55,13 +55,17 @@ int main( int argc, char* argv[]) {
     int n_iters = 5000; // the default value is 10000 iterations.
     int n_cells = 0;
     int n_bins = 0;
+    int ploidy = 2;
+    int verbosity = 0;
 
 
     cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
     options.add_options()
             ("n_bins", "Number of regions", cxxopts::value(n_bins))
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
-            ("n_cells", "Number of cells", cxxopts::value(n_cells));
+            ("n_cells", "Number of cells", cxxopts::value(n_cells))
+            ("ploidy", "ploidy", cxxopts::value(ploidy))
+            ("verbosity", "verbosity", cxxopts::value(verbosity));
 
     auto result = options.parse(argc, argv);
 
@@ -76,6 +80,14 @@ int main( int argc, char* argv[]) {
     if (result.count("n_iters"))
     {
         n_iters = result["n_iters"].as<int>();
+    }
+    if (result.count("verbosity"))
+    {
+        verbosity = result["verbosity"].as<int>();
+    }
+    if (result.count("ploidy"))
+    {
+        ploidy = result["ploidy"].as<int>();
     }
 
 
@@ -162,7 +174,7 @@ int main( int argc, char* argv[]) {
         is_breakpoint.push_back(sp_val > breakpoint_threshold);
     }
 
-    std::ofstream output_file("./breast_tissue_E_2k_s_p_window_size_5.txt");
+    std::ofstream output_file("./breast_tissue_E_2k_s_p_window_size_5.txt"); // TODO: build this string dynamicly and have a param to write this file, perhaps verbosity=2
     for (const auto &e : s_p) output_file << e << "\n";
 
 
@@ -216,7 +228,7 @@ int main( int argc, char* argv[]) {
     // move probabilities
     vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
 
-    Inference mcmc(r_real.size());
+    Inference mcmc(r_real.size(), ploidy, verbosity);
 
 //    mcmc.initialize_worked_example();
     u_int n_nodes = 15;
@@ -237,7 +249,9 @@ int main( int argc, char* argv[]) {
 
     mcmc.infer_mcmc(D_real, r_real, move_probs, n_iters);
     mcmc.assign_cells_to_nodes(D_real, r_real); // returns the inferred CNVs
-    mcmc.write_best_tree();
+
+    if (verbosity > 1)
+        mcmc.write_best_tree();
 
 
     return EXIT_SUCCESS;
