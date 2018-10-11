@@ -16,6 +16,8 @@
 
 #include <unistd.h>
 
+
+
 using namespace std;
 using namespace std::chrono;
 
@@ -41,29 +43,6 @@ void read_counts(vector<vector<double>> &mat, const string path)
             j++;
         }
         i++;
-    }
-}
-
-void disp_vec(vector<vector<long double>>& vec) {
-/*
- * displays the long double vector
- * */
-
-    for (auto const &v1: vec) {
-        for (auto const &v2: v1)
-            cout << v2 << ' ';
-        cout << endl;
-    }
-}
-void disp_vec(vector<vector<double>>& vec) {
-/*
- * displays the double vector
- * */
-
-    for (auto const &v1: vec) {
-        for (auto const &v2: v1)
-            cout << v2 << ' ';
-        cout << endl;
     }
 }
 
@@ -93,20 +72,12 @@ int main( int argc, char* argv[] ) {
         }
     }
 
-
     // set a seed number for reproducibility
     //SingletonRandomGenerator::get_generator(42);
 
-
-
     // parse input, using the fill constructor
     vector<vector<double>> mat(n, vector<double>(m));
-    read_counts(mat, "../input_data/CCGL1ANXX_1_chr1_norm_counts.tsv");
-
-
-
-
-
+    read_counts(mat, "../input_data/breast_tissue_E_2kfiltered_norm_counts.tsv");
 
     // compute the AIC scores
     u_int window_size = 5;
@@ -185,7 +156,7 @@ int main( int argc, char* argv[] ) {
         is_breakpoint.push_back(sp_val > breakpoint_threshold);
     }
 
-    std::ofstream output_file("./CCGL1ANXX_1_chr1_s_p_window_size_5.txt");
+    std::ofstream output_file("./breast_tissue_E_2k_s_p_window_size_5.txt");
     for (const auto &e : s_p) output_file << e << "\n";
 
 
@@ -261,8 +232,6 @@ int main( int argc, char* argv[] ) {
     mcmc.infer_mcmc(D_real, r_real, move_probs, mcmc_iters);
     mcmc.assign_cells_to_nodes(D_real, r_real); // returns the inferred CNVs
     mcmc.write_best_tree();
-
-
 
 
     return EXIT_SUCCESS;
