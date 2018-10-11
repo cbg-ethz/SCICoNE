@@ -10,6 +10,11 @@
 #include <random>
 #include "SingletonRandomGenerator.h"
 #include "MathOp.h"
+#include <unistd.h>
+#include <fstream>
+#include <sstream>
+
+using namespace std;
 
 #define SC_DNA_UTILS_H
 
@@ -22,6 +27,8 @@ public:
     static bool is_empty_map(std::map<u_int, int>& dict);
     static void random_initialize_labels_map(std::map<u_int, int> &distinct_regions, int n_regions, double lambda_r,
                                              double lambda_c);
+
+    static void read_counts(vector<vector<double>> &mat, const string path);
 };
 
 

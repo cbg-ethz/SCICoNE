@@ -14,40 +14,12 @@
 
 #include <chrono> // for measuring the execution time
 
-#include <unistd.h>
-
-
 #include <cxxopts.hpp>
 
 
 
 using namespace std;
 using namespace std::chrono;
-
-void read_counts(vector<vector<double>> &mat, const string path)
-{
-    /*
-     * Parses the input data into a default filled double vector of vector.
-     * */
-
-    std::ifstream filein(path);
-
-    int i = 0, j=0;
-    for (std::string line; std::getline(filein, line); )
-    {
-
-        std::istringstream fline(line);
-        j = 0;
-        for(;;) {
-            double val;
-            fline >> val;
-            if (!fline) break;
-            mat[i][j] = val;
-            j++;
-        }
-        i++;
-    }
-}
 
 
 int main( int argc, char* argv[]) {
@@ -96,7 +68,7 @@ int main( int argc, char* argv[]) {
 
     // parse input, using the fill constructor
     vector<vector<double>> mat(n_cells, vector<double>(n_bins));
-    read_counts(mat, "../input_data/CCGL1ANXX_1_chr1_norm_counts.tsv");
+    Utils::read_counts(mat, "../input_data/CCGL1ANXX_1_chr1_norm_counts.tsv");
 
     // compute the AIC scores
     u_int window_size = 5;
