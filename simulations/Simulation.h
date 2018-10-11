@@ -166,10 +166,7 @@ public:
 
         std::ofstream delta_file(to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_" + f_name_postfix +  "_deltas.csv");
         delta_file << delta;
-
     }
-
-
 };
 
 

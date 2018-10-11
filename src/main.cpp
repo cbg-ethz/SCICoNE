@@ -17,6 +17,9 @@
 #include <unistd.h>
 
 
+#include <cxxopts.hpp>
+
+
 
 using namespace std;
 using namespace std::chrono;
@@ -47,37 +50,41 @@ void read_counts(vector<vector<double>> &mat, const string path)
 }
 
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char* argv[]) {
 
-    int mcmc_iters = 5000; // the default value is 10000 iterations.
-    size_t n = 0;
-    size_t m = 0;
+    int n_iters = 5000; // the default value is 10000 iterations.
+    int n_cells = 0;
+    int n_bins = 0;
 
-    // argument parsing
-    int c;
-    while( ( c = getopt (argc, argv, "i:n:m:") ) != -1 )
+
+    cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
+    options.add_options()
+            ("n_bins", "Number of regions", cxxopts::value(n_bins))
+            ("n_iters", "Number of iterations", cxxopts::value(n_iters))
+            ("n_cells", "Number of cells", cxxopts::value(n_cells));
+
+    auto result = options.parse(argc, argv);
+
+    if (result.count("n_bins"))
     {
-        switch(c)
-        {
-            case 'i':
-                if(optarg) mcmc_iters = std::atoi(optarg);
-                break;
-            case 'n':
-                if(optarg) n = std::atoi(optarg);
-                break;
-            case 'm':
-                if(optarg) m = std::atoi(optarg);
-                break;
-            // TODO: have a default case, default:
-        }
+        n_bins = result["n_bins"].as<int>();
     }
+    if (result.count("n_cells"))
+    {
+        n_cells = result["n_cells"].as<int>();
+    }
+    if (result.count("n_iters"))
+    {
+        n_iters = result["n_iters"].as<int>();
+    }
+
 
     // set a seed number for reproducibility
     //SingletonRandomGenerator::get_generator(42);
 
     // parse input, using the fill constructor
-    vector<vector<double>> mat(n, vector<double>(m));
-    read_counts(mat, "../input_data/breast_tissue_E_2kfiltered_norm_counts.tsv");
+    vector<vector<double>> mat(n_cells, vector<double>(n_bins));
+    read_counts(mat, "../input_data/CCGL1ANXX_1_chr1_norm_counts.tsv");
 
     // compute the AIC scores
     u_int window_size = 5;
@@ -96,7 +103,6 @@ int main( int argc, char* argv[] ) {
     vector<vector<double>> sigma;
 
     int n_breakpoints = aic_vec.size();
-    int n_cells = aic_vec[0].size();
     cout <<"n_breakpoints: " << n_breakpoints << " n_cells: " << n_cells <<endl;
 
     for (auto &vec: aic_vec) // compute sigma matrix
@@ -229,7 +235,7 @@ int main( int argc, char* argv[] ) {
 
     mcmc.compute_t_table(D_real,r_real);
 
-    mcmc.infer_mcmc(D_real, r_real, move_probs, mcmc_iters);
+    mcmc.infer_mcmc(D_real, r_real, move_probs, n_iters);
     mcmc.assign_cells_to_nodes(D_real, r_real); // returns the inferred CNVs
     mcmc.write_best_tree();
 
