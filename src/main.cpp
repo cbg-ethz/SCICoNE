@@ -22,53 +22,15 @@ using namespace std;
 using namespace std::chrono;
 
 
-int main( int argc, char* argv[]) {
+vector<long double> breakpoint_detection(vector<vector<double>> &mat)
+{
+    /*
+     * Performs the breakpoint detection
+     * */
 
-    int n_iters = 5000; // the default value is 10000 iterations.
-    int n_cells = 0;
-    int n_bins = 0;
-    int ploidy = 2;
-    int verbosity = 0;
-
-
-    cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
-    options.add_options()
-            ("n_bins", "Number of regions", cxxopts::value(n_bins))
-            ("n_iters", "Number of iterations", cxxopts::value(n_iters))
-            ("n_cells", "Number of cells", cxxopts::value(n_cells))
-            ("ploidy", "ploidy", cxxopts::value(ploidy))
-            ("verbosity", "verbosity", cxxopts::value(verbosity));
-
-    auto result = options.parse(argc, argv);
-
-    if (result.count("n_bins"))
-    {
-        n_bins = result["n_bins"].as<int>();
-    }
-    if (result.count("n_cells"))
-    {
-        n_cells = result["n_cells"].as<int>();
-    }
-    if (result.count("n_iters"))
-    {
-        n_iters = result["n_iters"].as<int>();
-    }
-    if (result.count("verbosity"))
-    {
-        verbosity = result["verbosity"].as<int>();
-    }
-    if (result.count("ploidy"))
-    {
-        ploidy = result["ploidy"].as<int>();
-    }
+    int n_cells = mat.size();
 
 
-    // set a seed number for reproducibility
-    //SingletonRandomGenerator::get_generator(42);
-
-    // parse input, using the fill constructor
-    vector<vector<double>> mat(n_cells, vector<double>(n_bins));
-    Utils::read_counts(mat, "../input_data/CCGL1ANXX_1_chr1_norm_counts.tsv");
 
     // compute the AIC scores
     u_int window_size = 5;
@@ -115,7 +77,7 @@ int main( int argc, char* argv[]) {
     int k_star = 4;
 
     vector<long double> s_p;
-    vector<bool> is_breakpoint; // boolean mask for the breakpoints
+
     for (int l = 0; l < n_breakpoints; ++l)
     {
         posterior.push_back(vector<long double>());
@@ -142,8 +104,76 @@ int main( int argc, char* argv[]) {
 
         s_p.push_back(sp_val);
 
-        double breakpoint_threshold = 150.0;
-        is_breakpoint.push_back(sp_val > breakpoint_threshold);
+    }
+
+    return s_p;
+
+}
+
+
+int main( int argc, char* argv[]) {
+
+    int n_iters = 5000; // the default value is 10000 iterations.
+    int n_cells = 0;
+    int n_bins = 0;
+    int ploidy = 2;
+    int verbosity = 0;
+    int seed = 0;
+
+    cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
+    options.add_options()
+            ("n_bins", "Number of regions", cxxopts::value(n_bins))
+            ("n_iters", "Number of iterations", cxxopts::value(n_iters))
+            ("n_cells", "Number of cells", cxxopts::value(n_cells))
+            ("ploidy", "ploidy", cxxopts::value(ploidy))
+            ("verbosity", "verbosity", cxxopts::value(verbosity))
+            ("seed", "seed", cxxopts::value(verbosity));
+
+    auto result = options.parse(argc, argv);
+
+    if (result.count("n_bins"))
+    {
+        n_bins = result["n_bins"].as<int>();
+    }
+    if (result.count("n_cells"))
+    {
+        n_cells = result["n_cells"].as<int>();
+    }
+    if (result.count("n_iters"))
+    {
+        n_iters = result["n_iters"].as<int>();
+    }
+    if (result.count("verbosity"))
+    {
+        verbosity = result["verbosity"].as<int>();
+    }
+    if (result.count("ploidy"))
+    {
+        ploidy = result["ploidy"].as<int>();
+    }
+    if (result.count("seed"))
+    {
+        seed = result["seed"].as<int>();
+        //set a seed number for reproducibility
+        SingletonRandomGenerator::get_generator(seed);
+    }
+
+
+
+
+    // parse input, using the fill constructor
+    vector<vector<double>> mat(n_cells, vector<double>(n_bins));
+    Utils::read_counts(mat, "../input_data/CCGL1ANXX_1_chr1_norm_counts.tsv");
+
+
+    vector<long double> s_p = breakpoint_detection(mat);
+
+    vector<bool> is_breakpoint(n_bins); // boolean mask for the breakpoints
+
+    double breakpoint_threshold = 150.0;
+
+    for (int j = 0; j < s_p.size(); ++j) {
+        is_breakpoint[j] = (s_p[j] > breakpoint_threshold);
     }
 
     std::ofstream output_file("./breast_tissue_E_2k_s_p_window_size_5.txt"); // TODO: build this string dynamicly and have a param to write this file, perhaps verbosity=2
