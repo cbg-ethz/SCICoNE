@@ -28,6 +28,10 @@ public:
     int max_region_size;
     vector<double> delta_vec;
 
+    vector<vector<double>> D;
+    vector<int> region_sizes;
+    vector<vector<int>> ground_truth; // default init value: ploidy
+    vector<vector<int>> inferred_cnvs;
 
 public:
     // constructor
@@ -39,92 +43,110 @@ public:
               lambda_c(lambda_c),
               ploidy(ploidy),
               n_cells(n_cells),
-              n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions)
+              n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions), ground_truth(n_cells, vector<int>(n_regions,ploidy)), inferred_cnvs(n_cells, vector<int>(n_regions,ploidy)), D(n_cells, vector<double>(n_regions)), region_sizes(n_regions)
     {
-        Inference mcmc(n_regions, ploidy, verbosity);
-        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree
+
     }
 
-    void infer_cnvs(int n_iters, int verbosity)
+    void simulate_count_matrix(bool is_neutral, int verbosity)
     {
-        // move probabilities
-        vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
+        /*
+         * Simulates the count matrix and the ground_truth.
+         * If is_neutral, then there are no mutations.
+         * All values of the ground truth will be equal to ploidy and the count matrix reads distributions will only be based on region sizes.
+         * Else, a mutation tree will be inferred and that tree will simulate the data.
+         * */
+
+
+
         Inference mcmc(n_regions, ploidy, verbosity);
-        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree, mcmc.t
-
-        // create the D matrix from the tree, initialize ground truth & region sizes
-        vector<vector<double>> D(n_cells, vector<double>(n_regions));
-        vector<int> region_sizes(n_regions);
-        vector<vector<int>> ground_truth(n_cells, vector<int>(n_regions,ploidy));
-
-
         vector<vector<double>> p_read_region_cell(n_cells, vector<double>(n_regions)); // initialize with the default value
+
+        std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+
+        if (not is_neutral) // tree will generate the data
+        {
+            mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree, mcmc.t
+
+            // assign cells uniformly to the nodes
+            for (int i = 0; i < n_cells; ++i) {
+                int uniform_val = MathOp::random_uniform(0, mcmc.t.get_n_nodes());
+
+                Node *uniform_node = mcmc.t.all_nodes_vec[uniform_val];
+
+                for (auto const &x : uniform_node->c) // iterate over map, fill the existing region values, the others will be zero by default
+                {
+                    ground_truth[i][x.first] = x.second + ploidy;
+                }
+            }
+        }
+
+            // create the p_read_region_cell values, not normalized yet.
+            for (int i = 0; i < p_read_region_cell.size(); ++i) {
+                for (int j = 0; j < p_read_region_cell[i].size(); ++j) {
+
+                    if (not is_neutral)
+                        p_read_region_cell[i][j] = ground_truth[i][j] * region_sizes[j];
+                    else
+                        p_read_region_cell[i][j] = ploidy * region_sizes[j];
+                }
+            }
+
+
+            // normalize the p_read_region cell per cell to get probabilities. e.g. prob of a read belonging to a region in a cell
+            for (int k = 0; k < p_read_region_cell.size(); ++k) {
+                // find the sum value
+                double sum_per_cell = accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0);
+
+                for (int i = 0; i < p_read_region_cell[k].size(); ++i) {
+                    if (p_read_region_cell[k][i] != 0.0)
+                        p_read_region_cell[k][i] /= sum_per_cell; // divide all the values by the sum
+                }
+                assert(abs(1.0 - accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0)) <= 0.01); // make sure probs sum up to 1
+            }
+            for (int i = 0; i < D.size(); ++i) // for each cell
+            {
+                // assign the read to region by sampling from the dist
+                std::discrete_distribution<> d(p_read_region_cell[i].begin(), p_read_region_cell[i].end()); // distribution will be different for each cell
+
+                for (int j = 0; j < n_reads; ++j) // distribute the reads to regions
+                {
+                    unsigned sample = d(generator);
+                    D[i][sample]++;
+                }
+            }
+        }
+
+    void sample_region_sizes()
+    {
+        /*
+         * Uniformly samples the region sizes and returns the vector of region sizes.
+         * */
+
 
         // random uniform sample the region sizes
         for (int j = 0; j < n_regions; ++j) {
             int region_size = MathOp::random_uniform(1,max_region_size);
             region_sizes[j] = region_size;
         }
+    }
 
-        // assign cells uniformly to the nodes
-        for (int i = 0; i < n_cells; ++i) {
-            int uniform_val = MathOp::random_uniform(0, mcmc.t.get_n_nodes());
+    void infer_cnvs(int n_iters, int verbosity)
+    {
 
-            Node* uniform_node = mcmc.t.all_nodes_vec[uniform_val];
+        sample_region_sizes();
+        simulate_count_matrix(false, verbosity);
 
-            for (auto const& x : uniform_node->c) // iterate over map, fill the existing region values, the others will be zero by default
-            {
-                ground_truth[i][x.first] = x.second + ploidy;
-            }
-        }
-
-        // create the p_read_region_cell values, not normalized yet.
-        for (int i = 0; i < p_read_region_cell.size(); ++i) {
-            for (int j = 0; j < p_read_region_cell[i].size(); ++j) {
-                p_read_region_cell[i][j] = ground_truth[i][j] * region_sizes[j];
-            }
-        }
-
-
-        // normalize the p_read_region cell per cell to get probabilities. e.g. prob of a read belonging to a region in a cell
-        for (int k = 0; k < p_read_region_cell.size(); ++k) {
-            // find the sum value
-            double sum_per_cell = accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0);
-
-            for (int i = 0; i < p_read_region_cell[k].size(); ++i) {
-                if (p_read_region_cell[k][i] != 0.0)
-                    p_read_region_cell[k][i] /= sum_per_cell; // divide all the values by the sum
-            }
-            assert(abs(1.0 - accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0)) <= 0.01); // make sure probs sum up to 1
-
-
-        }
-
-
-        std::mt19937 &generator = SingletonRandomGenerator::get_generator();
-
-
-        for (int i = 0; i < D.size(); ++i) // for each cell
-        {
-            // assign the read to region by sampling from the dist
-            std::discrete_distribution<> d(p_read_region_cell[i].begin(), p_read_region_cell[i].end()); // distribution will be different for each cell
-
-            for (int j = 0; j < n_reads; ++j) // distribute the reads to regions
-            {
-                unsigned sample = d(generator);
-                D[i][sample]++;
-            }
-
-        }
-
-
+        Inference mcmc(n_regions, ploidy, verbosity);
         mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // re-creates a random tree as mcmc.t
 
         // compute the initial tree using D and region sizes
         mcmc.compute_t_table(D,region_sizes);
+        // move probabilities
+        vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
         mcmc.infer_mcmc(D,region_sizes, move_probs, n_iters);
 
-        vector<vector<int>> inferred_cnvs = mcmc.assign_cells_to_nodes(D, region_sizes);
+        inferred_cnvs = mcmc.assign_cells_to_nodes(D, region_sizes);
 
 
         // compute the Frobenius avg. of the difference of the inferred CNVs and the ground truth
@@ -136,6 +158,7 @@ public:
             mcmc.write_best_tree();
 
     }
+
 
 //    double random_cnvs_inference(vector<vector<int>>& ground_truth)
 //    {
@@ -172,6 +195,18 @@ public:
 //
 //
 //    }
+
+    void create_neutral_dataset(int n_cells, int n_reads, int n_regions)
+    {
+        /*
+         * Creates the D matrix for a neutral (diploid in human case) set of cells and writes it to a csv file.
+         * Distributes the n_reads uniformly to each region in each cell
+         *
+         * */
+
+
+
+    }
 
     void write_d_vector(string f_name_postfix)
     {
