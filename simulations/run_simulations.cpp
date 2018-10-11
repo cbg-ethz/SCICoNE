@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
     int n_cells = 500;
     int n_reads = 10000;
     int n_iters = 5000;
-    int n_repetitions = 100;
+    int n_repetitions = 1;
     int max_region_size = 10;
     int ploidy = 2;
     int verbosity = 0;
@@ -76,11 +76,8 @@ int main(int argc, char* argv[])
     //double delta_random_init = sim.random_cnvs_inference();
 
 
-    for (int i = 0; i < n_repetitions; ++i)
-    {
-        sim.infer_cnvs(n_iters, verbosity); // n_iters: 50000
-        cout << "delta from our method: " << sim.delta_vec[i] << endl;
-    }
+    sim.infer_cnvs(n_iters, verbosity); // n_iters: 50000
+    cout << "delta from our method: " << sim.delta << endl;
 
     // cout << "delta from random method: " << delta_random_init << endl;
 

@@ -26,7 +26,7 @@ public:
     int n_cells;
     int n_reads;
     int max_region_size;
-    vector<double> delta_vec;
+    double delta;
 
     vector<vector<double>> D;
     vector<int> region_sizes;
@@ -150,63 +150,13 @@ public:
 
 
         // compute the Frobenius avg. of the difference of the inferred CNVs and the ground truth
-        double delta = MathOp::frobenius_avg(inferred_cnvs, ground_truth);
-        delta_vec.push_back(delta);
-
+        delta = MathOp::frobenius_avg(inferred_cnvs, ground_truth);
 
         if (verbosity > 1)
             mcmc.write_best_tree();
-
     }
 
 
-//    double random_cnvs_inference(vector<vector<int>>& ground_truth)
-//    {
-//        /*
-//         * Randomly initializes the CNVs matrix within the range of CNV values as ground truth
-//         * Returns the Frobenius norm between the random initialized matrix and the ground truth
-//         * */
-//        // init max with the smallest value possible, and min with max value possible
-//        int max = numeric_limits<int>::lowest();
-//        int min = numeric_limits<int>::max();
-//
-//        for (int i = 0; i < ground_truth.size(); ++i)  // set min and max
-//        {
-//            for (int j = 0; j < ground_truth[0].size(); ++j)
-//            {
-//                if (ground_truth[i][j] > max)
-//                    max = ground_truth[i][j];
-//                if (ground_truth[i][j] < min)
-//                    min = ground_truth[i][j];
-//            }
-//        }
-//        // randomly assign the cnvs between min and max
-//        vector<vector<int>> random_cnvs(ground_truth.size(), vector<int>(ground_truth[0].size())); //fill constructor
-//        for (int i = 0; i < random_cnvs.size(); ++i) {
-//            for (int j = 0; j < random_cnvs[0].size(); ++j) {
-//                random_cnvs[i][j] = MathOp::random_uniform(min,max);
-//            }
-//        }
-//
-//        // compute frobenius avg btw. ground truth and random_cnvs
-//        double delta = MathOp::frobenius_avg(random_cnvs, ground_truth);
-//        return delta;
-//
-//
-//
-//    }
-
-    void create_neutral_dataset(int n_cells, int n_reads, int n_regions)
-    {
-        /*
-         * Creates the D matrix for a neutral (diploid in human case) set of cells and writes it to a csv file.
-         * Distributes the n_reads uniformly to each region in each cell
-         *
-         * */
-
-
-
-    }
 
     void write_d_vector(string f_name_postfix)
     {
@@ -214,8 +164,8 @@ public:
          * Writes the d vector to file.
          * */
 
-        std::ofstream delta_vec_file(to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_" + f_name_postfix +  "_deltas.csv");
-        for (const auto &d : delta_vec) delta_vec_file << d << ',';
+        std::ofstream delta_file(to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_" + f_name_postfix +  "_deltas.csv");
+        delta_file << delta;
 
     }
 
