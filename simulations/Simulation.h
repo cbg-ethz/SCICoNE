@@ -117,6 +117,49 @@ public:
             }
         }
 
+
+    void split_regions_to_bins()
+    {
+
+        // compute the total n_bins by summing up the region sizes
+        double n_bins = accumulate( region_sizes.begin(), region_sizes.end(), 0.0);
+
+
+
+        vector<vector<double>> D_bins(n_cells, vector<double>(n_bins));
+        vector<vector<int>> ground_truth_bins(n_cells, vector<int>(n_bins));
+
+        for (int i = 0; i < D.size(); ++i) // for each cell
+        {
+            int region_offset = 0;
+            for (int j = 0; j < D[0].size(); ++j) // for each region
+            {
+
+                for (int k = 0; k < D[i][j]; ++k) // for the count value
+                {
+                    int val =  MathOp::random_uniform(0, region_sizes[j]-1);
+                    D_bins[i][val + region_offset]++;
+                }
+
+                for (int l = 0; l < region_sizes[j]; ++l) {
+                    ground_truth_bins[i][l + region_offset] = ground_truth[i][j];
+                }
+
+                region_offset += region_sizes[j];
+            }
+        }
+
+        // Unit test
+        double validation_sum = 0.0;
+        for (int m = 0; m < region_sizes[1]; ++m) {
+            validation_sum += D_bins[0][m + region_sizes[0]]; // region_sizes[0] is the offset
+        }
+        assert(validation_sum == D[0][1]);
+
+        D = D_bins;
+        ground_truth = ground_truth_bins;
+    }
+
     void sample_region_sizes()
     {
         /*
@@ -130,6 +173,8 @@ public:
             region_sizes[j] = region_size;
         }
     }
+
+
 
     void infer_cnvs(int n_iters, int verbosity)
     {
