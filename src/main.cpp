@@ -112,7 +112,7 @@ int main( int argc, char* argv[]) {
 
 
     // the default values
-    int n_regions = 400;
+    int n_regions = 50;
     int n_nodes = 50;
     double lambda_r = 0.1;
     double lambda_c = 0.2;
@@ -185,10 +185,23 @@ int main( int argc, char* argv[]) {
     vector<long double> s_p0 = breakpoint_detection(sim0.D);
     vector<long double> s_p1 = breakpoint_detection(sim1.D);
 
-    std::ofstream output_file0("./sim_sp0.txt");
-    std::ofstream output_file1("./sim_sp1.txt");
+
+    std::ofstream output_file0("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp0.txt");
+    std::ofstream output_file1("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp1.txt");
     for (const auto &e : s_p0) output_file0 << e << "\n";
     for (const auto &e : s_p1) output_file1 << e << "\n";
+
+    // write the region sizes
+    std::ofstream region_sizes_file("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp0_region_sizes.txt");
+    for (const auto &e : sim1.region_sizes) region_sizes_file << e << "\n";
+
+    // write the ground truth
+    std::ofstream ground_truth_file("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_ground_truth.txt");
+    for (auto const &v1: sim1.ground_truth) {
+        for (auto const &v2: v1)
+            ground_truth_file << v2 << ' ';
+        ground_truth_file << '\n';
+    }
 
 
 

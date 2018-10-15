@@ -84,7 +84,6 @@ public:
             // create the p_read_region_cell values, not normalized yet.
             for (int i = 0; i < p_read_region_cell.size(); ++i) {
                 for (int j = 0; j < p_read_region_cell[i].size(); ++j) {
-
                     if (not is_neutral)
                         p_read_region_cell[i][j] = ground_truth[i][j] * region_sizes[j];
                     else
