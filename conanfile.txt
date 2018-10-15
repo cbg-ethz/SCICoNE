@@ -1,5 +1,0 @@
-[requires]
-Boost/1.66.0@conan/stable
-
-[generators]
-cmake
