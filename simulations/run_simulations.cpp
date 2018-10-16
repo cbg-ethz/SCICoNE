@@ -34,6 +34,7 @@ int main(int argc, char* argv[])
     cxxopts::Options options("Mcmc simulations", "simulates cnv values, infers them and benchmarks");
     options.add_options()
             ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
+            ("n_cells", "Number of cells", cxxopts::value(n_cells))
             ("n_nodes", "Number of nodes of the tree", cxxopts::value(n_nodes))
             ("n_regions", "Number of regions", cxxopts::value(n_regions))
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
@@ -52,6 +53,10 @@ int main(int argc, char* argv[])
     if (result.count("n_nodes"))
     {
         n_nodes = result["n_nodes"].as<int>();
+    }
+    if (result.count("n_cells"))
+    {
+        n_cells = result["n_cells"].as<int>();
     }
     if (result.count("n_regions"))
     {
