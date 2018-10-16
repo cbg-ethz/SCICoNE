@@ -20,6 +20,7 @@ int main(int argc, char* argv[])
     double lambda_r = 0.1;
     double lambda_c = 0.2;
     int n_cells = 500;
+    int n_bins = 10000;
     int n_reads = 10000;
     int n_iters = 5000;
     int n_repetitions = 1;
@@ -32,6 +33,8 @@ int main(int argc, char* argv[])
 
     cxxopts::Options options("Mcmc simulations", "simulates cnv values, infers them and benchmarks");
     options.add_options()
+            ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
+            ("n_nodes", "Number of nodes of the tree", cxxopts::value(n_nodes))
             ("n_regions", "Number of regions", cxxopts::value(n_regions))
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
             ("n_rep", "Number of repetitions", cxxopts::value(n_repetitions))
@@ -42,6 +45,14 @@ int main(int argc, char* argv[])
 
     auto result = options.parse(argc, argv);
 
+    if (result.count("n_bins"))
+    {
+        n_bins = result["n_bins"].as<int>();
+    }
+    if (result.count("n_nodes"))
+    {
+        n_nodes = result["n_nodes"].as<int>();
+    }
     if (result.count("n_regions"))
     {
         n_regions = result["n_regions"].as<int>();
@@ -77,9 +88,12 @@ int main(int argc, char* argv[])
 //
 //    vector<int> region_sizes(n_regions); // sampling the region sizes
 
-    Simulation sim(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy, verbosity);
+    Simulation sim(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy, verbosity);
     //double delta_random_init = sim.random_cnvs_inference();
 
+    sim.sample_region_sizes(n_bins);
+    sim.simulate_count_matrix(false, verbosity);
+    sim.split_regions_to_bins();
 
     sim.infer_cnvs(n_iters, verbosity); // n_iters: 50000
     cout << "delta from our method: " << sim.delta << endl;

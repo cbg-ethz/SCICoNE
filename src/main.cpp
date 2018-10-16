@@ -105,7 +105,7 @@ int main( int argc, char* argv[]) {
 
     int n_iters = 5000; // the default value is 10000 iterations.
     int n_cells = 0;
-    int n_bins = 0;
+    int n_bins = 10000;
     int ploidy = 2;
     int verbosity = 0;
     int seed = 0;
@@ -170,11 +170,11 @@ int main( int argc, char* argv[]) {
     }
 
 
-    Simulation sim0(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy, verbosity);
-    Simulation sim1(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy, verbosity);
+    Simulation sim0(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy, verbosity);
+    Simulation sim1(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy, verbosity);
 
 
-    sim0.sample_region_sizes();
+    sim0.sample_region_sizes(n_bins);
     sim0.simulate_count_matrix(true, verbosity);
     sim0.split_regions_to_bins();
 

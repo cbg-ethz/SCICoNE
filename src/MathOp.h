@@ -57,6 +57,9 @@ public:
 
     static double frobenius_avg(vector<vector<int>>& mat, vector<vector<int>>& ground_truth);
 
+    static vector<double> dirichlet_sample(int len, double alpha=1.0);
+
+
 };
 
 

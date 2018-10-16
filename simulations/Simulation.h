@@ -19,6 +19,7 @@ public:
 
     Tree tree;
     int ploidy;
+    int n_bins;
     int n_regions;
     int n_nodes;
     double lambda_r;
@@ -35,9 +36,10 @@ public:
 
 public:
     // constructor
-    Simulation(int n_regions, int n_nodes, double lambda_r, double lambda_c, int n_cells, int n_reads,
+    Simulation(int n_regions, int n_bins, int n_nodes, double lambda_r, double lambda_c, int n_cells, int n_reads,
                int max_region_size, int ploidy, int verbosity)
             : n_regions(n_regions),
+              n_bins(n_bins),
               n_nodes(n_nodes),
               lambda_r(lambda_r),
               lambda_c(lambda_c),
@@ -159,18 +161,20 @@ public:
         ground_truth = ground_truth_bins;
     }
 
-    void sample_region_sizes()
+    void sample_region_sizes(int n_bins)
     {
         /*
          * Uniformly samples the region sizes and returns the vector of region sizes.
          * */
 
+        vector<double> dirichlet = MathOp::dirichlet_sample(n_regions);
 
-        // random uniform sample the region sizes
-        for (int j = 0; j < n_regions; ++j) {
-            int region_size = MathOp::random_uniform(1,max_region_size);
-            region_sizes[j] = region_size;
+        for (int i = 0; i < n_regions; ++i) {
+            region_sizes[i] = static_cast<int>(dirichlet[i]*n_bins);
         }
+
+        double sum = accumulate( region_sizes.begin(), region_sizes.end(), 0.0);
+
     }
 
 
@@ -178,7 +182,7 @@ public:
     void infer_cnvs(int n_iters, int verbosity)
     {
 
-        sample_region_sizes();
+        sample_region_sizes(this->n_bins);
         simulate_count_matrix(false, verbosity);
 
         Inference mcmc(n_regions, ploidy, verbosity);
