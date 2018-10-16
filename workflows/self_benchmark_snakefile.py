@@ -15,9 +15,10 @@ n_iters = 1000000 # 1 million iters for each setting
 
 # TODO: have rules to compile the code
 
-SIM_OUTPUT= "simulations_output"
+SIM_OUTPUT= "/cluster/work/bewi/members/tuncel/data/dna/recomb_simulations" # "simulations_output"
 
-time = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
+# time = datetime.datetime.now().strftime("%Y-%m-%d_%H_%M")
+time = "9_sims"
 
 '''
 rules
@@ -45,7 +46,7 @@ rule run_sim:
         # files = rules.all.input.read_region_sims
         SIM_OUTPUT+ '_' + time +'/'+'{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_deltas.csv'
     shell:
-        "{params.sim_bin} --n_regions {wildcards.regions} --n_reads {wildcards.reads} --n_iters {params.n_iters} --n_rep 1; ls -tp {wildcards.regions}regions_{wildcards.reads}reads_*_deltas.csv | grep -v / | head -n1 | xargs -I '{{}}' mv '{{}}' {output}"
+        "{params.sim_bin} --n_regions {wildcards.regions} --n_reads {wildcards.reads} --n_iters {params.n_iters} --n_rep 1 --verbosity 1 --postfix {wildcards.rep_id}; mv {wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_deltas.csv {output}"
 
 
 
