@@ -11,12 +11,13 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g") # icc needs -O3 after -g
 
 include_directories(src)
 include_directories(include)
+include_directories(simulations)
 
 add_executable(sc_dna
         src/MathOp.cpp
         src/main.cpp
         src/MathOp.h
-        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h)
+        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/Simulation.cpp simulations/Simulation.h)
 
 add_executable(tests tests/run_tests.cpp src/MathOp.cpp
         src/MathOp.h

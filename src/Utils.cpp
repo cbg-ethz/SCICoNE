@@ -72,3 +72,30 @@ void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions,
 
 }
 
+void Utils::read_counts(vector<vector<double>> &mat, const string path) {
+
+    /*
+     * Parses the input data into a default filled double vector of vector.
+     * */
+
+    ifstream filein(path);
+
+    int i = 0, j=0;
+    for (std::string line; std::getline(filein, line); )
+    {
+
+        istringstream fline(line);
+        j = 0;
+        for(;;) {
+            double val;
+            fline >> val;
+            if (!fline) break;
+            mat[i][j] = val;
+            j++;
+        }
+        i++;
+    }
+
+
+}
+
