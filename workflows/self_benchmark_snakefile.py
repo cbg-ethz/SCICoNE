@@ -7,9 +7,12 @@ configfile: "self_benchmark_config.json"
 parameters
 '''
 
-n_regions = [25,50,100]
-n_reads = [10000, 100000, 1000000]
+n_nodes = 10
+n_regions = [n_nodes,2*n_nodes,4*n_nodes]
+n_bins = 10000
+n_reads = [1000, 10000, 100000]
 n_repetitions = 100
+n_cells = 500
 n_iters = 1000000 # 1 million iters for each setting
 
 
@@ -35,6 +38,9 @@ rule all:
 rule run_sim:
     params:
         sim_bin = config["simulations_bin"],
+        n_nodes = n_nodes,
+        n_bins = n_bins,
+        n_cells = n_cells,
         n_repetitions = n_repetitions,
         n_iters = n_iters,
         scratch = config["cnv_trees"]["scratch"],
@@ -46,7 +52,7 @@ rule run_sim:
         # files = rules.all.input.read_region_sims
         SIM_OUTPUT+ '_' + time +'/'+'{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_deltas.csv'
     shell:
-        "{params.sim_bin} --n_regions {wildcards.regions} --n_reads {wildcards.reads} --n_iters {params.n_iters} --n_rep 1 --verbosity 1 --postfix {wildcards.rep_id}; mv {wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_deltas.csv {output}"
+        "{params.sim_bin} --n_regions {wildcards.regions} --n_reads {wildcards.reads} --n_iters {params.n_iters} --n_cells {params.n_cells} --n_bins {params.n_bins} --n_nodes {params.n_nodes} --n_rep 1 --verbosity 0 --ploidy 2 --postfix {wildcards.rep_id}; mv {wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_deltas.csv {output}"
 
 
 
