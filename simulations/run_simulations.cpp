@@ -86,18 +86,18 @@ int main(int argc, char* argv[]) {
                    verbosity);
     //double delta_random_init = sim.random_cnvs_inference();
 
-    sim.sample_region_sizes(n_bins);
+    sim.sample_region_sizes(n_bins, 1);
     sim.simulate_count_matrix(false, verbosity);
     sim.split_regions_to_bins();
 
 
 
     // write the region sizes
-    std::ofstream region_sizes_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+"region_sizes.txt");
+    std::ofstream region_sizes_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_region_sizes.txt");
     for (const auto &e : sim.region_sizes) region_sizes_file << e << "\n";
 
     // write the ground truth
-    std::ofstream ground_truth_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+"ground_truth.txt");
+    std::ofstream ground_truth_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_ground_truth.txt");
     for (auto const &v1: sim.ground_truth) {
         for (auto const &v2: v1)
             ground_truth_file << v2 << ' ';
@@ -105,23 +105,25 @@ int main(int argc, char* argv[]) {
     }
 
     // write the D matrix
-    std::ofstream D_mat_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+"d_mat.txt");
+    std::ofstream D_mat_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_d_mat.txt");
     for (auto const &v1: sim.D) {
         for (auto const &v2: v1)
             D_mat_file << v2 << ' ';
         D_mat_file << '\n';
     }
 
-    return EXIT_SUCCESS;
+    // write the tree that generated the data
+    std::ofstream tree_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_tree.txt");
+    tree_file << sim.tree;
 
-}
+
 
 //    sim.infer_cnvs(n_iters, verbosity); // n_iters: 50000
 //
 //    // compute the Frobenius avg. of the difference of the inferred CNVs and the ground truth
 //    double delta = MathOp::frobenius_avg(sim.inferred_cnvs, sim.ground_truth);
 //    cout << "delta from our method: " << delta << endl;
-//
+////
 //    // cout << "delta from random method: " << delta_random_init << endl;
 //
 //    sim.write_d_vector(f_name_postfix);
@@ -129,3 +131,6 @@ int main(int argc, char* argv[]) {
     //simulate(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, D, region_sizes); // initializes D and region_sizes
 
     // initialize the tree and infer the CNV profiles
+    return EXIT_SUCCESS;
+
+}

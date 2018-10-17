@@ -17,7 +17,7 @@ class Simulation {
 
 public:
 
-    Tree tree;
+    Tree tree; // true tree that generates the data
     int ploidy;
     int n_bins;
     int n_regions;
@@ -82,6 +82,7 @@ public:
                 }
             }
         }
+        this->tree = mcmc.t; // keep the true tree that generated the data
 
             // create the p_read_region_cell values, not normalized yet.
             for (int i = 0; i < p_read_region_cell.size(); ++i) {
@@ -161,7 +162,7 @@ public:
         ground_truth = ground_truth_bins;
     }
 
-    void sample_region_sizes(int n_bins)
+    void sample_region_sizes(int n_bins, int min_width=1)
     {
         /*
          * Uniformly samples the region sizes and returns the vector of region sizes.
@@ -169,8 +170,11 @@ public:
 
         vector<double> dirichlet = MathOp::dirichlet_sample(n_regions);
 
+        n_bins -= min_width * n_regions;
+
         for (int i = 0; i < n_regions; ++i) {
             region_sizes[i] = static_cast<int>(dirichlet[i]*n_bins);
+            region_sizes[i] += min_width;
         }
 
         double sum = accumulate( region_sizes.begin(), region_sizes.end(), 0.0); //for debug purposes
