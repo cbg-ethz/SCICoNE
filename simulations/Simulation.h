@@ -173,7 +173,7 @@ public:
             region_sizes[i] = static_cast<int>(dirichlet[i]*n_bins);
         }
 
-        double sum = accumulate( region_sizes.begin(), region_sizes.end(), 0.0);
+        double sum = accumulate( region_sizes.begin(), region_sizes.end(), 0.0); //for debug purposes
 
     }
 
@@ -181,9 +181,9 @@ public:
 
     void infer_cnvs(int n_iters, int verbosity)
     {
-
-        sample_region_sizes(this->n_bins);
-        simulate_count_matrix(false, verbosity);
+        /*
+         * Infers the cnvs matrix given D and region sizes.
+         * */
 
         Inference mcmc(n_regions, ploidy, verbosity);
         mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // re-creates a random tree as mcmc.t
@@ -193,15 +193,33 @@ public:
         // move probabilities
         vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
         mcmc.infer_mcmc(D,region_sizes, move_probs, n_iters);
-
-        inferred_cnvs = mcmc.assign_cells_to_nodes(D, region_sizes);
-
-
-        // compute the Frobenius avg. of the difference of the inferred CNVs and the ground truth
-        delta = MathOp::frobenius_avg(inferred_cnvs, ground_truth);
-
         if (verbosity > 1)
             mcmc.write_best_tree();
+
+        vector<vector<int>> inferred_cnvs_regions = mcmc.assign_cells_to_nodes(D, region_sizes);
+
+        // compute the total n_bins by summing up the region sizes
+        double n_bins = accumulate( region_sizes.begin(), region_sizes.end(), 0.0);
+        vector<vector<int>> inferred_cnvs_bins(n_cells, vector<int>(n_bins));
+
+        for (int i = 0; i < inferred_cnvs_regions.size(); ++i) // cells
+        {
+            int region_offset = 0;
+
+            for (int j = 0; j < inferred_cnvs_regions[0].size(); ++j) // regions
+            {
+                for (int k = 0; k < region_sizes[j]; ++k)
+                {
+                    inferred_cnvs_bins[i][k + region_offset] = inferred_cnvs_regions[i][j];
+                }
+
+                region_offset += region_sizes[j];
+            }
+
+        }
+
+        this->inferred_cnvs = inferred_cnvs_bins;
+
     }
 
 

@@ -11,8 +11,7 @@ using namespace std;
 
 
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
 
     // the default values
     int n_regions = 50;
@@ -46,44 +45,34 @@ int main(int argc, char* argv[])
 
     auto result = options.parse(argc, argv);
 
-    if (result.count("n_bins"))
-    {
+    if (result.count("n_bins")) {
         n_bins = result["n_bins"].as<int>();
     }
-    if (result.count("n_nodes"))
-    {
+    if (result.count("n_nodes")) {
         n_nodes = result["n_nodes"].as<int>();
     }
-    if (result.count("n_cells"))
-    {
+    if (result.count("n_cells")) {
         n_cells = result["n_cells"].as<int>();
     }
-    if (result.count("n_regions"))
-    {
+    if (result.count("n_regions")) {
         n_regions = result["n_regions"].as<int>();
     }
-    if (result.count("n_reads"))
-    {
+    if (result.count("n_reads")) {
         n_reads = result["n_reads"].as<int>();
     }
-    if (result.count("n_iters"))
-    {
+    if (result.count("n_iters")) {
         n_iters = result["n_iters"].as<int>();
     }
-    if (result.count("n_rep"))
-    {
+    if (result.count("n_rep")) {
         n_repetitions = result["n_rep"].as<int>();
     }
-    if (result.count("ploidy"))
-    {
+    if (result.count("ploidy")) {
         ploidy = result["ploidy"].as<int>();
     }
-    if (result.count("verbosity"))
-    {
+    if (result.count("verbosity")) {
         verbosity = result["verbosity"].as<int>();
     }
-    if (result.count("postfix"))
-    {
+    if (result.count("postfix")) {
         f_name_postfix = result["postfix"].as<string>();
     }
 
@@ -93,26 +82,50 @@ int main(int argc, char* argv[])
 //
 //    vector<int> region_sizes(n_regions); // sampling the region sizes
 
-    Simulation sim(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy, verbosity);
+    Simulation sim(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy,
+                   verbosity);
     //double delta_random_init = sim.random_cnvs_inference();
 
     sim.sample_region_sizes(n_bins);
     sim.simulate_count_matrix(false, verbosity);
     sim.split_regions_to_bins();
 
-    sim.infer_cnvs(n_iters, verbosity); // n_iters: 50000
-    cout << "delta from our method: " << sim.delta << endl;
 
-    // cout << "delta from random method: " << delta_random_init << endl;
 
-    sim.write_d_vector(f_name_postfix);
+    // write the region sizes
+    std::ofstream region_sizes_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+"sim_region_sizes.txt");
+    for (const auto &e : sim.region_sizes) region_sizes_file << e << "\n";
+
+    // write the ground truth
+    std::ofstream ground_truth_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+"sim_ground_truth.txt");
+    for (auto const &v1: sim.ground_truth) {
+        for (auto const &v2: v1)
+            ground_truth_file << v2 << ' ';
+        ground_truth_file << '\n';
+    }
+
+    // write the D matrix
+    std::ofstream D_mat_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+"sim_d_mat.txt");
+    for (auto const &v1: sim.D) {
+        for (auto const &v2: v1)
+            D_mat_file << v2 << ' ';
+        D_mat_file << '\n';
+    }
+
+    return EXIT_SUCCESS;
+
+}
+
+//    sim.infer_cnvs(n_iters, verbosity); // n_iters: 50000
+//
+//    // compute the Frobenius avg. of the difference of the inferred CNVs and the ground truth
+//    double delta = MathOp::frobenius_avg(sim.inferred_cnvs, sim.ground_truth);
+//    cout << "delta from our method: " << delta << endl;
+//
+//    // cout << "delta from random method: " << delta_random_init << endl;
+//
+//    sim.write_d_vector(f_name_postfix);
 
     //simulate(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, D, region_sizes); // initializes D and region_sizes
 
     // initialize the tree and infer the CNV profiles
-
-    return EXIT_SUCCESS;
-
-
-}
-
