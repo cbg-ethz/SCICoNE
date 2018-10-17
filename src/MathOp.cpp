@@ -360,7 +360,11 @@ double MathOp::frobenius_avg(vector<vector<int>> &mat, vector<vector<int>> &grou
      * Computes and returns the Frobenius average of 2 matrices
      * */
 
+    assert(mat.size() == ground_truth.size());
+    assert(mat[0].size() == ground_truth[0].size());
+
     double delta = 0.0;
+
     int n = mat.size();
     int m = mat[0].size();
     for (int i = 0; i < n; ++i)
