@@ -93,11 +93,11 @@ int main(int argc, char* argv[]) {
 
 
     // write the region sizes
-    std::ofstream region_sizes_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+"sim_region_sizes.txt");
+    std::ofstream region_sizes_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+"region_sizes.txt");
     for (const auto &e : sim.region_sizes) region_sizes_file << e << "\n";
 
     // write the ground truth
-    std::ofstream ground_truth_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+"sim_ground_truth.txt");
+    std::ofstream ground_truth_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+"ground_truth.txt");
     for (auto const &v1: sim.ground_truth) {
         for (auto const &v2: v1)
             ground_truth_file << v2 << ' ';
@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
     }
 
     // write the D matrix
-    std::ofstream D_mat_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+"sim_d_mat.txt");
+    std::ofstream D_mat_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+"d_mat.txt");
     for (auto const &v1: sim.D) {
         for (auto const &v2: v1)
             D_mat_file << v2 << ' ';
