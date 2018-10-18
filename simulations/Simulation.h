@@ -82,7 +82,6 @@ public:
                 }
             }
         }
-        this->tree = mcmc.t; // keep the true tree that generated the data
 
             // create the p_read_region_cell values, not normalized yet.
             for (int i = 0; i < p_read_region_cell.size(); ++i) {
@@ -117,7 +116,22 @@ public:
                     D[i][sample]++;
                 }
             }
-        }
+
+            // compute the tree and store it in this->tree
+            mcmc.compute_t_table(D,region_sizes);
+
+            double t_sum = accumulate( mcmc.t_sums.begin(), mcmc.t_sums.end(), 0.0);
+            int m = D.size(); //n_cells
+            double log_post_t = mcmc.log_posterior(t_sum, m, mcmc.t);
+
+            // assign the tree score
+            mcmc.t.score = log_post_t;
+
+
+
+            this->tree = mcmc.t;
+
+    }
 
 
     void split_regions_to_bins()

@@ -174,22 +174,22 @@ int main( int argc, char* argv[]) {
     Simulation sim1(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy, verbosity);
 
 
-    sim0.sample_region_sizes(n_bins);
-    sim0.simulate_count_matrix(true, verbosity);
-    sim0.split_regions_to_bins();
+//    sim0.sample_region_sizes(n_bins);
+//    sim0.simulate_count_matrix(true, verbosity);
+//    sim0.split_regions_to_bins();
 
     sim1.region_sizes = sim0.region_sizes; // use the same region sizes
     sim1.simulate_count_matrix(false, verbosity);
     sim1.split_regions_to_bins();
 
-    vector<long double> s_p0 = breakpoint_detection(sim0.D);
-    vector<long double> s_p1 = breakpoint_detection(sim1.D);
-
-
-    std::ofstream output_file0("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp0.txt");
-    std::ofstream output_file1("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp1.txt");
-    for (const auto &e : s_p0) output_file0 << e << "\n";
-    for (const auto &e : s_p1) output_file1 << e << "\n";
+//    vector<long double> s_p0 = breakpoint_detection(sim0.D);
+//    vector<long double> s_p1 = breakpoint_detection(sim1.D);
+//
+//
+//    std::ofstream output_file0("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp0.txt");
+//    std::ofstream output_file1("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp1.txt");
+//    for (const auto &e : s_p0) output_file0 << e << "\n";
+//    for (const auto &e : s_p1) output_file1 << e << "\n";
 
     // write the region sizes
     std::ofstream region_sizes_file("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp0_region_sizes.txt");
