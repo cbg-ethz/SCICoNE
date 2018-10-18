@@ -1,6 +1,6 @@
-# sc-dna
+# CNV Trees
 
-Compiling
+## Compiling
 
 ### cmake
 
