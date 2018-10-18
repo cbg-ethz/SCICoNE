@@ -110,6 +110,10 @@ int main( int argc, char* argv[]) {
     int verbosity = 0;
     int seed = 0;
 
+    string region_sizes_file = "";
+    string d_matrix_file = "";
+    bool to_segment = true; // if true then segmentation occurs
+
 
     // the default values
     int n_regions = 50;
@@ -125,6 +129,8 @@ int main( int argc, char* argv[]) {
 
     cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
     options.add_options()
+            ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
+            ("d_matrix_file", "Path to the D matrix file, delimiter: ' ', line separator: '\n' ", cxxopts::value(d_matrix_file))
             ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
             ("n_cells", "Number of cells", cxxopts::value(n_cells))
@@ -142,6 +148,21 @@ int main( int argc, char* argv[]) {
 
     auto result = options.parse(argc, argv);
 
+    if (result.count("region_sizes_file"))
+    {
+        region_sizes_file = result["region_sizes_file"].as<string>();
+        to_segment = false;
+    }
+
+    if (result.count("d_matrix_file"))
+    {
+        d_matrix_file = result["d_matrix_file"].as<string>();
+    }
+    else
+    {
+        cerr << "the D matrix file is not provided."<<endl;
+        return EXIT_FAILURE;
+    }
     if (result.count("n_bins"))
     {
         n_bins = result["n_bins"].as<int>();
@@ -170,17 +191,29 @@ int main( int argc, char* argv[]) {
     }
 
 
-    Simulation sim0(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy, verbosity);
-    Simulation sim1(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy, verbosity);
+    if (segment)
+    {
+        // TODO : perform segmentation and peak detection, then define the region sizes
+    }
+    else
+    {
+        // TODO : the region sizes are already given, use them
+        //
+    }
 
 
-//    sim0.sample_region_sizes(n_bins);
-//    sim0.simulate_count_matrix(true, verbosity);
-//    sim0.split_regions_to_bins();
-
-    sim1.region_sizes = sim0.region_sizes; // use the same region sizes
-    sim1.simulate_count_matrix(false, verbosity);
-    sim1.split_regions_to_bins();
+//
+//    Simulation sim0(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy, verbosity);
+//    Simulation sim1(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy, verbosity);
+//
+//
+////    sim0.sample_region_sizes(n_bins);
+////    sim0.simulate_count_matrix(true, verbosity);
+////    sim0.split_regions_to_bins();
+//
+//    sim1.region_sizes = sim0.region_sizes; // use the same region sizes
+//    sim1.simulate_count_matrix(false, verbosity);
+//    sim1.split_regions_to_bins();
 
 //    vector<long double> s_p0 = breakpoint_detection(sim0.D);
 //    vector<long double> s_p1 = breakpoint_detection(sim1.D);
@@ -191,17 +224,7 @@ int main( int argc, char* argv[]) {
 //    for (const auto &e : s_p0) output_file0 << e << "\n";
 //    for (const auto &e : s_p1) output_file1 << e << "\n";
 
-    // write the region sizes
-    std::ofstream region_sizes_file("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp0_region_sizes.txt");
-    for (const auto &e : sim1.region_sizes) region_sizes_file << e << "\n";
 
-    // write the ground truth
-    std::ofstream ground_truth_file("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_ground_truth.txt");
-    for (auto const &v1: sim1.ground_truth) {
-        for (auto const &v2: v1)
-            ground_truth_file << v2 << ' ';
-        ground_truth_file << '\n';
-    }
 
 
 
