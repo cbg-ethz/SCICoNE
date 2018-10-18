@@ -93,7 +93,7 @@ void Utils::read_counts(vector<vector<double>> &mat, const string path) {
             mat[i][j] = val;
             j++;
         }
-        assert(j == mat[i].size());
+        // assert(j == mat[i].size()); probabilities don't always sum up to one, we can get 1 column of empty bins here
         i++;
     }
 

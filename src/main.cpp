@@ -136,7 +136,7 @@ int main( int argc, char* argv[]) {
             ("n_cells", "Number of cells", cxxopts::value(n_cells))
             ("ploidy", "ploidy", cxxopts::value(ploidy))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
-            ("seed", "seed", cxxopts::value(verbosity))
+            ("seed", "seed", cxxopts::value(seed))
             // simulation parameters
             ("n_regions","the number of regions in the tree that simulates the data", cxxopts::value(n_regions))
             ("n_nodes","the number of nodes in the tree that simulates the data", cxxopts::value(n_nodes))

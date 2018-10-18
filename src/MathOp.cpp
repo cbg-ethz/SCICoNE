@@ -380,29 +380,36 @@ double MathOp::frobenius_avg(vector<vector<int>> &mat, vector<vector<int>> &grou
     return delta;
 }
 
-vector<double> MathOp::dirichlet_sample(int len, double alpha) {
+vector<long double> MathOp::dirichlet_sample(int len, double alpha) {
     /*
      * Samples a vector of length len that sum up to 1 using dirichlet with alpha parameter
      * */
 
     mt19937 &gen = SingletonRandomGenerator::get_generator();
-    gamma_distribution<double> distribution(alpha,1.0);
+    gamma_distribution<long double> distribution(alpha,1.0);
 
-    vector<double> y_vals(len);
+    vector<long double> y_vals(len);
 
     // sample from gamma
-    double sum_gamma = 0.0;
+    long double sum_gamma = 0.0;
     for (int i = 0; i < len; ++i) {
         y_vals[i] = distribution(gen);
         sum_gamma += y_vals[i];
     }
 
     // normalize them, that's it
-    vector<double> x_vals(len);
+    vector<long double> x_vals(len);
     for (int j = 0; j < len; ++j) {
         x_vals[j] = y_vals[j]/sum_gamma;
     }
 
+
+    // make sure probs sum up to 1
+    long double sum = accumulate( x_vals.begin(), x_vals.end(), 0.0);
+    if (sum != 1.0) // add the 0.0000001 to the first element.
+    {
+        x_vals[0] += 1.0-sum;
+    }
     return x_vals;
 }
 

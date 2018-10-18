@@ -17,7 +17,7 @@ add_executable(sc_dna
         src/MathOp.cpp
         src/main.cpp
         src/MathOp.h
-        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/Simulation.cpp simulations/Simulation.h)
+        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/Simulation.h)
 
 add_executable(tests tests/run_tests.cpp src/MathOp.cpp
         src/MathOp.h
@@ -25,7 +25,7 @@ add_executable(tests tests/run_tests.cpp src/MathOp.cpp
 
 add_executable(simulations simulations/run_simulations.cpp src/MathOp.cpp
         src/MathOp.h
-        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/run_simulations.cpp simulations/Simulation.cpp simulations/Simulation.h)
+        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/run_simulations.cpp simulations/Simulation.h)
 
 
 #src/Inference.h

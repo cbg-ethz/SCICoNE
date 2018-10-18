@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
     int max_region_size = 10;
     int ploidy = 2;
     int verbosity = 0;
-
+    int seed = 0;
     string f_name_postfix = "";
 
 
@@ -41,6 +41,7 @@ int main(int argc, char* argv[]) {
             ("n_reads", "Number of reads per cell", cxxopts::value(n_reads))
             ("ploidy", "ploidy", cxxopts::value(ploidy))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
+            ("seed", "seed", cxxopts::value(seed))
             ("postfix", "postfix", cxxopts::value(f_name_postfix));
 
     auto result = options.parse(argc, argv);
@@ -74,6 +75,12 @@ int main(int argc, char* argv[]) {
     }
     if (result.count("postfix")) {
         f_name_postfix = result["postfix"].as<string>();
+    }
+    if (result.count("seed"))
+    {
+        seed = result["seed"].as<int>();
+        //set a seed number for reproducibility
+        SingletonRandomGenerator::get_generator(seed);
     }
 
 

@@ -183,16 +183,23 @@ public:
          * Uniformly samples the region sizes and returns the vector of region sizes.
          * */
 
-        vector<double> dirichlet = MathOp::dirichlet_sample(n_regions);
+        vector<long double> dirichlet = MathOp::dirichlet_sample(n_regions);
 
         n_bins -= min_width * n_regions;
 
+        long double sum_prob = 0.0;
+
         for (int i = 0; i < n_regions; ++i) {
-            region_sizes[i] = static_cast<int>(dirichlet[i]*n_bins);
+            region_sizes[i] = static_cast<int>((sum_prob+dirichlet[i])*n_bins) - static_cast<int>(sum_prob*n_bins);
+            sum_prob += dirichlet[i];
             region_sizes[i] += min_width;
         }
 
-        double sum = accumulate( region_sizes.begin(), region_sizes.end(), 0.0); //for debug purposes
+        long double sum = accumulate( region_sizes.begin(), region_sizes.end(), 0.0); //for debug purposes
+        n_bins += min_width * n_regions;
+
+        if (sum != n_bins)
+            cout << "sum is not equal to n_bins since probabilities don't always sum up to one";
 
     }
 
