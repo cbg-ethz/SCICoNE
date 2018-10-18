@@ -93,9 +93,69 @@ void Utils::read_counts(vector<vector<double>> &mat, const string path) {
             mat[i][j] = val;
             j++;
         }
+        assert(j == mat[i].size());
         i++;
     }
 
+    assert(i == mat.size());
+
+
+
+}
+
+vector<vector<double>> Utils::condense_matrix(vector<vector<double>>& D, vector<int>& region_sizes) {
+
+    /*
+     * Groups the matrix by the given region_sizes.
+     * E.g. if region_sizes[0]=5 then sum up the first 5 columns and that will be one column in the resulting matrix
+     * Biological example: The bins will be grouped by the regions
+     * */
+
+    int n_rows = D.size();
+    int n_bins = D[0].size();
+    int n_regions = region_sizes.size();
+
+    vector<vector<double>> condensed_mat(n_rows, vector<double>(n_regions));
+
+    for (int i = 0; i < n_rows; ++i)
+    {
+        int region_id = 0;
+        int region_count = 0;
+        for (int j = 0; j < n_bins; ++j) {
+
+            condensed_mat[i][region_id] += D[i][j];
+
+            region_count++;
+            if(region_count == region_sizes[region_id])
+            {
+                region_id++;
+                region_count = 0;
+            }
+        }
+
+    }
+
+
+    return condensed_mat;
+}
+
+void Utils::read_vector(vector<int> &vec, const string path) {
+
+    /*
+     * Reads a 1 dimensional vector file at path path to reference vec.
+     * */
+
+    ifstream filein(path);
+
+    for (std::string line; std::getline(filein, line); )
+    {
+        istringstream fline(line);
+        int val;
+        fline >> val;
+        vec.push_back(val); // push_back is fine since this file is much smaller
+    }
+
+    assert(vec.size() != 0);
 
 }
 

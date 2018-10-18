@@ -191,14 +191,27 @@ int main( int argc, char* argv[]) {
     }
 
 
-    if (segment)
+    if (to_segment)
     {
         // TODO : perform segmentation and peak detection, then define the region sizes
     }
     else
     {
         // TODO : the region sizes are already given, use them
-        //
+
+
+        // read the input d_matrix
+        vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
+        Utils::read_counts(d_bins, d_matrix_file);
+
+        // read the region_sizes file
+        vector<int> region_sizes;
+        Utils::read_vector(region_sizes, region_sizes_file);
+
+        // Merge the bins into regions
+        vector<vector<double>> d_regions = Utils::condense_matrix(d_bins, region_sizes);
+
+
     }
 
 

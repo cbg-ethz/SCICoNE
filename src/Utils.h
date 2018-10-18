@@ -29,6 +29,10 @@ public:
                                              double lambda_c);
 
     static void read_counts(vector<vector<double>> &mat, const string path);
+    static void read_vector(vector<int> &vec, const string path);
+
+    static vector<vector<double>> condense_matrix(vector<vector<double>>& D, vector<int>& region_sizes);
+
 };
 
 
