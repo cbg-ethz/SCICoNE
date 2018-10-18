@@ -190,6 +190,15 @@ int main( int argc, char* argv[]) {
         SingletonRandomGenerator::get_generator(seed);
     }
 
+    // read the input d_matrix
+    vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
+    Utils::read_counts(d_bins, d_matrix_file);
+
+    // read the region_sizes file
+    vector<int> region_sizes;
+    Utils::read_vector(region_sizes, region_sizes_file);
+
+    vector<vector<double>> d_regions;
 
     if (to_segment)
     {
@@ -197,22 +206,50 @@ int main( int argc, char* argv[]) {
     }
     else
     {
-        // TODO : the region sizes are already given, use them
-
-
-        // read the input d_matrix
-        vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
-        Utils::read_counts(d_bins, d_matrix_file);
-
-        // read the region_sizes file
-        vector<int> region_sizes;
-        Utils::read_vector(region_sizes, region_sizes_file);
-
         // Merge the bins into regions
-        vector<vector<double>> d_regions = Utils::condense_matrix(d_bins, region_sizes);
-
-
+        d_regions = Utils::condense_matrix(d_bins, region_sizes);
     }
+
+    // run mcmc inference
+
+    // move probabilities
+    vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
+
+    Inference mcmc(n_regions, ploidy, verbosity);
+
+    try {
+        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 50000); // creates a random tree
+    }catch (const std::runtime_error& e)
+    {
+        std::cerr << " a runtime error was caught during the random tree initialize function, with message '"
+                  << e.what() << "'\n";
+        return EXIT_FAILURE; // reject the move
+    }
+
+
+    mcmc.compute_t_table(d_regions,region_sizes);
+
+    mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters);
+    vector<vector<int>> inferred_cnvs = mcmc.assign_cells_to_nodes(d_regions, region_sizes); // returns the inferred CNVs
+
+    if (verbosity > 1)
+        mcmc.write_best_tree();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 //
