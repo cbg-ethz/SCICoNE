@@ -33,6 +33,8 @@ public:
 
     static vector<vector<double>> condense_matrix(vector<vector<double>>& D, vector<int>& region_sizes);
 
+    static vector<vector<int>> regions_to_bins_cnvs(vector<vector<int>>& cnvs, vector<int>& region_sizes);
+
 };
 
 

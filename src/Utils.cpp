@@ -159,3 +159,30 @@ void Utils::read_vector(vector<int> &vec, const string path) {
 
 }
 
+vector<vector<int>> Utils::regions_to_bins_cnvs(vector<vector<int>> &cnvs, vector<int> &region_sizes) {
+    /*
+     * Creates a cells-bins cnvs matrix from the regions-bins cnvs matrix by duplicating the region columns by their sizes.
+     * */
+
+    // compute the total n_bins by summing up the region sizes
+    double n_bins = accumulate( region_sizes.begin(), region_sizes.end(), 0.0);
+    double n_rows = cnvs.size();
+    vector<vector<int>> bins_vec(n_rows, vector<int>(n_bins));
+
+    for (int i = 0; i < n_rows; ++i) {
+        int region_offset = 0;
+
+        for (int j = 0; j < cnvs[0].size(); ++j) {
+
+            for (int k = 0; k < region_sizes[j]; ++k) {
+                bins_vec[i][k + region_offset] = cnvs[i][j];
+            }
+
+            region_offset += region_sizes[j];
+        }
+
+    }
+
+    return bins_vec;
+}
+

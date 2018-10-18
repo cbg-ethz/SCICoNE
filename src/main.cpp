@@ -109,7 +109,7 @@ int main( int argc, char* argv[]) {
     int ploidy = 2;
     int verbosity = 0;
     int seed = 0;
-
+    string f_name_postfix = "";
     string region_sizes_file = "";
     string d_matrix_file = "";
     bool to_segment = true; // if true then segmentation occurs
@@ -144,6 +144,7 @@ int main( int argc, char* argv[]) {
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
             ("n_reads","the number of reads per cell", cxxopts::value(n_reads))
             ("max_region_size","the maximum size that a region can have", cxxopts::value(max_region_size))
+            ("postfix", "postfix", cxxopts::value(f_name_postfix))
             ;
 
     auto result = options.parse(argc, argv);
@@ -189,6 +190,9 @@ int main( int argc, char* argv[]) {
         //set a seed number for reproducibility
         SingletonRandomGenerator::get_generator(seed);
     }
+    if (result.count("postfix")) {
+        f_name_postfix = result["postfix"].as<string>();
+    }
 
     // read the input d_matrix
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
@@ -232,23 +236,20 @@ int main( int argc, char* argv[]) {
     mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters);
     vector<vector<int>> inferred_cnvs = mcmc.assign_cells_to_nodes(d_regions, region_sizes); // returns the inferred CNVs
 
-    if (verbosity > 1)
-        mcmc.write_best_tree();
+    vector<vector<int>> inferred_cnvs_bins = Utils::regions_to_bins_cnvs(inferred_cnvs, region_sizes);
+
+    // write the inferred(best) tree
+    std::ofstream tree_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_tree_inferred.txt");
+    tree_file << mcmc.best_tree;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    // write the inferred CNVs
+    std::ofstream inferred_cnvs_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_inferred_cnvs.txt");
+    for (auto const &v1: inferred_cnvs_bins) {
+        for (auto const &v2: v1)
+            inferred_cnvs_file << v2 << ' ';
+        inferred_cnvs_file << '\n';
+    }
 
 
 
