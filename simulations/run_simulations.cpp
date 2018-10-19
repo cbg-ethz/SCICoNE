@@ -30,7 +30,6 @@ int main(int argc, char* argv[]) {
     int n_bins = 10000;
     int n_reads = 10000;
     int n_iters = 5000;
-    int n_repetitions = 1;
     int max_region_size = 10;
     int ploidy = 2;
     int verbosity = 0;
@@ -46,7 +45,6 @@ int main(int argc, char* argv[]) {
             ("n_nodes", "Number of nodes of the tree", cxxopts::value(n_nodes))
             ("n_regions", "Number of regions", cxxopts::value(n_regions))
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
-            ("n_rep", "Number of repetitions", cxxopts::value(n_repetitions))
             ("n_reads", "Number of reads per cell", cxxopts::value(n_reads))
             ("ploidy", "ploidy", cxxopts::value(ploidy))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
@@ -75,9 +73,6 @@ int main(int argc, char* argv[]) {
     if (result.count("n_iters")) {
         n_iters = result["n_iters"].as<int>();
     }
-    if (result.count("n_rep")) {
-        n_repetitions = result["n_rep"].as<int>();
-    }
     if (result.count("ploidy")) {
         ploidy = result["ploidy"].as<int>();
     }
@@ -98,14 +93,8 @@ int main(int argc, char* argv[]) {
     }
 
 
-    // create the D matrix
-//    vector<vector<double>> D(n_cells, vector<double>(n_regions)); // initialize with the default value
-//
-//    vector<int> region_sizes(n_regions); // sampling the region sizes
-
     Simulation sim(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy,
                    verbosity);
-    //double delta_random_init = sim.random_cnvs_inference();
 
     sim.sample_region_sizes(n_bins, 1);
     sim.simulate_count_matrix(false, verbosity);
@@ -138,20 +127,6 @@ int main(int argc, char* argv[]) {
     tree_file << sim.tree;
 
 
-
-//    sim.infer_cnvs(n_iters, verbosity); // n_iters: 50000
-//
-//    // compute the Frobenius avg. of the difference of the inferred CNVs and the ground truth
-//    double delta = MathOp::frobenius_avg(sim.inferred_cnvs, sim.ground_truth);
-//    cout << "delta from our method: " << delta << endl;
-////
-//    // cout << "delta from random method: " << delta_random_init << endl;
-//
-//    sim.write_d_vector(f_name_postfix);
-
-    //simulate(n_regions, n_nodes, lambda_r, lambda_c, n_cells, n_reads, D, region_sizes); // initializes D and region_sizes
-
-    // initialize the tree and infer the CNV profiles
     return EXIT_SUCCESS;
 
 }
