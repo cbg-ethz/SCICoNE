@@ -46,11 +46,11 @@ int main(int argc, char* argv[]) {
             ("n_regions", "Number of regions", cxxopts::value(n_regions))
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
             ("n_reads", "Number of reads per cell", cxxopts::value(n_reads))
-            ("ploidy", "ploidy", cxxopts::value(ploidy))
-            ("verbosity", "verbosity", cxxopts::value(verbosity))
-            ("seed", "seed", cxxopts::value(seed))
-            ("postfix", "postfix", cxxopts::value(f_name_postfix))
-            ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
+            ("ploidy", "The ploidy information", cxxopts::value(ploidy))
+            ("verbosity", "Verbosity of the programme, 1 provides standard output, 2 also writes several files", cxxopts::value(verbosity))
+            ("seed", "Seed", cxxopts::value(seed))
+            ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
+            ("print_precision", "The precision points of the score values to be printed", cxxopts::value(print_precision))
             ;
 
     auto result = options.parse(argc, argv);
