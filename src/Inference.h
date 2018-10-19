@@ -55,7 +55,7 @@ public:
                               bool weighted = false, bool validation_test_mode = false);
     bool apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted = false,
                     bool test_mode = false);
-    Tree * comparison(int m);
+    Tree *comparison(int m, double gamma);
     void infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters);
     void write_best_tree();
     void update_t_scores();
@@ -217,7 +217,7 @@ void Inference::destroy() {
     // nothing to deallocate
 }
 
-Tree* Inference::comparison(int m) {
+Tree * Inference::comparison(int m, double gamma) {
     /*
      * Returns the pointer to the accepted tree
      * m is size(D)
@@ -238,7 +238,7 @@ Tree* Inference::comparison(int m) {
 
     t_prime.score = log_post_t_prime;
 
-    double acceptance_prob = exp(log_post_t_prime - log_post_t);
+    double acceptance_prob = exp(gamma*(log_post_t_prime - log_post_t));
 
     if (verbosity > 0)
         cout<<"acceptance prob: "<<acceptance_prob<<endl;
@@ -274,6 +274,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     int add_remove_move_rejected = 0;
     int insert_delete_move_rejection = 0;
     int condense_split_move_rejection = 0;
+
+    double gamma = 1.0; // gamma param to amplify the difference in log likelihoods
 
     // for writing the posteriors on file
     std::ofstream mcmc_scores_file;
@@ -392,11 +394,12 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         }
 
         // compare the trees
+
         Tree* accepted;
         if (rejected_before_comparison)
             accepted = &t;
         else
-            accepted = comparison(m);
+            accepted = comparison(m, gamma);
 
         // print accepted log_posterior
         mcmc_scores_file << std::setprecision(8) << accepted->score << ',';
@@ -420,7 +423,24 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         t_prime_sums.clear();
         t_prime_scores.clear();
 
+        // TODO: update gamma every 100 iterations
+        // N: n_nodes of tree t
+        if ((i > 1000) && (i % 100 == 0))
+        {
+            double acceptance_ratio = double(n_accepted) / double((n_accepted + n_rejected));
+            double N = t.get_n_nodes();
+            double c = -1 * (log(2) / log(N+2)); // +2 because root is not counted and log(1) is zero (it goes to the denominator)
+
+            gamma = gamma * exp(0.5 - pow(acceptance_ratio, c));
+
+            n_accepted = n_rejected = 0;
+            std::cout << "gamma val:" << gamma << endl;
+        }
+
+
     }
+
+
 
 
     if (verbosity > 0)
