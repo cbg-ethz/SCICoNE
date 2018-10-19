@@ -39,9 +39,9 @@ int main(int argc, char* argv[]) {
 
     print_precision = 16;
 
-    cxxopts::Options options("Mcmc simulations", "simulates cnv values, infers them and benchmarks");
+    cxxopts::Options options("Mcmc simulations", "Simulates the count matrix. Outputs the count matrix, region sizes, ground truth and the tree that generated the data.");
     options.add_options()
-            ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
+            ("n_bins", "Number of bins of the input matrix", cxxopts::value(n_bins))
             ("n_cells", "Number of cells", cxxopts::value(n_cells))
             ("n_nodes", "Number of nodes of the tree", cxxopts::value(n_nodes))
             ("n_regions", "Number of regions", cxxopts::value(n_regions))

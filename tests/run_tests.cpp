@@ -5,11 +5,18 @@
 #include "validation.h"
 #include <iostream>
 #include "SingletonRandomGenerator.h"
+#include "globals.cpp"
 
+// globals
+int print_precision;
+
+// endof globals
 
 
 int main()
 {
+    print_precision = 16;
+
     std::cout<<"\n UNIT TESTS \n ";
 //     set a seed number for reproducibility
     SingletonRandomGenerator::get_generator(42);
