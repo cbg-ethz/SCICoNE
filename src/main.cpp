@@ -111,7 +111,7 @@ vector<long double> breakpoint_detection(vector<vector<double>> &mat)
 int main( int argc, char* argv[]) {
 
     int n_iters = 5000; // the default value is 10000 iterations.
-    int n_cells = 0;
+    int n_cells;
     int n_bins = 10000;
     int ploidy = 2;
     int verbosity = 0;
@@ -140,11 +140,11 @@ int main( int argc, char* argv[]) {
             ("d_matrix_file", "Path to the counts matrix file, delimiter: ' ', line separator: '\n' ", cxxopts::value(d_matrix_file))
             ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
-            ("n_cells", "Number of cells", cxxopts::value(n_cells))
+            ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("ploidy", "ploidy", cxxopts::value(ploidy))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
             ("seed", "seed", cxxopts::value(seed))
-            // simulation parameters
+            // random tree parameters
             ("n_nodes","the number of nodes in the tree that simulates the data", cxxopts::value(n_nodes))
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
@@ -183,6 +183,11 @@ int main( int argc, char* argv[]) {
     if (result.count("n_cells"))
     {
         n_cells = result["n_cells"].as<int>();
+    }
+    else
+    {
+        cerr << "the number of cells is not provided."<<endl;
+        return EXIT_FAILURE;
     }
     if (result.count("n_iters"))
     {
