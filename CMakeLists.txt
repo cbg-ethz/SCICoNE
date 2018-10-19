@@ -13,7 +13,7 @@ include_directories(src)
 include_directories(include)
 include_directories(simulations)
 
-add_executable(sc_dna
+add_executable(inference
         src/MathOp.cpp
         src/main.cpp
         src/MathOp.h
@@ -23,7 +23,7 @@ add_executable(tests tests/run_tests.cpp src/MathOp.cpp
         src/MathOp.h
         src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h tests/validation.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h)
 
-add_executable(simulations simulations/run_simulations.cpp src/MathOp.cpp
+add_executable(simulation simulations/run_simulations.cpp src/MathOp.cpp
         src/MathOp.h
         src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/run_simulations.cpp simulations/Simulation.h)
 
