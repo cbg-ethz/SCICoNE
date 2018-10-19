@@ -120,17 +120,19 @@ int main( int argc, char* argv[]) {
     string region_sizes_file = "";
     string d_matrix_file = "";
     bool to_segment = true; // if true then segmentation occurs
+    print_precision = 16;
 
-
-    // the default values
     int n_regions;
+
+    // random tree parameters
     int n_nodes = 50;
     double lambda_r = 0.1;
     double lambda_c = 0.2;
-    int n_reads = 100000;
+
     int max_region_size = 10;
 
-    print_precision = 16;
+    int n_reads = -1; // -1 means not specified
+
 
 
 
@@ -144,14 +146,16 @@ int main( int argc, char* argv[]) {
             ("ploidy", "ploidy", cxxopts::value(ploidy))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
             ("seed", "seed", cxxopts::value(seed))
+            ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
+            ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
             // random tree parameters
-            ("n_nodes","the number of nodes in the tree that simulates the data", cxxopts::value(n_nodes))
+            ("n_nodes","the number of nodes in the random initialised tree", cxxopts::value(n_nodes))
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
             ("n_reads","the number of reads per cell", cxxopts::value(n_reads))
             ("max_region_size","the maximum size that a region can have", cxxopts::value(max_region_size))
-            ("postfix", "postfix", cxxopts::value(f_name_postfix))
-            ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
+
+
             ;
 
     auto result = options.parse(argc, argv);
