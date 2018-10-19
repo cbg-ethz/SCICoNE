@@ -18,6 +18,13 @@
 
 #include "Simulation.h"
 
+#include "globals.cpp"
+
+// globals
+int print_precision;
+
+// endof globals
+
 using namespace std;
 using namespace std::chrono;
 
@@ -123,7 +130,7 @@ int main( int argc, char* argv[]) {
     int n_reads = 100000;
     int max_region_size = 10;
 
-
+    print_precision = 16;
 
 
 
@@ -145,6 +152,7 @@ int main( int argc, char* argv[]) {
             ("n_reads","the number of reads per cell", cxxopts::value(n_reads))
             ("max_region_size","the maximum size that a region can have", cxxopts::value(max_region_size))
             ("postfix", "postfix", cxxopts::value(f_name_postfix))
+            ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
             ;
 
     auto result = options.parse(argc, argv);
@@ -192,6 +200,9 @@ int main( int argc, char* argv[]) {
     }
     if (result.count("postfix")) {
         f_name_postfix = result["postfix"].as<string>();
+    }
+    if (result.count("print_precision")) {
+        print_precision = result["print_precision"].as<int>();
     }
 
     // read the input d_matrix

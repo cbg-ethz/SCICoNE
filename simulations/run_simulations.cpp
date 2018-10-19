@@ -7,6 +7,14 @@
 #include "Simulation.h"
 #include <cxxopts.hpp>
 
+#include "globals.cpp"
+
+// globals
+int print_precision;
+
+// endof globals
+
+
 using namespace std;
 
 
@@ -29,6 +37,7 @@ int main(int argc, char* argv[]) {
     int seed = 0;
     string f_name_postfix = "";
 
+    print_precision = 16;
 
     cxxopts::Options options("Mcmc simulations", "simulates cnv values, infers them and benchmarks");
     options.add_options()
@@ -42,7 +51,9 @@ int main(int argc, char* argv[]) {
             ("ploidy", "ploidy", cxxopts::value(ploidy))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
             ("seed", "seed", cxxopts::value(seed))
-            ("postfix", "postfix", cxxopts::value(f_name_postfix));
+            ("postfix", "postfix", cxxopts::value(f_name_postfix))
+            ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
+            ;
 
     auto result = options.parse(argc, argv);
 
@@ -81,6 +92,9 @@ int main(int argc, char* argv[]) {
         seed = result["seed"].as<int>();
         //set a seed number for reproducibility
         SingletonRandomGenerator::get_generator(seed);
+    }
+    if (result.count("print_precision")) {
+        print_precision = result["print_precision"].as<int>();
     }
 
 

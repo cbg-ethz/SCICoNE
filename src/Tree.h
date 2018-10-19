@@ -22,6 +22,7 @@
 #include "Utils.h"
 
 #include <algorithm> // std::remove
+#include "globals.cpp"
 
 
 class Tree {
@@ -86,7 +87,7 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
 
     vector<Node*> nodes = t.root->get_descendents(true);
 
-    os << "Tree score: " << setprecision(8) << t.score << endl;
+    os << "Tree score: " << setprecision(print_precision) << t.score << endl;
     for (auto const &x : nodes)
     {
         os << *x << std::endl;

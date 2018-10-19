@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <math.h>
 #include <array>
+#include "globals.cpp"
 
 class Inference {
 /*
@@ -266,7 +267,6 @@ Tree * Inference::comparison(int m, double gamma) {
 void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs,
                            int n_iters) {
 
-
     int m = static_cast<int>(D.size());
     int n_accepted = 0;
     int n_rejected = 0;
@@ -405,10 +405,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         else
             accepted = comparison(m, gamma);
 
-        static const double first_score = accepted->score;
+        static double first_score = accepted->score; // the first value will be kept in whole program
         // print accepted log_posterior
-        mcmc_scores_file << std::setprecision(8) << accepted->score << ',';
-        rel_mcmc_scores_file << std::setprecision(8) << accepted->score - first_score << ',';
+        mcmc_scores_file << std::setprecision(print_precision) << accepted->score << ',';
+        rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->score - first_score << ',';
 
         // update trees and the matrices
         if (accepted == &t_prime)
@@ -552,8 +552,8 @@ void Inference::write_best_tree() {
     std::ofstream outfile;
     outfile.open(f_name+"_tree.txt", std::ios_base::app);
     outfile << "The resulting tree is: "<<std::endl;
-    outfile << std::setprecision(8) << best_tree;
-    std::cout << std::setprecision(8) << best_tree;
+    outfile << std::setprecision(print_precision) << best_tree;
+    std::cout << std::setprecision(print_precision) << best_tree;
 }
 
 void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r) {
