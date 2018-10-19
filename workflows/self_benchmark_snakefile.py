@@ -7,6 +7,13 @@ configfile: "self_benchmark_config.json"
 parameters
 '''
 
+'''
+Trees of size n=10, 20 and 40
+n_regions = n, 2n and 4n
+10,000 bins and 500 cells
+1000, 10,000 and 100,000 reads per cell
+'''
+
 n_nodes = 10 # values: [10,20,40]
 n_regions = [n_nodes,2*n_nodes,4*n_nodes]
 n_bins = 10000
@@ -15,11 +22,11 @@ n_repetitions = 100
 n_cells = 500
 n_iters = 1000000 # 1 million iters for each setting
 
-output_file_exts = ['d_mat.txt','ground_truth.txt','region_sizes.txt', 'tree.txt']
+output_file_exts = ['d_mat.txt','ground_truth.txt','region_sizes.txt', 'tree.txt', 'inferred_cnvs.txt', 'tree_inferred.txt']
 
 SIM_OUTPUT= "/cluster/work/bewi/members/tuncel/data/dna/recomb_simulations" # "simulations_output"
 
-prefix = "2700sims"
+prefix = "2700sims_2"
 
 '''
 rules
@@ -31,6 +38,25 @@ rule all:
     output:
     shell:
 	    "echo STATUS:SUCCESS. All of the rules are ran through."
+
+rule infer_trees:
+    params:
+        binary = config["inference_bin"],
+        n_nodes = n_nodes,
+        n_bins = n_bins,
+        n_iters = n_iters,
+        n_cells = n_cells,
+        scratch = config["cnv_trees"]["scratch"],
+        mem = config["cnv_trees"]["mem"],
+        time = config["cnv_trees"]["time"]
+    input:
+        d_mat = SIM_OUTPUT+ '_' + prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_d_mat.txt',
+        region_sizes = SIM_OUTPUT+ '_' + prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_region_sizes.txt'
+    output:
+        inferred_cnvs = SIM_OUTPUT+ '_' + prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_inferred_cnvs.txt',
+        inferred_tree = SIM_OUTPUT+ '_' + prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_tree_inferred.txt'
+    shell:
+        "{params.binary} --n_nodes {params.n_nodes} --n_bins {params.n_bins} --n_regions {wildcards.regions} --n_iters {params.n_iters} --n_cells {params.n_cells} --verbosity 0 --ploidy 2 --seed 42 --postfix {wildcards.rep_id} --d_matrix_file {input.d_mat} --region_sizes_file {input.region_sizes}; mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_tree_inferred.txt {output.inferred_tree}; mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_inferred_cnvs.txt {output.inferred_cnvs};"
 
 rule run_sim:
     params:

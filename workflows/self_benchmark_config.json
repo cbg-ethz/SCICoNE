@@ -1,5 +1,6 @@
 {
     "simulations_bin":"../bin/simulations",
+    "inference_bin": "../bin/sc_dna",
     "parameters":
     {
     },
