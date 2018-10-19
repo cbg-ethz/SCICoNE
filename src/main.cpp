@@ -123,7 +123,7 @@ int main( int argc, char* argv[]) {
 
 
     // the default values
-    int n_regions = 50;
+    int n_regions;
     int n_nodes = 50;
     double lambda_r = 0.1;
     double lambda_c = 0.2;
@@ -145,7 +145,6 @@ int main( int argc, char* argv[]) {
             ("verbosity", "verbosity", cxxopts::value(verbosity))
             ("seed", "seed", cxxopts::value(seed))
             // simulation parameters
-            ("n_regions","the number of regions in the tree that simulates the data", cxxopts::value(n_regions))
             ("n_nodes","the number of nodes in the tree that simulates the data", cxxopts::value(n_nodes))
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
@@ -217,6 +216,8 @@ int main( int argc, char* argv[]) {
     // read the region_sizes file
     vector<int> region_sizes;
     Utils::read_vector(region_sizes, region_sizes_file);
+
+    n_regions = region_sizes.size();
 
     vector<vector<double>> d_regions;
 
