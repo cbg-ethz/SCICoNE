@@ -1,5 +1,10 @@
 # CNV Trees
 
+## Requirements
+
+* C++ compiler that supports C++14 standards (e.g. `gcc>=6.3.0`, `clang>=5.0.0)`)
+* CMake version > 3.8
+
 ## Installation
 
 1. Open your terminal in your preferred directory and clone this project
