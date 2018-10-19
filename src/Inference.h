@@ -279,8 +279,12 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
     // for writing the posteriors on file
     std::ofstream mcmc_scores_file;
+    std::ofstream rel_mcmc_scores_file;
     if (verbosity > 1)
+    {
         mcmc_scores_file.open(f_name + "_markov_chain.txt", std::ios_base::app);
+        rel_mcmc_scores_file.open(f_name + "_rel_markov_chain.txt", std::ios_base::app);
+    }
 
     best_tree = t; //start with the t
 
@@ -401,8 +405,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         else
             accepted = comparison(m, gamma);
 
+        static const double first_score = accepted->score;
         // print accepted log_posterior
         mcmc_scores_file << std::setprecision(8) << accepted->score << ',';
+        rel_mcmc_scores_file << std::setprecision(8) << accepted->score - first_score << ',';
 
         // update trees and the matrices
         if (accepted == &t_prime)
