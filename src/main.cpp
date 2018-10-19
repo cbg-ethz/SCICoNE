@@ -184,6 +184,11 @@ int main( int argc, char* argv[]) {
         cerr << "the number of bins is not provided."<<endl;
         return EXIT_FAILURE;
     }
+    if (result.count("n_reads"))
+    {
+        n_reads = result["n_reads"].as<int>();
+    }
+
     if (result.count("n_cells"))
     {
         n_cells = result["n_cells"].as<int>();
