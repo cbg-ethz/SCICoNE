@@ -199,7 +199,8 @@ public:
         n_bins += min_width * n_regions;
 
         if (sum != n_bins)
-            cout << "sum is not equal to n_bins since probabilities don't always sum up to one";
+            cout << "WARNING: sum of all of the region sizes is not equal to n_bins since probabilities don't always sum up to 1 due to precision loss"
+                    " (e.g. they can sum up to 0.999999999999997) as a result the last bin may have zero count";
 
     }
 
