@@ -189,11 +189,20 @@ void Tree::compute_stack(Node *node, const vector<double> &D, double &sum_D, con
 Tree::Tree(u_int ploidy, u_int n_regions)
 {
     root = new Node();
+    // compute and store the hash
+    vector<int> keys_values = {};
+
+    int size_for_hash = keys_values.size() * sizeof(keys_values[0]);
+    uint64_t c_hash = Utils::calcul_hash(&keys_values[0], size_for_hash);
+    root->c_hash = c_hash;
+
     this->ploidy = ploidy;
     this->n_regions = n_regions;
     n_nodes = 0;
     score = 0.0;
     // creates a copy of the root ptr and stores it in the vector
+
+
 
     all_nodes_vec.push_back(root);
 
