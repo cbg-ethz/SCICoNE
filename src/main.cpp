@@ -20,6 +20,9 @@
 
 #include "globals.cpp"
 
+#include "SignalProcessing.h"
+
+
 // globals
 int print_precision;
 
@@ -29,7 +32,7 @@ using namespace std;
 using namespace std::chrono;
 
 
-vector<long double> breakpoint_detection(vector<vector<double>> &mat)
+vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size = 5)
 {
     /*
      * Performs the breakpoint detection
@@ -40,7 +43,7 @@ vector<long double> breakpoint_detection(vector<vector<double>> &mat)
 
 
     // compute the AIC scores
-    u_int window_size = 5;
+
     vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
 
     vector<vector<double>> sigma;
@@ -73,7 +76,7 @@ vector<long double> breakpoint_detection(vector<vector<double>> &mat)
     vector<vector<long double>> posterior;
     int k_star = 4;
 
-    vector<long double> s_p;
+    vector<double> s_p;
 
     for (int l = 0; l < n_breakpoints; ++l)
     {
@@ -97,7 +100,7 @@ vector<long double> breakpoint_detection(vector<vector<double>> &mat)
         long double sp_denom = std::accumulate(posterior[l].begin(), posterior[l].end(), 0.0);
         sp_denom = log(sp_denom) + max_denom;
 
-        long double sp_val = sp_denom-sp_num;
+        double sp_val = sp_denom-sp_num;
 
         s_p.push_back(sp_val);
 
@@ -116,6 +119,7 @@ int main( int argc, char* argv[]) {
     int ploidy = 2;
     int verbosity = 0;
     int seed = 0;
+    int window_size = 5;
     string f_name_postfix = "";
     string region_sizes_file = "";
     string d_matrix_file = "";
@@ -229,21 +233,50 @@ int main( int argc, char* argv[]) {
 
     // read the region_sizes file
     vector<int> region_sizes;
-    Utils::read_vector(region_sizes, region_sizes_file);
-
-    n_regions = region_sizes.size();
-
     vector<vector<double>> d_regions;
 
     if (to_segment)
     {
-        // TODO : perform segmentation and peak detection, then define the region sizes
+
+        // perform segmentation and peak detection, then define the region sizes
+        SignalProcessing dsp;
+
+
+        // create an sp_null signal and make it zero-mean
+        int _n_regions = n_bins; // assume n_regions=n_bins for the null model
+        Simulation sim_null(_n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy,
+                            verbosity);
+        sim_null.sample_region_sizes(n_bins, 1);
+        sim_null.simulate_count_matrix(true, verbosity);
+        sim_null.split_regions_to_bins();
+        vector<double> sp_null = breakpoint_detection(sim_null.D);
+        sp_null = dsp.crop(sp_null, window_size); // crop the window sizes
+        sp_null = dsp.make_zero_mean(sp_null); // make it zero mean
+        double threshold = MathOp::percentile_val(sp_null, 0.999);
+
+
+        // create s_p from the input data
+        vector<double> s_p = breakpoint_detection(d_bins);
+        vector<double> sp_cropped = dsp.crop(s_p, window_size);
+        vector<double> zero_sp_cropped = dsp.make_zero_mean(sp_cropped);
+        dsp.attenuate_values_below(zero_sp_cropped, threshold);
+
+        vector<double> sp_peaks = dsp.diff(zero_sp_cropped);
+        sp_peaks = dsp.sign(sp_peaks);
+        sp_peaks = dsp.diff(sp_peaks);
+        vector<bool> sp_breakpoints = dsp.filter_by_val(sp_peaks, -2.0);
+
+        region_sizes = dsp.create_region_sizes(sp_breakpoints);
+
     }
     else
     {
+        Utils::read_vector(region_sizes, region_sizes_file);
         // Merge the bins into regions
         d_regions = Utils::condense_matrix(d_bins, region_sizes);
     }
+
+    n_regions = region_sizes.size();
 
     // run mcmc inference
 
