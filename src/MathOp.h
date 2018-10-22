@@ -52,12 +52,17 @@ public:
     template <class T>
     static double vec_sum(vector<T> &);
 
+    template <class T>
+    static T percentile_val(vector<T>, double percentile_val);
+
     static double compute_omega(Node *node, double lambda_r, double lambda_c, double K);
 
 
     static double frobenius_avg(vector<vector<int>>& mat, vector<vector<int>>& ground_truth);
 
     static vector<long double> dirichlet_sample(int len, double alpha = 1.0);
+
+
 
 
 };

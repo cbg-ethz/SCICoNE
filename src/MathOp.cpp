@@ -9,7 +9,7 @@
 
 template<class T>
 double MathOp::vec_avg(vector<T> &v) {
-    float average = accumulate( v.begin(), v.end(), 0.0)/v.size();
+    double average = accumulate( v.begin(), v.end(), 0.0)/v.size();
     return average;
 }
 
@@ -413,3 +413,23 @@ vector<long double> MathOp::dirichlet_sample(int len, double alpha) {
     return x_vals;
 }
 
+template<class T>
+T MathOp::percentile_val(vector<T> vec, double percentile_val) {
+/*
+ * Returns the value of the vector at the given percentile.
+ * First sorts the vector.
+ * The percentile value should be between 0 and 1.
+ * */
+
+    assert(percentile_val <=1.0 && percentile_val >= 0.0);
+
+    // sort using the default operator<
+    std::sort(vec.begin(), vec.end());
+
+    int percentile_idx = static_cast<int>(percentile_val * vec.size())-1;
+
+    return vec[percentile_idx];
+}
+
+template double MathOp::percentile_val<double>(vector<double>, double percentile_val);
+template long double MathOp::percentile_val<long double>(vector<long double>, double percentile_val);
