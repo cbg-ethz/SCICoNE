@@ -17,7 +17,7 @@ add_executable(inference
         src/MathOp.cpp
         src/main.cpp
         src/MathOp.h
-        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/Simulation.h src/globals.cpp)
+        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/Simulation.h src/globals.cpp src/SignalProcessing.cpp src/SignalProcessing.h)
 
 add_executable(tests tests/run_tests.cpp src/MathOp.cpp
         src/MathOp.h
