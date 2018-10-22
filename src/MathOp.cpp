@@ -317,7 +317,7 @@ double MathOp::n_choose_k(int n, int k) {
     return res;
 }
 
-double MathOp::compute_omega(Node *node, double lambda_r, double lambda_c, double K) {
+double MathOp::compute_omega_insert_delete(Node *node, double lambda_r, double lambda_c, double K) {
     /*
      * Computes the omega value used in assessing the delete node probabilities.
      * Note: omega is named w on the original publication.
