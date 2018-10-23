@@ -186,3 +186,28 @@ vector<vector<int>> Utils::regions_to_bins_cnvs(vector<vector<int>> &cnvs, vecto
     return bins_vec;
 }
 
+map<u_int, int> Utils::map_diff(map<u_int, int> a, map<u_int, int> b) {
+    /*
+     * Computes the difference between all of the elements existing in either of the maps.
+     * */
+
+    map<u_int, int> difference;
+
+    // store all the keys in a set
+    set<u_int> all_keys;
+
+    for (auto const &e : a)
+        all_keys.insert(e.first);
+    for (auto const &e : b)
+        all_keys.insert(e.first);
+
+    for (auto const &k : all_keys)
+    {
+        int diff = a[k] - b[k];
+        if (diff != 0)
+            difference[k] = a[k] - b[k];
+    }
+
+    return difference;
+}
+

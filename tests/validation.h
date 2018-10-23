@@ -304,7 +304,7 @@ void test_prune_reattach()
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
 
-    mcmc.apply_prune_reattach(D,r,false,true);
+    mcmc.apply_prune_reattach(D, r, false, false, true);
 
     assert(abs(mcmc.t_prime_sums[0] + 551.804)  <= epsilon);
     assert(abs(mcmc.t_prime_sums[1] + 413.292)  <= epsilon);
@@ -332,7 +332,7 @@ void test_weighted_prune_reattach()
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
 
-    mcmc.apply_prune_reattach(D,r,false,true);
+    mcmc.apply_prune_reattach(D, r, false, false, true);
 
 
     // get the subvector

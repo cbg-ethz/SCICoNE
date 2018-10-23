@@ -44,8 +44,8 @@ public:
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);
     double log_posterior(double tree_sum, int m, Tree &tree);
-    bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted = false,
-                              bool validation_test_mode = false);
+    bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
+                                  bool weighted, bool validation_test_mode);
     bool apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<double>> &D,
                                  const vector<int> &r,
                                  bool weighted = false,
@@ -157,8 +157,8 @@ Inference::~Inference() {
     destroy();
 }
 
-bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
-                                     bool validation_test_mode) {
+bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
+                                     bool weighted, bool validation_test_mode) {
     /*
      * Applies prune and reattach to t_prime
      * Updates the sums and scores tables partially
@@ -166,7 +166,7 @@ bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vect
 
     Node* attached_node;
     try {
-        attached_node = t_prime.prune_reattach(weighted, validation_test_mode);
+        attached_node = t_prime.prune_reattach(genotype_preserving, weighted, validation_test_mode);
     }catch (const std::logic_error& e)
     {
         if (verbosity > 0)
@@ -185,7 +185,6 @@ bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vect
     {
         compute_t_prime_scores(attached_node, D, r);
         compute_t_prime_sums(D);
-
         return true;
     }
     else
@@ -351,7 +350,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // prune & reattach
                 if (verbosity > 0)
                     cout << "Prune and reattach" << endl;
-                bool prune_reattach_success = apply_prune_reattach(D, r, false);
+                bool prune_reattach_success = apply_prune_reattach(D, r, false, false, false);
                 if (not prune_reattach_success) {
                     n_attached_to_the_same_pos++;
                     rejected_before_comparison = true;
@@ -363,7 +362,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted prune & reattach
                 if (verbosity > 0)
                     cout<<"Weighted prune and reattach"<<endl;
-                bool weighted_prune_reattach_success = apply_prune_reattach(D, r, true); // weighted=true
+                bool weighted_prune_reattach_success = apply_prune_reattach(D, r, false, true, false); // weighted=true
                 if (not weighted_prune_reattach_success)
                 {
                     n_attached_to_the_same_pos++;
@@ -437,6 +436,18 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 else
                     if (verbosity > 0)
                         cout << "condense/split accepted!"<<endl;
+                break;
+            }
+            case 7:
+            {
+                // genotype_preserving prune & reattach
+                if (verbosity > 0)
+                    cout<<"Genotype preserving prune and reattach"<<endl;
+                bool genotype_prune_reattach_success = apply_prune_reattach(D, r, true, false, false); // weighted=false
+                if (not genotype_prune_reattach_success)
+                {
+                    rejected_before_comparison = true;
+                }
                 break;
             }
             default:
