@@ -272,43 +272,22 @@ void test_insert_delete_weights()
     // check the score
     assert(abs(t.score + 2632.658) <= epsilon);
 
-    vector<double> omega; // delete weights
-    vector<double> upsilon; // cost weighted omega
-    vector<double> chi; // add weights;
-    vector<double> xi; // cost weighted chi;
-
-
     int K = t.n_regions;
     double lambda_r = 2.0;
     double lambda_c = 1.0;
 
-    vector<Node*> all_nodes = t.root->get_descendents(false); // without root
-    for(auto &node: all_nodes)
-    {
-        //int r_i = static_cast<int>(node->c_change.size());
-        double omega_val = MathOp::compute_omega_insert_delete(node, lambda_r, lambda_c, K);
-        omega.push_back(omega_val);
-        upsilon.push_back(omega_val/node->n_descendents);
-    }
-
-    for(auto &node: t.all_nodes_vec)
-    {
-        double chi_val = pow(2, node->get_n_children()); // chi is to be computed for the n_first order children
-        chi.push_back(chi_val);
-        double xi_val = pow(2, node->get_n_children()+1) / (node->n_descendents+1);
-        xi.push_back(xi_val);
-    }
+    vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, false); // delete weights
+    vector<double> upsilon = t.omega_insert_delete(lambda_r, lambda_c, true); // cost weighted omega
+    vector<double> chi = t.chi_insert_delete(false); // weighted = false;
+    vector<double> xi = t.chi_insert_delete(true); // cost weighted chi;
 
     double sum_chi = accumulate(chi.begin(), chi.end(), 0.0);
     double sum_xi = accumulate(xi.begin(), xi.end(), 0.0);
-
 
     assert(abs(omega[0] - 0.916e-03) <=epsilon_sens);
     assert(abs(omega.back() - 4.979e-03) <=epsilon_sens);
     assert(abs(sum_chi - 15.0) <= epsilon);
     assert(abs(sum_xi - 7.443) <= epsilon);
-
-
 
 
     cout<<"Insert and delete node weights validation test passed!"<<endl;

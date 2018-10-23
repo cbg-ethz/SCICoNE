@@ -72,6 +72,9 @@ public:
     vector<double> omega_condense_split(double lambda_s, bool weighted);
     vector<double> chi_condense_split(bool weighted);
 
+    vector<double> omega_insert_delete(double lambda_r, double lambda_c, bool weighted);
+    vector<double> chi_insert_delete(bool weighted);
+
 
 
 private:
@@ -953,26 +956,8 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
 
     Node* return_node = nullptr;
 
-    vector<double> chi; // add weights
-    vector<double> omega; // delete weights
-
-    vector<double> xi; // cost weighted chi
-    vector<double> upsilon; // cost weighted omega
-
-    // iterate over all_nodes, use node->n_descendents-1 as n_children
-    // using all_nodes_vec is safe here since neither its order nor its size will change until the action and the node are chosen
-    for (auto const &node : all_nodes_vec)
-    {
-        double chi_val = pow(2, node->get_n_children()); // chi is to be computed for the n_first order children
-        chi.push_back(chi_val);
-
-        if (weighted)
-        {
-            double xi_val = pow(2, node->get_n_children()+1) / (node->n_descendents+1);
-            xi.push_back(xi_val);
-        }
-
-    }
+    vector<double> chi = chi_insert_delete(weighted); // add weights
+    vector<double> omega = omega_insert_delete(lambda_r, lambda_c, weighted); // delete weights
 
     // sample the number of regions to be affected with Poisson(lambda_r)+1
     std::mt19937 &generator = SingletonRandomGenerator::get_generator();
@@ -983,19 +968,11 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     int K = this->n_regions;
 
 
-    for (auto const &node : all_nodes_vec) { // computes the omega vector
-        double omega_val = MathOp::compute_omega_insert_delete(node, lambda_r, lambda_c, K);
-        omega.push_back(omega_val);
-        if (weighted)
-            upsilon.push_back(omega_val/node->n_descendents);
-    }
-
     double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
     double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
 
     double normalization_term = sum_chi + sum_omega;
     double p_chi = sum_chi / normalization_term;
-    // double p_omega = sum_omega / normalization_term;
 
     std::uniform_real_distribution<double> prob_dist(0.0,1.0);
     double rand_val = prob_dist(generator); // to be btw. 0 and 1
@@ -1004,11 +981,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     {
         // add is chosen
         std::discrete_distribution<>* dd;
-
-        if (weighted)
-            dd = new std::discrete_distribution<>(xi.begin(),xi.end());
-        else
-            dd = new std::discrete_distribution<>(chi.begin(),chi.end());
+        dd = new std::discrete_distribution<>(chi.begin(),chi.end());
 
         u_int pos_to_insert = (*dd)(generator); // this is the index of the all_nodes_vector.
         delete dd;
@@ -1051,10 +1024,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     {
 
         std::discrete_distribution<>* dd;
-        if (weighted)
-            dd = new std::discrete_distribution<>(upsilon.begin()+1,upsilon.end());
-        else
-            dd = new std::discrete_distribution<>(omega.begin()+1,omega.end());
+        dd = new std::discrete_distribution<>(omega.begin()+1,omega.end());
 
         u_int64_t idx_tobe_deleted = (*dd)(generator) + 1; // this is the index of the all_nodes_vector,
         // +1 here again because the discrete distribution will consider omega.begin()+1 as 0
@@ -1289,6 +1259,50 @@ vector<double> Tree::chi_condense_split(bool weighted) {
     }
 
     return chi;
+}
+
+vector<double> Tree::chi_insert_delete(bool weighted) {
+    /*
+     * Returns the chi probabilities computed for the insert/delete move.
+     * Chi vector is representing the insert weights
+     * */
+
+    vector<double> chi; // add weights
+    // iterate over all_nodes, use node->n_descendents-1 as n_children
+    // using all_nodes_vec is safe here since neither its order nor its size will change until the action and the node are chosen
+    for (auto const &node : all_nodes_vec)
+    {
+        double chi_val;
+        if (weighted)
+            chi_val = pow(2, node->get_n_children()+1) / (node->n_descendents+1);
+        else
+            chi_val = pow(2, node->get_n_children()); // chi is to be computed for the n_first order children
+
+        chi.push_back(chi_val);
+    }
+
+    return chi;
+
+}
+
+vector<double> Tree::omega_insert_delete(double lambda_r, double lambda_c, bool weighted) {
+    /*
+     * Returns the omega probabilities computed for the insert/delete move.
+     * Omega vector is representing the delete weights
+     * */
+
+    vector<double> omega; // delete weights
+    int K = this->n_regions;
+
+    vector<Node*> all_nodes = root->get_descendents(false); // without root
+    for (auto const &node : all_nodes) { // computes the omega vector
+        double omega_val = MathOp::compute_omega_insert_delete(node, lambda_r, lambda_c, K);
+        if (weighted)
+            omega_val = omega_val/node->n_descendents;
+        omega.push_back(omega_val);
+    }
+
+    return omega;
 }
 
 

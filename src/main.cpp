@@ -26,6 +26,7 @@
 // globals
 int print_precision;
 double lambda_s_condense_split;
+extern map<string, double> insert_delete_params;
 
 // endof globals
 
@@ -125,8 +126,7 @@ int main( int argc, char* argv[]) {
     string region_sizes_file = "";
     string d_matrix_file = "";
     bool to_segment = true; // if true then segmentation occurs
-    print_precision = 16;
-    lambda_s_condense_split = 0.5;
+
 
     int n_regions;
 
@@ -228,6 +228,13 @@ int main( int argc, char* argv[]) {
     if (result.count("print_precision")) {
         print_precision = result["print_precision"].as<int>();
     }
+
+
+    // set the globals
+    print_precision = 16;
+    lambda_s_condense_split = 0.5;
+//    insert_delete_params["lambda_r"] = lambda_r;
+//    insert_delete_params["lambda_c"] = lambda_c;
 
     // read the input d_matrix
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));

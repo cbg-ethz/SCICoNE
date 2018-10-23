@@ -244,7 +244,26 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     if (move_id == 1) // weighted prune reattach
     {}
     else if (move_id == 5) // insert/delete move
-    {}
+    {
+        bool weighted = false; // TODO: make those hardcoded params all global parameters as a map (1 map for each method)
+        double lambda_r = 2.0;
+        double lambda_c = 1.0;
+
+        vector<double> chi = t.chi_insert_delete(weighted);
+        double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+        vector<double> chi_prime = t_prime.chi_insert_delete(weighted);
+        double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
+
+        vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted);
+        double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+        vector<double> omega_prime = t_prime.omega_insert_delete(lambda_r, lambda_c, weighted);
+        double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
+
+        double score_diff = t_prime.score - t.score;
+
+        acceptance_prob = exp(gamma*score_diff) * (sum_chi+sum_omega) / (sum_chi_prime + sum_omega_prime);
+
+    }
     else if (move_id == 6) // condense/split move
     {
         bool weighted = false;
