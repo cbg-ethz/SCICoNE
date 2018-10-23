@@ -164,6 +164,8 @@ void test_condense_split_weights()
     t_prime.insert_at(2,{{3, -1}}); // 5
     t_prime.insert_at(1,{{1, 1}}); // 6
 
+    t_prime.compute_weights();
+
     int n = static_cast<int>(D.size());
     for (int i = 0; i < n; ++i)
     {
@@ -200,30 +202,33 @@ void test_condense_split_weights()
     vector<double> omega = t.omega_condense_split(lambda_s, weighted);
     double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
     if (weighted)
-    {}
+        assert(abs(sum_omega - 0.0878) <= epsilon);
     else
         assert(abs(sum_omega - 0.296) <= epsilon);
 
     vector<double> chi_prime = t_prime.chi_condense_split(weighted);
     double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
     if (weighted)
-    {}
+        assert(abs(sum_chi_prime - 0.571) <= epsilon);
     else
         assert(abs(sum_chi_prime - 4) <= epsilon);
 
     vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, weighted);
     double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
-    assert(abs(sum_omega_prime - 0.488) <= epsilon);
+    if (weighted)
+        assert(abs(sum_omega_prime - 0.1956) <= epsilon);
+    else
+        assert(abs(sum_omega_prime - 0.488) <= epsilon);
 
-
-    double normalization_term = sum_chi + sum_omega;
-    double p_chi = sum_chi / normalization_term;
 
     double score_diff = t_prime.score - t.score;
     assert(abs(score_diff + 8.858) <= epsilon);
 
     double acceptance_prob = exp(score_diff) * (sum_chi+sum_omega) / (sum_chi_prime + sum_omega_prime);
-    assert(abs(acceptance_prob - 0.000263) <= epsilon);
+    if (weighted)
+        assert(abs(acceptance_prob - 0.000244) <= epsilon_sens);
+    else
+        assert(abs(acceptance_prob - 0.000263) <= epsilon_sens);
 
     cout<<"Condense and split node weights validation test passed!"<<endl;
 

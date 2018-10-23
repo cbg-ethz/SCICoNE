@@ -9,6 +9,7 @@
 
 // globals
 int print_precision;
+double lambda_s_condense_split;
 
 // endof globals
 
@@ -16,6 +17,7 @@ int print_precision;
 int main()
 {
     print_precision = 16;
+    lambda_s_condense_split = 0.5;
     std::cout<<"\n UNIT TESTS \n ";
 //     set a seed number for reproducibility
     SingletonRandomGenerator::get_generator(42);
