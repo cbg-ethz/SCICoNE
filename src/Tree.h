@@ -701,7 +701,9 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
 
     }
 
-    //
+    // if the labels to be swapped are the same, then reject the move
+    if(node1->c_change == node2->c_change)
+        throw std::logic_error("swapping 2 nodes with the same labels does not make sense, the move will be rejected");
 
     // perform std swap on maps
     node1->c_change.swap(node2->c_change);
