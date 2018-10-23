@@ -290,7 +290,7 @@ int main( int argc, char* argv[]) {
     // run mcmc inference
 
     // move probabilities
-    vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
+    vector<float> move_probs = {1.0f,0.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
 
     Inference mcmc(n_regions, ploidy, verbosity);
 

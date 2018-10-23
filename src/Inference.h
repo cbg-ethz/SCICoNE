@@ -242,7 +242,10 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     // acceptance probability computations
     double acceptance_prob;
     if (move_id == 1) // weighted prune reattach
-    {}
+    {
+        // TODO: add the weights
+        acceptance_prob = exp(gamma*(log_post_t_prime - log_post_t));
+    }
     else if (move_id == 5) // insert/delete move
     {
         bool weighted = false; // TODO: make those hardcoded params all global parameters as a map (1 map for each method)
