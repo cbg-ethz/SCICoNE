@@ -68,6 +68,12 @@ public:
     bool is_valid_subtree(Node* node) const;// TODO: can be a method of node instead
     bool subtree_contains_negative(Node* n) const;// TODO: can be a method of node instead
     bool zero_ploidy_changes(Node* n) const;// TODO: can be a method of node instead
+
+    vector<double> omega_condense_split(double lambda_s, bool weighted);
+    vector<double> chi_condense_split(bool weighted);
+
+
+
 private:
     void update_label(std::map<u_int,int>& c_parent, Node* node);
     void update_desc_labels(Node* node);
@@ -978,7 +984,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
 
 
     for (auto const &node : all_nodes_vec) { // computes the omega vector
-        double omega_val = MathOp::compute_omega(node, lambda_r, lambda_c, K);
+        double omega_val = MathOp::compute_omega_insert_delete(node, lambda_r, lambda_c, K);
         omega.push_back(omega_val);
         if (weighted)
             upsilon.push_back(omega_val/node->n_descendents);
@@ -1078,108 +1084,8 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
      * */
 
     Node* return_node = nullptr;
-
-    vector<double> chi; // split weights
-    vector<double> omega; // condense weights
-
-    vector<double> xi; // cost weighted chi
-    vector<double> upsilon; // cost weighted omega
-
-
-
-    std::mt19937 &generator = SingletonRandomGenerator::get_generator();
-    // n_regions from Poisson(lambda_S)+1
-    std::poisson_distribution<int> poisson_s(lambda_s); // the param is to be specified later
-
-    int K = this->n_regions;
-    std::bernoulli_distribution bernoulli_05(0.5);
-
-    vector<Node*> descendents_of_root = this->root->get_descendents(false);
-
-    // compute chi and xi
-    for (auto const &node : descendents_of_root) // all nodes without the root
-    {
-        if (node->c_change.size() <= 1)
-            continue;
-        else
-        {
-            double chi_val = pow(2, node->get_n_children());
-            chi.push_back(chi_val);
-
-            if (weighted)
-            {
-                double xi_val = pow(2, node->get_n_children()+1) / (node->n_descendents+1);
-                xi.push_back(xi_val);
-            }
-        }
-    }
-
-    // compute omega and upsilon
-    /*
-     * 1. compute v_p and v_c
-     * 2. compute f(c)
-     * 3. compute omega
-     * */
-    for (auto const &node : descendents_of_root)
-    {
-        if (node->c_change.size() ==1)
-            continue; // cannot split
-        else
-        {
-            map<u_int,int> v_p;
-            map<u_int,int> v_c;
-
-            for (auto const& x : node->c_change) // for a node // TODO: make a method that takes 2 maps by reference and updates them, reuse it if split move is chosen
-            {
-                bool sign = bernoulli_05(generator);
-                int beta = 2 * sign -1;
-                int lambda = poisson_s(generator);
-
-
-                int v_k = x.second;
-                if (v_k % 2 == 0) // even value
-                    v_p[x.first] = v_k/2 + beta*(0.5 + lambda); // results in integer
-                else // odd value
-                    v_p[x.first] = v_k/2 + beta*lambda;
-
-                v_c[x.first] = v_k - v_p[x.first]; // v_c = v - v_p
-
-            }
-
-            if (Utils::is_empty_map(v_p) || Utils::is_empty_map(v_c)) // if one of them is an empty map then reject the move
-                throw std::logic_error("empty node created, condense split move will be rejected"); // TODO: handle it in the inference class apply method
-
-            double omega_val = 1.0; //TODO later compute this part in MathOp
-            for (auto const& x : node->c_change) // iterate over c_changes of node
-            {
-
-                if (node->c_change.size() ==1)
-                    continue; // this node won't be considered  in omega
-
-                int c = abs(v_p[x.first] - v_c[x.first]); // the absolute difference c btw n_copies in parent and child
-                double f_c = 1.0;
-
-                if (c % 2 == 0) // c is even
-                {
-                    f_c *= pow(lambda_s, c/2);
-                    f_c *= exp(-1*lambda_s);
-                    f_c /= 2*tgamma(c/2 +1); //tgamma +1 = factorial
-                }
-                else // c is odd
-                {
-                    f_c *= pow(lambda_s, (c-1)/2);
-                    f_c *= exp(-1*lambda_s);
-                    f_c /= 2*tgamma((c-1)/2 + 1);
-                }
-                omega_val *= f_c;
-            }
-
-            omega.push_back(omega_val);
-            if (weighted)
-                upsilon.push_back(omega_val / node->n_descendents);
-
-        }
-    }
+    vector<double> chi = this->chi_condense_split(weighted); // split weights
+    vector<double> omega = this->omega_condense_split(lambda_s, weighted); // condense weights
 
     double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
     double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
@@ -1187,18 +1093,21 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
     double normalization_term = sum_chi + sum_omega;
     double p_chi = sum_chi / normalization_term;
 
+    std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+    // n_regions from Poisson(lambda_S)+1
+    std::poisson_distribution<int> poisson_s(lambda_s); // the param is to be specified later
+    std::bernoulli_distribution bernoulli_05(0.5);
+
     std::uniform_real_distribution<double> prob_dist(0.0,1.0);
     double rand_val = prob_dist(generator); // to be btw. 0 and 1
 
+    vector<Node*> descendents_of_root = this->root->get_descendents(false); // without the root
     if (rand_val < p_chi)
     {
         // split is chosen
         std::discrete_distribution<>* dd;
 
-        if (weighted)
-            dd = new std::discrete_distribution<>(xi.begin(),xi.end());
-        else
-            dd = new std::discrete_distribution<>(chi.begin(),chi.end());
+        dd = new std::discrete_distribution<>(chi.begin(),chi.end());
 
         u_int pos_to_insert = (*dd)(generator); // this is the index of the descendents_of_root.
         delete dd;
@@ -1229,8 +1138,6 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
                 v_p.erase(x.first);
             if (v_c.at(x.first) == 0)
                 v_c.erase(x.first);
-
-
         }
         parent->c_change = v_p; // the parent c_change becomes v_p
 
@@ -1243,7 +1150,6 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
 
         this->insert_child(parent, static_cast<map<u_int,int>&&>(v_c)); // insert the child with v_c
         Node* new_node = all_nodes_vec.back(); // the last inserted elem, e.g. new node
-
         // foreach first_order_child, with 0.5 prob. change their parent to become the last element.
         // Change the parent with 0.5 prob
         for (Node* elem : first_order_children)
@@ -1255,9 +1161,7 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
                 insert_child(new_node, pruned_child); // insert into next parent
             }
         }
-
         return_node = parent;
-
     }
     else
     {
@@ -1265,20 +1169,15 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
         // condense is delete with its c_change values passed to the parent
 
         std::discrete_distribution<>* dd;
-        if (weighted)
-            dd = new std::discrete_distribution<>(upsilon.begin(),upsilon.end());
-        else
-            dd = new std::discrete_distribution<>(omega.begin(),omega.end());
-
+        dd = new std::discrete_distribution<>(omega.begin(),omega.end());
         u_int64_t idx_tobe_deleted = (*dd)(generator); // this is the index of the descendents_of_root,
-
         delete dd;
 
-        Node* tobe_deleted = descendents_of_root[idx_tobe_deleted]; // this node will be split
+        Node* tobe_deleted = descendents_of_root[idx_tobe_deleted];
 
         // check if suitable for condensing
         if (Utils::is_empty_map(tobe_deleted->c_change) || Utils::is_empty_map(tobe_deleted->parent->c_change)) // if one of them is an empty map then reject the move
-            throw std::logic_error("cannot condense an node with an empty node");
+            throw std::logic_error("cannot condense a node with an empty node (root)");
 
         map<u_int,int> condensed_c_change = tobe_deleted->parent->c_change;
 
@@ -1287,27 +1186,31 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
             int new_val = x.second;
             if (condensed_c_change.count(x.first))
                 new_val += condensed_c_change[x.first];
-
             if (new_val == 0)
                 throw std::logic_error("Any of the events cannot cancel completely upon condense");
             condensed_c_change[x.first] = new_val;
         }
 
-        tobe_deleted->parent->c_change = condensed_c_change;
+        if (condensed_c_change.size() == 1)
+        {
+            for (auto const &i : condensed_c_change)
+            {
+                if(i.second == 1)
+                    throw std::logic_error("Nodes cannot be combined if they result in a single event");
+            }
+        }
 
+        tobe_deleted->parent->c_change = condensed_c_change;
         return_node = delete_node(tobe_deleted); // returns the parent of the deleted node
 
     }
-
     //update the c vectors of the parent and its new descendents
     update_desc_labels(return_node);
     // check if the subtrees are valid after updating the labels
     if (!is_valid_subtree(return_node) || is_redundant())
         return nullptr;
-
     // recompute the weights after the tree structure is changed
     this->compute_weights();
-
     return return_node;
 }
 
@@ -1338,6 +1241,54 @@ Node* Tree::delete_node(Node *node) {
     delete tobe_deleted; // deallocate it.
 
     return parent_of_deleted; // return the node that is going to be used for the partial trees scoring
+}
+
+vector<double> Tree::omega_condense_split(double lambda_s, bool weighted) {
+    /*
+     * Returns the omega probabilities computed for a tree for the condense/split move.
+     * Omega vector is representing the condense weights
+     * */
+
+    vector<double> omega; // condense weights
+    vector<Node*> descendents_of_root = this->root->get_descendents(false); // without the root
+
+    for (auto const &node : descendents_of_root)
+    {
+        double omega_val = MathOp::compute_omega_condense_split(node, lambda_s, this->n_regions, weighted);
+        if (weighted)
+            omega_val /= (node->n_descendents + 1);
+        omega.push_back(omega_val);
+    }
+
+    return omega;
+}
+
+vector<double> Tree::chi_condense_split(bool weighted) {
+    /*
+     * Returns the chi probabilities computed for a tree for the condense/split move.
+     * Chi vector is representing the split weights
+     * */
+
+    vector<double> chi; // split weights
+
+    vector<Node*> descendents_of_root = this->root->get_descendents(false); // without the root
+    // compute chi and xi
+    for (auto const &node : descendents_of_root) // all nodes without the root
+    {
+        if (node->c_change.size() <= 1)
+            continue;
+        else
+        {
+            double chi_val = pow(2, node->get_n_children());
+            if (weighted)
+                chi_val /= (node->n_descendents + 1);
+
+            chi.push_back(chi_val);
+        }
+
+    }
+
+    return chi;
 }
 
 

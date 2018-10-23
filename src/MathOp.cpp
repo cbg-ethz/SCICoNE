@@ -4,8 +4,7 @@
 
 
 #include "MathOp.h"
-
-
+#include "Utils.h"
 
 template<class T>
 double MathOp::vec_avg(vector<T> &v) {
@@ -430,6 +429,64 @@ T MathOp::percentile_val(vector<T> vec, double percentile_val) {
 
     return vec[percentile_idx];
 }
+
+double MathOp::compute_omega_condense_split(Node *node, double lambda_s, int n_regions, bool weighted) {
+
+    /*
+     * Computes the omega probability of the condense/split move.
+     * */
+
+    double omega_val = 1.0;
+
+    vector<int> res_c_change = {};
+    for (int i = 0; i < n_regions; ++i) {
+        int c_val = 0; // value of the region in the child
+        int p_val = 0; // value of the region in the parent
+
+        if (Utils::is_empty_map(node->parent->c_change)) // EXCLUDE: parent is root
+            return 0;
+
+        if (node->c_change.count(i))
+            c_val = node->c_change[i];
+        if (node->parent->c_change.count(i))
+            p_val = node->parent->c_change[i];
+
+        if ((p_val == 0) && (c_val == 0)) // this region is not to be considered
+            continue;
+
+        if (p_val + c_val == 0) // EXCLUDE: any of the nodes cancel out
+            return 0;
+
+        int c = abs(c_val-p_val);
+        double f_c = 1.0;
+
+        if (c == 0) // c is zero
+        {
+            f_c *= exp(-1*lambda_s);
+        }
+        else if (c % 2 == 0) // c is even
+        {
+            f_c *= pow(lambda_s, c/2);
+            f_c *= exp(-1*lambda_s);
+            f_c /= 2*tgamma(c/2 +1); //tgamma +1 = factorial
+        }
+        else // c is odd
+        {
+            f_c *= pow(lambda_s, (c-1)/2);
+            f_c *= exp(-1*lambda_s);
+            f_c /= 2*tgamma((c-1)/2 + 1);
+        }
+        omega_val *= f_c;
+        res_c_change.push_back(c_val + p_val);
+    }
+
+    if(res_c_change.size() == 1 && res_c_change[0] == 1) // you cannot end up with 1 region and 1 event
+        return 0;
+
+    return omega_val;
+}
+
+
 
 template double MathOp::percentile_val<double>(vector<double>, double percentile_val);
 template long double MathOp::percentile_val<long double>(vector<long double>, double percentile_val);
