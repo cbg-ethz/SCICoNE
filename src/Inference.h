@@ -56,7 +56,7 @@ public:
                               bool weighted = false, bool validation_test_mode = false);
     bool apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted = false,
                     bool test_mode = false);
-    Tree *comparison(int m, double gamma);
+    Tree *comparison(int m, double gamma, unsigned move_id);
     void infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters);
     void write_best_tree();
     void update_t_scores();
@@ -218,7 +218,7 @@ void Inference::destroy() {
     // nothing to deallocate
 }
 
-Tree * Inference::comparison(int m, double gamma) {
+Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     /*
      * Returns the pointer to the accepted tree
      * m is size(D)
@@ -239,7 +239,31 @@ Tree * Inference::comparison(int m, double gamma) {
 
     t_prime.score = log_post_t_prime;
 
-    double acceptance_prob = exp(gamma*(log_post_t_prime - log_post_t));
+    // acceptance probability computations
+    double acceptance_prob;
+    if (move_id == 1) // weighted prune reattach
+    {}
+    else if (move_id == 5) // insert/delete move
+    {}
+    else if (move_id == 6) // condense/split move
+    {
+        bool weighted = false;
+        vector<double> chi = t.chi_condense_split(weighted);
+        double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+        vector<double> chi_prime = t_prime.chi_condense_split(weighted);
+        double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
+
+        vector<double> omega = t.omega_condense_split(lambda_s_condense_split, weighted);
+        double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+        vector<double> omega_prime = t_prime.omega_condense_split(lambda_s_condense_split, weighted);
+        double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
+
+        double score_diff = t_prime.score - t.score;
+
+        acceptance_prob = exp(gamma*score_diff) * (sum_chi+sum_omega) / (sum_chi_prime + sum_omega_prime);
+    }
+    else
+        acceptance_prob = exp(gamma*(log_post_t_prime - log_post_t));
 
     if (verbosity > 0)
         cout<<"acceptance prob: "<<acceptance_prob<<endl;
@@ -363,7 +387,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // insert delete node
                 if (verbosity > 0)
                     cout << "insert/delete node" << endl;
-                bool insert_delete_success = apply_insert_delete_node(1.0, 1.0, D, r, true, false); // weighted=false
+                bool insert_delete_success = apply_insert_delete_node(1.0, 1.0, D, r, false, false); // weighted=false
                 if (not insert_delete_success) {
                     insert_delete_move_rejection++;
                     rejected_before_comparison = true;
@@ -380,7 +404,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // condense split move
                 if (verbosity > 0)
                     cout << "condense split move " <<endl;
-                bool condense_split_success = apply_condense_split(1.0,D,r,false,false);
+                bool condense_split_success = apply_condense_split(lambda_s_condense_split,D,r,false,false);
                 if (not condense_split_success)
                 {
                     condense_split_move_rejection++;
@@ -403,7 +427,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         if (rejected_before_comparison)
             accepted = &t;
         else
-            accepted = comparison(m, gamma);
+            accepted = comparison(m, gamma, move_id);
 
         static double first_score = accepted->score; // the first value will be kept in whole program
         // print accepted log_posterior

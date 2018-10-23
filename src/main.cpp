@@ -25,6 +25,7 @@
 
 // globals
 int print_precision;
+double lambda_s_condense_split;
 
 // endof globals
 
@@ -125,6 +126,7 @@ int main( int argc, char* argv[]) {
     string d_matrix_file = "";
     bool to_segment = true; // if true then segmentation occurs
     print_precision = 16;
+    lambda_s_condense_split = 0.5;
 
     int n_regions;
 

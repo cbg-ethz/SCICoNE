@@ -9,7 +9,7 @@
 
 
 extern int print_precision; // the precision for the printed double/float values
-
+extern double lambda_s_condense_split;
 
 
 
