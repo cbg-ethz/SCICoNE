@@ -118,6 +118,7 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, double lambda_
     }
 
     t = *random_tree;
+    delete random_tree; // deallocate
     t.compute_weights();
 
 
