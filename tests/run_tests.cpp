@@ -10,6 +10,8 @@
 // globals
 int print_precision;
 double lambda_s;
+double lambda_r;
+double lambda_c;
 
 // endof globals
 
