@@ -248,8 +248,6 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     else if (move_id == 5) // insert/delete move
     {
         bool weighted = false; // TODO: make those hardcoded params all global parameters as a map (1 map for each method)
-        double lambda_r = 2.0;
-        double lambda_c = 1.0;
 
         vector<double> chi = t.chi_insert_delete(weighted);
         double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
@@ -274,9 +272,9 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         vector<double> chi_prime = t_prime.chi_condense_split(weighted);
         double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
 
-        vector<double> omega = t.omega_condense_split(lambda_s_condense_split, weighted);
+        vector<double> omega = t.omega_condense_split(lambda_s, weighted);
         double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-        vector<double> omega_prime = t_prime.omega_condense_split(lambda_s_condense_split, weighted);
+        vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, weighted);
         double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
 
         double score_diff = t_prime.score - t.score;
@@ -396,7 +394,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (verbosity > 0)
                     cout << "add or remove event" << endl;
                 // pass 0.0 to the poisson distributions to have 1 event added/removed
-                bool add_remove_success = apply_add_remove_events(0.0, 0.0, D, r, true); // weighted=true
+                bool add_remove_success = apply_add_remove_events(lambda_r, lambda_c, D, r, true); // weighted=true
                 if (not add_remove_success) {
                     add_remove_move_rejected++;
                     rejected_before_comparison = true;
@@ -408,7 +406,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // insert delete node
                 if (verbosity > 0)
                     cout << "insert/delete node" << endl;
-                bool insert_delete_success = apply_insert_delete_node(1.0, 1.0, D, r, false, false); // weighted=false
+                bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, false, false); // weighted=false
                 if (not insert_delete_success) {
                     insert_delete_move_rejection++;
                     rejected_before_comparison = true;
@@ -425,7 +423,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // condense split move
                 if (verbosity > 0)
                     cout << "condense split move " <<endl;
-                bool condense_split_success = apply_condense_split(lambda_s_condense_split,D,r,false,false);
+                bool condense_split_success = apply_condense_split(lambda_s,D,r,false,false);
                 if (not condense_split_success)
                 {
                     condense_split_move_rejection++;
@@ -490,13 +488,13 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         // N: n_nodes of tree t
         if ((i > 1000) && (i % 100 == 0))
         {
-            double acceptance_ratio = double(n_accepted) / double((n_accepted + n_rejected));
-            double N = t.get_n_nodes();
-            double c = -1 * (log(2) / log(N+2)); // +2 because root is not counted and log(1) is zero (it goes to the denominator)
-
-            gamma = gamma * exp(0.5 - pow(acceptance_ratio, c));
-
-            n_accepted = n_rejected = 0;
+//            double acceptance_ratio = double(n_accepted) / double((n_accepted + n_rejected));
+//            double N = t.get_n_nodes();
+//            double c = -1 * (log(2) / log(N+2)); // +2 because root is not counted and log(1) is zero (it goes to the denominator)
+//
+//            gamma = gamma * exp(0.5 - pow(acceptance_ratio, c));
+            // TODO: Jack will change the way gamma is computed
+            //n_accepted = n_rejected = 0;
             std::cout << "gamma val:" << gamma << endl;
         }
 

@@ -11,7 +11,9 @@
 
 // globals
 int print_precision;
-
+double lambda_r;
+double lambda_c;
+double lambda_s;
 // endof globals
 
 
@@ -24,8 +26,8 @@ int main(int argc, char* argv[]) {
     // the default values
     int n_regions = 50;
     int n_nodes = 50;
-    double lambda_r = 0.1;
-    double lambda_c = 0.2;
+    lambda_r = 0.1;
+    lambda_c = 0.2;
     int n_cells = 500;
     int n_bins = 10000;
     int n_reads = 10000;
@@ -51,6 +53,8 @@ int main(int argc, char* argv[]) {
             ("seed", "Seed", cxxopts::value(seed))
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
             ("print_precision", "The precision points of the score values to be printed", cxxopts::value(print_precision))
+            ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
+            ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
             ;
 
     auto result = options.parse(argc, argv);
@@ -90,6 +94,12 @@ int main(int argc, char* argv[]) {
     }
     if (result.count("print_precision")) {
         print_precision = result["print_precision"].as<int>();
+    }
+    if (result.count("lambda_r")) {
+        lambda_r = result["lambda_r"].as<double>();
+    }
+    if (result.count("lambda_c")) {
+        lambda_c = result["lambda_c"].as<double>();
     }
 
 

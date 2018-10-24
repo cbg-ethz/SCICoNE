@@ -25,8 +25,9 @@
 
 // globals
 int print_precision;
-double lambda_s_condense_split;
-extern map<string, double> insert_delete_params;
+double lambda_s;
+double lambda_r;
+double lambda_c;
 
 // endof globals
 
@@ -132,8 +133,8 @@ int main( int argc, char* argv[]) {
 
     // random tree parameters
     int n_nodes = 50;
-    double lambda_r = 0.1;
-    double lambda_c = 0.2;
+    lambda_r = 0.1;
+    lambda_c = 0.2;
 
     int max_region_size = 10;
 
@@ -159,10 +160,7 @@ int main( int argc, char* argv[]) {
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
             ("n_reads","the number of reads per cell", cxxopts::value(n_reads))
-            ("max_region_size","the maximum size that a region can have", cxxopts::value(max_region_size))
-
-
-            ;
+            ("max_region_size","the maximum size that a region can have", cxxopts::value(max_region_size));
 
     auto result = options.parse(argc, argv);
 
@@ -228,13 +226,19 @@ int main( int argc, char* argv[]) {
     if (result.count("print_precision")) {
         print_precision = result["print_precision"].as<int>();
     }
+    if (result.count("lambda_r")) {
+        lambda_r = result["lambda_r"].as<double>();
+    }
+    if (result.count("lambda_c")) {
+        lambda_c = result["lambda_c"].as<double>();
+    }
+
 
 
     // set the globals
     print_precision = 16;
-    lambda_s_condense_split = 0.5;
-//    insert_delete_params["lambda_r"] = lambda_r;
-//    insert_delete_params["lambda_c"] = lambda_c;
+    lambda_s = 0.5;
+
 
     // read the input d_matrix
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
