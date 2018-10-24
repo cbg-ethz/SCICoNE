@@ -12,6 +12,7 @@
 #include <cassert>
 #include <random>
 #include <map>
+#include <algorithm>
 #include "SingletonRandomGenerator.h"
 
 #ifndef SC_DNA_NODE_H
@@ -47,7 +48,7 @@ public:
     static int random_uniform(int min, int max);
 
     template <class T>
-    static double vec_avg(vector<T> &);
+    static double vec_avg(vector<T> &v);
 
     template <class T>
     static double vec_sum(vector<T> &);
