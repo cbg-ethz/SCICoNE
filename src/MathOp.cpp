@@ -487,6 +487,7 @@ double MathOp::compute_omega_condense_split(Node *node, double lambda_s, int n_r
 }
 
 
-
+template double MathOp::vec_avg(vector<double> &v);
 template double MathOp::percentile_val<double>(vector<double>, double percentile_val);
 template long double MathOp::percentile_val<long double>(vector<long double>, double percentile_val);
+
