@@ -13,10 +13,9 @@ vector<double> SignalProcessing::diff(vector<double> &signal) {
 
     vector<double> res(signal.size()-1); // -1 because the first one cannot have a diff
 
-    for (int i = 1; i < signal.size(); ++i) {
+    for (int i = 1; i < signal.size()-1; ++i) {
         res[i] = signal[i]-signal[i-1];
     }
-
     return res;
 }
 
@@ -34,8 +33,6 @@ vector<double> SignalProcessing::sign(vector<double> &signal) {
         else
             res[i] = -1.0;
     }
-
-
     return res;
 }
 

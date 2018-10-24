@@ -285,16 +285,16 @@ int main( int argc, char* argv[]) {
     else
     {
         Utils::read_vector(region_sizes, region_sizes_file);
-        // Merge the bins into regions
-        d_regions = Utils::condense_matrix(d_bins, region_sizes);
     }
-
+    // Merge the bins into regions
+    d_regions = Utils::condense_matrix(d_bins, region_sizes);
     n_regions = region_sizes.size();
 
     // run mcmc inference
 
     // move probabilities
-    vector<float> move_probs = {1.0f,0.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+    vector<float> move_probs = {1.0f,0.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f};
+    //-------------------------------w-pr------------------------------w-id--------w-cs-------
 
     Inference mcmc(n_regions, ploidy, verbosity);
 
@@ -325,7 +325,7 @@ int main( int argc, char* argv[]) {
     for (auto const &v1: inferred_cnvs_bins) {
         for (auto const &v2: v1)
             inferred_cnvs_file << v2 << ' ';
-        inferred_cnvs_file << '\n';
+        inferred_cnvs_file << endl;
     }
 
 

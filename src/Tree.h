@@ -425,7 +425,7 @@ Node * Tree::prune_reattach(bool genotype_preserving, bool weighted, bool valida
      * */
 
     if (all_nodes_vec.size() <= 2)
-        throw std::logic_error("prune and reattach move does not make sense when they is only one node besides the root");
+        throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
 
     Node* prune_pos = nullptr;
 

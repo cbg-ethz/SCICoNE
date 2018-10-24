@@ -63,6 +63,7 @@ public:
     void random_initialize(u_int n_nodes, u_int n_regions, double lambda_r, double lambda_c, int max_iters=10000); // randomly initializes a tree and copies it into the other
     void initialize_worked_example(); // initializes the trees based on the test example
     vector<vector<int>> assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r);
+    double nbd(unsigned move_id);
 private:
     int deleted_node_idx();
 };
@@ -240,49 +241,9 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
     // acceptance probability computations
     double acceptance_prob;
-    if (move_id == 1) // weighted prune reattach
-    {
-        // TODO: add the weights
-        acceptance_prob = exp(gamma*(log_post_t_prime - log_post_t));
-    }
-    else if (move_id == 5) // insert/delete move
-    {
-        bool weighted = false; // TODO: make those hardcoded params all global parameters as a map (1 map for each method)
+    double score_diff = t_prime.score - t.score;
+    acceptance_prob = exp(gamma*score_diff) * nbd(move_id);
 
-        vector<double> chi = t.chi_insert_delete(weighted);
-        double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-        vector<double> chi_prime = t_prime.chi_insert_delete(weighted);
-        double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
-
-        vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted);
-        double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-        vector<double> omega_prime = t_prime.omega_insert_delete(lambda_r, lambda_c, weighted);
-        double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
-
-        double score_diff = t_prime.score - t.score;
-
-        acceptance_prob = exp(gamma*score_diff) * (sum_chi+sum_omega) / (sum_chi_prime + sum_omega_prime);
-
-    }
-    else if (move_id == 6) // condense/split move
-    {
-        bool weighted = false;
-        vector<double> chi = t.chi_condense_split(weighted);
-        double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-        vector<double> chi_prime = t_prime.chi_condense_split(weighted);
-        double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
-
-        vector<double> omega = t.omega_condense_split(lambda_s, weighted);
-        double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-        vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, weighted);
-        double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
-
-        double score_diff = t_prime.score - t.score;
-
-        acceptance_prob = exp(gamma*score_diff) * (sum_chi+sum_omega) / (sum_chi_prime + sum_omega_prime);
-    }
-    else
-        acceptance_prob = exp(gamma*(log_post_t_prime - log_post_t));
 
     if (verbosity > 0)
         cout<<"acceptance prob: "<<acceptance_prob<<endl;
@@ -352,6 +313,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (not prune_reattach_success) {
                     n_attached_to_the_same_pos++;
                     rejected_before_comparison = true;
+                    if (verbosity > 0)
+                        cout << "Prune and reattach is rejected before comparison"<<endl;
                 }
                 break;
             }
@@ -365,6 +328,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 {
                     n_attached_to_the_same_pos++;
                     rejected_before_comparison = true;
+                    if (verbosity > 0)
+                        cout << "Weighted prune and reattach is rejected before comparison"<<endl;
                 }
                 break;
             }
@@ -376,6 +341,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 bool swap_success = apply_swap(D, r, false); // weighted=false
                 if (not swap_success)
                     rejected_before_comparison = true;
+                if (verbosity > 0)
+                    cout << "Swap labels is rejected before comparison"<<endl;
                 break;
             }
             case 3:
@@ -386,6 +353,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 bool weighted_swap_success = apply_swap(D, r, true); // weighted=true
                 if (not weighted_swap_success)
                     rejected_before_comparison = true;
+                    if (verbosity > 0)
+                        cout << "Weighted swap labels is rejected before comparison"<<endl;
                 break;
             }
             case 4:
@@ -394,14 +363,31 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (verbosity > 0)
                     cout << "add or remove event" << endl;
                 // pass 0.0 to the poisson distributions to have 1 event added/removed
-                bool add_remove_success = apply_add_remove_events(lambda_r, lambda_c, D, r, true); // weighted=true
+                bool add_remove_success = apply_add_remove_events(lambda_r, lambda_c, D, r, false); // weighted=false
                 if (not add_remove_success) {
                     add_remove_move_rejected++;
                     rejected_before_comparison = true;
+                    if (verbosity > 0)
+                        cout << "Add or remove event is rejected before comparison"<<endl;
                 }
                 break;
             }
             case 5:
+            {
+                // weighted add or remove event
+                if (verbosity > 0)
+                    cout << "weighted add or remove event" << endl;
+                // pass 0.0 to the poisson distributions to have 1 event added/removed
+                bool add_remove_success = apply_add_remove_events(lambda_r, lambda_c, D, r, true); // weighted=true
+                if (not add_remove_success) {
+                    add_remove_move_rejected++;
+                    rejected_before_comparison = true;
+                    if (verbosity > 0)
+                        cout << "Weighted add or remove event is rejected before comparison"<<endl;
+                }
+                break;
+            }
+            case 6:
             {
                 // insert delete node
                 if (verbosity > 0)
@@ -413,12 +399,23 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     if (verbosity > 0)
                         cout << "insert/delete rejected before comparison" << endl;
                 }
-                else
-                    if (verbosity > 0)
-                        cout<< "insert/delete accepted!" << endl;
                 break;
             }
-            case 6:
+            case 7:
+            {
+                // weighted insert delete node
+                if (verbosity > 0)
+                    cout << "weighted insert/delete node" << endl;
+                bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, true, false); // weighted=true
+                if (not insert_delete_success) {
+                    insert_delete_move_rejection++;
+                    rejected_before_comparison = true;
+                    if (verbosity > 0)
+                        cout << "weighted insert/delete rejected before comparison" << endl;
+                }
+                break;
+            }
+            case 8:
             {
                 // condense split move
                 if (verbosity > 0)
@@ -431,12 +428,24 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     if (verbosity > 0)
                         cout << "condense/split move is rejected before comparison"<<endl;
                 }
-                else
-                    if (verbosity > 0)
-                        cout << "condense/split accepted!"<<endl;
                 break;
             }
-            case 7:
+            case 9:
+            {
+                // weighted condense split move
+                if (verbosity > 0)
+                    cout << "weighted condense split move " <<endl;
+                bool condense_split_success = apply_condense_split(lambda_s,D,r,true,false); //weighted=true
+                if (not condense_split_success)
+                {
+                    condense_split_move_rejection++;
+                    rejected_before_comparison = true;
+                    if (verbosity > 0)
+                        cout << "weighted condense/split move is rejected before comparison"<<endl;
+                }
+                break;
+            }
+            case 10:
             {
                 // genotype_preserving prune & reattach
                 if (verbosity > 0)
@@ -445,6 +454,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (not genotype_prune_reattach_success)
                 {
                     rejected_before_comparison = true;
+                    if (verbosity > 0)
+                        cout << "Genotype preserving prune/reattach is rejected before comparison"<<endl;
                 }
                 break;
             }
@@ -908,6 +919,58 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
 
 
     return cell_regions;
+}
+
+double Inference::nbd(unsigned move_id) {
+    /*
+     * Computes the neighbourhood correction between trees t and t_prime.
+     * Neighbourhood correction assures the transition probabilities between t->t_prime and vice versa are close (ideally equal).
+     * */
+
+    bool weighted;
+    if ((move_id %2 == 1) && (move_id <=9)) // weighted move ids
+        weighted = true;
+    else
+        weighted = false;
+
+    double nbd_corr= 1.0;
+
+    if (move_id == 1)
+    {
+        // TODO: weighted prune-reattach
+    }
+    else if (move_id == 6) // insert/delete move
+    {
+
+        vector<double> chi = t.chi_insert_delete(weighted);
+        double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+        vector<double> chi_prime = t_prime.chi_insert_delete(weighted);
+        double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
+
+        vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted);
+        double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+        vector<double> omega_prime = t_prime.omega_insert_delete(lambda_r, lambda_c, weighted);
+        double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
+
+        nbd_corr = (sum_chi+sum_omega) / (sum_chi_prime + sum_omega_prime);
+    }
+    else if (move_id == 8) // condense/split move
+    {
+        vector<double> chi = t.chi_condense_split(weighted);
+        double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+        vector<double> chi_prime = t_prime.chi_condense_split(weighted);
+        double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
+
+        vector<double> omega = t.omega_condense_split(lambda_s, weighted);
+        double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+        vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, weighted);
+        double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
+
+        nbd_corr = (sum_chi+sum_omega) / (sum_chi_prime + sum_omega_prime);
+    }
+
+
+    return nbd_corr;
 }
 
 
