@@ -567,11 +567,11 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
             v += abs(it.second);
         double pv_i = 0.0;
 
-        pv_i += vfact_hash[v];
-        pv_i -= v*log(2*K);
+        // pv_i += vfact_hash[v];
+        pv_i -= v*log(2*K); // the event prior
 
-        for (auto const &it : c_change)
-            pv_i -= log(tgamma(abs(it.second) + 1)); // +1 because we are using gamma func for factorial
+//        for (auto const &it : c_change)
+//            pv_i -= log(tgamma(abs(it.second) + 1)); // +1 because we are using gamma func for factorial
 
         p_v.push_back(pv_i);
 
