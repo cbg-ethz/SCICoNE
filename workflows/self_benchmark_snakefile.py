@@ -86,19 +86,19 @@ rule hmm_copy_inference:
     params:
         script = config["hmm_copy"]["script"],
         n_nodes = n_nodes,
-        n_regions = n_regions,
-        n_reads = n_reads,
         scratch = config["hmm_copy"]["scratch"],
         mem = config["hmm_copy"]["mem"],
         time = config["hmm_copy"]["time"],
-        script_inp = str(n_nodes)+"nodes_"+str(n_regions)+"regions_"+str(n_reads)+"reads_{wildcards.rep_id}"
+        script_inp = str(n_nodes)+"nodes_{regions}regions_{reads}reads_{rep_id}"
+    input:
+        d_mat = SIM_OUTPUT+ '_' + prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_d_mat.txt'
     threads:
         config["hmm_copy"]["threads"]
     output:
         # sample output: 10nodes_10regions_100000reads_sim1_HMMcopy_inferred.txt
         inferred_cnvs = SIM_OUTPUT+ '_' + prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_HMMcopy_inferred.txt'
     shell:
-        "{params.script} {params.script_inp}"
+        " Rscript {params.script} {input.d_mat}" 
 
 rule run_sim:
     params:
