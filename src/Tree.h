@@ -796,6 +796,9 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
      * Returns the pointer to the affacted node.
      * */
 
+    if (all_nodes_vec.size() <= 1)
+        throw std::logic_error("Adding or removing events does not make sense when there is 1 node or less. Root has to be neutral.");
+
     Node* node;
 
     if (validation_test_mode)
@@ -1041,6 +1044,9 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     else // delete is chosen
     {
 
+        if (all_nodes_vec.size() <= 1)
+            throw std::logic_error("Root cannot be deleted, delete move will be rejected");
+
         std::discrete_distribution<>* dd;
         dd = new std::discrete_distribution<>(omega.begin()+1,omega.end());
 
@@ -1070,6 +1076,10 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
     /*
      * Condenses two nodes into one or splits a node into two.
      * */
+
+    if (all_nodes_vec.size() <= 1)
+        throw std::logic_error("condense or split does not make sense when there is 1 node or less. ");
+
 
     Node* return_node = nullptr;
     vector<double> chi = this->chi_condense_split(weighted); // split weights
@@ -1155,6 +1165,10 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
     {
         // condense is chosen
         // condense is delete with its c_change values passed to the parent
+
+        if (all_nodes_vec.size() <= 2)
+            throw std::logic_error("condensing nodes does not make sense when there are 2 or less nodes. Root has to be neutral.");
+
 
         std::discrete_distribution<>* dd;
         dd = new std::discrete_distribution<>(omega.begin(),omega.end());
