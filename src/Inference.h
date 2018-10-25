@@ -496,10 +496,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         t_prime_sums.clear();
         t_prime_scores.clear();
 
-        // TODO: update gamma every 100 iterations
+        // TODO: update gamma every 100 iterations, adaptive stuff
         // N: n_nodes of tree t
-        if ((i > 1000) && (i % 100 == 0))
-        {
+//        if ((i > 1000) && (i % 100 == 0))
+//        {
 //            double acceptance_ratio = double(n_accepted) / double((n_accepted + n_rejected));
 //            double N = t.get_n_nodes();
 //            double c = -1 * (log(2) / log(N+2)); // +2 because root is not counted and log(1) is zero (it goes to the denominator)
@@ -507,15 +507,9 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 //            gamma = gamma * exp(0.5 - pow(acceptance_ratio, c));
             // TODO: Jack will change the way gamma is computed
             //n_accepted = n_rejected = 0;
-            std::cout << "gamma val:" << gamma << endl;
-        }
-
-
+//            std::cout << "gamma val:" << gamma << endl;
+//        }
     }
-
-
-
-
     if (verbosity > 0)
     {
         cout<<"n_accepted: "<<n_accepted<<endl;
@@ -524,7 +518,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         cout<<"add_remove_move_rejected: "<<add_remove_move_rejected<<endl;
         cout<<"condense/split rejected: " << condense_split_move_rejection<<endl;
     }
-
 }
 
 double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
@@ -532,7 +525,6 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     // m: n_cells, n: n_nodes
 
     int n = tree.get_n_nodes();
-
     double log_posterior = 0.0;
     log_posterior = tree_sum - (n -1 + m ) * log(n+1);
 
