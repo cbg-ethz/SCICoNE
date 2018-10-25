@@ -20,6 +20,7 @@ public:
     vector<double> diff(vector<double> &signal);
     vector<double> sign(vector<double> &signal);
     vector<double> make_zero_mean(vector<double>& signal);
+    vector<double> subtract_median(vector<double> &signal);
     void attenuate_values_below(vector<double> &signal, double threshold);
     vector<bool> filter_by_val(vector<double> &signal, double val);
 

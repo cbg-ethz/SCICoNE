@@ -119,6 +119,21 @@ vector<T> SignalProcessing::crop(vector<T> &signal, int offset)
     return cropped;
 }
 
+vector<double> SignalProcessing::subtract_median(vector<double> &signal) {
+    /*
+     * Substracts the median from the signal and returns the new signal.
+     * */
+
+    vector<double> res(signal.size());
+    double median_val = MathOp::percentile_val(signal, 0.5);
+
+    for (int i = 0; i < signal.size(); ++i) {
+        res[i] = signal[i] - median_val;
+    }
+
+    return res;
+}
+
 template vector<double> SignalProcessing::crop<double>(vector<double>& signal, int offset);
 template vector<long double> SignalProcessing::crop<long double>(vector<long double>& signal, int offset);
 
