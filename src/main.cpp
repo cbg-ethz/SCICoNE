@@ -257,6 +257,7 @@ int main( int argc, char* argv[]) {
 
         // create an sp_null signal and make it zero-mean
         int _n_regions = n_bins; // assume n_regions=n_bins for the null model
+        assert(n_reads != -1); // n_reads is needed for the null model
         Simulation sim_null(_n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy,
                             verbosity);
         sim_null.sample_region_sizes(n_bins, 1);
