@@ -3,7 +3,9 @@ args = commandArgs(trailingOnly=TRUE)
 
 #file_name <- "10nodes_10regions_100000reads_sim1"
 
+print(args)
 file_name <- args[1]
+
 
 # HMMCopy script
 suppressWarnings(library(HMMcopy))
@@ -22,7 +24,7 @@ tumour_copy <- correctReadcount(wigsToRangedData(tfile, gfile, mfile))
 
 # read in the simulated data
 
-sim_data <- read.table(paste0(file_name, "_d_mat.txt"),header=FALSE)
+sim_data <- read.table(file_name,header=FALSE)
 
 sim_data <- t(t(sim_data)) # make it numeric!
 
@@ -56,6 +58,9 @@ for(ii in 1:n_cells){ # run over all cells
 }
 
 # write the output inferred states
+
+file_name = substr(file_name, 1, nchar(file_name)-10)
+print(file_name)
 
 write.table(inferred_states, paste0(file_name, "_HMMcopy_inferred.txt"), col.names=FALSE, row.names=FALSE)
 
