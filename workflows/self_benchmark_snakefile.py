@@ -14,7 +14,7 @@ n_regions = n, 2n and 4n
 1000, 10,000 and 100,000 reads per cell
 '''
 
-n_nodes = 10 # values: [10,20,30]
+n_nodes = 30 # values: [10,20,30]
 n_regions = [n_nodes,2*n_nodes,4*n_nodes]
 n_bins = 10000
 n_reads = [10000, 30000, 100000] # add 300000
@@ -56,10 +56,31 @@ rule infer_trees:
         inferred_cnvs = SIM_OUTPUT+ '_' + prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_inferred_cnvs.txt',
         inferred_tree = SIM_OUTPUT+ '_' + prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_tree_inferred.txt'
     shell:
-        "{params.binary} --n_reads {wildcards.reads} --n_nodes {params.n_nodes} --n_bins {params.n_bins} --n_iters {params.n_iters} --n_cells {params.n_cells} --verbosity 2 \
+        "{params.binary} --n_reads {wildcards.reads} --n_nodes {params.n_nodes} --n_bins {params.n_bins} --n_iters {params.n_iters} --n_cells {params.n_cells} --verbosity 0 \
         --ploidy 2 --seed 42 --postfix {wildcards.rep_id} --d_matrix_file {input.d_mat} --region_sizes_file {input.region_sizes}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_tree_inferred.txt {output.inferred_tree}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_inferred_cnvs.txt {output.inferred_cnvs}"
+
+rule infer_trees_with_segmentation:
+    params:
+        binary = config["inference_bin"],
+        n_nodes = n_nodes,
+        n_bins = n_bins,
+        n_iters = n_iters,
+        n_cells = n_cells,
+        scratch = config["cnv_trees"]["scratch"],
+        mem = config["cnv_trees"]["mem"],
+        time = config["cnv_trees"]["time"]
+    input:
+        d_mat = SIM_OUTPUT+ '_' + prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_d_mat.txt'
+    output:
+        inferred_cnvs = SIM_OUTPUT+ '_' + prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_inferred_cnvs_segmented.txt',
+        inferred_tree = SIM_OUTPUT+ '_' + prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_tree_inferred_segmented.txt'
+    shell:
+        "{params.binary} --n_reads {wildcards.reads} --n_nodes {params.n_nodes} --n_bins {params.n_bins} --n_iters {params.n_iters} --n_cells {params.n_cells} --verbosity 0 \
+        --ploidy 2 --seed 42 --postfix {wildcards.rep_id} --d_matrix_file {input.d_mat}; \
+        mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_tree_inferred_segmented.txt {output.inferred_tree}; \
+        mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_inferred_cnvs_segmented.txt {output.inferred_cnvs}"
 
 rule run_sim:
     params:
