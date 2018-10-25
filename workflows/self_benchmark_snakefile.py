@@ -14,7 +14,7 @@ n_regions = n, 2n and 4n
 1000, 10,000 and 100,000 reads per cell
 '''
 
-n_nodes = 30 # values: [10,20,30]
+n_nodes = 10 # values: [10,20,30]
 n_regions = [n_nodes,2*n_nodes,4*n_nodes]
 n_bins = 10000
 n_reads = [10000, 30000, 100000] # add 300000
@@ -22,7 +22,7 @@ n_repetitions = 100
 n_cells = 500
 n_iters = int(1000000*n_nodes/10) # 1 million iters for each setting
 
-output_file_exts = ['d_mat.txt','ground_truth.txt','region_sizes.txt', 'tree.txt', 'inferred_cnvs.txt', 'tree_inferred.txt']
+output_file_exts = ['d_mat.txt','ground_truth.txt','region_sizes.txt', 'tree.txt', 'inferred_cnvs.txt', 'tree_inferred.txt', 'HMMcopy_inferred.txt']
 
 SIM_OUTPUT= "/cluster/work/bewi/members/tuncel/data/dna/recomb_simulations" # "simulations_output"
 
@@ -81,6 +81,24 @@ rule infer_trees_with_segmentation:
         --ploidy 2 --seed 42 --postfix {wildcards.rep_id} --d_matrix_file {input.d_mat}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_tree_inferred_segmented.txt {output.inferred_tree}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_inferred_cnvs_segmented.txt {output.inferred_cnvs}"
+
+rule hmm_copy_inference:
+    params:
+        script = config["hmm_copy"]["script"],
+        n_nodes = n_nodes,
+        n_regions = n_regions,
+        n_reads = n_reads,
+        scratch = config["hmm_copy"]["scratch"],
+        mem = config["hmm_copy"]["mem"],
+        time = config["hmm_copy"]["time"],
+        script_inp = str(n_nodes)+"nodes_"+str(n_regions)+"regions_"+str(n_reads)+"reads_{wildcards.rep_id}"
+    threads:
+        config["hmm_copy"]["threads"]
+    output:
+        # sample output: 10nodes_10regions_100000reads_sim1_HMMcopy_inferred.txt
+        inferred_cnvs = SIM_OUTPUT+ '_' + prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_HMMcopy_inferred.txt'
+    shell:
+        "{params.script} {params.script_inp}"
 
 rule run_sim:
     params:
