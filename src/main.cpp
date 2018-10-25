@@ -264,21 +264,28 @@ int main( int argc, char* argv[]) {
         sim_null.simulate_count_matrix(true, verbosity);
         sim_null.split_regions_to_bins();
         vector<double> sp_null = breakpoint_detection(sim_null.D);
+
         sp_null = dsp.crop(sp_null, window_size); // crop the window sizes
-        sp_null = dsp.make_zero_mean(sp_null); // make it zero mean
+        sp_null = dsp.subtract_median(sp_null); // subtract the median val.
         double threshold = MathOp::percentile_val(sp_null, 0.999);
 
 
         // create s_p from the input data
         vector<double> s_p = breakpoint_detection(d_bins);
-        vector<double> sp_cropped = dsp.crop(s_p, window_size);
-        vector<double> zero_sp_cropped = dsp.make_zero_mean(sp_cropped);
-        dsp.attenuate_values_below(zero_sp_cropped, threshold);
 
-        vector<double> sp_peaks = dsp.diff(zero_sp_cropped);
+        vector<double> sp_cropped = dsp.crop(s_p, window_size);
+        sp_cropped = dsp.subtract_median(sp_cropped);
+        dsp.attenuate_values_below(sp_cropped, threshold*10);
+
+        vector<double> sp_peaks = dsp.diff(sp_cropped);
         sp_peaks = dsp.sign(sp_peaks);
         sp_peaks = dsp.diff(sp_peaks);
         vector<bool> sp_breakpoints = dsp.filter_by_val(sp_peaks, -2.0);
+
+        std::ofstream output_file0("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp_null.txt");
+        for (const auto &e : sp_null) output_file0 << e << endl;
+        std::ofstream output_file1("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp.txt");
+        for (const auto &e : sp_cropped) output_file1 << e << endl;
 
         region_sizes = dsp.create_region_sizes(sp_breakpoints);
 
@@ -316,13 +323,21 @@ int main( int argc, char* argv[]) {
 
     vector<vector<int>> inferred_cnvs_bins = Utils::regions_to_bins_cnvs(inferred_cnvs, region_sizes);
 
+    string segmented_posfix = "";
+
+    if (to_segment)
+    {
+        segmented_posfix = "_segmented";
+    }
+
+
     // write the inferred(best) tree
-    std::ofstream tree_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_tree_inferred.txt");
+    std::ofstream tree_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_tree_inferred" + segmented_posfix + ".txt");
     tree_file << mcmc.best_tree;
 
 
     // write the inferred CNVs
-    std::ofstream inferred_cnvs_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_inferred_cnvs.txt");
+    std::ofstream inferred_cnvs_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_inferred_cnvs" + segmented_posfix + ".txt");
     for (auto const &v1: inferred_cnvs_bins) {
         for (auto const &v2: v1)
             inferred_cnvs_file << v2 << ' ';
