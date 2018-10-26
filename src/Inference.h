@@ -243,8 +243,11 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     // acceptance probability computations
     double acceptance_prob;
     double score_diff = t_prime.score - t.score;
-    acceptance_prob = exp(gamma*score_diff) * nbd(move_id);
+    double nbd_corr = nbd(move_id);
+    acceptance_prob = exp(gamma*score_diff) * nbd_corr;
 
+    assert(!isinf(nbd_corr));
+    assert(!isnan(acceptance_prob));
 
     if (verbosity > 0)
         cout<<"acceptance prob: "<<acceptance_prob<<endl;
