@@ -131,7 +131,7 @@ int main( int argc, char* argv[]) {
 
 
     int n_regions;
-    int n_regions_initial; // used for naming the output for I/O workflow purposes
+    int n_regions_initial = 0; // used for naming the output for I/O workflow purposes
 
     // random tree parameters
     int n_nodes = 50;
@@ -149,7 +149,7 @@ int main( int argc, char* argv[]) {
     options.add_options()
             ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
             ("d_matrix_file", "Path to the counts matrix file, delimiter: ' ', line separator: '\n' ", cxxopts::value(d_matrix_file))
-            ("n_regions", "Number of regions to be contained in the output file", cxxopts::value(n_bins))
+            ("n_regions", "Number of regions to be contained in the output file", cxxopts::value(n_regions))
             ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
