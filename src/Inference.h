@@ -246,8 +246,12 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     double nbd_corr = nbd(move_id);
     acceptance_prob = exp(gamma*score_diff) * nbd_corr;
 
-    assert(!isinf(nbd_corr));
+    //assert(!isinf(nbd_corr));
+    // if inf then reject
+    if (isinf(nbd_corr))
+        return &t;
     assert(!isnan(acceptance_prob));
+
 
     if (verbosity > 0)
         cout<<"acceptance prob: "<<acceptance_prob<<endl;
