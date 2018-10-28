@@ -115,15 +115,23 @@ vector<vector<double>> Utils::condense_matrix(vector<vector<double>>& D, vector<
     int n_bins = D[0].size();
     int n_regions = region_sizes.size();
 
+    int sum_region_sizes = accumulate( region_sizes.begin(), region_sizes.end(), 0);
+
     vector<vector<double>> condensed_mat(n_rows, vector<double>(n_regions));
 
     for (int i = 0; i < n_rows; ++i)
     {
         int region_id = 0;
         int region_count = 0;
-        for (int j = 0; j < n_bins; ++j) {
+        for (int j = 0; j < sum_region_sizes; ++j) {
 
-            condensed_mat[i][region_id] += D[i][j];
+            if(region_id < n_regions)
+                cout << "yes.";
+            else
+                cout << "no";
+
+            double to_add = D[i][j];
+            condensed_mat[i][region_id] += to_add;
 
             region_count++;
             if(region_count == region_sizes[region_id])

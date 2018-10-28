@@ -123,7 +123,7 @@ int main( int argc, char* argv[]) {
     int ploidy = 2;
     int verbosity = 0;
     int seed = 0;
-    int window_size = 5;
+    int window_size = 10;
     string f_name_postfix = "";
     string region_sizes_file = "";
     string d_matrix_file = "";
@@ -327,6 +327,9 @@ int main( int argc, char* argv[]) {
         }
 
         region_sizes = dsp.create_region_sizes(sp_breakpoints);
+        int sum_region_sizes = accumulate( region_sizes.begin(), region_sizes.end(), 0);
+        assert(sum_region_sizes == n_bins);
+
 
     }
     else

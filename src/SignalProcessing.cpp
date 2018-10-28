@@ -66,6 +66,7 @@ vector<int> SignalProcessing::create_region_sizes(vector<bool> peaks) {
             size++;
         else
         {
+            size++;
             region_sizes.push_back(size);
             size = 0;
         }
