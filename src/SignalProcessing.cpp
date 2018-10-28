@@ -134,6 +134,68 @@ vector<double> SignalProcessing::subtract_median(vector<double> &signal) {
     return res;
 }
 
+void SignalProcessing::median_normalise(vector<double> &signal) {
+    /*
+     * Divides each element in the vector by its median value.
+     * */
+
+    double med = MathOp::median(signal);
+
+    for (int i = 0; i < signal.size(); ++i) {
+        signal[i] /= med;
+    }
+}
+
+int SignalProcessing::find_highest_peak(vector<double> &signal, int lb, int ub, double threshold) {
+    /*
+     * Returns the index of the highest peak above the threshold in a signal between the lb (lower bound) ub (upper bound) intervals.
+     * */
+
+    assert(lb < ub);
+    assert(ub < signal.size());
+
+    // get the subvector
+    vector<double>::const_iterator first = signal.begin() + lb;
+    vector<double>::const_iterator last = signal.begin() + ub+1; // add +1 here
+    vector<double> sub(first, last);
+
+    this->median_normalise(sub);
+
+    vector<double> peaks = this->diff(sub);
+    peaks = this->sign(peaks);
+    peaks = this->diff(peaks); // real peaks are peaks -1 because of double differentiation.
+    // after 1st diff. peak is the last positive. after 2nd diff. peak is zero but peak+1 is -2
+
+    vector<bool> breakpoints = this->filter_by_val(peaks, -2.0);
+    // add paddings
+//    breakpoints.insert(breakpoints.begin(), false);
+//    breakpoints.push_back(false);
+
+    vector<int> bp_indices;
+
+    for (int i = 0; i < breakpoints.size(); ++i) {
+        if (breakpoints[i])
+            bp_indices.push_back(i-1); // push i-1 because that's the real peak
+    }
+
+    double max_val = numeric_limits<double>::lowest();
+    int max_idx = -1;
+
+    for (int j = 0; j < bp_indices.size(); ++j) {
+        if (sub[bp_indices[j]] > max_val)
+        {
+            max_val = sub[bp_indices[j]];
+            max_idx = bp_indices[j];
+        }
+    }
+
+    if (max_val > threshold)
+        return max_idx + lb;
+    else
+        return -1;
+
+}
+
 template vector<double> SignalProcessing::crop<double>(vector<double>& signal, int offset);
 template vector<long double> SignalProcessing::crop<long double>(vector<long double>& signal, int offset);
 

@@ -27,6 +27,23 @@ const double epsilon_sens = 1e-06;
 u_int ploidy = 2;
 
 
+void test_mathop()
+{
+    /*
+     * Tests for mathop functions
+     * */
+    vector<double> vals1 = {12.5, 5.2, 10, 3.8, 15.5};
+    vector<double> vals2 = {12.5, 5.2, 10, 44.1, 3.8, 19.5};
+
+    double std = MathOp::st_deviation(vals1);
+    double med1 = MathOp::median(vals1);
+    double med2 = MathOp::median(vals2);
+
+    assert(abs(std - 4.3858) <= epsilon);
+    assert(abs(med1 - 10.0) <= epsilon);
+    assert(abs(med2 - 11.25) <= epsilon);
+
+}
 
 void test_xxhash()
 {

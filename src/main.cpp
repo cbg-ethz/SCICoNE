@@ -3,10 +3,11 @@
 #include <vector>
 #include <sstream>
 #include <map>
+#include <queue>
 #include <string>
 
 #include <iterator>
-
+#include <algorithm>
 
 #include "MathOp.h"
 #include "Tree.h"
@@ -255,7 +256,7 @@ int main( int argc, char* argv[]) {
         SignalProcessing dsp;
 
 
-        // create an sp_null signal and make it zero-mean
+        // create an sp_null signal
         int _n_regions = n_bins; // assume n_regions=n_bins for the null model
         assert(n_reads != -1); // n_reads is needed for the null model
         Simulation sim_null(_n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy,
@@ -263,29 +264,67 @@ int main( int argc, char* argv[]) {
         sim_null.sample_region_sizes(n_bins, 1);
         sim_null.simulate_count_matrix(true, verbosity);
         sim_null.split_regions_to_bins();
-        vector<double> sp_null = breakpoint_detection(sim_null.D);
+        vector<double> sp_null = breakpoint_detection(sim_null.D, window_size);
+
+//        std::ofstream output_file0("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp_null.txt");
+//        for (const auto &e : sp_null) output_file0 << e << endl;
 
         sp_null = dsp.crop(sp_null, window_size); // crop the window sizes
-        sp_null = dsp.subtract_median(sp_null); // subtract the median val.
-        double threshold = MathOp::percentile_val(sp_null, 0.999);
+
+
+
+        // find the threshold on null signal
+        dsp.median_normalise(sp_null);
+        double std = MathOp::st_deviation(sp_null);
+        double threshold = (1+9*std);
+
 
 
         // create s_p from the input data
-        vector<double> s_p = breakpoint_detection(d_bins);
+        vector<double> s_p = breakpoint_detection(d_bins, window_size);
+
+//        std::ofstream output_file1("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp.txt");
+//        for (const auto &e : s_p) output_file1 << e << endl;
 
         vector<double> sp_cropped = dsp.crop(s_p, window_size);
-        sp_cropped = dsp.subtract_median(sp_cropped);
-        dsp.attenuate_values_below(sp_cropped, threshold*10);
 
-        vector<double> sp_peaks = dsp.diff(sp_cropped);
-        sp_peaks = dsp.sign(sp_peaks);
-        sp_peaks = dsp.diff(sp_peaks);
-        vector<bool> sp_breakpoints = dsp.filter_by_val(sp_peaks, -2.0);
+        int lb = 0;
+        int ub = sp_cropped.size()-1;
 
-        std::ofstream output_file0("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp_null.txt");
-        for (const auto &e : sp_null) output_file0 << e << endl;
-        std::ofstream output_file1("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp.txt");
-        for (const auto &e : sp_cropped) output_file1 << e << endl;
+        vector<int> all_max_ids;
+        deque<pair<int,int>> wait_list;
+        wait_list.push_back({lb,ub}); // initial boundries
+
+        while(!wait_list.empty())
+        {
+            pair<int,int> elem = wait_list.back();
+            wait_list.pop_back();
+
+            if (elem.second - elem.first > 2*window_size)
+            {
+                int max_idx = dsp.find_highest_peak(sp_cropped, elem.first, elem.second, threshold);
+                if (max_idx != -1)
+                {
+                    all_max_ids.push_back(max_idx);
+                    wait_list.push_back({elem.first,max_idx});
+                    wait_list.push_back({max_idx,elem.second});
+                }
+            }
+        }
+
+        std::sort(all_max_ids.begin(), all_max_ids.end());
+
+        vector<bool> sp_breakpoints(sp_cropped.size());
+
+        for (int i = 0; i < all_max_ids.size(); ++i) {
+            sp_breakpoints[all_max_ids[i]] = true;
+        }
+
+        // add back the cropped window sizes
+        for (int j = 0; j < window_size; ++j) {
+            sp_breakpoints.push_back(false);
+            sp_breakpoints.insert(sp_breakpoints.begin(), false);
+        }
 
         region_sizes = dsp.create_region_sizes(sp_breakpoints);
 

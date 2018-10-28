@@ -486,7 +486,46 @@ double MathOp::compute_omega_condense_split(Node *node, double lambda_s, int n_r
     return omega_val;
 }
 
+template<class T>
+double MathOp::median(vector<T> v) {
 
+    /*
+     * Returns the median value of the vector
+     * */
+
+    // sort using the default operator<
+    std::sort(v.begin(), v.end());
+
+    int n = v.size();
+    if (n % 2 != 0) // odd
+        return (double)v[n/2];
+    return (double)(v[(n-1)/2] + v[n/2])/2.0; // even
+
+}
+
+template<class T>
+double MathOp::st_deviation(vector<T> &v) {
+
+    /*
+     * Returns the standard deviation of a vector of elements.
+     * */
+
+    double mean = MathOp::vec_avg(v);
+    double var = 0.0;
+
+    for (int i = 0; i < v.size(); ++i) {
+        var += pow(v[i] - mean, 2);
+    }
+    var /= v.size();
+
+    double stdev = sqrt(var);
+
+    return stdev;
+}
+
+
+template double MathOp::st_deviation(vector<double> &v);
+template double MathOp::median(vector<double> v);
 template double MathOp::vec_avg(vector<double> &v);
 template double MathOp::percentile_val<double>(vector<double>, double percentile_val);
 template long double MathOp::percentile_val<long double>(vector<long double>, double percentile_val);

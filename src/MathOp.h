@@ -56,6 +56,14 @@ public:
     template <class T>
     static T percentile_val(vector<T>, double percentile_val);
 
+    template <class T>
+    static double median(vector<T> v);
+
+    template <class T>
+    static double st_deviation(vector<T>& v);
+
+
+
     static double compute_omega_insert_delete(Node *node, double lambda_r, double lambda_c, double K);
     static double compute_omega_condense_split(Node *node, double lambda_s, int n_regions, bool weighted);
 
