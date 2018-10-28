@@ -124,15 +124,8 @@ vector<vector<double>> Utils::condense_matrix(vector<vector<double>>& D, vector<
         int region_id = 0;
         int region_count = 0;
         for (int j = 0; j < sum_region_sizes; ++j) {
-
-            if(region_id < n_regions)
-                cout << "yes.";
-            else
-                cout << "no";
-
             double to_add = D[i][j];
             condensed_mat[i][region_id] += to_add;
-
             region_count++;
             if(region_count == region_sizes[region_id])
             {
