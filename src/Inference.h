@@ -557,7 +557,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
         for (auto const &it : c_change)
             v += it.second;
 
-        vfact_hash[v] = log(tgamma(abs(v)+1)); // log of factorial
+        vfact_hash[v] = lgamma(abs(v)+1); // log of factorial
     }
 
     vector<double> p_v;
@@ -583,7 +583,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     assert(n==p_v.size());
     double PV = 0.0;
     PV += std::accumulate(p_v.begin(), p_v.end(), 0.0);
-    PV -= log(tgamma(n+1));
+    PV -= lgamma(n+1);
 
 
     log_posterior += PV;

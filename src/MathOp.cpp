@@ -333,25 +333,26 @@ double MathOp::compute_omega_insert_delete(Node *node, double lambda_r, double l
     for (auto const& x : node->c_change)
         c.push_back(abs(x.second));
 
-    double omega_val = 1.0;
-    omega_val *= pow(lambda_r, r_i - 1) * exp(-1 * lambda_r);
+    // rewrite in log space
+    double omega_val = 0.0;
+    omega_val += log(lambda_r) * (r_i - 1) + (-1 * lambda_r);
     double sum_cj_minus = 0.0;
 
     for (auto const &elem : c)
         sum_cj_minus += elem - 1;
-    omega_val *= pow(lambda_c, sum_cj_minus);
-    omega_val *= exp(-1 * r_i * lambda_c);
+    omega_val += log(lambda_c)* sum_cj_minus;
+    omega_val += (-1 * r_i * lambda_c);
 
-    omega_val /= pow(2, r_i);
-    omega_val /= MathOp::n_choose_k(K, r_i);
-    omega_val /= tgamma(r_i);
+    omega_val -= log(2) * r_i;
+    omega_val -= MathOp::log_n_choose_k(K, r_i);
+    omega_val -= lgamma(r_i);
 
-    double mul_cj_tgamma = 1.0;
+    double mul_cj_lgamma = 0.0;
     for (auto const &elem : c)
-        mul_cj_tgamma *= tgamma(elem);
+        mul_cj_lgamma += lgamma(elem);
 
-    omega_val /= mul_cj_tgamma;
-    return omega_val;
+    omega_val -= mul_cj_lgamma;
+    return exp(omega_val);
 }
 
 double MathOp::frobenius_avg(vector<vector<int>> &mat, vector<vector<int>> &ground_truth) {

@@ -25,11 +25,11 @@ int main()
     SingletonRandomGenerator::get_generator(42);
     test_mathop();
     test_xxhash();
-    test_swap_label();
-    test_weighted_sample();
-    test_prune_reattach();
-    test_weighted_prune_reattach();
-    test_add_remove_event();
+//    test_swap_label();
+//    test_weighted_sample();
+//    test_prune_reattach();
+//    test_weighted_prune_reattach();
+//    test_add_remove_event();
     test_insert_delete_weights();
     test_condense_split_weights();
     test_reproducibility_five_moves();
