@@ -43,7 +43,7 @@ public:
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);
-    double log_posterior(double tree_sum, int m, Tree &tree);
+    double log_posterior(double tree_sum, int m, Tree &tree, int norm_constant = 10);
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
                                   bool weighted, bool validation_test_mode);
     bool apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<double>> &D,
@@ -527,7 +527,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     }
 }
 
-double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
+double Inference::log_posterior(double tree_sum, int m, Tree &tree, int norm_constant) {
     // TODO: move to the mathop
     // m: n_cells, n: n_nodes
 
@@ -570,12 +570,39 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
         Node* node = *it;
         map<u_int,int>& c_change = node->c_change;
         int v = 0;
+        int v_prev = 0; // the first region is zero
+        int i_prev = -1; // the initial index is -1, it'll be updated later
+
+        auto last_elem_id = c_change.rbegin()->first;
+
         for (auto const &it : c_change)
-            v += abs(it.second);
+        {
+            int diff;
+            if (it.first - 1 == i_prev) // if the region is adjacent to its previous
+            {}
+            else
+            {
+                v_prev = 0;
+            }
+            diff = it.second - v_prev;
+            if (diff <= 0)
+            {}
+            else // diff > 0
+                v += diff;
+            v_prev = it.second;
+            i_prev = it.first;
+
+            if (it.first == last_elem_id)
+            {
+                int diff_last = 0 - v_prev;
+                v += diff_last;
+            }
+        }
+
         double pv_i = 0.0;
 
         // pv_i += vfact_hash[v];
-        pv_i -= v*log(2*K); // the event prior
+        pv_i -= v*log(2*K/norm_constant); // the event prior
 
 //        for (auto const &it : c_change)
 //            pv_i -= log(tgamma(abs(it.second) + 1)); // +1 because we are using gamma func for factorial
