@@ -575,6 +575,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree, int norm_con
 
         auto last_elem_id = c_change.rbegin()->first;
 
+
         for (auto const &it : c_change)
         {
             int diff;
@@ -582,6 +583,11 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree, int norm_con
             {}
             else
             {
+                int diff_right = 0 - v_prev; // the right hand side change at the end of the last consecutive region
+                if (diff_right <= 0)
+                {}
+                else // diff_right > 0
+                    v += diff_right;
                 v_prev = 0;
             }
             diff = it.second - v_prev;
@@ -595,7 +601,11 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree, int norm_con
             if (it.first == last_elem_id)
             {
                 int diff_last = 0 - v_prev;
-                v += diff_last;
+
+                if (diff_last <= 0)
+                {}
+                else
+                    v += diff_last;
             }
         }
 
