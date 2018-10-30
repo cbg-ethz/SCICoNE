@@ -321,6 +321,8 @@ void test_prune_reattach()
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
 
+    assert(abs(mcmc.t.score + 2612.699) <= epsilon);
+
     mcmc.apply_prune_reattach(D, r, false, false, true);
 
     assert(abs(mcmc.t_prime_sums[0] + 551.804)  <= epsilon);
@@ -329,11 +331,10 @@ void test_prune_reattach()
     assert(abs(mcmc.t_prime_sums[3] + 547.348)  <= epsilon);
     assert(abs(mcmc.t_prime_sums[4] + 406.636)  <= epsilon);
 
-    assert(abs(mcmc.t_prime.score + 2615.918) <= epsilon);
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
     double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, mcmc.t_prime);
     mcmc.t_prime.score = log_post_t_prime;
-    assert(abs(mcmc.t_prime.score + 2618.528) <= epsilon);
+    assert(abs(mcmc.t_prime.score + 2615.309) <= epsilon);
 
 
     cout<<"Prune and reattach validation test passed!"<<endl;
