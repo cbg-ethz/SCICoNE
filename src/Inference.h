@@ -43,7 +43,7 @@ public:
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);
-    double log_posterior(double tree_sum, int m, Tree &tree, int norm_constant = 10);
+    double log_posterior(double tree_sum, int m, Tree &tree);
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
                                   bool weighted, bool validation_test_mode);
     bool apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<double>> &D,
@@ -527,7 +527,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     }
 }
 
-double Inference::log_posterior(double tree_sum, int m, Tree &tree, int norm_constant) {
+double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     // TODO: move to the mathop
     // m: n_cells, n: n_nodes
 
@@ -605,14 +605,18 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree, int norm_con
                 if (diff_last <= 0)
                 {}
                 else
+                {
                     v += diff_last;
+                    assert(v>0);
+                }
+
             }
         }
 
         double pv_i = 0.0;
 
         // pv_i += vfact_hash[v];
-        pv_i -= v*log(2*K/norm_constant); // the event prior
+        pv_i -= v*log(2*K); // the event prior
 
 //        for (auto const &it : c_change)
 //            pv_i -= log(tgamma(abs(it.second) + 1)); // +1 because we are using gamma func for factorial

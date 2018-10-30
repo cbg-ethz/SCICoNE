@@ -12,7 +12,7 @@ double MathOp::vec_avg(vector<T> &v) {
     return average;
 }
 
-double MathOp::breakpoint_log_likelihood(std::vector<double> v, double nu)
+double MathOp::breakpoint_log_likelihood(std::vector<double> v, double lambda, double nu)
 {
     /*
      * Returns the max likelihood value for the Negative binomial distribution with mean: lambda and overdispersion: nu
@@ -20,7 +20,7 @@ double MathOp::breakpoint_log_likelihood(std::vector<double> v, double nu)
      *
      */
     // max likelihood:  std::log(lambda) * sum(v) - (v.size() * lambda)
-    double lambda = vec_avg(v);
+
     double term1,term2;
     // to avoid log(0) * 0
     if (vec_sum(v) == 0 && lambda==0)
@@ -72,23 +72,48 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>>& mat, dou
             vector<double> lbins = vector<double>(mat[j].begin() + start, mat[j].begin() + i);
             vector<double> rbins = vector<double>(mat[j].begin() + i, mat[j].begin() + end);
             vector<double> all_bins = vector<double>(mat[j].begin() + start, mat[j].begin() + end);
-            /*cout << lbins.size() <<' ' << rbins.size() << ' ' << all_bins.size() << ' ' << i;
-            cout << endl;
-            cout << avg(lbins) << ' ' << avg(rbins) << ' ' << vec_avg(all_bins) <<endl;
-            */
+
+            double lambda_r = median(rbins); // max likelihood value is the avg. (poisson property)
+            double lambda_l = median(lbins);
+            double lambda_all = vec_avg(all_bins);
+
+//            double scale_const;
+
+//            if (lambda_r == lambda_l)
+//            {
+//                scale_const = 1.0;
+//            }
+//            else
+//            {
+//                double lambda_diff = (lambda_r - lambda_l) / lambda_all;
+//                lambda_diff = abs(lambda_diff);
+//                scale_const = 0.2 / lambda_diff;
+//            }
+//
+//
+//            if (scale_const > 1.0)
+//            {
+//                lambda_r = scale_const * (lambda_r - lambda_all) + lambda_all;
+//                lambda_l = scale_const * (lambda_l - lambda_all) + lambda_all;
+//
+//                // sanity check
+//                double new_diff = abs((lambda_r - lambda_l) / lambda_all);
+//
+//            }
+
             // k is the degrees of freedom of the segment model
             u_int k_segment = 1;
-            double ll_segment = breakpoint_log_likelihood(all_bins);
+            double ll_segment = breakpoint_log_likelihood(all_bins, lambda_all, 1.0);
             double aic_segment = 2 * k_segment - 2 * ll_segment;
 
             // degrees of freedom is 2, lambda_r and lambda_l
             u_int k_break = 2;
-            double ll_break = breakpoint_log_likelihood(lbins) + breakpoint_log_likelihood(rbins);
+            double ll_break = breakpoint_log_likelihood(lbins, lambda_l, 1.0) +
+                              breakpoint_log_likelihood(rbins, lambda_r, 1.0);
             double aic_break = 2 * k_break - 2 * ll_break;
 
-            //cout << ll_break << ' ' << ll_segment << ' ' << aic_break << ' ' << aic_segment << endl;
             double aic_p = aic_segment - aic_break;
-            //cout << aic_p << endl;
+            aic_p = max(aic_p, -2.0);
 
             aic_vec[i][j] = aic_p;
         }

@@ -123,7 +123,7 @@ int main( int argc, char* argv[]) {
     int ploidy = 2;
     int verbosity = 0;
     int seed = 0;
-    int window_size = 5;
+    int window_size = 20;
     string f_name_postfix = "";
     string region_sizes_file = "";
     string d_matrix_file = "";
