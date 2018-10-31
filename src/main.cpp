@@ -264,6 +264,7 @@ int main( int argc, char* argv[]) {
 
         // create an sp_null signal
         int _n_regions = n_bins; // assume n_regions=n_bins for the null model
+        // TODO: compute n_reads by summing the matrix up
         assert(n_reads != -1); // n_reads is needed for the null model
         Simulation sim_null(_n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy,
                             verbosity);
@@ -271,26 +272,18 @@ int main( int argc, char* argv[]) {
         sim_null.simulate_count_matrix(true, verbosity);
         sim_null.split_regions_to_bins();
         vector<double> sp_null = breakpoint_detection(sim_null.D, window_size);
-
 //        std::ofstream output_file0("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp_null.txt");
 //        for (const auto &e : sp_null) output_file0 << e << endl;
-
         sp_null = dsp.crop(sp_null, window_size); // crop the window sizes
-
-
-
         // find the threshold on null signal
         dsp.median_normalise(sp_null);
         double std = MathOp::st_deviation(sp_null);
-        double threshold = (1+9*std);
-
-
-
+        double threshold = (1+3*std);
         // create s_p from the input data
         vector<double> s_p = breakpoint_detection(d_bins, window_size);
-
-//        std::ofstream output_file1("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp.txt");
+//        std::ofstream output_file1("./"+ to_string(window_size) + "ws" + to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp.txt");
 //        for (const auto &e : s_p) output_file1 << e << endl;
+//        cout <<"sp created"<<endl;
 
         vector<double> sp_cropped = dsp.crop(s_p, window_size);
 
@@ -306,7 +299,7 @@ int main( int argc, char* argv[]) {
             pair<int,int> elem = wait_list.back();
             wait_list.pop_back();
 
-            if (elem.second - elem.first > 2*window_size)
+            if (elem.second - elem.first > window_size)
             {
                 int max_idx = dsp.find_highest_peak(sp_cropped, elem.first, elem.second, threshold);
                 if (max_idx != -1)
@@ -319,7 +312,6 @@ int main( int argc, char* argv[]) {
         }
 
         std::sort(all_max_ids.begin(), all_max_ids.end());
-
 
 
         // filter the peaks within the window range
@@ -355,9 +347,9 @@ int main( int argc, char* argv[]) {
             sp_breakpoints[idx] = true;
         }
 
-//        for (int i = 0; i < all_max_ids.size(); ++i) {
-//            sp_breakpoints[all_max_ids[i]] = true;
-//        }
+        for (int i = 0; i < all_max_ids.size(); ++i) {
+            sp_breakpoints[all_max_ids[i]] = true;
+        }
 
         // add back the cropped window sizes
         for (int j = 0; j < window_size; ++j) {
