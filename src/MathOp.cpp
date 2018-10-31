@@ -77,18 +77,23 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>>& mat, dou
             double lambda_l = median(lbins);
             double lambda_all = vec_avg(all_bins);
 
-//            double scale_const;
+            if (lambda_r == 0)
+                lambda_r = 0.0001;
+            if (lambda_l == 0)
+                lambda_l = 0.0001;
 
-//            if (lambda_r == lambda_l)
-//            {
-//                scale_const = 1.0;
-//            }
-//            else
-//            {
-//                double lambda_diff = (lambda_r - lambda_l) / lambda_all;
-//                lambda_diff = abs(lambda_diff);
-//                scale_const = 0.2 / lambda_diff;
-//            }
+            double scale_const;
+
+            if (lambda_r == lambda_l)
+            {
+                scale_const = 1.0;
+            }
+            else
+            {
+                double lambda_diff = (lambda_r - lambda_l) / lambda_all;
+                lambda_diff = abs(lambda_diff);
+                scale_const = 0.2 / lambda_diff;
+            }
 //
 //
 //            if (scale_const > 1.0)
@@ -100,20 +105,26 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>>& mat, dou
 //                double new_diff = abs((lambda_r - lambda_l) / lambda_all);
 //
 //            }
+            double aic_p;
+            if (scale_const <= 1.0)
+            {
+                // k is the degrees of freedom of the segment model
+                u_int k_segment = 1;
+                double ll_segment = breakpoint_log_likelihood(all_bins, lambda_all, 1.0);
+                double aic_segment = 2 * k_segment - 2 * ll_segment;
 
-            // k is the degrees of freedom of the segment model
-            u_int k_segment = 1;
-            double ll_segment = breakpoint_log_likelihood(all_bins, lambda_all, 1.0);
-            double aic_segment = 2 * k_segment - 2 * ll_segment;
+                // degrees of freedom is 2, lambda_r and lambda_l
+                u_int k_break = 2;
+                double ll_break = breakpoint_log_likelihood(lbins, lambda_l, 1.0) +
+                                  breakpoint_log_likelihood(rbins, lambda_r, 1.0);
+                double aic_break = 2 * k_break - 2 * ll_break;
 
-            // degrees of freedom is 2, lambda_r and lambda_l
-            u_int k_break = 2;
-            double ll_break = breakpoint_log_likelihood(lbins, lambda_l, 1.0) +
-                              breakpoint_log_likelihood(rbins, lambda_r, 1.0);
-            double aic_break = 2 * k_break - 2 * ll_break;
-
-            double aic_p = aic_segment - aic_break;
-            aic_p = max(aic_p, -2.0);
+                aic_p = aic_segment - aic_break;
+            }
+            else
+            {
+                aic_p = -2.0;
+            }
 
             aic_vec[i][j] = aic_p;
         }

@@ -609,7 +609,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
                     v += diff_last;
                     assert(v>0);
                 }
-
+                    
             }
         }
 
