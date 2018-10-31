@@ -1,6 +1,6 @@
 import datetime
 
-configfile: "self_benchmark_config.json"
+# configfile: "self_benchmark_config.json"
 
 
 '''
@@ -14,7 +14,7 @@ n_regions = n, 2n and 4n
 1000, 10,000 and 100,000 reads per cell
 '''
 
-n_nodes = 10 # values: [10,20,30]
+n_nodes = config["cnv_trees"]["n_nodes"] # values: [10,20,30]
 n_regions = [n_nodes,2*n_nodes,4*n_nodes]
 n_bins = 10000
 n_reads = [10000, 30000, 100000] # add 300000
@@ -78,10 +78,9 @@ rule infer_trees_with_segmentation:
         inferred_tree = SIM_OUTPUT+ '_' + prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_tree_inferred_segmented.txt'
     shell:
         "{params.binary} --n_regions {wildcards.regions}  --n_reads {wildcards.reads} --n_nodes {params.n_nodes} --n_bins {params.n_bins} --n_iters {params.n_iters} --n_cells {params.n_cells} --verbosity 0 \
-        --ploidy 2 --seed 42 --postfix {wildcards.rep_id} --d_matrix_file {input.d_mat}; \
+        --ploidy 2  --postfix {wildcards.rep_id} --d_matrix_file {input.d_mat}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_tree_inferred_segmented.txt {output.inferred_tree}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_inferred_cnvs_segmented.txt {output.inferred_cnvs}"
-
 rule hmm_copy_inference:
     params:
         script = config["hmm_copy"]["script"],
