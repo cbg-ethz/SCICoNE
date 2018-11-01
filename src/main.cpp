@@ -140,7 +140,7 @@ int main( int argc, char* argv[]) {
 
     int max_region_size = 10;
 
-    int n_reads = -1; // -1 means not specified
+    int n_reads = 0;
 
 
 
@@ -162,7 +162,6 @@ int main( int argc, char* argv[]) {
             ("n_nodes","the number of nodes in the random initialised tree", cxxopts::value(n_nodes))
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
-            ("n_reads","the number of reads per cell", cxxopts::value(n_reads))
             ("max_region_size","the maximum size that a region can have", cxxopts::value(max_region_size));
 
     auto result = options.parse(argc, argv);
@@ -190,10 +189,6 @@ int main( int argc, char* argv[]) {
     {
         cerr << "the number of bins is not provided."<<endl;
         return EXIT_FAILURE;
-    }
-    if (result.count("n_reads"))
-    {
-        n_reads = result["n_reads"].as<int>();
     }
     if (result.count("n_regions"))
     {
@@ -251,12 +246,21 @@ int main( int argc, char* argv[]) {
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
     Utils::read_counts(d_bins, d_matrix_file);
 
+
+
     // read the region_sizes file
     vector<int> region_sizes;
     vector<vector<double>> d_regions;
 
     if (to_segment)
     {
+        // compute n_reads
+        for (int k = 0; k < d_bins.size(); ++k) {
+            for (int i = 0; i < d_bins[0].size(); ++i) {
+                n_reads += d_bins[k][i];
+            }
+        }
+
 
         // perform segmentation and peak detection, then define the region sizes
         SignalProcessing dsp;
