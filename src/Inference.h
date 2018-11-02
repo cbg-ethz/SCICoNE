@@ -821,7 +821,7 @@ bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const
 
     Node* tobe_computed;
     try {
-        tobe_computed = t_prime.insert_delete_node(lambda_r, lambda_c, weighted, validation_test_mode);
+        tobe_computed = t_prime.insert_delete_node(lambda_r, lambda_c, weighted, validation_test_mode, size_limit);
     }catch (const std::out_of_range& e)
     {
         if (verbosity > 0)
