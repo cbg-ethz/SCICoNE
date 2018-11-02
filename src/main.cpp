@@ -129,6 +129,7 @@ int main( int argc, char* argv[]) {
     string d_matrix_file = "";
     bool to_segment = true; // if true then segmentation occurs
 
+    int size_limit = -1;
 
     int n_regions;
     int n_regions_initial = 0; // used for naming the output for I/O workflow purposes
@@ -158,6 +159,8 @@ int main( int argc, char* argv[]) {
             ("seed", "seed", cxxopts::value(seed))
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
             ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
+            ("size_limit", "the limitation on the max size of the tree", cxxopts::value(size_limit))
+
             // random tree parameters
             ("n_nodes","the number of nodes in the random initialised tree", cxxopts::value(n_nodes))
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
@@ -391,7 +394,7 @@ int main( int argc, char* argv[]) {
 
     mcmc.compute_t_table(d_regions,region_sizes);
 
-    mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters);
+    mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters, size_limit);
     vector<vector<int>> inferred_cnvs = mcmc.assign_cells_to_nodes(d_regions, region_sizes); // returns the inferred CNVs
 
     vector<vector<int>> inferred_cnvs_bins = Utils::regions_to_bins_cnvs(inferred_cnvs, region_sizes);

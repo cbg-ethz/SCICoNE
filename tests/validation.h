@@ -81,7 +81,7 @@ void test_reproducibility_five_moves()
 
     // move probabilities
     const vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f};
-    mcmc.infer_mcmc(D, r, move_probs, 500);
+    mcmc.infer_mcmc(D, r, move_probs, 500, 0);
 
     assert(abs(mcmc.best_tree.score + 2615.9176) <= epsilon);
     cout<<"Reproducibility test with 5 moves and 500 iterations is passed!"<<endl;

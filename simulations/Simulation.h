@@ -219,7 +219,7 @@ public:
         mcmc.compute_t_table(D,region_sizes);
         // move probabilities
         vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f};
-        mcmc.infer_mcmc(D,region_sizes, move_probs, n_iters);
+        mcmc.infer_mcmc(D, region_sizes, move_probs, n_iters);
         if (verbosity > 1)
             mcmc.write_best_tree();
 

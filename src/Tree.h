@@ -46,8 +46,8 @@ public:
     Node *prune_reattach(bool genotype_preserving, bool weighted, bool validation_test_mode);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
-    Node* insert_delete_node(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
-    Node* condense_split_node(double lambda_s, bool weighted = false, bool validation_test_mode = false);
+    Node* insert_delete_node(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false, int size_limit=-1);
+    Node* condense_split_node(double lambda_s, bool weighted = false, bool validation_test_mode = false, int size_limit=-1);
     Node* delete_node(u_int64_t idx_tobe_deleted);
     Node* delete_node(Node* node);
     Node* uniform_sample(bool with_root=true) const;
@@ -968,7 +968,7 @@ Node * Tree::delete_node(u_int64_t idx_tobe_deleted) {
     return delete_node(tobe_deleted);
 }
 
-Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode) {
+Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode, int size_limit) {
     /*
      * Adds or deletes nodes move, that takes the mcmc transition probabilities into account.
      * Returns the node to perform partial score computation on.
@@ -1001,6 +1001,10 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     if (rand_val < p_chi)
     {
         // add is chosen
+
+        if (all_nodes_vec.size() >= size_limit)
+            throw std::logic_error("Tree size limit is reached, insert node move will be rejected!");
+
         std::discrete_distribution<>* dd;
         dd = new std::discrete_distribution<>(chi.begin(),chi.end());
 
@@ -1072,7 +1076,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     return return_node;
 }
 
-Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_test_mode) {
+Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_test_mode, int size_limit) {
     /*
      * Condenses two nodes into one or splits a node into two.
      * */
@@ -1103,6 +1107,11 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
     if (rand_val < p_chi)
     {
         // split is chosen
+
+        if (all_nodes_vec.size() >= size_limit)
+            throw std::logic_error("Tree size limit is reached, split move will be rejected!");
+
+
         std::discrete_distribution<>* dd;
 
         dd = new std::discrete_distribution<>(chi.begin(),chi.end());
