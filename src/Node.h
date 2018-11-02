@@ -75,21 +75,38 @@ struct Node{
 };
 
 inline std::ostream& operator<<(std::ostream& os, Node& n) {
-    os << "node " << n.id << ": ";
-    for (auto i : n.c_change)
-        os << " " << i.first << ":" << i.second << ',';
+    //os << "node " << n.id << ": ";
 
     if (n.parent == nullptr)
-        os << "parent: NULL";
+        os << "p_id:NULL";
     else
-        os << "parent: " << n.parent->id;
+        os << "p_id:" << n.parent->id;
 
-    os << endl << "\t c values:";
-    for (auto i : n.c)
-        os << "\t  " << i.first << ":" << i.second << ',';
+    os << ',';
+    os << '[';
 
-    os << endl << "\t z value: " << n.z;
-    os << endl << "\t n_descendents: " << n.n_descendents;
+    if (! n.c_change.empty())
+    {
+        auto last_elem_id = n.c_change.rbegin()->first;
+        for (auto i : n.c_change)
+        {
+            os << i.first << ":" << i.second;
+            if (i.first != last_elem_id)
+                os << ',';
+        }
+    }
+    os << ']';
+
+
+
+
+
+//    os << endl << "\t c values:";
+//    for (auto i : n.c)
+//        os << "\t  " << i.first << ":" << i.second << ',';
+//
+//    os << endl << "\t z value: " << n.z;
+//    os << endl << "\t n_descendents: " << n.n_descendents;
 
 
     return os;
