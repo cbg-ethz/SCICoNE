@@ -75,7 +75,7 @@ struct Node{
 };
 
 inline std::ostream& operator<<(std::ostream& os, Node& n) {
-    //os << "node " << n.id << ": ";
+    os << "node " << n.id << ": ";
 
     if (n.parent == nullptr)
         os << "p_id:NULL";
