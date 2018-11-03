@@ -391,8 +391,9 @@ int main( int argc, char* argv[]) {
         return EXIT_FAILURE; // reject the move
     }
 
-
+    mcmc.compute_neutral_table(d_regions, region_sizes);
     mcmc.compute_t_table(d_regions,region_sizes);
+
 
     mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters, size_limit);
     vector<vector<int>> inferred_cnvs = mcmc.assign_cells_to_nodes(d_regions, region_sizes); // returns the inferred CNVs

@@ -27,6 +27,7 @@ public:
     Tree t;
     Tree t_prime;
     Tree best_tree;
+    Tree neutral;
     u_int n_regions;
     int ploidy;
     std::vector<std::map<int, double>> t_scores;
@@ -41,6 +42,7 @@ public:
     ~Inference();
     void destroy();
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
+    void compute_neutral_table(const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);
     double log_posterior(double tree_sum, int m, Tree &tree);
@@ -122,6 +124,8 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, double lambda_
     delete random_tree; // deallocate
     t.compute_weights();
 
+    neutral.compute_weights();
+
 
 }
 
@@ -144,7 +148,7 @@ void Inference::initialize_worked_example() {
 
 }
 
-Inference::Inference(u_int n_regions, int ploidy, int verbosity): t(ploidy, n_regions), t_prime(ploidy, n_regions), best_tree(ploidy, n_regions)  {
+Inference::Inference(u_int n_regions, int ploidy, int verbosity): t(ploidy, n_regions), neutral(ploidy,n_regions), t_prime(ploidy, n_regions), best_tree(ploidy, n_regions)  {
 
     this->n_regions = n_regions;
     this->ploidy = ploidy;
@@ -208,11 +212,34 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
 
     int m = D.size();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
-    t.score = log_posterior(t_sum, m, t);
+    t.score = log_posterior(t_sum, m, t) - neutral.score;
 
     // update t_prime
     // calls the copy constructor
     t_prime = t;
+
+}
+
+void Inference::compute_neutral_table(const vector<vector<double>> &D, const vector<int> &r) {
+
+    /*
+     *  Computes the neutral tree score
+     * */
+    int n = static_cast<int>(D.size());
+    std::vector<std::map<int, double>> neutral_scores;
+    std::vector<double> neutral_sums;
+    for (int i = 0; i < n; ++i)
+    {
+        this->neutral.compute_tree(D[i], r);
+        std::map<int, double> scores_vec = this->neutral.get_children_id_score(this->neutral.root);
+
+        neutral_scores.push_back(scores_vec);
+        neutral_sums.push_back(MathOp::log_sum(scores_vec));
+    }
+
+    int m = D.size();
+    double neutral_sum = accumulate( neutral_sums.begin(), neutral_sums.end(), 0.0);
+    neutral.score = log_posterior(neutral_sum, m, neutral);
 
 }
 
@@ -234,12 +261,12 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     log_post_t = log_posterior(t_sum, m, t);
 
     // assign the tree score
-    t.score = log_post_t;
+    t.score = log_post_t - neutral.score;
 
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
     log_post_t_prime = log_posterior(t_prime_sum, m, t_prime);
 
-    t_prime.score = log_post_t_prime;
+    t_prime.score = log_post_t_prime - neutral.score;
 
     // acceptance probability computations
     double acceptance_prob;
@@ -1014,6 +1041,8 @@ double Inference::nbd(unsigned move_id) {
 
     return nbd_corr;
 }
+
+
 
 
 #endif //SC_DNA_INFERENCE_H
