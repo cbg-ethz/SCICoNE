@@ -68,7 +68,7 @@ public:
     bool is_redundant() const;
     // Validation of subtrees
     bool is_valid_subtree(Node* node) const;// TODO: can be a method of node instead
-    bool subtree_contains_negative(Node* n) const;// TODO: can be a method of node instead
+    bool subtree_out_of_bound(Node *n) const;// TODO: can be a method of node instead
     bool zero_ploidy_changes(Node* n) const;// TODO: can be a method of node instead
 
     vector<double> omega_condense_split(double lambda_s, bool weighted);
@@ -850,7 +850,7 @@ bool Tree::is_valid_subtree(Node *node) const{
      * Returns true if the subtree is valid
      * */
 
-    if (subtree_contains_negative(node))
+    if (subtree_out_of_bound(node))
         return false;
 
     if (zero_ploidy_changes(node))
@@ -946,15 +946,16 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
 
 }
 
-bool Tree::subtree_contains_negative(Node* n) const{
+bool Tree::subtree_out_of_bound(Node *n) const{
 /*
  * Returns true if any of the descendent nodes contain a value less than -ploidy in the c hashmap
  * */
-    int a = -ploidy;
+    int lb = -ploidy;
+    int ub = 5; // TODO parametrize it later!
     vector<Node*> descendents = n->get_descendents(true);
     for (auto const &elem : descendents)
         for (auto const &it : elem->c)
-            if (it.second < a)
+            if (it.second < lb || it.second > 5)
                 return true;
     return false;
 
