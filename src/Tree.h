@@ -20,7 +20,9 @@
 #include <set>
 #include <iomanip>
 #include "Utils.h"
-
+#include <string>
+#include <sstream>
+#include <fstream>
 #include <algorithm> // std::remove
 #include "globals.cpp"
 
@@ -74,6 +76,8 @@ public:
 
     vector<double> omega_insert_delete(double lambda_r, double lambda_c, bool weighted);
     vector<double> chi_insert_delete(bool weighted);
+
+    void load_from_file(string file);
 
 
 
@@ -566,6 +570,73 @@ Tree &Tree::operator=(const Tree &other) {
 }
 
 
+void Tree::load_from_file(string file) {
+    /*
+     * Loads the tree from file
+     * TODO: first destroy the tree if it is not empty (or 1 node only)
+     * */
+
+    //string file = "10nodes_0regions_100reads_size_limit_test_tree_inferred_segmented.txt";
+    std::ifstream infile(file);
+    std::string line;
+
+    std::getline(infile, line);
+    std::getline(infile, line); // pass the first 2 lines
+    while (std::getline(infile, line))
+    {
+        std::istringstream iss(line);
+        string a, b, c ;
+        if (!(iss >> a >> b >> c)) { break; } // error
+        b.pop_back();
+        int node_id = stoi(b);
+        string del3 = ",[";
+        string delim_cp = "]";
+        string token = c.substr(0, c.find(del3));
+        string token_r = c.substr(c.find(del3)+1, c.length());
+        int parent_id = stoi(token.substr(5,token.size()));
+        string s = token_r.substr(1, token_r.find(delim_cp)-1);
+        cout <<" node id: " << node_id << " parent id: " << parent_id <<"s=" <<s<<  endl;
+        // process pair (a,b)
+        size_t pos = 0;
+        vector<string> pairs;
+        string delimiter= ",";
+        while ((s.find(delimiter)) != std::string::npos)
+        {
+            pos = s.find(delimiter);
+            pairs.push_back(s.substr(0, pos));
+            s.erase(0, pos+ delimiter.length());
+        }
+        pairs.push_back(s);
+
+        // create node
+        Node* child = new Node();
+        child->id = node_id;
+
+        // fill the c_change map
+        for (auto const& s : pairs)
+        {
+            u_int key = stoi(s.substr(0,s.find(':')));
+            int value = stoi(s.substr(s.find(':')+1, s.length()));
+            child->c_change[key] = value;
+        }
+
+
+        // find the node with a given id and insert there
+        //t.in
+        Node* parent = nullptr;
+        for (Node* ptr : all_nodes_vec)
+        {
+            if (ptr->id == parent_id)
+            {
+                parent = ptr;
+                break;
+            }
+        }
+        insert_child(parent, child);
+    }
+    compute_weights();
+
+}
 
 map<int, double> Tree::get_children_id_score(Node *node) {
 /*

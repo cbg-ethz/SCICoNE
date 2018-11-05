@@ -65,6 +65,7 @@ public:
     void update_t_scores();
     void random_initialize(u_int n_nodes, u_int n_regions, double lambda_r, double lambda_c, int max_iters=10000); // randomly initializes a tree and copies it into the other
     void initialize_worked_example(); // initializes the trees based on the test example
+    void initialize_from_file(string path);
     vector<vector<int>> assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r);
     double nbd(unsigned move_id);
 private:
@@ -1042,7 +1043,14 @@ double Inference::nbd(unsigned move_id) {
     return nbd_corr;
 }
 
+void Inference::initialize_from_file(string path) {
+    /*
+     * Initializes the tree t from the file
+     * */
+    t.load_from_file(path);
 
+
+}
 
 
 #endif //SC_DNA_INFERENCE_H
