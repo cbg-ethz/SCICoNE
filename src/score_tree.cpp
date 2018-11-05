@@ -90,7 +90,7 @@ int main( int argc, char* argv[]) {
     mcmc.compute_t_table(d_regions,region_sizes);
 
     // write the tree
-    std::ofstream tree_file("./" + to_string(n_regions) + "regions_" +f_name_postfix+"_tree_inferred" + ".txt");
+    std::ofstream tree_file("./" +f_name_postfix+"_tree_rescored" + ".txt");
     tree_file << mcmc.t;
 
 
