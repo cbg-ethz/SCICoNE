@@ -116,7 +116,8 @@ void Tree::compute_root_score(double &sum_d, const vector<int> &r) {
     for (auto const &x : r)
         z += x * this->ploidy;
 
-    root->log_score = sum_d * log(this->ploidy) - sum_d * log(z);
+    //root->log_score = sum_d * log(this->ploidy) - sum_d * log(z);
+    root->log_score = 0;
     root->z = z;
 }
 

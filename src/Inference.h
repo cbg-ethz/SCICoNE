@@ -213,7 +213,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
 
     int m = D.size();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
-    t.score = log_posterior(t_sum, m, t) - neutral.score;
+    t.score = log_posterior(t_sum, m, t);
 
     // update t_prime
     // calls the copy constructor
@@ -262,12 +262,12 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     log_post_t = log_posterior(t_sum, m, t);
 
     // assign the tree score
-    t.score = log_post_t - neutral.score;
+    t.score = log_post_t;
 
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
     log_post_t_prime = log_posterior(t_prime_sum, m, t_prime);
 
-    t_prime.score = log_post_t_prime - neutral.score;
+    t_prime.score = log_post_t_prime;
 
     // acceptance probability computations
     double acceptance_prob;
