@@ -32,6 +32,6 @@ int main()
     test_add_remove_event();
     test_insert_delete_weights();
     test_condense_split_weights();
-    test_reproducibility();
+//    test_reproducibility();
     return EXIT_SUCCESS;
 }
