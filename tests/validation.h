@@ -68,23 +68,35 @@ void test_xxhash()
 // TODO write a reprodubilicity test case with 7 moves
 // TODO implement the validation tests on the worked examples
 
-void test_reproducibility_five_moves()
+void test_reproducibility()
 {
+    /*
+     * Tests the reproducibility of the markov chain
+     * */
+
+    // set the globals
+    lambda_r = 0.1;
+    lambda_c = 0.2;
+
+    int ploidy = 2;
+    int verbosity = 0;
+
 
     // if seed is not set, set it to 42
     SingletonRandomGenerator::get_generator(42);
 
-    Inference mcmc(r.size());
+    Inference mcmc(r.size(), ploidy, verbosity);
 
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
 
     // move probabilities
-    const vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f};
-    mcmc.infer_mcmc(D, r, move_probs, 500, 0);
+    vector<float> move_probs = {1.0f,0.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f};
+    //-------------------------------w-pr------------------------------w-id--------w-cs-------
+    mcmc.infer_mcmc(D, r, move_probs, 5000);
 
-    assert(abs(mcmc.best_tree.score + 2615.9176) <= epsilon);
-    cout<<"Reproducibility test with 5 moves and 500 iterations is passed!"<<endl;
+    assert(abs(mcmc.best_tree.score - 32.784) <= epsilon);
+    cout<<"Reproducibility test is passed!"<<endl;
 
 }
 
@@ -203,8 +215,8 @@ void test_condense_split_weights()
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
     t_prime.score = mcmc.log_posterior(t_prime_sum, m, t_prime);
     // check the scores
-    assert(abs(t.score + 2612.6987) <= epsilon);
-    assert(abs(t_prime.score + 2623.16586) <= epsilon);
+    assert(abs(t.score - 21.26) <= epsilon);
+    assert(abs(t_prime.score - 10.792) <= epsilon);
 
     bool weighted = true;
     double lambda_s = 0.5;
