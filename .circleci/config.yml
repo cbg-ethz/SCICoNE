@@ -23,7 +23,7 @@ jobs:
           command: 'cd build && cmake ..'
       - run:
           name: Running MAKE
-          command: 'make ./build'
+          command: 'make build'
       - run:
-          name: Point Unit Testing
+          name: Unit Tests
           command: './build/tests'
