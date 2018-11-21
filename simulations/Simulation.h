@@ -27,7 +27,6 @@ public:
     int n_cells;
     int n_reads;
     int max_region_size;
-    double delta;
 
     vector<vector<double>> D;
     vector<int> region_sizes;
@@ -93,7 +92,6 @@ public:
                 }
             }
 
-
             // normalize the p_read_region cell per cell to get probabilities. e.g. prob of a read belonging to a region in a cell
             for (int k = 0; k < p_read_region_cell.size(); ++k) {
                 // find the sum value
@@ -128,8 +126,6 @@ public:
                 mcmc.t.score = log_post_t;
             }
 
-
-
             this->tree = mcmc.t;
 
     }
@@ -137,11 +133,11 @@ public:
 
     void split_regions_to_bins()
     {
+        /*
+         * Compute the total n_bins by grouping the regions
+         * */
 
-        // compute the total n_bins by summing up the region sizes
         double n_bins = accumulate( region_sizes.begin(), region_sizes.end(), 0.0);
-
-
 
         vector<vector<double>> D_bins(n_cells, vector<double>(n_bins));
         vector<vector<int>> ground_truth_bins(n_cells, vector<int>(n_bins));
@@ -203,7 +199,6 @@ public:
                     " (e.g. they can sum up to 0.999999999999997) as a result the last bin may have zero count";
 
     }
-
 
 };
 
