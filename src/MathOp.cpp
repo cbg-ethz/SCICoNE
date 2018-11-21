@@ -196,10 +196,10 @@ int MathOp::random_uniform(int min, int max) {
 }
 
 double MathOp::log_sum(const map<int, double> &map) {
-/*
- * Performs normal sum in the log space
- * Takes a map as input
- * */
+    /*
+     * Performs normal sum in the log space
+     * Takes a map as input
+     * */
 
     // init max with the smallest value possible
     double max = numeric_limits<double>::lowest();
@@ -218,10 +218,10 @@ double MathOp::log_sum(const map<int, double> &map) {
 }
 
 double MathOp::log_sum(const vector<double> &vec) {
-/*
- * Performs normal sum in the log space
- * Takes a vector as input
- * */
+    /*
+     * Performs normal sum in the log space
+     * Takes a vector as input
+     * */
 
     // init max with the smallest value possible
     double max = std::numeric_limits<double>::lowest();
@@ -241,9 +241,9 @@ double MathOp::log_sum(const vector<double> &vec) {
 
 
 double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtract, const vector<double> &to_add) {
-/*
- * computes the sum in the log space, replaces the old elements of the vector (subtracts) then adds the new ones
- * */
+    /*
+     * computes the sum in the log space, replaces the old elements of the vector (subtracts) then adds the new ones
+     * */
 
     double max = sum;
     for (auto i: to_subtract)
@@ -421,11 +421,11 @@ vector<long double> MathOp::dirichlet_sample(int len, double alpha) {
 
 template<class T>
 T MathOp::percentile_val(vector<T> vec, double percentile_val) {
-/*
- * Returns the value of the vector at the given percentile.
- * First sorts the vector.
- * The percentile value should be between 0 and 1.
- * */
+    /*
+     * Returns the value of the vector at the given percentile.
+     * First sorts the vector.
+     * The percentile value should be between 0 and 1.
+     * */
 
     assert(percentile_val <=1.0 && percentile_val >= 0.0);
 

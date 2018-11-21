@@ -13,7 +13,4 @@ extern double lambda_s;
 extern double lambda_r; // lambda param for the poisson that generates the number of regions
 extern double lambda_c; // lambda param for the poisson that generates the copy number state of a region
 
-
-
-
 #endif //SC_DNA_GLOBALS_H
