@@ -93,10 +93,10 @@ void test_reproducibility()
     // move probabilities
     vector<float> move_probs = {1.0f,0.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f};
     //-------------------------------w-pr------------------------------w-id--------w-cs-------
-    mcmc.infer_mcmc(D, r, move_probs, 5000);
+    mcmc.infer_mcmc(D, r, move_probs, 500);
 
     cout<<"Reproducibility score: " << mcmc.best_tree.score << endl;
-    assert(abs(mcmc.best_tree.score - 32.784) <= epsilon);
+    assert(abs(mcmc.best_tree.score - 31.1689) <= epsilon);
     cout<<"Reproducibility test is passed!"<<endl;
 
 }
