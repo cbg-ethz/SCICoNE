@@ -109,9 +109,6 @@ int main(int argc, char* argv[]) {
 
     sim.write_output(f_name_postfix);
 
-
-
-
     return EXIT_SUCCESS;
 
 }
