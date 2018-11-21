@@ -4,7 +4,7 @@
 
 #include "Utils.h"
 
-uint64_t Utils::calcul_hash(const void *buffer, size_t length) {
+uint64_t Utils::calculate_hash(const void *buffer, size_t length) {
 
     /*
      * Calculates the hash using xxhash.
