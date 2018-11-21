@@ -16,11 +16,14 @@ jobs:
           name: Install CMAKE
           command: 'apt-get update && sudo apt-get install -y cmake'
       - run:
-          name: Creating Build Files
-          command: 'cmake -H. -Bbuild'
+          name: Creating Build Folder
+          command: 'mkdir build && cd build'
       - run:
-          name: Creating Binary Files
-          command: 'cmake --build build'
+          name: Running CMAKE
+          command: 'cmake ..'
+      - run:
+          name: Running MAKE
+          command: 'make'
       - run:
           name: Point Unit Testing
           command: './bin/tests'
