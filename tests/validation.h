@@ -101,17 +101,17 @@ void test_swap_label()
 
     mcmc.apply_swap(D,r,false,true);
 
-    assert(abs(mcmc.t_prime_sums[0] + 552.120)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[1] + 413.462)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[2] + 670.394)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[3] + 547.325)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[4] + 406.635)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[0] - 2.397)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[1] - 2.426)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[2] - 22.753)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[3] - 7.192)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[4] - 9.253)  <= epsilon);
 
     // compute the log posterior
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
     double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, mcmc.t_prime);
     mcmc.t_prime.score = log_post_t_prime;
-    assert(abs(mcmc.t_prime.score + 2622.361) <= epsilon);
+    assert(abs(mcmc.t_prime.score - 11.597) <= epsilon);
 
     cout<<"Swap label validation test passed!"<<endl;
 
@@ -321,20 +321,20 @@ void test_prune_reattach()
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
 
-    assert(abs(mcmc.t.score + 2612.699) <= epsilon);
+    assert(abs(mcmc.t.score - 21.26) <= epsilon);
 
     mcmc.apply_prune_reattach(D, r, false, false, true);
 
-    assert(abs(mcmc.t_prime_sums[0] + 551.804)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[1] + 413.292)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[2] + 663.804)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[3] + 547.348)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[4] + 406.636)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[0] - 2.713)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[1] - 2.596)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[2] - 29.343)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[3] - 7.169)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[4] - 9.252)  <= epsilon);
 
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
     double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, mcmc.t_prime);
     mcmc.t_prime.score = log_post_t_prime;
-    assert(abs(mcmc.t_prime.score + 2615.309) <= epsilon);
+    assert(abs(mcmc.t_prime.score - 18.649) <= epsilon);
 
 
     cout<<"Prune and reattach validation test passed!"<<endl;
@@ -399,16 +399,16 @@ void test_add_remove_event()
 
     mcmc.apply_add_remove_events(0.0, 0.0, D, r, false, true);
 
-    assert(abs(mcmc.t_prime_sums[0] + 553.134)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[1] + 411.720)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[2] + 663.925)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[3] + 547.325)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[4] + 406.654)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[0] - 1.383)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[1] - 4.168)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[2] - 29.222)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[3] - 7.191)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[4] - 9.233)  <= epsilon);
 
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
     double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, mcmc.t_prime);
     mcmc.t_prime.score = log_post_t_prime;
-    assert(abs(mcmc.t_prime.score + 2617.488) <= epsilon);
+    assert(abs(mcmc.t_prime.score - 16.47) <= epsilon);
 
     cout<<"Add / remove event validation test passed!"<<endl;
 }
