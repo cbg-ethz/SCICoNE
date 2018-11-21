@@ -20,7 +20,7 @@ jobs:
           command: 'mkdir build && cd build'
       - run:
           name: Running CMAKE
-          command: 'cmake ..'
+          command: 'cmake ./build'
       - run:
           name: Running MAKE
           command: 'make'
