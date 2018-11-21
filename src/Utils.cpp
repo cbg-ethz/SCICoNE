@@ -72,7 +72,7 @@ void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions,
 
 }
 
-void Utils::read_counts(vector<vector<double>> &mat, const string path) {
+void Utils::read_counts(vector<vector<double>> &mat, const string &path) {
 
     /*
      * Parses the input data into a default filled double vector of vector.
@@ -140,7 +140,7 @@ vector<vector<double>> Utils::condense_matrix(vector<vector<double>>& D, vector<
     return condensed_mat;
 }
 
-void Utils::read_vector(vector<int> &vec, const string path) {
+void Utils::read_vector(vector<int> &vec, const string &path) {
 
     /*
      * Reads a 1 dimensional vector file at path path to reference vec.
