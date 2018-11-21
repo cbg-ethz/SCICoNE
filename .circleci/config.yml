@@ -20,10 +20,10 @@ jobs:
           command: 'mkdir build && cd build'
       - run:
           name: Running CMAKE
-          command: 'cmake ./build'
+          command: 'cd build && cmake ..'
       - run:
           name: Running MAKE
-          command: 'make'
+          command: 'make ./build'
       - run:
           name: Point Unit Testing
-          command: './bin/tests'
+          command: './build/tests'
