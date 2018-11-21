@@ -178,10 +178,8 @@ vector<vector<int>> Utils::regions_to_bins_cnvs(vector<vector<int>> &cnvs, vecto
             for (int k = 0; k < region_sizes[j]; ++k) {
                 bins_vec[i][k + region_offset] = cnvs[i][j];
             }
-
             region_offset += region_sizes[j];
         }
-
     }
 
     return bins_vec;

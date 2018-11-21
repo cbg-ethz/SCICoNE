@@ -29,12 +29,9 @@ public:
     static map<u_int, int> map_diff(map<u_int, int> a, map<u_int, int> b);
     static void random_initialize_labels_map(std::map<u_int, int> &distinct_regions, int n_regions, double lambda_r,
                                              double lambda_c);
-
     static void read_counts(vector<vector<double>> &mat, const string &path);
     static void read_vector(vector<int> &vec, const string &path);
-
     static vector<vector<double>> condense_matrix(vector<vector<double>>& D, vector<int>& region_sizes);
-
     static vector<vector<int>> regions_to_bins_cnvs(vector<vector<int>>& cnvs, vector<int>& region_sizes);
 
 };
