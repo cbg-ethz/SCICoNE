@@ -1,3 +1,4 @@
+[![CircleCI](https://circleci.com/gh/anilbey/sc-dna/tree/master.svg?style=svg)](https://circleci.com/gh/anilbey/sc-dna/tree/master)
 # CNV Trees
 
 ## Requirements
