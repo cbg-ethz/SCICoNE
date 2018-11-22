@@ -42,7 +42,7 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
      * Performs the breakpoint detection
      * */
 
-    int n_cells = mat.size();
+    size_t n_cells = mat.size();
 
 
 

@@ -40,7 +40,7 @@ double MathOp::vec_sum(vector<T> &v) {
     return accumulate( v.begin(), v.end(), 0.0);
 }
 
-vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>>& mat, double window_size) {
+vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int window_size) {
     /*
      *
      * Computes the difference of the AIC_break and AIC_segment cases to tell whether to break or not
@@ -371,8 +371,8 @@ double MathOp::frobenius_avg(vector<vector<int>> &mat, vector<vector<int>> &grou
 
     double delta = 0.0;
 
-    int n = mat.size();
-    int m = mat[0].size();
+    size_t n = mat.size();
+    size_t m = mat[0].size();
     for (int i = 0; i < n; ++i)
     {
         for (int j = 0; j < m; ++j)
@@ -386,7 +386,7 @@ double MathOp::frobenius_avg(vector<vector<int>> &mat, vector<vector<int>> &grou
     return delta;
 }
 
-vector<long double> MathOp::dirichlet_sample(int len, double alpha) {
+vector<long double> MathOp::dirichlet_sample(size_t len, double alpha) {
     /*
      * Samples a vector of length len that sum up to 1 using dirichlet with alpha parameter
      * */
@@ -446,7 +446,7 @@ double MathOp::compute_omega_condense_split(Node *node, double lambda_s, int n_r
     double omega_val = 1.0;
 
     vector<int> res_c_change = {};
-    for (int i = 0; i < n_regions; ++i) {
+    for (u_int i = 0; i < n_regions; ++i) {
         int c_val = 0; // value of the region in the child
         int p_val = 0; // value of the region in the parent
 
