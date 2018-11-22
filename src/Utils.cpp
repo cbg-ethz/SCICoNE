@@ -111,9 +111,8 @@ vector<vector<double>> Utils::condense_matrix(vector<vector<double>>& D, vector<
      * Biological example: The bins will be grouped by the regions
      * */
 
-    int n_rows = D.size();
-    int n_bins = D[0].size();
-    int n_regions = region_sizes.size();
+    size_t n_rows = D.size();
+    size_t n_regions = region_sizes.size();
 
     int sum_region_sizes = accumulate( region_sizes.begin(), region_sizes.end(), 0);
 
