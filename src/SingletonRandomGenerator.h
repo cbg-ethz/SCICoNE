@@ -27,7 +27,7 @@ public:
         return instance.generator;
     }
 private:
-    SingletonRandomGenerator(int seed) {
+    explicit SingletonRandomGenerator(int seed) {
 
         if (seed == -1)
         {
@@ -46,7 +46,6 @@ private:
 public:
     SingletonRandomGenerator(SingletonRandomGenerator const&) = delete;
     void operator=(SingletonRandomGenerator const&)  = delete;
-
 };
 
 
