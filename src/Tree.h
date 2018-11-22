@@ -703,15 +703,15 @@ void Tree::compute_weights() {
 
 Node *Tree::weighted_sample() const{
 
-    if (all_nodes_vec.size() == 0)
+    if (all_nodes_vec.empty())
         throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
     else if (all_nodes_vec.size() ==1)
         throw std::length_error("there is only 1 element which is the root and root cannot be sampled");
     else
     {
         // get the subvector
-        vector<Node*>::const_iterator first = all_nodes_vec.begin() + 1;
-        vector<Node*>::const_iterator last = all_nodes_vec.end();
+        auto first = all_nodes_vec.begin() + 1;
+        auto last = all_nodes_vec.end();
         vector<Node*> nodes_to_sample(first, last);
 
         vector<float> weights;
@@ -834,7 +834,7 @@ void Tree::update_desc_labels(Node *node) {
     stk.push(node);
 
     while (!stk.empty()) {
-        Node* top = (Node*) stk.top();
+        Node* top = static_cast<Node*>(stk.top());
         stk.pop();
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
@@ -894,7 +894,7 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
     // sample n_regions_to_sample distinct regions uniformly
     int n_regions = this->n_regions;
     int regions_sampled = 0;
-    std::set<int> distinct_regions;
+    std::set<u_int> distinct_regions;
 
     // otherwise we cannot sample distinct uniform regions
     if (n_regions_to_sample > n_regions)
@@ -903,7 +903,7 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
 
     while (regions_sampled < n_regions_to_sample)
     {
-        int uniform_val = MathOp::random_uniform(0, n_regions-1);
+        u_int uniform_val = static_cast<u_int> (MathOp::random_uniform(0, n_regions-1));
         if (validation_test_mode)
             uniform_val =3;
         if (distinct_regions.find(uniform_val) == distinct_regions.end())
@@ -1061,7 +1061,6 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
 
     int K = this->n_regions;
 
-
     double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
     double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
 
@@ -1074,7 +1073,6 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     if (rand_val < p_chi)
     {
         // add is chosen
-
         if (all_nodes_vec.size() >= size_limit)
             throw std::logic_error("Tree size limit is reached, insert node move will be rejected!");
 
@@ -1108,14 +1106,11 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
             bool rand = bernoulli_05(generator); // either true or false with 0.5 prob
             if (rand)
             {
-                // TODO: maybe encapsulate those 2 lines in a method called change_parent
                 Node* pruned_child = prune(elem); // prune from the old parent
                 insert_child(new_node, pruned_child); // insert into next parent
             }
         }
         return_node = new_node;
-
-
     }
 
     else // delete is chosen
@@ -1132,20 +1127,15 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
 
         delete dd;
         return_node = delete_node(idx_tobe_deleted); // returns the parent of the deleted node
-
     }
-
 
     //update the c vectors of the parent and its new descendents
     update_desc_labels(return_node);
     // check if the subtrees are valid after updating the labels
     if (!is_valid_subtree(return_node) || is_redundant())
         return nullptr;
-
     // recompute the weights after the tree structure is changed
     this->compute_weights();
-
-
     return return_node;
 }
 
@@ -1189,7 +1179,7 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
 
         dd = new std::discrete_distribution<>(chi.begin(),chi.end());
 
-        u_int pos_to_insert = (*dd)(generator); // this is the index of the descendents_of_root.
+        u_int pos_to_insert = static_cast<u_int>((*dd)(generator)); // this is the index of the descendents_of_root.
         delete dd;
 
         Node* parent = descendents_of_root[pos_to_insert]; // this node will be split
