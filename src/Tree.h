@@ -98,6 +98,10 @@ private:
 
 std::ostream& operator<<(std::ostream& os, Tree& t) {
 
+    /*
+     * Overloading the << operator
+     * */
+
     vector<Node*> nodes = t.root->get_descendents(true);
 
     os << "Tree score: " << setprecision(print_precision) << t.score << endl;
@@ -112,6 +116,10 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
 
 void Tree::compute_root_score(double &sum_d, const vector<int> &r) {
 
+    /*
+     * Computes the score of the root.
+     * */
+
     int z = 0;
     for (auto const &x : r)
         z += x * this->ploidy;
@@ -123,6 +131,9 @@ void Tree::compute_root_score(double &sum_d, const vector<int> &r) {
 
 void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta) {
 
+    /*
+     * Computes the score of a node.
+     * */
 
     if (node->parent == nullptr)
     {
@@ -165,8 +176,12 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
 
 void Tree::compute_tree(const vector<double> &D, const vector<int> &r) {
 
-    //reuse the computed sum in each node
+    /*
+     * Computes the tree.
+     * */
+
     double sum_d = std::accumulate(D.begin(), D.end(), 0.0);
+    //reuse the computed sum in each node
     compute_stack(root, D, sum_d, r);
 
 }
@@ -183,13 +198,13 @@ void Tree::compute_stack(Node *node, const vector<double> &D, double &sum_D, con
     stk.push(node);
 
     while (!stk.empty()) {
-        Node* top = (Node*) stk.top();
+        Node* top = static_cast<Node*> (stk.top());
         stk.pop();
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
         }
         compute_score(top, D, sum_D, r);
-        // TODO: use a function pointer to compute_score or traverse or update_desc_labels because rest of the code is the same.
+        // TODO: reuse this part of the code (the recursive iteration of nodes)
     }
 
 //    alternative recursive implementation
@@ -228,6 +243,11 @@ Tree::~Tree() {
 }
 
 Node* Tree::uniform_sample(bool with_root) const{
+
+    /*
+     * Returns a uniformly sampled node pointer.
+     *
+     * */
 
     int rand_val = 0;
     if (all_nodes_vec.size() == 0)
@@ -312,6 +332,9 @@ void Tree::insert_child(Node* pos, std::map<u_int, int>&& labels) {
 }
 
 void Tree::destroy() {
+    /*
+     * Destroys the tree
+     * */
     for (auto elem: all_nodes_vec)
     {
         //std::cout<<"deleting " << elem->log_score <<std::endl;
@@ -328,6 +351,10 @@ void Tree::destroy() {
 
 void Tree::random_insert(std::map<u_int, int>&& labels)
 {
+    /*
+     * Inserts a node to a uniform random position.
+     * */
+
     Node* pos = uniform_sample(true);
     insert_child(pos, std::move(labels));
 
@@ -367,7 +394,7 @@ void Tree::update_label(std::map<u_int, int>& c_parent, Node *node) {
         keys_values.push_back(it.first);
         keys_values.push_back(it.second);
     };
-    int size_for_hash = keys_values.size() * sizeof(keys_values[0]);
+    unsigned long size_for_hash = keys_values.size() * sizeof(keys_values[0]);
     uint64_t c_hash = Utils::calculate_hash(&keys_values[0], size_for_hash);
 
     node->c_hash = c_hash;
@@ -384,7 +411,7 @@ Tree::Tree(Tree &source) {
 
 void Tree::copy_tree(const Tree& source_tree) {
     /*
-     * TODO
+     * Copies the source tree
      * call it recursively (using stack)
     */
 
@@ -454,7 +481,7 @@ Node * Tree::prune_reattach(bool genotype_preserving, bool weighted, bool valida
     stk.push(prune_pos);
 
     while (!stk.empty()) {
-        Node *top = (Node *) stk.top();
+        Node* top = static_cast<Node*> (stk.top());
         stk.pop();
         for (Node *temp = top->first_child; temp != nullptr; temp = temp->next) {
             stk.push(temp);
@@ -651,7 +678,7 @@ map<int, double> Tree::get_children_id_score(Node *node) {
     stk.push(node);
 
     while (!stk.empty()) {
-        Node* top = (Node*) stk.top();
+        Node* top = static_cast<Node*> (stk.top());
         stk.pop();
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
@@ -666,6 +693,7 @@ map<int, double> Tree::get_children_id_score(Node *node) {
 void Tree::compute_weights() {
 
     /*
+     * Computes the weights of all of the nodes.
      * a bottom-up approach
      * time complexity: O(n), where n is the number of nodes
      * */
@@ -680,7 +708,7 @@ void Tree::compute_weights() {
     stk.push(root); //start with the root
 
     while (!stk.empty()) {
-        Node* top = (Node*) stk.top();
+        Node* top = static_cast<Node*> (stk.top());
         stk.pop();
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
@@ -690,7 +718,7 @@ void Tree::compute_weights() {
 
     while (!cmp_stack.empty())
     {
-        Node* top = (Node*) cmp_stack.top();
+        Node* top = static_cast<Node*> (cmp_stack.top());
         cmp_stack.pop();
         unsigned n_descendents = 1;
 
