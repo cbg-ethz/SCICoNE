@@ -23,21 +23,17 @@ double MathOp::breakpoint_log_likelihood(std::vector<double> v, double lambda, d
 
     double term1,term2;
     // to avoid log(0) * 0
-    if (vec_sum(v) == 0 && lambda==0)
+    double v_sum = accumulate( v.begin(), v.end(), 0.0);
+    if (v_sum == 0 && lambda==0)
         term1 = 0.0;
     else
-        term1 = (log(lambda) - log(lambda+nu)) * vec_sum(v);
+        term1 = (log(lambda) - log(lambda+nu)) * v_sum;
 
     term2 = (v.size() * nu * log(lambda+nu));
     double ll =  term1 - term2;
 
     assert(!std::isnan(ll));
     return ll;
-}
-
-template<class T>
-double MathOp::vec_sum(vector<T> &v) {
-    return accumulate( v.begin(), v.end(), 0.0);
 }
 
 vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int window_size) {

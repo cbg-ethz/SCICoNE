@@ -47,8 +47,6 @@ public:
     template <class T>
     static double vec_avg(vector<T> &v);
     template <class T>
-    static double vec_sum(vector<T> &);
-    template <class T>
     static T percentile_val(vector<T>, double percentile_val);
     template <class T>
     static double median(vector<T> v);
