@@ -411,7 +411,7 @@ vector<long double> MathOp::dirichlet_sample(int len, double alpha) {
 
 
     // make sure probs sum up to 1
-    long double sum = accumulate( x_vals.begin(), x_vals.end(), 0.0);
+    long double sum = accumulate( x_vals.begin(), x_vals.end(), 0.0l); // l defines long double
     if (sum != 1.0) // add the 0.0000001 to the first element.
     {
         x_vals[0] += 1.0-sum;
@@ -503,7 +503,7 @@ double MathOp::median(vector<T> v) {
     // sort using the default operator<
     std::sort(v.begin(), v.end());
 
-    int n = v.size();
+    size_t n = v.size();
     if (n % 2 != 0) // odd
         return (double)v[n/2];
     return (double)(v[(n-1)/2] + v[n/2])/2.0; // even
