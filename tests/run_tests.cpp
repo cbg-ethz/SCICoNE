@@ -31,7 +31,8 @@ int main()
     test_weighted_prune_reattach();
     test_add_remove_event();
     test_insert_delete_weights();
-    test_condense_split_weights();
+    test_condense_split_weights(true);
+    test_condense_split_weights(false);
 //    test_reproducibility();
     return EXIT_SUCCESS;
 }
