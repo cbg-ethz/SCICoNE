@@ -52,7 +52,7 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
 
     vector<vector<double>> sigma;
 
-    int n_breakpoints = aic_vec.size();
+    size_t n_breakpoints = aic_vec.size();
     cout <<"n_breakpoints: " << n_breakpoints << " n_cells: " << n_cells <<endl;
 
     for (auto &vec: aic_vec) // compute sigma matrix
@@ -124,9 +124,9 @@ int main( int argc, char* argv[]) {
     int verbosity = 0;
     int seed = 0;
     int window_size = 20;
-    string f_name_postfix = "";
-    string region_sizes_file = "";
-    string d_matrix_file = "";
+    string f_name_postfix;
+    string region_sizes_file;
+    string d_matrix_file;
     bool to_segment = true; // if true then segmentation occurs
 
     int size_limit = -1;
@@ -291,7 +291,7 @@ int main( int argc, char* argv[]) {
         vector<double> sp_cropped = dsp.crop(s_p, window_size);
 
         int lb = 0;
-        int ub = sp_cropped.size()-1;
+        size_t ub = sp_cropped.size()-1;
 
         vector<int> all_max_ids;
         deque<pair<int,int>> wait_list;
