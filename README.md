@@ -1,6 +1,5 @@
-[![CircleCI](https://circleci.com/gh/anilbey/sc-dna/tree/master.svg?style=svg)](https://circleci.com/gh/anilbey/sc-dna/tree/master)
 # CNV Trees
-
+[![CircleCI](https://circleci.com/gh/anilbey/sc-dna/tree/master.svg?style=svg)](https://circleci.com/gh/anilbey/sc-dna/tree/master)
 ## Requirements
 
 * C++ compiler that supports C++14 standards (e.g. `gcc>=6.3.0`, `clang>=5.0.0)`)
