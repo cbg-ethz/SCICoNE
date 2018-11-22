@@ -32,6 +32,7 @@ void test_mathop()
     /*
      * Tests for mathop functions
      * */
+    
     vector<double> vals1 = {12.5, 5.2, 10, 3.8, 15.5};
     vector<double> vals2 = {12.5, 5.2, 10, 44.1, 3.8, 19.5};
 
@@ -47,6 +48,10 @@ void test_mathop()
 
 void test_xxhash()
 {
+
+    /*
+     * Tests the functionality of the xxhash module
+     * */
 
     vector<int> r1 = {4,2,3,5,2};
     vector<int> r2 = {4,2,3,5};
@@ -64,9 +69,6 @@ void test_xxhash()
     cout<<"xxhash validation test passed!"<<endl;
 
 }
-
-// TODO write a reprodubilicity test case with 7 moves
-// TODO implement the validation tests on the worked examples
 
 void test_reproducibility()
 {
@@ -103,6 +105,9 @@ void test_reproducibility()
 
 void test_swap_label()
 {
+    /*
+     * Tests the swap label move
+     * */
 
     Inference mcmc(r.size());
     mcmc.initialize_worked_example();
@@ -168,8 +173,12 @@ void test_weighted_sample()
 
 }
 
-void test_condense_split_weights()
+void test_condense_split_weights(bool weighted)
 {
+    /*
+     * Tests the condense split weights
+     * */
+
     Inference mcmc(r.size());
     std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
@@ -219,7 +228,6 @@ void test_condense_split_weights()
     assert(abs(t.score - 21.26) <= epsilon);
     assert(abs(t_prime.score - 10.792) <= epsilon);
 
-    bool weighted = true;
     double lambda_s = 0.5;
 
     vector<double> chi = t.chi_condense_split(weighted);
@@ -254,13 +262,8 @@ void test_condense_split_weights()
     double score_diff = t_prime.score - t.score;
     assert(abs(score_diff + 10.467) <= epsilon);
 
-//    double acceptance_prob = exp(score_diff) * (sum_chi+sum_omega) / (sum_chi_prime + sum_omega_prime);
-//    if (weighted)
-//        assert(abs(acceptance_prob - 0.000244) <= epsilon_sens);
-//    else
-//        assert(abs(acceptance_prob - 0.000263) <= epsilon_sens);
 
-    cout<<"Condense and split node weights validation test passed!"<<endl;
+    cout<<"Condense and split node weights validation test passed! "<< "with weighted: " << (weighted?"True": "False") << endl;
 
 
 }
@@ -299,9 +302,6 @@ void test_insert_delete_weights()
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
     t.score = mcmc.log_posterior(t_sum, m, t);
 
-    // check the score
-    //assert(abs(t.score + 2632.658) <= epsilon);
-
     int K = t.n_regions;
     double lambda_r = 2.0;
     double lambda_c = 1.0;
@@ -326,6 +326,9 @@ void test_insert_delete_weights()
 
 void test_prune_reattach()
 {
+    /*
+     * Tests the prune and reattach move
+     * */
 
     Inference mcmc(r.size());
     mcmc.initialize_worked_example();
@@ -356,6 +359,10 @@ void test_prune_reattach()
 void test_weighted_prune_reattach()
 {
 
+    /*
+     * Tests the weighted prune reattach move
+     * */
+
     Inference mcmc(r.size());
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
@@ -374,8 +381,6 @@ void test_weighted_prune_reattach()
     // re-ordering is needed since prune and reattach does not preserve the order in the all_nodes vector
     std::sort(nodes_to_sample.begin(),nodes_to_sample.end(), [](Node* a, Node* b) { return *a < *b; });
 
-
-
     vector<double> weights;
     double zeta = 0.0;
     for (auto const &x : nodes_to_sample)
@@ -385,8 +390,6 @@ void test_weighted_prune_reattach()
         zeta += weight;
     }
 
-
-
     assert(abs(weights[0] - 0.2)  <= epsilon);
     assert(abs(weights[1] - 0.333)  <= epsilon);
     assert(abs(weights[2] - 1.0)  <= epsilon);
@@ -394,13 +397,15 @@ void test_weighted_prune_reattach()
     assert(abs(weights[4] - 0.25)  <= epsilon);
     assert(abs(zeta - 2.783) <= epsilon);
 
-
     cout<<"Weighted prune &reattaach validation test passed!"<<endl;
 
 }
 
 void test_add_remove_event()
 {
+    /*
+     * Tests the add remove event move
+     * */
 
     Inference mcmc(r.size());
     mcmc.initialize_worked_example();
@@ -408,7 +413,6 @@ void test_add_remove_event()
 
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
-
 
     mcmc.apply_add_remove_events(0.0, 0.0, D, r, false, true);
 
