@@ -34,7 +34,7 @@ int main( int argc, char* argv[]) {
 
     int n_cells;
     int n_bins = 10000;
-    int n_regions;
+    size_t n_regions;
     int ploidy=2;
     int verbosity=2;
     string file;
