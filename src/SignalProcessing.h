@@ -14,7 +14,6 @@ class SignalProcessing {
 
 public:
 
-
     template<class T>
     vector<T> crop(vector<T> &signal, int offset);
     vector<double> diff(vector<double> &signal);
@@ -23,13 +22,9 @@ public:
     vector<double> make_zero_mean(vector<double>& signal);
     vector<double> subtract_median(vector<double> &signal);
     void median_normalise(vector<double> &signal);
-
     void attenuate_values_below(vector<double> &signal, double threshold);
     vector<bool> filter_by_val(vector<double> &signal, double val);
-
     vector<int> create_region_sizes(vector<bool> peaks);
-
-
 
 };
 

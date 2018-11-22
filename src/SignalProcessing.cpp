@@ -54,9 +54,9 @@ vector<bool> SignalProcessing::filter_by_val(vector<double> &signal, double val)
 
 
 vector<int> SignalProcessing::create_region_sizes(vector<bool> peaks) {
-/*
- * Segments the bins until a peak is observed.
- * */
+    /*
+     * Segments the bins until a peak is observed.
+     * */
 
     vector<int> region_sizes;
 
