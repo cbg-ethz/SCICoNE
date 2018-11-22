@@ -80,12 +80,12 @@ void Utils::read_counts(vector<vector<double>> &mat, const string &path) {
 
     ifstream filein(path);
 
-    int i = 0, j=0;
+    int i = 0;
     for (std::string line; std::getline(filein, line); )
     {
 
         istringstream fline(line);
-        j = 0;
+        int j = 0;
         for(;;) {
             double val;
             fline >> val;
