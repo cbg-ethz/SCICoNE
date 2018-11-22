@@ -126,10 +126,7 @@ inline bool Node::is_leaf() const{
     /*
      * Returns true if the node is a leaf node, e.g. has no children
      * */
-    if (this->first_child == nullptr)
-        return true;
-    else
-        return false;
+    return (this->first_child == nullptr);
 }
 
 inline vector<Node *> Node::get_descendents(bool with_n) const {
