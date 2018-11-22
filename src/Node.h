@@ -52,12 +52,9 @@ struct Node{
     inline vector<Node*> get_descendents(bool with_n=true) const;
 
     // copy constructor
-    Node(Node& source_node)
+    Node(Node& source_node): c(source_node.c), c_hash(source_node.c_hash), c_change(source_node.c_change)
     {
         id = source_node.id;
-        c = source_node.c;
-        c_hash = source_node.c_hash;
-        c_change = source_node.c_change;
         // log scores are not copied since they rely on cells
         log_score = 0.0;
         z = source_node.z;
