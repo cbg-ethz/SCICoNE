@@ -79,8 +79,6 @@ public:
 
     void load_from_file(string file);
 
-
-
 private:
     void update_label(std::map<u_int,int>& c_parent, Node* node);
     void update_desc_labels(Node* node);
