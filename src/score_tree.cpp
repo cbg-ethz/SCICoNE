@@ -25,8 +25,8 @@ using namespace std;
 
 int main( int argc, char* argv[]) {
 
-
-    print_precision = 17;
+    // set the globals
+    print_precision = 16;
     lambda_s = 0.5;
     lambda_r = 2.0;
     lambda_c = 1.0;
@@ -49,6 +49,7 @@ int main( int argc, char* argv[]) {
             ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
+            ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
             ("file", "file", cxxopts::value(file));
     auto result = options.parse(argc, argv);
 
@@ -68,6 +69,9 @@ int main( int argc, char* argv[]) {
     {
         file = result["file"].as<string>();
         //set a seed number for reproducibility
+    }
+    if (result.count("print_precision")) {
+        print_precision = result["print_precision"].as<int>();
     }
 
     // read the input d_matrix

@@ -144,6 +144,9 @@ int main( int argc, char* argv[]) {
     int n_reads = -1; // -1 means not specified
 
 
+    // set the globals
+    print_precision = 16;
+    lambda_s = 0.5;
 
 
     cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
@@ -245,9 +248,7 @@ int main( int argc, char* argv[]) {
 
 
 
-    // set the globals
-    print_precision = 16;
-    lambda_s = 0.5;
+
 
 
     // read the input d_matrix
