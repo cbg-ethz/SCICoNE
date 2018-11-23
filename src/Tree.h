@@ -248,7 +248,7 @@ Node* Tree::uniform_sample(bool with_root) const{
      * */
 
     int rand_val = 0;
-    if (all_nodes_vec.size() == 0)
+    if (all_nodes_vec.empty())
         throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
     else if (all_nodes_vec.size() ==1)
         rand_val = 1;
