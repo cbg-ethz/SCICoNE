@@ -778,18 +778,32 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
         vector<double> old_vals;
         old_vals.reserve(t_scores[i].size()); // the max possible size
         vector<double> new_vals;
-        old_vals.reserve(t_scores[i].size());
+        new_vals.reserve(t_scores[i].size());
+
+        map<int,double> unchanged_vals = t_scores[i]; // initiate with all values and remove the changed ones
+
 
         for (auto &u_map : t_prime_scores[i]) {
             if (t_scores[i].count(u_map.first)) // add only if it is existing in the old vals // for the insertion case
+            {
                 old_vals.push_back(t_scores[i][u_map.first]); // again the indices should match
+                unchanged_vals.erase(u_map.first); // erase it from the unchanged vals
+            }
+
+
             new_vals.push_back(u_map.second);
         }
 
         if (deleted_index != -1)
+        {
             old_vals.push_back(t_scores[i][deleted_index]);
+            unchanged_vals.erase(deleted_index); // erase it from the unchanged vals
+        }
 
-        double res = MathOp::log_replace_sum(t_sums[i], old_vals, new_vals); // it takes t_sums[i]
+
+        // in case of delete, the deleted val is in old_vals not in unchanged
+
+        double res = MathOp::log_replace_sum(t_sums[i], old_vals, new_vals, unchanged_vals); // it takes t_sums[i]
         // subtracts the olds and adds the news
         // in case of delete, subtract an extra value
         // in case of insert, add an extra value

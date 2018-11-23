@@ -37,7 +37,8 @@ public:
     static long double log_add(long double val1, long double val2);
     static double log_sum(const map<int, double> &map); // map version
     static double log_sum(const vector<double> &vec); // vector version
-    static double log_replace_sum(const double& sum, const vector<double>& to_subtract, const vector<double>& to_add);
+    static double log_replace_sum(const double &sum, const vector<double> &to_subtract, const vector<double> &to_add,
+                                     const map<int, double> &unchanged_vals);
     static vector<double> combine_scores(vector<double> aic_vec);
     static vector<vector<double>> likelihood_ratio(vector<vector<double>> &mat, int window_size);
     static double breakpoint_log_prior(int k, int m, double mu);

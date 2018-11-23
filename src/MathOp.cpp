@@ -236,38 +236,63 @@ double MathOp::log_sum(const vector<double> &vec) {
 
 
 
-double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtract, const vector<double> &to_add) {
+double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtract, const vector<double> &to_add,
+                              const map<int, double> &unchanged_vals) {
     /*
      * computes the sum in the log space, replaces the old elements of the vector (subtracts) then adds the new ones
      * */
 
-    double max = sum;
-    for (auto i: to_subtract)
-        if (i > max)
-            max = i;
+    double res; // the return value
 
-    double sum_in_normal_space = 0.0;
-    sum_in_normal_space += exp(sum-max); // += 1
-
-    for (auto i: to_subtract)
+    if (to_add.size() >= unchanged_vals.size())
     {
-        double temp = exp(i-max);
-        sum_in_normal_space -= temp;
+        vector<double> to_log_add = to_add;
+        for (auto const &u_map : unchanged_vals)
+        {
+            to_log_add.push_back(u_map.second);
+            res = log_sum(to_log_add);
+        }
+    }
+    else
+    {
+
+        double max = sum;
+        for (auto i: to_subtract)
+            if (i > max)
+                max = i;
+
+        double sum_in_normal_space = 0.0;
+        sum_in_normal_space += exp(sum-max); // += 1
+
+        for (auto i: to_subtract)
+        {
+            double temp = exp(i-max);
+            sum_in_normal_space -= temp;
+        }
+
+        if (sum_in_normal_space<= 1e-6)
+        {
+            //cout << "POSSIBLE PRECISION LOSS: " << sum_in_normal_space << endl;
+            vector<double> to_log_add = to_add;
+            for (auto const &u_map : unchanged_vals)
+            {
+                to_log_add.push_back(u_map.second);
+                res = log_sum(to_log_add);
+            }
+        }
+        else
+        {
+            double subtracted_res = log(sum_in_normal_space) + max;
+            vector<double> to_log_add = to_add;
+            to_log_add.push_back(subtracted_res);
+            res = log_sum(to_log_add);
+        }
+
     }
 
-    if (sum_in_normal_space<= 1e-10)
-        sum_in_normal_space = 1e-10;
-
-
-    double subtracted_res = log(sum_in_normal_space) + max;
-
-    vector<double> to_log_add = to_add;
-    to_log_add.push_back(subtracted_res);
-
-    double res = log_sum(to_log_add);
     assert(!std::isnan(res));
-
     return res;
+
 }
 
 double MathOp::breakpoint_log_prior(int k, int m, double mu) {
