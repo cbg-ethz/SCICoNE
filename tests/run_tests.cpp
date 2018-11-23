@@ -33,6 +33,6 @@ int main()
     test_insert_delete_weights();
     test_condense_split_weights(true);
     test_condense_split_weights(false);
-//    test_reproducibility();
+    test_reproducibility();
     return EXIT_SUCCESS;
 }

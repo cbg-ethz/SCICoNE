@@ -98,7 +98,7 @@ void test_reproducibility()
     mcmc.infer_mcmc(D, r, move_probs, 500);
 
     cout<<"Reproducibility score: " << mcmc.best_tree.score << endl;
-    assert(abs(mcmc.best_tree.score - 31.1689) <= epsilon);
+    assert(abs(mcmc.best_tree.score - 29.90167) <= epsilon);
     cout<<"Reproducibility test is passed!"<<endl;
 
 }
