@@ -219,7 +219,7 @@ Tree::Tree(u_int ploidy, u_int n_regions)
     // compute and store the hash
     vector<int> keys_values = {};
 
-    int size_for_hash = keys_values.size() * sizeof(keys_values[0]);
+    uint64_t size_for_hash = keys_values.size() * sizeof(keys_values[0]);
     uint64_t c_hash = Utils::calculate_hash(&keys_values[0], size_for_hash);
     root->c_hash = c_hash;
 
