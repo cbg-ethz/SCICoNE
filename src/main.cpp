@@ -168,7 +168,6 @@ int main( int argc, char* argv[]) {
             ("n_nodes","the number of nodes in the random initialised tree", cxxopts::value(n_nodes))
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
-            ("n_reads","the number of reads per cell", cxxopts::value(n_reads))
             ("max_region_size","the maximum size that a region can have", cxxopts::value(max_region_size));
 
     auto result = options.parse(argc, argv);
@@ -196,10 +195,6 @@ int main( int argc, char* argv[]) {
     {
         cerr << "the number of bins is not provided."<<endl;
         return EXIT_FAILURE;
-    }
-    if (result.count("n_reads"))
-    {
-        n_reads = result["n_reads"].as<int>();
     }
     if (result.count("n_regions"))
     {
@@ -268,7 +263,9 @@ int main( int argc, char* argv[]) {
 
         // create an sp_null signal
         int _n_regions = n_bins; // assume n_regions=n_bins for the null model
-        // TODO: compute n_reads by summing the matrix up
+        // compute n_reads by summing the cell (a row of the matrix) up
+        n_reads = static_cast<int>(accumulate(d_bins[0].begin(), d_bins[0].end(), 0.0));
+
         assert(n_reads != -1); // n_reads is needed for the null model
         Simulation sim_null(_n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy,
                             verbosity);
