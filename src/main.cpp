@@ -180,20 +180,12 @@ int main( int argc, char* argv[]) {
         to_segment = false;
     }
 
-    if (result.count("d_matrix_file"))
-    {
-        d_matrix_file = result["d_matrix_file"].as<string>();
-    }
-    else
+    if (not result.count("d_matrix_file"))
     {
         cerr << "the D matrix file is not provided."<<endl;
         return EXIT_FAILURE;
     }
-    if (result.count("n_bins"))
-    {
-        n_bins = result["n_bins"].as<int>();
-    }
-    else
+    if (not result.count("n_bins"))
     {
         cerr << "the number of bins is not provided."<<endl;
         return EXIT_FAILURE;
@@ -203,53 +195,17 @@ int main( int argc, char* argv[]) {
         // used only for naming the output
         n_regions_initial = result["n_regions"].as<int>();
     }
-    if (result.count("n_cells"))
-    {
-        n_cells = result["n_cells"].as<int>();
-    }
-    else
+    if (not result.count("n_cells"))
     {
         cerr << "the number of cells is not provided."<<endl;
         return EXIT_FAILURE;
     }
-    if (result.count("n_iters"))
-    {
-        n_iters = result["n_iters"].as<int>();
-    }
-    if (result.count("verbosity"))
-    {
-        verbosity = result["verbosity"].as<int>();
-    }
-    if (result.count("ploidy"))
-    {
-        ploidy = result["ploidy"].as<int>();
-    }
-    if (result.count("copy_number_limit"))
-    {
-        copy_number_limit = result["copy_number_limit"].as<int>();
-    }
-    if (result.count("size_limit"))
-    {
-        size_limit = result["size_limit"].as<int>();
-    }
     if (result.count("seed"))
     {
-        seed = result["seed"].as<int>();
         //set a seed number for reproducibility
         SingletonRandomGenerator::get_generator(seed);
     }
-    if (result.count("postfix")) {
-        f_name_postfix = result["postfix"].as<string>();
-    }
-    if (result.count("print_precision")) {
-        print_precision = result["print_precision"].as<int>();
-    }
-    if (result.count("lambda_r")) {
-        lambda_r = result["lambda_r"].as<double>();
-    }
-    if (result.count("lambda_c")) {
-        lambda_c = result["lambda_c"].as<double>();
-    }
+
 
     // read the input d_matrix
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
