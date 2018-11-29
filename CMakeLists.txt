@@ -21,11 +21,11 @@ add_executable(inference
 
 add_executable(tests tests/run_tests.cpp src/MathOp.cpp
         src/MathOp.h
-        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h tests/validation.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h)
+        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h tests/validation.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp)
 
 add_executable(simulation simulations/run_simulations.cpp src/MathOp.cpp
         src/MathOp.h
-        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/run_simulations.cpp simulations/Simulation.h)
+        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/run_simulations.cpp simulations/Simulation.h src/globals.cpp)
 
 add_executable(score src/score_tree.cpp src/MathOp.cpp
         src/MathOp.h
