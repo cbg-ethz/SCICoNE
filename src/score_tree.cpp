@@ -15,6 +15,7 @@ int print_precision;
 double lambda_s;
 double lambda_r;
 double lambda_c;
+int copy_number_limit;
 
 // endof globals
 
@@ -30,7 +31,7 @@ int main( int argc, char* argv[]) {
     lambda_s = 0.5;
     lambda_r = 2.0;
     lambda_c = 1.0;
-
+    copy_number_limit = 5;
 
     int n_cells;
     int n_bins = 10000;
