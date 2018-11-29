@@ -26,6 +26,7 @@
 
 // globals
 int print_precision;
+int copy_number_limit;
 double lambda_s;
 double lambda_r;
 double lambda_c;
@@ -117,7 +118,7 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
 
 int main( int argc, char* argv[]) {
 
-    int n_iters = 5000; // the default value is 10000 iterations.
+    int n_iters = 5000; // the default value is 5000 iterations.
     int n_cells;
     int n_bins = 10000;
     int ploidy = 2;
@@ -147,6 +148,7 @@ int main( int argc, char* argv[]) {
     // set the globals
     print_precision = 16;
     lambda_s = 0.5;
+    copy_number_limit = 5;
 
 
     cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
@@ -163,7 +165,7 @@ int main( int argc, char* argv[]) {
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
             ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
             ("size_limit", "the limitation on the max size of the tree", cxxopts::value(size_limit))
-
+            ("copy_number_limit", "the maximum copy number profile one bin or region can have", cxxopts::value(copy_number_limit))
             // random tree parameters
             ("n_nodes","the number of nodes in the random initialised tree", cxxopts::value(n_nodes))
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
@@ -222,6 +224,14 @@ int main( int argc, char* argv[]) {
     {
         ploidy = result["ploidy"].as<int>();
     }
+    if (result.count("copy_number_limit"))
+    {
+        copy_number_limit = result["copy_number_limit"].as<int>();
+    }
+    if (result.count("size_limit"))
+    {
+        size_limit = result["size_limit"].as<int>();
+    }
     if (result.count("seed"))
     {
         seed = result["seed"].as<int>();
@@ -241,11 +251,6 @@ int main( int argc, char* argv[]) {
         lambda_c = result["lambda_c"].as<double>();
     }
 
-
-
-
-
-
     // read the input d_matrix
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
     Utils::read_counts(d_bins, d_matrix_file);
@@ -259,7 +264,6 @@ int main( int argc, char* argv[]) {
 
         // perform segmentation and peak detection, then define the region sizes
         SignalProcessing dsp;
-
 
         // create an sp_null signal
         int _n_regions = n_bins; // assume n_regions=n_bins for the null model

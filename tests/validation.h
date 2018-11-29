@@ -109,7 +109,9 @@ void test_swap_label()
      * Tests the swap label move
      * */
 
-    Inference mcmc(r.size());
+    int ploidy = 2;
+    int verbosity = 0;
+    Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r); // t prime is copied from t, order is changed
 
@@ -143,7 +145,10 @@ void test_weighted_sample()
      *
      * */
 
-    Inference mcmc(r.size());
+
+    int ploidy = 2;
+    int verbosity = 0;
+    Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
 
     // get the subvector
@@ -179,7 +184,10 @@ void test_condense_split_weights(bool weighted)
      * Tests the condense split weights
      * */
 
-    Inference mcmc(r.size());
+
+    int ploidy = 2;
+    int verbosity = 0;
+    Inference mcmc(r.size(), ploidy, verbosity);
     std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
     std::vector<std::map<int, double>> t_prime_scores;
@@ -274,7 +282,9 @@ void test_insert_delete_weights()
      * Validation test for the weights of the insert_delete node move.
      * */
 
-    Inference mcmc(r.size());
+    int ploidy = 2;
+    int verbosity = 0;
+    Inference mcmc(r.size(), ploidy, verbosity);
     std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
 
@@ -330,7 +340,9 @@ void test_prune_reattach()
      * Tests the prune and reattach move
      * */
 
-    Inference mcmc(r.size());
+    int ploidy = 2;
+    int verbosity = 0;
+    Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
 
@@ -363,7 +375,9 @@ void test_weighted_prune_reattach()
      * Tests the weighted prune reattach move
      * */
 
-    Inference mcmc(r.size());
+    int ploidy = 2;
+    int verbosity = 0;
+    Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
 
@@ -407,7 +421,9 @@ void test_add_remove_event()
      * Tests the add remove event move
      * */
 
-    Inference mcmc(r.size());
+    int ploidy = 2;
+    int verbosity = 0;
+    Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r); // assignment operator changes the order
 

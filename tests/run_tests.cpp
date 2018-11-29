@@ -9,6 +9,7 @@
 
 // globals
 int print_precision;
+int copy_number_limit;
 double lambda_s;
 double lambda_r;
 double lambda_c;
@@ -19,6 +20,7 @@ double lambda_c;
 int main()
 {
     print_precision = 16;
+    copy_number_limit = 5;
     lambda_s = 0.5;
     std::cout<<"UNIT TESTS" <<std::endl;
 //     set a seed number for reproducibility

@@ -44,7 +44,7 @@ public:
               lambda_c(lambda_c),
               ploidy(ploidy),
               n_cells(n_cells),
-              n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions), ground_truth(n_cells, vector<int>(n_regions,ploidy)), inferred_cnvs(n_cells, vector<int>(n_regions,ploidy)), D(n_cells, vector<double>(n_regions)), region_sizes(n_regions)
+              n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions), ground_truth(n_cells, vector<int>(n_regions, ploidy)), inferred_cnvs(n_cells, vector<int>(n_regions, ploidy)), D(n_cells, vector<double>(n_regions)), region_sizes(n_regions)
     {
 
     }

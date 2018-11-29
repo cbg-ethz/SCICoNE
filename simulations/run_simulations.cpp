@@ -11,6 +11,7 @@
 
 // globals
 int print_precision;
+int copy_number_limit;
 double lambda_r;
 double lambda_c;
 double lambda_s;
@@ -33,6 +34,7 @@ int main(int argc, char* argv[]) {
     int ploidy = 2;
     int verbosity = 0;
     int seed = 0;
+    copy_number_limit = 5;
     string f_name_postfix = "";
 
     print_precision = 16;
@@ -52,6 +54,7 @@ int main(int argc, char* argv[]) {
             ("print_precision", "The precision points of the score values to be printed", cxxopts::value(print_precision))
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
+            ("copy_number_limit", "the maximum copy number profile one bin or region can have", cxxopts::value(copy_number_limit))
             ;
 
     auto result = options.parse(argc, argv);
@@ -76,6 +79,10 @@ int main(int argc, char* argv[]) {
     }
     if (result.count("ploidy")) {
         ploidy = result["ploidy"].as<int>();
+    }
+    if (result.count("copy_number_limit"))
+    {
+        copy_number_limit = result["copy_number_limit"].as<int>();
     }
     if (result.count("verbosity")) {
         verbosity = result["verbosity"].as<int>();

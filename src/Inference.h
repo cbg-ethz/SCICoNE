@@ -38,7 +38,7 @@ public:
     int verbosity;
 
 public:
-    Inference(u_int n_regions, int ploidy = 2, int verbosity = 2);
+    Inference(u_int n_regions, int ploidy=2, int verbosity=2);
     ~Inference();
     void destroy();
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
@@ -149,7 +149,10 @@ void Inference::initialize_worked_example() {
 
 }
 
-Inference::Inference(u_int n_regions, int ploidy, int verbosity): t(ploidy, n_regions), neutral(ploidy,n_regions), t_prime(ploidy, n_regions), best_tree(ploidy, n_regions)  {
+Inference::Inference(u_int n_regions, int ploidy, int verbosity) : t(ploidy, n_regions),
+                                                                   neutral(ploidy, n_regions),
+                                                                   t_prime(ploidy, n_regions),
+                                                                   best_tree(ploidy, n_regions) {
 
     this->n_regions = n_regions;
     this->ploidy = ploidy;

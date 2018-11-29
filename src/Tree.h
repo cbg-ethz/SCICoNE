@@ -215,6 +215,7 @@ void Tree::compute_stack(Node *node, const vector<double> &D, double &sum_D, con
 
 Tree::Tree(u_int ploidy, u_int n_regions)
 {
+    // Tree constructor
     root = new Node();
     // compute and store the hash
     vector<int> keys_values = {};
@@ -977,11 +978,11 @@ bool Tree::subtree_out_of_bound(Node *n) const{
  * Returns true if any of the descendent nodes contain a value less than -ploidy in the c hashmap
  * */
     int lb = -ploidy;
-    int ub = 5; // TODO parametrize it later!
+    int ub = copy_number_limit; // global variable
     vector<Node*> descendents = n->get_descendents(true);
     for (auto const &elem : descendents)
         for (auto const &it : elem->c)
-            if (it.second < lb || it.second > 5)
+            if (it.second < lb || it.second > ub)
                 return true;
     return false;
 
