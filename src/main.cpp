@@ -253,7 +253,7 @@ int main( int argc, char* argv[]) {
 
         vector<int> all_max_ids;
         deque<pair<int,int>> wait_list;
-        wait_list.push_back({lb,ub}); // initial boundries
+        wait_list.emplace_back(lb,ub); // initial boundries
 
         while(!wait_list.empty())
         {
@@ -266,8 +266,8 @@ int main( int argc, char* argv[]) {
                 if (max_idx != -1)
                 {
                     all_max_ids.push_back(max_idx);
-                    wait_list.push_back({elem.first,max_idx});
-                    wait_list.push_back({max_idx,elem.second});
+                    wait_list.emplace_back(elem.first,max_idx);
+                    wait_list.emplace_back(max_idx,elem.second);
                 }
             }
         }
