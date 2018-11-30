@@ -334,16 +334,6 @@ double MathOp::log_n_choose_k(int n, int k) {
 
 }
 
-double MathOp::n_choose_k(int n, int k) {
-    /*
-     * Returns the binomial coefficient, n choose k using the gamma function
-     * */
-    assert (n >= k);
-    double res = tgamma(n+1) / (tgamma(k+1) * tgamma(n-k+1));
-
-    return res;
-}
-
 double MathOp::compute_omega_insert_delete(Node *node, double lambda_r, double lambda_c, double K) {
     /*
      * Computes the omega value used in assessing the delete node probabilities.
