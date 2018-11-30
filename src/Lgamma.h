@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <vector>
+#include <limits>
 
 class Lgamma {
     /*
