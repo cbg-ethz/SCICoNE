@@ -19,6 +19,7 @@ public:
 
 
     std::mt19937 generator; //Standard mersenne_twister_engine
+    int seed;
 
     static SingletonRandomGenerator & get_instance(int seed = -1)
     {
@@ -28,6 +29,8 @@ public:
     }
 private:
     explicit SingletonRandomGenerator(int seed) {
+
+        this->seed = seed;
 
         if (seed == -1)
         {

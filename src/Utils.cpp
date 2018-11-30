@@ -10,7 +10,7 @@ uint64_t Utils::calculate_hash(const void *buffer, size_t length) {
      * Calculates the hash using xxhash.
      * */
 
-    unsigned long long const seed = 0;   /* or any other value */
+    unsigned long long const seed = SingletonRandomGenerator::get_instance().seed;
     unsigned long long const hash = XXH64(buffer, length, seed);
     return hash;
 
