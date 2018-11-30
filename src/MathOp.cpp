@@ -487,13 +487,13 @@ double MathOp::compute_omega_condense_split(Node *node, double lambda_s, int n_r
         {
             f_c *= pow(lambda_s, c/2);
             f_c *= exp(-1*lambda_s);
-            f_c /= 2*tgamma(c/2 +1); //tgamma +1 = factorial
+            f_c /= 2*exp(Lgamma::get_val(c/2 +1)); //tgamma +1 = factorial
         }
         else // c is odd
         {
             f_c *= pow(lambda_s, (c-1)/2);
             f_c *= exp(-1*lambda_s);
-            f_c /= 2*tgamma((c-1)/2 + 1);
+            f_c /= 2*exp(Lgamma::get_val((c-1)/2 + 1));
         }
         omega_val *= f_c;
         res_c_change.push_back(c_val + p_val);
