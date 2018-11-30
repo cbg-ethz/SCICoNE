@@ -349,7 +349,6 @@ int main( int argc, char* argv[]) {
         return EXIT_FAILURE; // reject the move
     }
 
-    mcmc.compute_neutral_table(d_regions, region_sizes);
     mcmc.compute_t_table(d_regions,region_sizes);
 
 

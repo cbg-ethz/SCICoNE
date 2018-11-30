@@ -91,7 +91,7 @@ int main( int argc, char* argv[]) {
     Inference mcmc(n_regions, ploidy, verbosity);
     mcmc.initialize_from_file(file);
 
-    mcmc.compute_neutral_table(d_regions, region_sizes);
+    //mcmc.compute_neutral_table(d_regions, region_sizes);
     mcmc.compute_t_table(d_regions,region_sizes);
 
     // write the tree
