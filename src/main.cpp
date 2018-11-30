@@ -23,6 +23,7 @@
 
 #include "SignalProcessing.h"
 
+#include "Lgamma.h"
 
 // globals
 int print_precision;
@@ -143,7 +144,6 @@ int main( int argc, char* argv[]) {
     int max_region_size = 10;
 
     int n_reads = -1; // -1 means not specified
-
 
     // set the globals
     print_precision = 16;
@@ -351,8 +351,21 @@ int main( int argc, char* argv[]) {
 
     mcmc.compute_t_table(d_regions,region_sizes);
 
-
+    // Get starting timepoint
+    auto start = high_resolution_clock::now();
     mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters, size_limit);
+
+    // Get ending timepoint
+    auto stop = high_resolution_clock::now();
+
+    // Get duration. Substart timepoints to
+    // get durarion. To cast it to proper unit
+    // use duration cast method
+    auto duration = duration_cast<microseconds>(stop - start);
+
+    cout << "Time taken by infer_mcmc function: "
+         << duration.count() << " microseconds" << endl;
+
     vector<vector<int>> inferred_cnvs = mcmc.assign_cells_to_nodes(d_regions, region_sizes); // returns the inferred CNVs
 
     vector<vector<int>> inferred_cnvs_bins = Utils::regions_to_bins_cnvs(inferred_cnvs, region_sizes);
