@@ -20,11 +20,11 @@ public:
 
     std::mt19937 generator; //Standard mersenne_twister_engine
 
-    static std::mt19937& get_generator(int seed=-1)
+    static SingletonRandomGenerator & get_instance(int seed = -1)
     {
         static SingletonRandomGenerator instance(seed); // Guaranteed to be destroyed.
         // Instantiated on first use.
-        return instance.generator;
+        return instance;
     }
 private:
     explicit SingletonRandomGenerator(int seed) {

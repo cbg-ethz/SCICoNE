@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
     {
         seed = result["seed"].as<int>();
         //set a seed number for reproducibility
-        SingletonRandomGenerator::get_generator(seed);
+        SingletonRandomGenerator::get_instance(seed);
     }
     if (result.count("print_precision")) {
         print_precision = result["print_precision"].as<int>();

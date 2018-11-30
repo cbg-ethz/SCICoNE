@@ -748,7 +748,7 @@ Node *Tree::weighted_sample() const{
             weights.push_back(weight);
         }
 
-        std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+        std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
         std::discrete_distribution<> d(weights.begin(), weights.end());
 
         unsigned sample = d(generator);
@@ -912,7 +912,7 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
         else
             node = uniform_sample(false); //without the root
     }
-    std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+    std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
 
     // n_regions from Poisson(lambda_R)+1
@@ -1081,7 +1081,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     vector<double> omega = omega_insert_delete(lambda_r, lambda_c, weighted); // delete weights
 
     // sample the number of regions to be affected with Poisson(lambda_r)+1
-    std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+    std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
     // 0.5 prob bernoulli
     std::bernoulli_distribution bernoulli_05(0.5);
@@ -1185,7 +1185,7 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
     double normalization_term = sum_chi + sum_omega;
     double p_chi = sum_chi / normalization_term;
 
-    std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+    std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
     // n_regions from Poisson(lambda_S)+1
     std::poisson_distribution<int> poisson_s(lambda_s); // the param is to be specified later
     std::bernoulli_distribution bernoulli_05(0.5);

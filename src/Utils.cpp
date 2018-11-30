@@ -40,7 +40,7 @@ void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions,
     assert(is_empty_map(distinct_regions));
 
     // sample the number of regions to be affected with Poisson(lambda_r)+1
-    std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+    std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
     // n_regions from Poisson(lambda_R)+1
     std::poisson_distribution<int> poisson_r(lambda_r); // the param is to be specified later

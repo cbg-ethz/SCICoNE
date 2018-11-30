@@ -24,7 +24,7 @@ int main()
     lambda_s = 0.5;
     std::cout<<"UNIT TESTS" <<std::endl;
 //     set a seed number for reproducibility
-    SingletonRandomGenerator::get_generator(42);
+    SingletonRandomGenerator::get_instance(42);
     test_mathop();
     test_xxhash();
     test_swap_label();
@@ -35,6 +35,6 @@ int main()
     test_insert_delete_weights();
     test_condense_split_weights(true);
     test_condense_split_weights(false);
-//    test_reproducibility();
+    test_reproducibility();
     return EXIT_SUCCESS;
 }

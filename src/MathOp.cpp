@@ -185,7 +185,7 @@ vector<double> MathOp::combine_scores(vector<double> aic_vec)
 int MathOp::random_uniform(int min, int max) {
     int rand_val = 0;
     std::uniform_int_distribution<> dis(min,max);
-    std::mt19937 &gen = SingletonRandomGenerator::get_generator();
+    std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
 
     rand_val = dis(gen);
     return rand_val;
@@ -412,7 +412,7 @@ vector<long double> MathOp::dirichlet_sample(size_t len, double alpha) {
      * Samples a vector of length len that sum up to 1 using dirichlet with alpha parameter
      * */
 
-    mt19937 &gen = SingletonRandomGenerator::get_generator();
+    mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
     gamma_distribution<long double> distribution(alpha,1.0);
 
     vector<long double> y_vals(len);

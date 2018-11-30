@@ -132,8 +132,8 @@ int main( int argc, char* argv[]) {
 
     int size_limit = -1;
 
-    int n_regions;
-    int n_regions_initial = 0; // used for naming the output for I/O workflow purposes
+    size_t n_regions;
+    size_t n_regions_initial = 0; // used for naming the output for I/O workflow purposes
 
     // random tree parameters
     int n_nodes = 50;
@@ -193,7 +193,7 @@ int main( int argc, char* argv[]) {
     if (result.count("n_regions"))
     {
         // used only for naming the output
-        n_regions_initial = result["n_regions"].as<int>();
+        n_regions_initial = result["n_regions"].as<size_t>();
     }
     if (not result.count("n_cells"))
     {
@@ -203,7 +203,7 @@ int main( int argc, char* argv[]) {
     if (result.count("seed"))
     {
         //set a seed number for reproducibility
-        SingletonRandomGenerator::get_generator(seed);
+        SingletonRandomGenerator::get_instance(seed);
     }
 
 
@@ -222,7 +222,7 @@ int main( int argc, char* argv[]) {
         SignalProcessing dsp;
 
         // create an sp_null signal
-        int _n_regions = n_bins; // assume n_regions=n_bins for the null model
+        size_t _n_regions = n_bins; // assume n_regions=n_bins for the null model
         // compute n_reads by summing the cell (a row of the matrix) up
         n_reads = static_cast<int>(accumulate(d_bins[0].begin(), d_bins[0].end(), 0.0));
 

@@ -63,7 +63,7 @@ public:
         Inference mcmc(n_regions, ploidy, verbosity);
         vector<vector<double>> p_read_region_cell(n_cells, vector<double>(n_regions)); // initialize with the default value
 
-        std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+        std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
         if (not is_neutral) // tree will generate the data
         {

@@ -85,7 +85,7 @@ void test_reproducibility()
 
 
     // if seed is not set, set it to 42
-    SingletonRandomGenerator::get_generator(42);
+    SingletonRandomGenerator::get_instance(42);
 
     Inference mcmc(r.size(), ploidy, verbosity);
 
