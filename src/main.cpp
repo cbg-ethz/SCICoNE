@@ -23,7 +23,6 @@
 
 #include "SignalProcessing.h"
 
-#include "Lgamma.h"
 
 // globals
 int print_precision;

@@ -5,6 +5,7 @@
 
 #include "MathOp.h"
 #include "Utils.h"
+#include "Lgamma.h"
 
 template<class T>
 double MathOp::vec_avg(vector<T> &v) {
@@ -329,7 +330,7 @@ double MathOp::log_n_choose_k(int n, int k) {
      * Returns the log of n choose k using lgamma function
      * */
     assert(n >= k);
-    return(lgamma(n+1) - lgamma(k+1) - lgamma(n-k+1));
+    return(Lgamma::get_val(n+1) - Lgamma::get_val(k+1) - Lgamma::get_val(n-k+1));
 
 }
 
@@ -372,11 +373,11 @@ double MathOp::compute_omega_insert_delete(Node *node, double lambda_r, double l
 
     omega_val -= log(2) * r_i;
     omega_val -= MathOp::log_n_choose_k(K, r_i);
-    omega_val -= lgamma(r_i);
+    omega_val -= Lgamma::get_val(r_i);
 
     double mul_cj_lgamma = 0.0;
     for (auto const &elem : c)
-        mul_cj_lgamma += lgamma(elem);
+        mul_cj_lgamma += Lgamma::get_val(elem);
 
     omega_val -= mul_cj_lgamma;
     return exp(omega_val);
