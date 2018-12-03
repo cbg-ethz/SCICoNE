@@ -548,7 +548,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
      * */
 
     vector<double> p_v;
-    for (auto it = tree.all_nodes_vec.begin()+1; it != tree.all_nodes_vec.end(); ++it)
+    for (auto it = tree.all_nodes_vec.begin()+1; it != tree.all_nodes_vec.end(); ++it) // without the root
     {
         Node* node = *it;
         map<u_int,int>& c_change = node->c_change;
