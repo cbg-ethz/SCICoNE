@@ -539,7 +539,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
 
     int n = tree.get_n_nodes();
     double log_posterior = 0.0;
-    log_posterior = tree_sum - (n -1 + m ) * log(n+1);
+    log_posterior = tree_sum - (n -1 + m ) * log(n+1); // tree prior
 
     /*
      * compute penalization term
@@ -554,21 +554,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
      * */
 
 
-
-
-    map<int, double> vfact_hash;
-
     int K = this->n_regions;
-    for (auto it = tree.all_nodes_vec.begin()+1; it != tree.all_nodes_vec.end(); ++it)
-    {
-        Node* node = *it;
-        map<u_int,int>& c_change = node->c_change;
-        int v = 0;
-        for (auto const &it : c_change)
-            v += it.second;
-
-        vfact_hash[v] = Lgamma::get_val(abs(v)+1); // log of factorial
-    }
 
     vector<double> p_v;
     for (auto it = tree.all_nodes_vec.begin()+1; it != tree.all_nodes_vec.end(); ++it)
@@ -580,7 +566,6 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
         int i_prev = -1; // the initial index is -1, it'll be updated later
 
         auto last_elem_id = c_change.rbegin()->first;
-
 
         for (auto const &it : c_change)
         {
@@ -621,12 +606,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
 
         double pv_i = 0.0;
 
-        // pv_i += vfact_hash[v];
         pv_i -= v*log(2*K); // the event prior
-
-//        for (auto const &it : c_change)
-//            pv_i -= log(tgamma(abs(it.second) + 1)); // +1 because we are using gamma func for factorial
-
         p_v.push_back(pv_i);
 
     }
