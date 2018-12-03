@@ -544,17 +544,8 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     /*
      * compute penalization term
      * K: max region index
-     * V: the event vector (vector of labels) list of hashmap c_change
-     *
-     *
-     *
-     * compute K from v, v is c_change
-     * 1) compute all v! and put in hashmap
      *
      * */
-
-
-    int K = this->n_regions;
 
     vector<double> p_v;
     for (auto it = tree.all_nodes_vec.begin()+1; it != tree.all_nodes_vec.end(); ++it)
@@ -570,21 +561,15 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
         for (auto const &it : c_change)
         {
             int diff;
-            if (it.first - 1 == i_prev) // if the region is adjacent to its previous
-            {}
-            else
+            if (it.first - 1 != i_prev) // if the region is adjacent to its previous
             {
                 int diff_right = 0 - v_prev; // the right hand side change at the end of the last consecutive region
-                if (diff_right <= 0)
-                {}
-                else // diff_right > 0
+                if (diff_right > 0)
                     v += diff_right;
                 v_prev = 0;
             }
             diff = it.second - v_prev;
-            if (diff <= 0)
-            {}
-            else // diff > 0
+            if (diff > 0)
                 v += diff;
             v_prev = it.second;
             i_prev = it.first;
@@ -593,19 +578,17 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
             {
                 int diff_last = 0 - v_prev;
 
-                if (diff_last <= 0)
-                {}
-                else
+                if (diff_last > 0)
                 {
                     v += diff_last;
                     assert(v>0);
                 }
-                    
             }
         }
 
         double pv_i = 0.0;
 
+        int K = this->n_regions;
         pv_i -= v*log(2*K); // the event prior
         p_v.push_back(pv_i);
 
@@ -615,7 +598,6 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     double PV = 0.0;
     PV += std::accumulate(p_v.begin(), p_v.end(), 0.0);
     PV -= Lgamma::get_val(n+1);
-
 
     log_posterior += PV;
 
