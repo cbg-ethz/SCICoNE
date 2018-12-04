@@ -8,7 +8,7 @@
 #include "Lgamma.h"
 
 template<class T>
-double MathOp::vec_avg(vector<T> &v) {
+double MathOp::vec_avg(const vector<T> &v) {
     double average = accumulate( v.begin(), v.end(), 0.0)/v.size();
     return average;
 }
@@ -36,6 +36,8 @@ double MathOp::breakpoint_log_likelihood(std::vector<double> v, double lambda, d
     assert(!std::isnan(ll));
     return ll;
 }
+
+
 
 vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int window_size) {
     /*
@@ -70,16 +72,38 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             vector<double> rbins = vector<double>(mat[j].begin() + i, mat[j].begin() + end);
             vector<double> all_bins = vector<double>(mat[j].begin() + start, mat[j].begin() + end);
 
+            size_t n_bins = all_bins.size();
+
             double lambda_r = median(rbins); // max likelihood value is the avg. (poisson property)
             double lambda_l = median(lbins);
             double lambda_all = vec_avg(all_bins);
+
+            vector<double> bin_positions(n_bins);
+            for (size_t l = 0; l < n_bins; ++l) {
+                bin_positions[l] = l+1; // 1 indexed
+            }
+
+
+            // predicting the lambdas_regression
+            vector<double> lambdas_regression(n_bins);
+            double beta_regression = compute_linear_regression_slope(bin_positions, all_bins);
+            double mean_x = vec_avg(bin_positions);
+            double mean_y = vec_avg(all_bins);
+
+            for (size_t k = 0; k < n_bins; ++k)
+            {
+                lambdas_regression[k] = mean_y + beta_regression*(bin_positions[k] - mean_x); // prediction
+                if (lambdas_regression[k] == 0)
+                    lambdas_regression[k] = 0.0001;
+            }
+
 
             if (lambda_r == 0)
                 lambda_r = 0.0001;
             if (lambda_l == 0)
                 lambda_l = 0.0001;
 
-            double aic_p;
+            double aic_p = 0.0;
             // k is the degrees of freedom of the segment model
             u_int k_segment = 1;
             double ll_segment = breakpoint_log_likelihood(all_bins, lambda_all, 1.0);
@@ -91,7 +115,16 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
                               breakpoint_log_likelihood(rbins, lambda_r, 1.0);
             double aic_break = 2 * k_break - 2 * ll_break;
 
-            aic_p = aic_segment - aic_break;
+            u_int k_slope = 1;
+            double ll_slope = 0.0;
+
+            for (size_t m = 0; m < n_bins; ++m) {
+                ll_slope += breakpoint_log_likelihood(vector<double>(all_bins.begin()+m, all_bins.begin()+m+1), lambdas_regression[m], 1.0);
+            }
+            double aic_slope = 2 * k_slope - 2* ll_slope;
+
+
+            aic_p = aic_segment - max(aic_slope,aic_break);
 
             aic_vec[i][j] = aic_p;
         }
@@ -542,10 +575,37 @@ double MathOp::st_deviation(vector<T> &v) {
     return stdev;
 }
 
+double MathOp::compute_linear_regression_slope(const vector<double> &x, const vector<double> &y) {
+    /*
+     * Computes the b1 (slope) of the formula Yi = b0 + b1Xi
+     * */
+
+    if(x.size() != y.size()){
+        throw length_error("Length of y and x must be equal in simple linear regression");
+    }
+
+    double mean_x = vec_avg(x);
+    double mean_y = vec_avg(y);
+
+    double numerator = 0.0;
+    double denominator = 0.0;
+
+    for(int i=0; i<x.size(); ++i){
+        numerator += (x[i] - mean_x) * (y[i] - mean_y);
+        denominator += (x[i] - mean_x) * (x[i] - mean_x);
+    }
+
+    if(denominator == 0){
+        throw domain_error("Denominator cannot be zero");
+    }
+
+    return numerator / denominator;
+}
+
 
 template double MathOp::st_deviation(vector<double> &v);
 template double MathOp::median(vector<double> v);
-template double MathOp::vec_avg(vector<double> &v);
+template double MathOp::vec_avg(const vector<double> &v);
 template double MathOp::percentile_val<double>(vector<double>, double percentile_val);
 template long double MathOp::percentile_val<long double>(vector<long double>, double percentile_val);
 
