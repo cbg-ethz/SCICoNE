@@ -93,7 +93,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             for (size_t k = 0; k < n_bins; ++k)
             {
                 lambdas_regression[k] = mean_y + beta_regression*(bin_positions[k] - mean_x); // prediction
-                if (lambdas_regression[k] == 0)
+                if (lambdas_regression[k] <= 0)
                     lambdas_regression[k] = 0.0001;
             }
 
@@ -115,7 +115,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
                               breakpoint_log_likelihood(rbins, lambda_r, 1.0);
             double aic_break = 2 * k_break - 2 * ll_break;
 
-            u_int k_slope = 1;
+            u_int k_slope = 2;
             double ll_slope = 0.0;
 
             for (size_t m = 0; m < n_bins; ++m) {
@@ -124,7 +124,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             double aic_slope = 2 * k_slope - 2* ll_slope;
 
 
-            aic_p = aic_segment - max(aic_slope,aic_break);
+            aic_p = min(aic_segment, aic_slope) - aic_break;
 
             aic_vec[i][j] = aic_p;
         }
