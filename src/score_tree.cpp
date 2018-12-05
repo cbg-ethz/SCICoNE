@@ -54,26 +54,6 @@ int main( int argc, char* argv[]) {
             ("file", "file", cxxopts::value(file));
     auto result = options.parse(argc, argv);
 
-    if (result.count("region_sizes_file"))
-    {
-        region_sizes_file = result["region_sizes_file"].as<string>();
-    }
-
-    if (result.count("d_matrix_file"))
-    {
-        d_matrix_file = result["d_matrix_file"].as<string>();
-    }
-    if (result.count("postfix")) {
-        f_name_postfix = result["postfix"].as<string>();
-    }
-    if (result.count("file"))
-    {
-        file = result["file"].as<string>();
-        //set a seed number for reproducibility
-    }
-    if (result.count("print_precision")) {
-        print_precision = result["print_precision"].as<int>();
-    }
 
     // read the input d_matrix
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
