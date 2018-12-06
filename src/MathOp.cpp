@@ -55,6 +55,11 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
     // u_int cell_no = 0;
     vector<vector<double>> aic_vec(bp_size,vector<double>(n_cells)); // fill constructor
 
+    std::ofstream aic_file("./aic_scores_with_bp_no.txt");
+    aic_file << "aic_segment,aic_break,aic_slope,aic_p,bp_no" <<endl;
+    //        for (const auto &e : s_p) output_file1 << e << endl;
+    //        cout <<"sp created"<<endl;
+
     for (int i = 0; i < bp_size; ++i) {
 
         int start = i - window_size;
@@ -103,6 +108,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             if (lambda_l == 0)
                 lambda_l = 0.0001;
 
+
             double aic_p = 0.0;
             // k is the degrees of freedom of the segment model
             u_int k_segment = 1;
@@ -123,8 +129,10 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             }
             double aic_slope = 2 * k_slope - 2* ll_slope;
 
-
             aic_p = min(aic_segment, aic_slope) - aic_break;
+
+            aic_file << to_string(aic_segment) + ',' + to_string(aic_break) + ',' +  to_string(aic_slope) + ',' + to_string(aic_p) << ',' <<to_string(i) << endl;
+
 
             aic_vec[i][j] = aic_p;
         }
