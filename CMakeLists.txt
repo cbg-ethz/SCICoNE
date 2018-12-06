@@ -11,6 +11,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g") # icc needs -O3 after -g
 
 include_directories(src)
 include_directories(include)
+include_directories(include/stats)
 include_directories(simulations)
 
 add_executable(inference

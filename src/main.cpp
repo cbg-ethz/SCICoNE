@@ -23,6 +23,7 @@
 
 #include "SignalProcessing.h"
 
+#include "stats.hpp"
 
 // globals
 int print_precision;

@@ -6,6 +6,7 @@
 #include <iostream>
 #include "SingletonRandomGenerator.h"
 #include "globals.cpp"
+#include "stats.hpp"
 
 // globals
 int print_precision;
@@ -19,12 +20,20 @@ double lambda_c;
 
 int main()
 {
+
+    // test for statslib
+
+    std::mt19937_64 engine(42);
+    double ran_val_2 = stats::rnorm(1,2,engine);
+
+
     print_precision = 16;
     copy_number_limit = 5;
     lambda_s = 0.5;
     std::cout<<"UNIT TESTS" <<std::endl;
 //     set a seed number for reproducibility
     SingletonRandomGenerator::get_instance(42);
+
     test_mathop();
     test_xxhash();
     test_swap_label();
