@@ -1,0 +1,12 @@
+Tree score: 298.343860484773
+node 0: p_id:NULL,[]
+node 3: p_id:0,[2:-1]
+node 1: p_id:0,[7:2]
+node 2: p_id:1,[0:2]
+node 10: p_id:2,[3:1]
+node 4: p_id:2,[9:-1]
+node 9: p_id:4,[0:-1]
+node 5: p_id:4,[1:1]
+node 6: p_id:5,[7:2]
+node 8: p_id:6,[9:1]
+node 7: p_id:6,[4:1]

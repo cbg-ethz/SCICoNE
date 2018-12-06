@@ -9,19 +9,28 @@
 
 class SingletonRandomGenerator
 {
+    /*
+     *  Singleton random generator used throughout the program except for the xxhash part.
+     *  xxhash requires another seed than the seed used here.
+     * */
+
+
 public:
 
 
     std::mt19937 generator; //Standard mersenne_twister_engine
+    int seed;
 
-    static std::mt19937& get_generator(int seed=-1)
+    static SingletonRandomGenerator & get_instance(int seed = -1)
     {
         static SingletonRandomGenerator instance(seed); // Guaranteed to be destroyed.
         // Instantiated on first use.
-        return instance.generator;
+        return instance;
     }
 private:
-    SingletonRandomGenerator(int seed) {
+    explicit SingletonRandomGenerator(int seed) {
+
+        this->seed = seed;
 
         if (seed == -1)
         {
@@ -40,7 +49,6 @@ private:
 public:
     SingletonRandomGenerator(SingletonRandomGenerator const&) = delete;
     void operator=(SingletonRandomGenerator const&)  = delete;
-
 };
 
 

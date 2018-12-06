@@ -1,0 +1,203 @@
+//
+// Created by Tuncel  Mustafa Anil on 10/21/18.
+//
+
+#include "SignalProcessing.h"
+
+
+vector<double> SignalProcessing::diff(vector<double> &signal) {
+    /*
+     * Performs the diff filter on the input signal and returns the value.
+     * The returned signal has length 1 less than the input signal.
+     * */
+
+    vector<double> res(signal.size()-1); // -1 because the first one cannot have a diff
+
+    for (int i = 1; i < signal.size()-1; ++i) {
+        res[i] = signal[i]-signal[i-1];
+    }
+    return res;
+}
+
+vector<double> SignalProcessing::sign(vector<double> &signal) {
+    /*
+     * Maps the input signal into a signal of {-1.0,1.0} values by their sign values.
+     * Positive values will be mapped to 1.0 while negative will be mapped to -1.0
+     * */
+
+    vector<double> res(signal.size());
+
+    for (int i = 0; i < signal.size(); ++i) {
+        if (signal[i] > 0)
+            res[i] = 1.0;
+        else
+            res[i] = -1.0;
+    }
+    return res;
+}
+
+vector<bool> SignalProcessing::filter_by_val(vector<double> &signal, double val) {
+    /*
+     * Creates and returns a vector of boolean containing true for elements in the signal equal to val, false otherwise.
+     * */
+    vector<bool> res(signal.size());
+
+    for (int i = 0; i < signal.size(); ++i) {
+        if (signal[i] == val)
+            res[i] = true;
+        else
+            res[i] = false;
+    }
+
+    return res;
+}
+
+
+vector<int> SignalProcessing::create_region_sizes(vector<bool> peaks) {
+    /*
+     * Segments the bins until a peak is observed.
+     * */
+
+    vector<int> region_sizes;
+
+    int size = 0;
+    for (int i = 0; i < peaks.size(); ++i) {
+        if (!peaks[i])
+            size++;
+        else
+        {
+            size++;
+            region_sizes.push_back(size);
+            size = 0;
+        }
+    }
+    if (size != 0)
+        region_sizes.push_back(size);
+
+    return region_sizes;
+}
+
+vector<double> SignalProcessing::make_zero_mean(vector<double> &signal) {
+    /*
+     * Subtracts the mean value from signal and returns a zero mean signal.
+     * */
+    vector<double> res(signal.size());
+    double avg = MathOp::vec_avg(signal);
+
+    for (int i = 0; i < signal.size(); ++i) {
+        res[i] = signal[i] - avg;
+    }
+
+
+    return res;
+}
+
+void SignalProcessing::attenuate_values_below(vector<double> &signal, double threshold) {
+    /*
+     * Sets the values below the threshold to zero in the input signal.
+     * Modifies the input signal
+     * */
+    for (int i = 0; i < signal.size(); ++i) {
+        if (signal[i] < threshold)
+            signal[i] = 0.0;
+    }
+
+}
+
+template<class T>
+vector<T> SignalProcessing::crop(vector<T> &signal, int offset)
+{
+    /*
+     * Crops the signal by the offset from both ends and returns the cropped signal
+     * */
+
+    assert(signal.size() > offset*2); // the signal should be bigger than the offset
+
+    typename std::vector<T>::const_iterator first = signal.begin() + offset;
+    typename std::vector<T>::const_iterator last = signal.end()  - offset;
+    typename std::vector<T> cropped(first, last);
+
+    return cropped;
+}
+
+vector<double> SignalProcessing::subtract_median(vector<double> &signal) {
+    /*
+     * Substracts the median from the signal and returns the new signal.
+     * */
+
+    vector<double> res(signal.size());
+    double median_val = MathOp::percentile_val(signal, 0.5);
+
+    for (int i = 0; i < signal.size(); ++i) {
+        res[i] = signal[i] - median_val;
+    }
+
+    return res;
+}
+
+void SignalProcessing::median_normalise(vector<double> &signal) {
+    /*
+     * Divides each element in the vector by its median value.
+     * */
+
+    double med = MathOp::median(signal);
+
+    for (int i = 0; i < signal.size(); ++i) {
+        signal[i] /= med;
+    }
+}
+
+int SignalProcessing::find_highest_peak(vector<double> &signal, int lb, int ub, double threshold) {
+    /*
+     * Returns the index of the highest peak above the threshold in a signal between the lb (lower bound) ub (upper bound) intervals.
+     * */
+
+    assert(lb < ub);
+    assert(ub < signal.size());
+
+    // get the subvector
+    vector<double>::const_iterator first = signal.begin() + lb;
+    vector<double>::const_iterator last = signal.begin() + ub+1; // add +1 here
+    vector<double> sub(first, last);
+
+    this->median_normalise(sub);
+
+    vector<double> peaks = this->diff(sub);
+    peaks = this->sign(peaks);
+    peaks = this->diff(peaks); // real peaks are peaks -1 because of double differentiation.
+    // after 1st diff. peak is the last positive. after 2nd diff. peak is zero but peak+1 is -2
+
+    vector<bool> breakpoints = this->filter_by_val(peaks, -2.0);
+    // add paddings
+//    breakpoints.insert(breakpoints.begin(), false);
+//    breakpoints.push_back(false);
+
+    vector<int> bp_indices;
+
+    for (int i = 0; i < breakpoints.size(); ++i) {
+        if (breakpoints[i])
+            bp_indices.push_back(i-1); // push i-1 because that's the real peak
+    }
+
+    double max_val = numeric_limits<double>::lowest();
+    int max_idx = -1;
+
+    for (int j = 0; j < bp_indices.size(); ++j) {
+        if (sub[bp_indices[j]] > max_val)
+        {
+            max_val = sub[bp_indices[j]];
+            max_idx = bp_indices[j];
+        }
+    }
+
+    if (max_val > threshold)
+        return max_idx + lb;
+    else
+        return -1;
+
+}
+
+template vector<double> SignalProcessing::crop<double>(vector<double>& signal, int offset);
+template vector<long double> SignalProcessing::crop<long double>(vector<long double>& signal, int offset);
+
+

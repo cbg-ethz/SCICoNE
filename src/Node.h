@@ -5,13 +5,17 @@
 #ifndef SC_DNA_NODE_H
 #define SC_DNA_NODE_H
 
-#include <unordered_map>
+#include <map>
 #include <iostream>
+#include <stack>
+
+using namespace std;
 
 struct Node{
     int id = 0;
-    std::unordered_map<u_int,int> c = {};
-    std::unordered_map<u_int,int> c_change= {};
+    std::map<u_int,int> c = {};
+    uint64_t  c_hash = 0;
+    std::map<u_int,int> c_change= {};
     double log_score = 0.0;
     int z = 0;
     unsigned n_descendents = 1; // including itself
@@ -19,36 +23,38 @@ struct Node{
     Node* next = nullptr;
     Node* parent = nullptr;
 
-    bool operator<(const Node &rhs) const {
+    inline bool operator<(const Node &rhs) const {
         return id < rhs.id;
     }
 
-    bool operator>(const Node &rhs) const {
+    inline bool operator>(const Node &rhs) const {
         return rhs < *this;
     }
 
-    bool operator<=(const Node &rhs) const {
+    inline bool operator<=(const Node &rhs) const {
         return !(rhs < *this);
     }
 
-    bool operator>=(const Node &rhs) const {
+    inline bool operator>=(const Node &rhs) const {
         return !(*this < rhs);
     }
 
-    bool operator==(const Node &rhs) const {
+    inline bool operator==(const Node &rhs) const {
         return id == rhs.id;
     }
 
-    bool operator!=(const Node &rhs) const {
+    inline bool operator!=(const Node &rhs) const {
         return !(rhs == *this);
     }
 
+    inline int get_n_children() const;
+    inline bool is_leaf() const;
+    inline vector<Node*> get_descendents(bool with_n=true) const;
+
     // copy constructor
-    Node(Node& source_node)
+    Node(Node& source_node): c(source_node.c), c_hash(source_node.c_hash), c_change(source_node.c_change)
     {
         id = source_node.id;
-        c = source_node.c;
-        c_change = source_node.c_change;
         // log scores are not copied since they rely on cells
         log_score = 0.0;
         z = source_node.z;
@@ -65,25 +71,84 @@ struct Node{
 
 };
 
-std::ostream& operator<<(std::ostream& os, Node& n) {
+inline std::ostream& operator<<(std::ostream& os, Node& n) {
     os << "node " << n.id << ": ";
-    for (auto i : n.c_change)
-        os << " " << i.first << ":" << i.second << ',';
 
     if (n.parent == nullptr)
-        os << "parent: NULL";
+        os << "p_id:NULL";
     else
-        os << "parent: " << n.parent->id;
+        os << "p_id:" << n.parent->id;
 
-    os << endl << "\t c values:";
-    for (auto i : n.c)
-        os << "\t  " << i.first << ":" << i.second << ',';
+    os << ',';
+    os << '[';
 
-    os << endl << "\t z value: " << n.z;
-    os << endl << "\t n_descendents: " << n.n_descendents;
+    if (! n.c_change.empty())
+    {
+        auto last_elem_id = n.c_change.rbegin()->first;
+        for (auto i : n.c_change)
+        {
+            os << i.first << ":" << i.second;
+            if (i.first != last_elem_id)
+                os << ',';
+        }
+    }
+    os << ']';
+
+
+
+
+
+//    os << endl << "\t c values:";
+//    for (auto i : n.c)
+//        os << "\t  " << i.first << ":" << i.second << ',';
+//
+//    os << endl << "\t z value: " << n.z;
+//    os << endl << "\t n_descendents: " << n.n_descendents;
 
 
     return os;
+}
+
+inline int Node::get_n_children() const{
+
+    int n_children = 0;
+    for (Node* temp = this->first_child; temp != nullptr; temp=temp->next)
+    {
+        n_children++;
+    }
+    return n_children;
+}
+
+inline bool Node::is_leaf() const{
+    /*
+     * Returns true if the node is a leaf node, e.g. has no children
+     * */
+    return (this->first_child == nullptr);
+}
+
+inline vector<Node *> Node::get_descendents(bool with_n) const {
+    /*
+     * Returns the descendents of node* n in a list in a BFS fashion.
+     * If with_n, then the descendents contain the node itself, otherwise not.
+     * Does preserve the order (e.g. parent is before the children)
+     *
+     * */
+    vector<Node *> descendents;
+
+    std::stack<Node*> stk;
+    stk.push(const_cast<Node*> (this)); // because this pointer is constant
+    while (!stk.empty()) {
+        Node* top = stk.top();
+        stk.pop();
+        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next)
+            stk.push(temp);
+        descendents.push_back(top);
+    }
+
+    if (!with_n)
+        descendents.erase(descendents.begin()); // erase the first node, which is n
+
+    return descendents;
 }
 
 #endif //SC_DNA_NODE_H

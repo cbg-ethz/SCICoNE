@@ -7,8 +7,8 @@
 
 #include <iostream>
 #include <vector>
-#include <stack>
 #include <queue>
+#include <map>
 #include <unordered_map>
 #include <numeric>
 #include <limits>
@@ -18,113 +18,124 @@
 #include <random>
 #include "SingletonRandomGenerator.h"
 #include <set>
-
+#include <iomanip>
+#include "Utils.h"
+#include <string>
+#include <sstream>
+#include <fstream>
 #include <algorithm> // std::remove
+#include "globals.cpp"
 
-
-bool node_ptr_compare(Node* a, Node* b)
-{
-    return (*a < *b);
-}
 
 class Tree {
-
+private:
+    u_int n_nodes; //the number of nodes without the root
+    int ploidy; // to be added to values of the unordered map for each node
+    int counter = 0;
 public:
     Node* root;
-    std::vector<Node*> all_nodes; // for uniform selection
-    u_int ploidy; // to be added to values of the unordered map for each node
+    std::vector<Node*> all_nodes_vec; // for random selection, destructor, insertion by position, iterating without order (e.g. for each node)
     u_int n_regions; // number of regions
     double score; // log posterior score of the tree
-    int counter = 0; // used as node id
-    u_int n_nodes; //the number of nodes without the root
-
+public:
     // constructor
     Tree(u_int ploidy, u_int n_regions);
     // copy constructor
     Tree(Tree& source);
     // destructor
     virtual ~Tree();
-
     // moves
-    Node* prune_reattach(bool weighted=false, bool validation_test_mode=false);
+    Node *prune_reattach(bool genotype_preserving, bool weighted, bool validation_test_mode);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
-    Node* add_remove_events(float lambda_r, float lambda_c, bool weighted=false, bool validation_test_mode=false);
-
-
-
-    bool is_leaf(Node*) const;
-    Node* uniform_sample(bool with_root=true);
-    Node* weighted_sample();
-    void random_insert(std::unordered_map<u_int, int>&&);
-    void insert_at(u_int pos, std::unordered_map<u_int, int>&&);
-    void insert_child(Node *pos, std::unordered_map<u_int, int>&& labels);
-    std::vector<double> get_scores();
-
-    unordered_map<int, double> get_children_id_score(Node *node);
-    void destroy();
-    void compute_tree(const vector<int> &D, const vector<int>& r);
-    void compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r);
-    void compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r);
-    void update_desc_labels(Node* node);
+    Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
+    Node* insert_delete_node(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false, int size_limit=-1);
+    Node* condense_split_node(double lambda_s, bool weighted = false, bool validation_test_mode = false, int size_limit=-1);
+    Node* delete_node(u_int64_t idx_tobe_deleted);
+    Node* delete_node(Node* node);
+    Node* uniform_sample(bool with_root=true) const;
+    Node* weighted_sample() const;
+    void random_insert(std::map<u_int, int>&&);
+    void insert_at(u_int pos, std::map<u_int, int>&&); // uses all_nodes_vec pos
+    void insert_child(Node *pos, std::map<u_int, int>&& labels);
+    map<int, double> get_children_id_score(Node *node); // TODO: can be a method of node instead
+    void compute_tree(const vector<double> &D, const vector<int> &r);
+    void compute_stack(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r);
     void compute_weights();
     u_int get_n_nodes() const;
-
     friend std::ostream& operator<<(std::ostream& os, Tree& t);
     Tree& operator=(const Tree& other);
+    //validation of tree
+    bool is_redundant() const;
+    // Validation of subtrees
+    bool is_valid_subtree(Node* node) const;// TODO: can be a method of node instead
+    bool subtree_out_of_bound(Node *n) const;// TODO: can be a method of node instead
+    bool zero_ploidy_changes(Node* n) const;// TODO: can be a method of node instead
 
+    vector<double> omega_condense_split(double lambda_s, bool weighted);
+    vector<double> chi_condense_split(bool weighted);
+
+    vector<double> omega_insert_delete(double lambda_r, double lambda_c, bool weighted);
+    vector<double> chi_insert_delete(bool weighted);
+
+    void load_from_file(string file);
 
 private:
-
-
-    void update_label(std::unordered_map<u_int,int>& c_parent, Node* node);
-
+    void update_label(std::map<u_int,int>& c_parent, Node* node);
+    void update_desc_labels(Node* node);
+    bool region_changes(Node *n, u_int region_id) const;
     void copy_tree(const Tree& source_tree);
-    void recursive_copy(Node *source, Node *destination);
-    void compute_score(Node *node, const vector<int> &D, int &sum_D, const vector<int> &r, float eta=0.0001f);
-    Node* prune(Node *pos); // does not deallocate, TODO: have a delete method that calls this and deallocates
+    void copy_tree_nodes(Node *destination, Node *source);
+    void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta = 0.0001f);
+    void compute_root_score(double &sum_d, const vector<int> &r);
+    Node* prune(Node *pos); // does not deallocate,
     Node* insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
-    bool is_ancestor(Node *target, Node *curr);
-
-    bool empty_hashmap(unordered_map<u_int, int> &dict);
-
+    bool is_ancestor(Node *target, Node *curr) const;
+    void destroy();
 };
 
 std::ostream& operator<<(std::ostream& os, Tree& t) {
 
-    std::stack<Node*> stk;
-    stk.push(t.root); //start with the root
-    os << "Tree score: " << t.score << endl;
+    /*
+     * Overloading the << operator
+     * */
 
-    while (!stk.empty()) {
-        Node* top = (Node*) stk.top();
-        stk.pop();
-        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
-            stk.push(temp);
-        }
-        os << *top << std::endl;
+    vector<Node*> nodes = t.root->get_descendents(true);
+
+    os << "Tree score: " << setprecision(print_precision) << t.score << endl;
+    for (auto const &x : nodes)
+    {
+        os << *x << std::endl;
     }
     return os;
 }
 
 
 
-void Tree::compute_root_score(const vector<int> &D, int& sum_d, const vector<int>& r) {
+void Tree::compute_root_score(double &sum_d, const vector<int> &r) {
+
+    /*
+     * Computes the score of the root.
+     * */
 
     int z = 0;
     for (auto const &x : r)
         z += x * this->ploidy;
 
-    root->log_score = sum_d * log(this->ploidy) - sum_d * log(z);
+    //root->log_score = sum_d * log(this->ploidy) - sum_d * log(z);
+    root->log_score = 0;
     root->z = z;
 }
 
-void Tree::compute_score(Node *node, const vector<int> &D, int &sum_D, const vector<int> &r, float eta) {
+void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta) {
 
+    /*
+     * Computes the score of a node.
+     * */
 
     if (node->parent == nullptr)
     {
-        compute_root_score(D, sum_D,r);
+        compute_root_score(sum_D, r);
     }
     else
 
@@ -136,11 +147,12 @@ void Tree::compute_score(Node *node, const vector<int> &D, int &sum_D, const vec
         {
 
             // if log zero then use eta value, not to have -infinity
-            int cf = node->c[x.first];
+            int cf = (node->c.count(x.first)?node->c[x.first]:0); // use count to check without initializing the not found element
+            // the above part can also be done by using map::at and exception handling
 
             val += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)));
 
-            int cp_f = node->parent->c[x.first];
+            int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
 
             val -= D[x.first] * (log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
 
@@ -151,6 +163,7 @@ void Tree::compute_score(Node *node, const vector<int> &D, int &sum_D, const vec
         val -= sum_D*log(z);
         val += sum_D*log(node->parent->z);
 
+        assert(!std::isnan(val));
         node->log_score = val;
         node->z = z;
     }
@@ -159,15 +172,19 @@ void Tree::compute_score(Node *node, const vector<int> &D, int &sum_D, const vec
 }
 
 
-void Tree::compute_tree(const vector<int> &D, const vector<int>& r) {
+void Tree::compute_tree(const vector<double> &D, const vector<int> &r) {
 
+    /*
+     * Computes the tree.
+     * */
+
+    double sum_d = std::accumulate(D.begin(), D.end(), 0.0);
     //reuse the computed sum in each node
-    int sum_d = std::accumulate(D.begin(), D.end(), 0);
     compute_stack(root, D, sum_d, r);
 
 }
 
-void Tree::compute_stack(Node *node, const vector<int> &D, int &sum_D, const vector<int>& r)
+void Tree::compute_stack(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r)
 {
     /*
      * Computes the nodes scores in a top-down fashion
@@ -179,13 +196,13 @@ void Tree::compute_stack(Node *node, const vector<int> &D, int &sum_D, const vec
     stk.push(node);
 
     while (!stk.empty()) {
-        Node* top = (Node*) stk.top();
+        Node* top = static_cast<Node*> (stk.top());
         stk.pop();
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
         }
         compute_score(top, D, sum_D, r);
-        // TODO: use a function pointer to compute_score or traverse or update_desc_labels because rest of the code is the same.
+        // TODO: reuse this part of the code (the recursive iteration of nodes)
     }
 
 //    alternative recursive implementation
@@ -198,14 +215,24 @@ void Tree::compute_stack(Node *node, const vector<int> &D, int &sum_D, const vec
 
 Tree::Tree(u_int ploidy, u_int n_regions)
 {
+    // Tree constructor
     root = new Node();
+    // compute and store the hash
+    vector<int> keys_values = {};
+
+    uint64_t size_for_hash = keys_values.size() * sizeof(keys_values[0]);
+    uint64_t c_hash = Utils::calculate_hash(&keys_values[0], size_for_hash);
+    root->c_hash = c_hash;
+
     this->ploidy = ploidy;
     this->n_regions = n_regions;
     n_nodes = 0;
     score = 0.0;
     // creates a copy of the root ptr and stores it in the vector
 
-    all_nodes.push_back(root);
+
+
+    all_nodes_vec.push_back(root);
 
 
 }
@@ -214,30 +241,32 @@ Tree::~Tree() {
     destroy();
 }
 
-Node* Tree::uniform_sample(bool with_root) {
+Node* Tree::uniform_sample(bool with_root) const{
+
+    /*
+     * Returns a uniformly sampled node pointer.
+     *
+     * */
 
     int rand_val = 0;
-    if (all_nodes.size() == 0)
+    if (all_nodes_vec.empty())
         throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
-    else if (all_nodes.size() ==1)
+    else if (all_nodes_vec.size() ==1)
         rand_val = 1;
     else
     {
         // 1 is root, 2 is 1st.
-        rand_val = MathOp::random_uniform(with_root?1:2,all_nodes.size());
+        rand_val = MathOp::random_uniform(with_root?1:2,all_nodes_vec.size());
     }
 
-    return all_nodes[rand_val-1];
-}
-
-bool Tree::is_leaf(Node* n) const{
-    if (n->first_child == nullptr)
-        return true;
-    else
-        return false;
+    return all_nodes_vec[rand_val-1];
 }
 
 Node * Tree::insert_child(Node *pos, Node *source) {
+/*
+ * Inserts the source node to the pos node.
+ * Updates the labels by calling update_label with the parent node.
+ * */
 
     // set the parent from the child
     source->parent = pos;
@@ -247,11 +276,11 @@ Node * Tree::insert_child(Node *pos, Node *source) {
         source->id = ++counter;
     // if the id is set then keep it
 
-    all_nodes.push_back(source);
+    all_nodes_vec.push_back(source);
     n_nodes++;
 
     // insert
-    if (is_leaf(pos))
+    if (pos->is_leaf())
     {
         pos->first_child = source;
         update_label(pos->c, source);
@@ -285,7 +314,7 @@ Node* Tree::insert_child(Node *pos, Node& source) {
 
 }
 
-void Tree::insert_child(Node* pos, std::unordered_map<u_int, int>&& labels) {
+void Tree::insert_child(Node* pos, std::map<u_int, int>&& labels) {
 
     /*
      * Creates a child node from the labels and inserts it to the position pos
@@ -302,7 +331,10 @@ void Tree::insert_child(Node* pos, std::unordered_map<u_int, int>&& labels) {
 }
 
 void Tree::destroy() {
-    for (auto elem: all_nodes)
+    /*
+     * Destroys the tree
+     * */
+    for (auto elem: all_nodes_vec)
     {
         //std::cout<<"deleting " << elem->log_score <<std::endl;
         elem->first_child = elem->next = nullptr;
@@ -310,27 +342,34 @@ void Tree::destroy() {
         delete elem;
         elem = nullptr;
     }
-    all_nodes.clear();
+    all_nodes_vec.clear();
     n_nodes = 0;
     root = nullptr;
     //std::cout<<"destroyed."<<std::endl;
 }
 
-void Tree::random_insert(std::unordered_map<u_int, int>&& labels)
+void Tree::random_insert(std::map<u_int, int>&& labels)
 {
+    /*
+     * Inserts a node to a uniform random position.
+     * */
+
     Node* pos = uniform_sample(true);
     insert_child(pos, std::move(labels));
 
 }
 
-void Tree::insert_at(u_int pos, std::unordered_map<u_int, int> && labels) {
-    Node* n = all_nodes[pos];
+void Tree::insert_at(u_int pos, std::map<u_int, int> && labels) {
+    /*
+     * Inserts the node by its all_nodes_vector position
+     * */
+    Node* n = all_nodes_vec[pos];
     insert_child(n, std::move(labels));
 
 }
 
 
-void Tree::update_label(std::unordered_map<u_int, int>& c_parent, Node *node) {
+void Tree::update_label(std::map<u_int, int>& c_parent, Node *node) {
     /*
      * Updates the child label (c) based on the parent c
      * */
@@ -339,11 +378,27 @@ void Tree::update_label(std::unordered_map<u_int, int>& c_parent, Node *node) {
     node->c = c_parent;
     // parent labels are passed to the child c here
     for (auto it=node->c_change.begin(); it!=node->c_change.end(); ++it) {
-        node->c[it->first] = node->c[it->first] + it->second;
+        int new_value = 0;
+        new_value = node->c[it->first] + it->second;
+        if (new_value == 0)
+            node->c.erase(it->first); //erase the zero instead of storing it, if not found by default it is already zero in map.
+        else
+            node->c[it->first] = new_value;
     }
 
 
+    // compute and store the hash
+    vector<int> keys_values = {};
+    for (auto const &it : node->c)  {
+        keys_values.push_back(it.first);
+        keys_values.push_back(it.second);
+    };
+    unsigned long size_for_hash = keys_values.size() * sizeof(keys_values[0]);
+    uint64_t c_hash = Utils::calculate_hash(&keys_values[0], size_for_hash);
+
+    node->c_hash = c_hash;
 }
+
 
 
 Tree::Tree(Tree &source) {
@@ -355,48 +410,58 @@ Tree::Tree(Tree &source) {
 
 void Tree::copy_tree(const Tree& source_tree) {
     /*
-     * TODO
-     * have a single copy node method (done)
+     * Copies the source tree
      * call it recursively (using stack)
-     * copy all the other attributes
     */
 
     this->ploidy = source_tree.ploidy;
     this->counter = source_tree.counter;
     this->score = source_tree.score;
     this->n_regions = source_tree.n_regions;
-    this->n_nodes = source_tree.n_nodes;
 
     // copy the nodes using struct copy constructor
     this->root = new Node(*source_tree.root);
-    this->all_nodes.push_back(root);
-    recursive_copy(source_tree.root, this->root);
-
+    this->all_nodes_vec.push_back(root); // all nodes cannot be copied since 2 trees cannot have nodes pointing to the same address
+    copy_tree_nodes(this->root, source_tree.root); // the nodes of the source tree are inserted into the destination tree
+    this->n_nodes = source_tree.n_nodes; // copy this after the insertions are done (insertions change this value).
  }
 
-void Tree::recursive_copy(Node* source, Node *destination) {
+void Tree::copy_tree_nodes(Node *destination, Node *source) {
     /*
-     * Copies the tree from source to destination
-     * TODO implement it using stack & loop, not to use the function call stack
-     * TODO the order of insertion is different (although the tree is the same)
-     * use either 2 stacks or a stack and a tuple
+     * Copies the tree from source to destination in a BFS fashion
+     * Uses a queue of Node* pairs to keep the copying order.
      * */
 
-    for (Node* temp = source->first_child; temp != nullptr; temp=temp->next) {
-        auto child = insert_child(destination, *temp);
-        recursive_copy(temp, child);
+    deque<pair<Node*,Node*>> to_copy;
+
+    for (Node* temp = source->first_child; temp != nullptr; temp=temp->next) // initialize with the first children
+        to_copy.push_back({destination,temp});
+
+    while(!to_copy.empty())
+    {
+        pair<Node*,Node*> top = to_copy.back();
+        to_copy.pop_back();
+        Node* new_destination = insert_child(top.first, *top.second);
+        for (Node* temp = top.second->first_child; temp != nullptr; temp=temp->next)
+            to_copy.push_back({new_destination,temp});
     }
-
-
 }
 
-Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
-    // returns the pruned node (which is the attached node)
+Node * Tree::prune_reattach(bool genotype_preserving, bool weighted, bool validation_test_mode) {
+    /*
+     * Prunes a node and reattaches it to another node which is not among the descendents of the pruned node.
+     * Returns the pruned node (which also happens to be the attached node)
+     * Requires more than two nodes to perform.
+     *
+     * */
+
+    if (all_nodes_vec.size() <= 2)
+        throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
 
     Node* prune_pos = nullptr;
 
     if (validation_test_mode)
-        prune_pos = all_nodes[2];
+        prune_pos = all_nodes_vec[2];
     else
     {
         if (weighted)
@@ -407,7 +472,7 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
 
 
     // copy all nodes
-    std::vector<Node*> destination_nodes = this->all_nodes;
+    std::vector<Node*> destination_nodes = this->all_nodes_vec;
 
     // remove all the descendents of the prune_pos
 
@@ -415,7 +480,7 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     stk.push(prune_pos);
 
     while (!stk.empty()) {
-        Node *top = (Node *) stk.top();
+        Node* top = static_cast<Node*> (stk.top());
         stk.pop();
         for (Node *temp = top->first_child; temp != nullptr; temp = temp->next) {
             stk.push(temp);
@@ -429,12 +494,11 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     Node* attach_pos = nullptr;
 
     if (validation_test_mode)
-        attach_pos = all_nodes[5];
+        attach_pos = all_nodes_vec[5];
     else
         attach_pos = destination_nodes[rand_val -1];
 
-
-    //do not recompute you attach at the same pos
+    //do not recompute if you attach at the same pos
     if (prune_pos->parent->id != attach_pos->id)
     {
         /*
@@ -442,19 +506,31 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
          * 2. Insert prune_pos using insert_child function
          * */
         auto pruned_node = prune(prune_pos);
+
+        std::map<u_int,int> pruned_c;
+
+        if(genotype_preserving)
+        {
+            pruned_c = pruned_node->c; // copy
+        }
+
         auto attached_node = insert_child(attach_pos, pruned_node);
+
+        if (genotype_preserving)
+        {
+            std::map<u_int,int> parent_c = attached_node->parent->c;
+            attached_node->c_change = Utils::map_diff(pruned_c, parent_c);
+        }
 
         //update the c vectors of the attached node and its descendents
         update_desc_labels(attached_node);
+
+        if (!is_valid_subtree(attached_node) || is_redundant())
+            return nullptr;
+
         // recompute the weights after the tree structure is changed
         this->compute_weights();
 
-        // std sort the all_nodes vector to make sure the indices match between 2 trees
-                // e.g. node id 4 will always be at index 4
-        //TODO: or never change the all_nodes vector after initialization
-
-        // TODO remove this sort, use perhaps a hashmap instead!
-        std::sort(this->all_nodes.begin(),this->all_nodes.end(), node_ptr_compare);
         return attached_node;
     }
     else
@@ -491,10 +567,10 @@ Node *Tree::prune(Node *pos) {
         }
     }
 
-    // prune from the all_nodes as well
-    all_nodes.erase(std::remove(all_nodes.begin(), all_nodes.end(), pos), all_nodes.end());
+    // remove from the all_nodes_vec as well
+    all_nodes_vec.erase(std::remove(all_nodes_vec.begin(), all_nodes_vec.end(), pos), all_nodes_vec.end());
 
-    //prune the next link
+    //remove the next link
     pos->next = nullptr;
 
     n_nodes--;
@@ -520,31 +596,88 @@ Tree &Tree::operator=(const Tree &other) {
     return *this;
 }
 
-std::vector<double> Tree::get_scores() {
 
-    vector<double> scores;
-    for (auto const &i : all_nodes)
+void Tree::load_from_file(string file) {
+    /*
+     * Loads the tree from file
+     * TODO: first destroy the tree if it is not empty (or 1 node only)
+     * */
+
+    //string file = "10nodes_0regions_100reads_size_limit_test_tree_inferred_segmented.txt";
+    std::ifstream infile(file);
+    std::string line;
+
+    std::getline(infile, line);
+    std::getline(infile, line); // pass the first 2 lines
+    while (std::getline(infile, line))
     {
-        assert(i->log_score != 0); // make sure no score is zero
-        scores.push_back(i->log_score);
-    }
+        std::istringstream iss(line);
+        string a, b, c ;
+        if (!(iss >> a >> b >> c)) { break; } // error
+        b.pop_back();
+        int node_id = stoi(b);
+        string del3 = ",[";
+        string delim_cp = "]";
+        string token = c.substr(0, c.find(del3));
+        string token_r = c.substr(c.find(del3)+1, c.length());
+        int parent_id = stoi(token.substr(5,token.size()));
+        string s = token_r.substr(1, token_r.find(delim_cp)-1);
+        cout <<" node id: " << node_id << " parent id: " << parent_id <<"s=" <<s<<  endl;
+        // process pair (a,b)
+        size_t pos = 0;
+        vector<string> pairs;
+        string delimiter= ",";
+        while ((s.find(delimiter)) != std::string::npos)
+        {
+            pos = s.find(delimiter);
+            pairs.push_back(s.substr(0, pos));
+            s.erase(0, pos+ delimiter.length());
+        }
+        pairs.push_back(s);
 
-    return scores;
+        // create node
+        Node* child = new Node();
+        child->id = node_id;
+
+        // fill the c_change map
+        for (auto const& s : pairs)
+        {
+            u_int key = stoi(s.substr(0,s.find(':')));
+            int value = stoi(s.substr(s.find(':')+1, s.length()));
+            child->c_change[key] = value;
+        }
+
+
+        // find the node with a given id and insert there
+        //t.in
+        Node* parent = nullptr;
+        for (Node* ptr : all_nodes_vec)
+        {
+            if (ptr->id == parent_id)
+            {
+                parent = ptr;
+                break;
+            }
+        }
+        insert_child(parent, child);
+    }
+    compute_weights();
+
 }
 
-unordered_map<int, double> Tree::get_children_id_score(Node *node) {
+map<int, double> Tree::get_children_id_score(Node *node) {
+/*
+ * Returns the ids and the log scores of the descendent nodes
+ * */
 
-    //TODO return a vector of tuple of <id,score>
-    //TODO or return a single unordered_map
-
-    unordered_map<int,double> id_score_pairs;
+    map<int,double> id_score_pairs;
 
     // stack based implementation
     std::stack<Node*> stk;
     stk.push(node);
 
     while (!stk.empty()) {
-        Node* top = (Node*) stk.top();
+        Node* top = static_cast<Node*> (stk.top());
         stk.pop();
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
@@ -559,6 +692,7 @@ unordered_map<int, double> Tree::get_children_id_score(Node *node) {
 void Tree::compute_weights() {
 
     /*
+     * Computes the weights of all of the nodes.
      * a bottom-up approach
      * time complexity: O(n), where n is the number of nodes
      * */
@@ -573,7 +707,7 @@ void Tree::compute_weights() {
     stk.push(root); //start with the root
 
     while (!stk.empty()) {
-        Node* top = (Node*) stk.top();
+        Node* top = static_cast<Node*> (stk.top());
         stk.pop();
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
@@ -583,7 +717,7 @@ void Tree::compute_weights() {
 
     while (!cmp_stack.empty())
     {
-        Node* top = (Node*) cmp_stack.top();
+        Node* top = static_cast<Node*> (cmp_stack.top());
         cmp_stack.pop();
         unsigned n_descendents = 1;
 
@@ -594,17 +728,17 @@ void Tree::compute_weights() {
     }
 }
 
-Node *Tree::weighted_sample() {
+Node *Tree::weighted_sample() const{
 
-    if (all_nodes.size() == 0)
+    if (all_nodes_vec.empty())
         throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
-    else if (all_nodes.size() ==1)
+    else if (all_nodes_vec.size() ==1)
         throw std::length_error("there is only 1 element which is the root and root cannot be sampled");
     else
     {
         // get the subvector
-        vector<Node*>::const_iterator first = all_nodes.begin() + 1;
-        vector<Node*>::const_iterator last = all_nodes.end();
+        auto first = all_nodes_vec.begin() + 1;
+        auto last = all_nodes_vec.end();
         vector<Node*> nodes_to_sample(first, last);
 
         vector<float> weights;
@@ -614,7 +748,7 @@ Node *Tree::weighted_sample() {
             weights.push_back(weight);
         }
 
-        std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+        std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
         std::discrete_distribution<> d(weights.begin(), weights.end());
 
         unsigned sample = d(generator);
@@ -626,7 +760,7 @@ Node *Tree::weighted_sample() {
 
 }
 
-bool Tree::is_ancestor(Node *target, Node *curr) {
+bool Tree::is_ancestor(Node *target, Node *curr) const{
     /*
      * Returns true if the target node is an ancestor of the current node
      * Complexity: O(n) where n is the number of ancestors of the curr node
@@ -649,7 +783,7 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
      * Requires more than 2 nodes to work
      * */
 
-    if (all_nodes.size() <= 2)
+    if (all_nodes_vec.size() <= 2)
         throw std::logic_error("swapping labels does not make sense when they is only one node besides the root");
 
     Node *node1, *node2;
@@ -667,8 +801,8 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
     {
         if (validation_test_mode)
         {
-            node1 = all_nodes[2]; //without the root
-            node2 = all_nodes[5];
+            node1 = all_nodes_vec[2]; //without the root
+            node2 = all_nodes_vec[5];
         }
         else
         {
@@ -680,12 +814,16 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
 
     }
 
-    // perform std swap on unordered_maps
+    // if the labels to be swapped are the same, then reject the move
+    if(node1->c_change == node2->c_change)
+        throw std::logic_error("swapping 2 nodes with the same labels does not make sense, the move will be rejected");
+
+    // perform std swap on maps
     node1->c_change.swap(node2->c_change);
 
     vector<Node*> return_nodes;
 
-
+    // TODO only compute the nodes in between
     if (is_ancestor(node1, node2))
         return_nodes.push_back(node1);
     else if (is_ancestor(node2, node1))
@@ -696,19 +834,20 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
         return_nodes.push_back(node2);
     }
 
-    return return_nodes;
-}
-
-
-bool Tree::empty_hashmap(unordered_map<u_int, int> &dict) {
-
-    for (auto const &it : dict)
+    // updating the labels
+    for (auto const &node : return_nodes)
     {
-        if(it.second != 0)
-            return false;
-    }
-    return true;
+        this->update_desc_labels(node);
 
+        if (!is_valid_subtree(node))
+            return {}; // empty vector with list initialization
+
+    }
+    if (is_redundant())
+        return {};
+
+
+    return return_nodes;
 }
 
 void Tree::update_desc_labels(Node *node) {
@@ -722,23 +861,49 @@ void Tree::update_desc_labels(Node *node) {
     stk.push(node);
 
     while (!stk.empty()) {
-        Node* top = (Node*) stk.top();
+        Node* top = static_cast<Node*>(stk.top());
         stk.pop();
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
         }
+        if (top == this->root) // delete move can cause this to happen (if a FO child of root is deleted) and top->parent will be NULL
+            continue;
         update_label(top->parent->c, top);
     }
 }
 
-Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, bool validation_test_mode) {
+bool Tree::is_valid_subtree(Node *node) const{
+    /*
+     * Returns true if the subtree is valid
+     * */
+
+    if (subtree_out_of_bound(node))
+        return false;
+
+    if (zero_ploidy_changes(node))
+        return false;
+
+    return true;
+
+}
+
+Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode) {
+
+    /*
+     * Adds and removes events to a node.
+     * Throws logical error if the "n_regions_to_sample" value, (drawn from a poisson) is bigger than total number of regions available.
+     * Returns the pointer to the affacted node.
+     * */
+
+    if (all_nodes_vec.size() <= 1)
+        throw std::logic_error("Adding or removing events does not make sense when there is 1 node or less. Root has to be neutral.");
 
     Node* node;
 
     if (validation_test_mode)
     {
-        node = all_nodes[3];
-        lambda_r = lambda_c = 0.0f;
+        node = all_nodes_vec[3];
+        lambda_r = lambda_c = 0.0;
     }
     else
     {
@@ -747,23 +912,25 @@ Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, boo
         else
             node = uniform_sample(false); //without the root
     }
-    std::mt19937 &generator = SingletonRandomGenerator::get_generator();
+    std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
 
     // n_regions from Poisson(lambda_R)+1
-    std::poisson_distribution<int> distribution(lambda_r); // the param is to be specified later
-    int n_regions_to_sample = distribution(generator) + 1;
+    std::poisson_distribution<int> poisson_dist(lambda_r); // the param is to be specified later
+    int n_regions_to_sample = poisson_dist(generator) + 1;
     // sample n_regions_to_sample distinct regions uniformly
     int n_regions = this->n_regions;
     int regions_sampled = 0;
-    std::set<int> distinct_regions;
+    std::set<u_int> distinct_regions;
 
     // otherwise we cannot sample distinct uniform regions
-    assert(n_regions_to_sample <= n_regions);
+    if (n_regions_to_sample > n_regions)
+        throw std::logic_error("the number of distinct regions to sample cannot be bigger than the total number of distinct regions available");
+
 
     while (regions_sampled < n_regions_to_sample)
     {
-        int uniform_val = MathOp::random_uniform(0, n_regions-1);
+        u_int uniform_val = static_cast<u_int> (MathOp::random_uniform(0, n_regions-1));
         if (validation_test_mode)
             uniform_val =3;
         if (distinct_regions.find(uniform_val) == distinct_regions.end())
@@ -785,18 +952,488 @@ Node *Tree::add_remove_events(float lambda_r, float lambda_c, bool weighted, boo
         if (validation_test_mode)
             sign = true;
 
-        node->c_change[elem] += (sign? n_copies : -n_copies);
+    node->c_change[elem] += (sign? n_copies : -n_copies);
+
+        if (node->c_change.at(elem) == 0)
+            node->c_change.erase(elem); //erase the zero instead of storing it
 
     }
 
-    if (empty_hashmap(node->c_change))
-        return nullptr;
+    if (Utils::is_empty_map(node->c_change))
+        return nullptr; //TODO: maybe throw certain exception here
     else
     {
         update_desc_labels(node); // to update the labels of the descendents
+        // check if the subtrees are valid after updating the labels
+        if (!is_valid_subtree(node) || is_redundant())
+            return nullptr; //TODO: maybe throw certain exception here
+
         return node;
     }
 
+}
+
+bool Tree::subtree_out_of_bound(Node *n) const{
+/*
+ * Returns true if any of the descendent nodes contain a value less than -ploidy in the c hashmap
+ * */
+    int lb = -ploidy;
+    int ub = copy_number_limit; // global variable
+    vector<Node*> descendents = n->get_descendents(true);
+    for (auto const &elem : descendents)
+        for (auto const &it : elem->c)
+            if (it.second < lb || it.second > ub)
+                return true;
+    return false;
+
+}
+
+bool Tree::zero_ploidy_changes(Node *n) const{
+
+    vector<Node*> descendents = n->get_descendents(true);
+    vector<int> checked_regions;
+
+    for (auto const &node : descendents)
+        for (auto const &it : node->c)
+            // if the ploidy becomes 0, i.e. hashmap value = -2 for humans, then it cannot change due to biological constraints.
+            if(it.second == (-1 * ploidy) && (find(checked_regions.begin(), checked_regions.end(), it.first) == checked_regions.end()))
+            {
+                bool does_change = region_changes(node, it.first);
+                if (does_change)
+                    return true;
+                else
+                    checked_regions.push_back(it.first);
+            }
+    return false;
+}
+
+bool Tree::region_changes(Node *n, u_int region_id) const{
+    /*
+     * Returns true if the region label changes in one of the descendents
+     * */
+
+    vector<Node*> descendents = n->get_descendents(true);
+
+    for (auto const &node : descendents)
+        if (node->c_change[region_id] != 0)
+            return true;
+    return false;
+
+}
+
+bool Tree::is_redundant() const {
+    /*
+     * Returns true if any of the nodes have the same c maps.
+     * Worst case complexity O(n), where n: n_nodes
+     * */
+
+    unordered_map<uint64_t , unsigned> hash_map;
+    for (unsigned i=0; i < all_nodes_vec.size(); i++)
+    {
+        if (hash_map.count(all_nodes_vec[i]->c_hash))
+        {
+            // found
+            unsigned hash_index = hash_map.at(all_nodes_vec[i]->c_hash);
+            bool eq_comparison = all_nodes_vec[i]->c == all_nodes_vec[hash_index]->c;
+            return (eq_comparison);
+        }
+        else
+        {
+            // not found
+            hash_map[all_nodes_vec[i]->c_hash] = i;
+        }
+    }
+
+    return false;
+
+
+}
+
+Node * Tree::delete_node(u_int64_t idx_tobe_deleted) {
+/*
+ * Deletes the node at the given index.
+ * Assigns the first order children of the deleted node to the parent of the deleted node.
+ * Throws out_of_range exception.
+ * Returns the pointer to the parent of the deleted node.
+ * */
+
+    Node* tobe_deleted;
+    try {
+        tobe_deleted = all_nodes_vec[idx_tobe_deleted];
+    } catch (const std::exception& e) {
+        std::cout << " a standard exception was caught while trying to access the index of the node to be deleted from all_nodes_vec, with message '"
+                  << e.what() << "'\n";
+        throw std::out_of_range("all_nodes_vec[idx_tobe_deleted] cannot be retrieved"); // rethrow it to handle it in apply_insert_delete_move method.
+    }
+    return delete_node(tobe_deleted);
+}
+
+Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode, int size_limit) {
+    /*
+     * Adds or deletes nodes move, that takes the mcmc transition probabilities into account.
+     * Returns the node to perform partial score computation on.
+     *
+     * */
+
+    Node* return_node = nullptr;
+
+    vector<double> chi = chi_insert_delete(weighted); // add weights
+    vector<double> omega = omega_insert_delete(lambda_r, lambda_c, weighted); // delete weights
+
+    // sample the number of regions to be affected with Poisson(lambda_r)+1
+    std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
+
+    // 0.5 prob bernoulli
+    std::bernoulli_distribution bernoulli_05(0.5);
+
+    int K = this->n_regions;
+
+    double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+    double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+
+    double normalization_term = sum_chi + sum_omega;
+    double p_chi = sum_chi / normalization_term;
+
+    std::uniform_real_distribution<double> prob_dist(0.0,1.0);
+    double rand_val = prob_dist(generator); // to be btw. 0 and 1
+
+    if (rand_val < p_chi)
+    {
+        // add is chosen
+        if (all_nodes_vec.size() >= size_limit)
+            throw std::logic_error("Tree size limit is reached, insert node move will be rejected!");
+
+        std::discrete_distribution<>* dd;
+        dd = new std::discrete_distribution<>(chi.begin(),chi.end());
+
+        u_int pos_to_insert = (*dd)(generator); // this is the index of the all_nodes_vector.
+        delete dd;
+
+        // create the map
+        // create a map, fill it properly with r amount of labels
+        map<u_int, int> distinct_regions;
+
+        Utils::random_initialize_labels_map(distinct_regions, K, lambda_r, lambda_c); // modifies the distinct_regions
+
+        Node* parent = all_nodes_vec[pos_to_insert];
+        // retrieve the first order children of pos_to_insert node
+        vector<Node*> first_order_children;
+        for (Node* temp = parent->first_child; temp != nullptr; temp=temp->next)
+        {
+            first_order_children.push_back(temp);
+        }
+
+        this->insert_at(pos_to_insert, static_cast<map<u_int, int> &&>(distinct_regions)); // cast the expression to r_value
+        Node* new_node = all_nodes_vec.back(); // the last inserted elem, e.g. new node
+
+        // foreach first_order_child, with 0.5 prob. change their parent to become the last element.
+        // Change the parent with 0.5 prob
+        for (Node* elem : first_order_children)
+        {
+            bool rand = bernoulli_05(generator); // either true or false with 0.5 prob
+            if (rand)
+            {
+                Node* pruned_child = prune(elem); // prune from the old parent
+                insert_child(new_node, pruned_child); // insert into next parent
+            }
+        }
+        return_node = new_node;
+    }
+
+    else // delete is chosen
+    {
+
+        if (all_nodes_vec.size() <= 1)
+            throw std::logic_error("Root cannot be deleted, delete move will be rejected");
+
+        std::discrete_distribution<>* dd;
+        dd = new std::discrete_distribution<>(omega.begin()+1,omega.end());
+
+        u_int64_t idx_tobe_deleted = (*dd)(generator) + 1; // this is the index of the all_nodes_vector,
+        // +1 here again because the discrete distribution will consider omega.begin()+1 as 0
+
+        delete dd;
+        return_node = delete_node(idx_tobe_deleted); // returns the parent of the deleted node
+    }
+
+    //update the c vectors of the parent and its new descendents
+    update_desc_labels(return_node);
+    // check if the subtrees are valid after updating the labels
+    if (!is_valid_subtree(return_node) || is_redundant())
+        return nullptr;
+    // recompute the weights after the tree structure is changed
+    this->compute_weights();
+    return return_node;
+}
+
+Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_test_mode, int size_limit) {
+    /*
+     * Condenses two nodes into one or splits a node into two.
+     * */
+
+    if (all_nodes_vec.size() <= 1)
+        throw std::logic_error("condense or split does not make sense when there is 1 node or less. ");
+
+
+    Node* return_node = nullptr;
+    vector<double> chi = this->chi_condense_split(weighted); // split weights
+    vector<double> omega = this->omega_condense_split(lambda_s, weighted); // condense weights
+
+    double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+    double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+
+    double normalization_term = sum_chi + sum_omega;
+    double p_chi = sum_chi / normalization_term;
+
+    std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
+    // n_regions from Poisson(lambda_S)+1
+    std::poisson_distribution<int> poisson_s(lambda_s); // the param is to be specified later
+    std::bernoulli_distribution bernoulli_05(0.5);
+
+    std::uniform_real_distribution<double> prob_dist(0.0,1.0);
+    double rand_val = prob_dist(generator); // to be btw. 0 and 1
+
+    vector<Node*> descendents_of_root = this->root->get_descendents(false); // without the root
+    if (rand_val < p_chi)
+    {
+        // split is chosen
+
+        if (all_nodes_vec.size() >= size_limit)
+            throw std::logic_error("Tree size limit is reached, split move will be rejected!");
+
+
+        std::discrete_distribution<>* dd;
+
+        dd = new std::discrete_distribution<>(chi.begin(),chi.end());
+
+        u_int pos_to_insert = static_cast<u_int>((*dd)(generator)); // this is the index of the descendents_of_root.
+        delete dd;
+
+        Node* parent = descendents_of_root[pos_to_insert]; // this node will be split
+
+        if (parent->c_change.size() == 1)
+            throw logic_error("Nodes with single events in a single region cannot be split");
+
+        // compute v_p and v_c
+        map<u_int,int> v_p;
+        map<u_int,int> v_c;
+
+        for (auto const& x : parent->c_change) // for a node // TODO: make a method that takes 2 maps by reference and updates them, reuse it if split move is chosen
+        {
+            bool sign = bernoulli_05(generator);
+            int beta = 2 * sign -1;
+            int lambda = poisson_s(generator);
+            int v_k = x.second;
+            if (v_k % 2 == 0) // even value
+                v_p[x.first] = v_k/2 + beta*(0.5 + lambda); // results in integer
+            else // odd value
+                v_p[x.first] = v_k/2 + beta*lambda;
+            v_c[x.first] = v_k - v_p[x.first]; // v_c = v - v_p
+
+            // make sure no zero values are created
+            if (v_p.at(x.first) == 0)
+                v_p.erase(x.first);
+            if (v_c.at(x.first) == 0)
+                v_c.erase(x.first);
+        }
+        parent->c_change = v_p; // the parent c_change becomes v_p
+
+        // retrieve the first order children of parent, because some will be passed to the new children
+        vector<Node*> first_order_children;
+        for (Node* temp = parent->first_child; temp != nullptr; temp=temp->next)
+        {
+            first_order_children.push_back(temp);
+        }
+
+        this->insert_child(parent, static_cast<map<u_int,int>&&>(v_c)); // insert the child with v_c
+        Node* new_node = all_nodes_vec.back(); // the last inserted elem, e.g. new node
+        // foreach first_order_child, with 0.5 prob. change their parent to become the last element.
+        // Change the parent with 0.5 prob
+        for (Node* elem : first_order_children)
+        {
+            bool rand = bernoulli_05(generator); // either true or false with 0.5 prob
+            if (rand)
+            {
+                Node* pruned_child = prune(elem); // prune from the old parent
+                insert_child(new_node, pruned_child); // insert into next parent
+            }
+        }
+        return_node = parent;
+    }
+    else
+    {
+        // condense is chosen
+        // condense is delete with its c_change values passed to the parent
+
+        if (all_nodes_vec.size() <= 2)
+            throw std::logic_error("condensing nodes does not make sense when there are 2 or less nodes. Root has to be neutral.");
+
+
+        std::discrete_distribution<>* dd;
+        dd = new std::discrete_distribution<>(omega.begin(),omega.end());
+        u_int64_t idx_tobe_deleted = (*dd)(generator); // this is the index of the descendents_of_root,
+        delete dd;
+
+        Node* tobe_deleted = descendents_of_root[idx_tobe_deleted];
+
+        // check if suitable for condensing
+        if (Utils::is_empty_map(tobe_deleted->c_change) || Utils::is_empty_map(tobe_deleted->parent->c_change)) // if one of them is an empty map then reject the move
+            throw std::logic_error("cannot condense a node with an empty node (root)");
+
+        map<u_int,int> condensed_c_change = tobe_deleted->parent->c_change;
+
+        for (auto const& x : tobe_deleted->c_change)
+        {
+            int new_val = x.second;
+            if (condensed_c_change.count(x.first))
+                new_val += condensed_c_change[x.first];
+            if (new_val == 0)
+                throw std::logic_error("Any of the events cannot cancel completely upon condense");
+            condensed_c_change[x.first] = new_val;
+        }
+
+        if (condensed_c_change.size() == 1)
+        {
+            for (auto const &i : condensed_c_change)
+            {
+                if(i.second == 1)
+                    throw std::logic_error("Nodes cannot be combined if they result in a single event");
+            }
+        }
+
+        tobe_deleted->parent->c_change = condensed_c_change;
+        return_node = delete_node(tobe_deleted); // returns the parent of the deleted node
+
+    }
+    //update the c vectors of the parent and its new descendents
+    update_desc_labels(return_node);
+    // check if the subtrees are valid after updating the labels
+    if (!is_valid_subtree(return_node) || is_redundant())
+        return nullptr;
+    // recompute the weights after the tree structure is changed
+    this->compute_weights();
+    return return_node;
+}
+
+Node* Tree::delete_node(Node *node) {
+    /*
+     * Deletes the node.
+     * Assigns the first order children of the deleted node to the parent of the deleted node.
+     * Returns the pointer to the parent of the deleted node.
+     * */
+
+    Node* tobe_deleted = node;
+
+    tobe_deleted = prune(tobe_deleted); // the node is pruned
+    Node* parent_of_deleted = tobe_deleted->parent;
+
+    // retrieve the first order children and prune & reattach them to parent_of_deleted
+    vector<Node*> first_order_children;
+    for (Node* temp = tobe_deleted->first_child; temp != nullptr; temp=temp->next)
+    {
+        first_order_children.push_back(temp);
+    }
+    for (Node* elem : first_order_children)
+    {
+        Node* pruned_child = prune(elem); // prune removes the next link, you cannot prune while iterating over children
+        pruned_child = insert_child(parent_of_deleted, pruned_child);
+    }
+
+    delete tobe_deleted; // deallocate it.
+
+    return parent_of_deleted; // return the node that is going to be used for the partial trees scoring
+}
+
+vector<double> Tree::omega_condense_split(double lambda_s, bool weighted) {
+    /*
+     * Returns the omega probabilities computed for a tree for the condense/split move.
+     * Omega vector is representing the condense weights
+     * */
+
+    vector<double> omega; // condense weights
+    vector<Node*> descendents_of_root = this->root->get_descendents(false); // without the root
+
+    for (auto const &node : descendents_of_root)
+    {
+        double omega_val = MathOp::compute_omega_condense_split(node, lambda_s, this->n_regions, weighted);
+        if (weighted)
+            omega_val /= (node->parent->n_descendents-1);
+        omega.push_back(omega_val);
+    }
+
+    return omega;
+}
+
+vector<double> Tree::chi_condense_split(bool weighted) {
+    /*
+     * Returns the chi probabilities computed for a tree for the condense/split move.
+     * Chi vector is representing the split weights
+     * */
+
+    vector<double> chi; // split weights
+
+    vector<Node*> descendents_of_root = this->root->get_descendents(false); // without the root
+    // compute chi and xi
+    for (auto const &node : descendents_of_root) // all nodes without the root
+    {
+        if (node->c_change.size() <= 1)
+            continue;
+        else
+        {
+            double chi_val = pow(2, node->get_n_children());
+            if (weighted)
+                chi_val /= (node->n_descendents + 1);
+
+            chi.push_back(chi_val);
+        }
+
+    }
+
+    return chi;
+}
+
+vector<double> Tree::chi_insert_delete(bool weighted) {
+    /*
+     * Returns the chi probabilities computed for the insert/delete move.
+     * Chi vector is representing the insert weights
+     * */
+
+    vector<double> chi; // add weights
+    // iterate over all_nodes, use node->n_descendents-1 as n_children
+    // using all_nodes_vec is safe here since neither its order nor its size will change until the action and the node are chosen
+    for (auto const &node : all_nodes_vec)
+    {
+        double chi_val;
+        if (weighted)
+            chi_val = pow(2, node->get_n_children()+1) / (node->n_descendents+1);
+        else
+            chi_val = pow(2, node->get_n_children()); // chi is to be computed for the n_first order children
+
+        chi.push_back(chi_val);
+    }
+
+    return chi;
+
+}
+
+vector<double> Tree::omega_insert_delete(double lambda_r, double lambda_c, bool weighted) {
+    /*
+     * Returns the omega probabilities computed for the insert/delete move.
+     * Omega vector is representing the delete weights
+     * */
+
+    vector<double> omega; // delete weights
+    int K = this->n_regions;
+
+    vector<Node*> all_nodes = root->get_descendents(false); // without root
+    for (auto const &node : all_nodes) { // computes the omega vector
+        double omega_val = MathOp::compute_omega_insert_delete(node, lambda_r, lambda_c, K);
+        if (weighted)
+            omega_val = omega_val/node->n_descendents;
+        omega.push_back(omega_val);
+    }
+
+    return omega;
 }
 
 
