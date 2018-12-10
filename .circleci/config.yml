@@ -13,6 +13,9 @@ jobs:
           name: Installing GCC
           command: 'apt-get update && apt-get install -y gcc g++'
       - run:
+          name: Installing Boost
+          command: 'apt-get install libboost-all-dev'
+      - run:
           name: Install CMAKE
           command: 'apt-get update && sudo apt-get install -y cmake'
       - run:
