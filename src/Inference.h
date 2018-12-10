@@ -259,7 +259,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     // if inf then reject
     if (isinf(nbd_corr))
         return &t;
-    assert(!isnan(acceptance_prob));
+    assert(!std::isnan(acceptance_prob));
 
 
     if (verbosity > 0)
