@@ -257,7 +257,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
     //assert(!isinf(nbd_corr));
     // if inf then reject
-    if (isinf(nbd_corr))
+    if (std::isinf(nbd_corr))
         return &t;
     assert(!std::isnan(acceptance_prob));
 
