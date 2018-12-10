@@ -7,6 +7,7 @@
 #include "SingletonRandomGenerator.h"
 #include "globals.cpp"
 
+
 // globals
 int print_precision;
 int copy_number_limit;
@@ -22,6 +23,8 @@ int main()
     print_precision = 16;
     copy_number_limit = 5;
     lambda_s = 0.5;
+    lambda_r = 0.1;
+    lambda_c = 0.2;
     std::cout<<"UNIT TESTS" <<std::endl;
 //     set a seed number for reproducibility
     SingletonRandomGenerator::get_instance(42);
@@ -35,6 +38,6 @@ int main()
     test_insert_delete_weights();
     test_condense_split_weights(true);
     test_condense_split_weights(false);
-//    test_reproducibility();
+    test_reproducibility();
     return EXIT_SUCCESS;
 }

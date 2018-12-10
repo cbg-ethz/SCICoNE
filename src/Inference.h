@@ -18,6 +18,9 @@
 #include "globals.cpp"
 #include "Lgamma.h"
 
+#include <boost/random/uniform_real_distribution.hpp>
+#include <boost/random/discrete_distribution.hpp>
+
 class Inference {
 /*
  * Contains functionality to perform monte carlo markov chains (mcmc) inference
@@ -268,7 +271,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     else
     {
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
-        std::uniform_real_distribution<double> distribution(0.0,1.0);
+        boost::random::uniform_real_distribution<double> distribution(0.0,1.0);
         double rand_val = distribution(gen);
 
         if (verbosity > 0)
@@ -312,7 +315,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         bool rejected_before_comparison = false;
 
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
-        std::discrete_distribution<> d(move_probs.begin(), move_probs.end());
+        boost::random::discrete_distribution<> d(move_probs.begin(), move_probs.end());
 
         unsigned move_id = d(gen);
 

@@ -9,6 +9,17 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g") # icc needs -O3 after -g
 
+
+
+# ----------------------------------------------------------------------------
+# Dependencies
+# ----------------------------------------------------------------------------
+
+# Search for boost
+find_package(Boost 1.47 COMPONENTS random REQUIRED)
+
+
+
 include_directories(src)
 include_directories(include)
 include_directories(simulations)

@@ -26,6 +26,10 @@
 #include <algorithm> // std::remove
 #include "globals.cpp"
 
+#include <boost/random/discrete_distribution.hpp>
+#include <boost/random/poisson_distribution.hpp>
+#include <boost/random/bernoulli_distribution.hpp>
+#include <boost/random/uniform_real_distribution.hpp>
 
 class Tree {
 private:
@@ -749,7 +753,7 @@ Node *Tree::weighted_sample() const{
         }
 
         std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
-        std::discrete_distribution<> d(weights.begin(), weights.end());
+        boost::random::discrete_distribution<> d(weights.begin(), weights.end());
 
         unsigned sample = d(generator);
 
@@ -903,7 +907,6 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
     if (validation_test_mode)
     {
         node = all_nodes_vec[3];
-        lambda_r = lambda_c = 0.0;
     }
     else
     {
@@ -916,8 +919,10 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
 
 
     // n_regions from Poisson(lambda_R)+1
-    std::poisson_distribution<int> poisson_dist(lambda_r); // the param is to be specified later
-    int n_regions_to_sample = poisson_dist(generator) + 1;
+    boost::random::poisson_distribution<int> poisson_dist(lambda_r); // the param is to be specified later
+    int n_regions_to_sample = poisson_dist(generator);
+    if (n_regions_to_sample == 0)
+        n_regions_to_sample += 1; // to have a region to sample
     // sample n_regions_to_sample distinct regions uniformly
     int n_regions = this->n_regions;
     int regions_sampled = 0;
@@ -941,10 +946,9 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
     }
 
     // n_copies from Poisson(lambda_c)+1
-    std::poisson_distribution<int> copy_dist(lambda_c); // the param is to be specified later
+    boost::random::poisson_distribution<int> copy_dist(lambda_c); // the param is to be specified later
     // sign
-    std::bernoulli_distribution bernoulli(0.5);
-
+    boost::random::bernoulli_distribution<double> bernoulli(0.5);
     for (auto const& elem : distinct_regions)
     {
         int n_copies = copy_dist(generator) + 1;
@@ -1084,7 +1088,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
     // 0.5 prob bernoulli
-    std::bernoulli_distribution bernoulli_05(0.5);
+    boost::random::bernoulli_distribution<double> bernoulli_05(0.5);
 
     int K = this->n_regions;
 
@@ -1094,7 +1098,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     double normalization_term = sum_chi + sum_omega;
     double p_chi = sum_chi / normalization_term;
 
-    std::uniform_real_distribution<double> prob_dist(0.0,1.0);
+    boost::random::uniform_real_distribution<double> prob_dist(0.0,1.0);
     double rand_val = prob_dist(generator); // to be btw. 0 and 1
 
     if (rand_val < p_chi)
@@ -1103,8 +1107,8 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
         if (all_nodes_vec.size() >= size_limit)
             throw std::logic_error("Tree size limit is reached, insert node move will be rejected!");
 
-        std::discrete_distribution<>* dd;
-        dd = new std::discrete_distribution<>(chi.begin(),chi.end());
+        boost::random::discrete_distribution<>* dd;
+        dd = new boost::random::discrete_distribution<>(chi.begin(),chi.end());
 
         u_int pos_to_insert = (*dd)(generator); // this is the index of the all_nodes_vector.
         delete dd;
@@ -1146,8 +1150,8 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
         if (all_nodes_vec.size() <= 1)
             throw std::logic_error("Root cannot be deleted, delete move will be rejected");
 
-        std::discrete_distribution<>* dd;
-        dd = new std::discrete_distribution<>(omega.begin()+1,omega.end());
+        boost::random::discrete_distribution<>* dd;
+        dd = new boost::random::discrete_distribution<>(omega.begin()+1,omega.end());
 
         u_int64_t idx_tobe_deleted = (*dd)(generator) + 1; // this is the index of the all_nodes_vector,
         // +1 here again because the discrete distribution will consider omega.begin()+1 as 0
@@ -1187,10 +1191,10 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
 
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
     // n_regions from Poisson(lambda_S)+1
-    std::poisson_distribution<int> poisson_s(lambda_s); // the param is to be specified later
-    std::bernoulli_distribution bernoulli_05(0.5);
+    boost::random::poisson_distribution<int> poisson_s(lambda_s); // the param is to be specified later
+    boost::random::bernoulli_distribution<double> bernoulli_05(0.5);
 
-    std::uniform_real_distribution<double> prob_dist(0.0,1.0);
+    boost::random::uniform_real_distribution<double> prob_dist(0.0,1.0);
     double rand_val = prob_dist(generator); // to be btw. 0 and 1
 
     vector<Node*> descendents_of_root = this->root->get_descendents(false); // without the root
@@ -1202,9 +1206,9 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
             throw std::logic_error("Tree size limit is reached, split move will be rejected!");
 
 
-        std::discrete_distribution<>* dd;
+        boost::random::discrete_distribution<>* dd;
 
-        dd = new std::discrete_distribution<>(chi.begin(),chi.end());
+        dd = new boost::random::discrete_distribution<>(chi.begin(),chi.end());
 
         u_int pos_to_insert = static_cast<u_int>((*dd)(generator)); // this is the index of the descendents_of_root.
         delete dd;
@@ -1269,8 +1273,8 @@ Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_
             throw std::logic_error("condensing nodes does not make sense when there are 2 or less nodes. Root has to be neutral.");
 
 
-        std::discrete_distribution<>* dd;
-        dd = new std::discrete_distribution<>(omega.begin(),omega.end());
+        boost::random::discrete_distribution<>* dd;
+        dd = new boost::random::discrete_distribution<>(omega.begin(),omega.end());
         u_int64_t idx_tobe_deleted = (*dd)(generator); // this is the index of the descendents_of_root,
         delete dd;
 
