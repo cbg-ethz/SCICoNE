@@ -25,16 +25,16 @@ int main(int argc, char* argv[]) {
     int n_regions = 50;
     int n_nodes = 50;
     lambda_r = 0.1;
-    lambda_c = 0.2;
+    lambda_c = 0.4;
     int n_cells = 500;
     int n_bins = 10000;
     int n_reads = 10000;
     int n_iters = 5000;
-    int max_region_size = 10;
+    int max_region_size = 25;
     int ploidy = 2;
     int verbosity = 0;
     int seed = 0;
-    copy_number_limit = 5;
+    copy_number_limit = 15;
     string f_name_postfix = "";
 
     print_precision = 16;
@@ -115,6 +115,8 @@ int main(int argc, char* argv[]) {
     sim.split_regions_to_bins();
 
     sim.write_output(f_name_postfix);
+
+    std::cout<<"Successfully simulated." << std::endl;
 
     return EXIT_SUCCESS;
 
