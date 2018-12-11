@@ -124,7 +124,7 @@ int main( int argc, char* argv[]) {
     int ploidy = 2;
     int verbosity = 0;
     int seed = 0;
-    int window_size = 20;
+    int window_size = 10;
     string f_name_postfix;
     string region_sizes_file;
     string d_matrix_file;
@@ -226,26 +226,17 @@ int main( int argc, char* argv[]) {
         n_reads = static_cast<int>(accumulate(d_bins[0].begin(), d_bins[0].end(), 0.0));
 
         assert(n_reads != -1); // n_reads is needed for the null model
-        Simulation sim_null(_n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy,
-                            verbosity);
-        sim_null.sample_region_sizes(n_bins, 1);
-        sim_null.simulate_count_matrix(true, verbosity);
-        sim_null.split_regions_to_bins();
-        vector<double> sp_null = breakpoint_detection(sim_null.D, window_size);
-//        std::ofstream output_file0("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp_null.txt");
-//        for (const auto &e : sp_null) output_file0 << e << endl;
-        sp_null = dsp.crop(sp_null, window_size); // crop the window sizes
-        // find the threshold on null signal
-        dsp.median_normalise(sp_null);
-        double std = MathOp::st_deviation(sp_null);
-        double threshold = (1+3*std);
-        // create s_p from the input data
+
         vector<double> s_p = breakpoint_detection(d_bins, window_size);
 //        std::ofstream output_file1("./"+ to_string(window_size) + "ws" + to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp.txt");
 //        for (const auto &e : s_p) output_file1 << e << endl;
 //        cout <<"sp created"<<endl;
 
         vector<double> sp_cropped = dsp.crop(s_p, window_size);
+
+        // median normalise sp_cropped
+        dsp.median_normalise(sp_cropped);
+        vector<double> sp_cropped_copy(sp_cropped); // the copy sp vector that'll contain the NaN values
 
         int lb = 0;
         size_t ub = sp_cropped.size()-1;
@@ -261,12 +252,63 @@ int main( int argc, char* argv[]) {
 
             if (elem.second - elem.first > window_size)
             {
-                int max_idx = dsp.find_highest_peak(sp_cropped, elem.first, elem.second, threshold);
+                int threshold_coef = 3;
+                int max_idx = dsp.find_highest_peak(sp_cropped, sp_cropped_copy, elem.first, elem.second,
+                                                    threshold_coef);
                 if (max_idx != -1)
                 {
+
+                    // replace the nearby bins by nan
+                    int start_idx, stop_idx;
+                    start_idx = max_idx - window_size;
+                    stop_idx = max_idx + window_size;
+
+                    // check the boundries
+                    if (start_idx < 0)
+                        start_idx = 0;
+                    if (stop_idx > sp_cropped.size())
+                        stop_idx = sp_cropped.size();
+                    // set the nearby bins to nan
+                    for (int i = start_idx; i < stop_idx; ++i) {
+                        sp_cropped_copy[i] = std::nan("");
+                    }
+
+
+                    // compute the left and right medians
+                    vector<double> left_vec(sp_cropped.begin() + elem.first, sp_cropped.begin() + max_idx);
+                    vector<double> right_vec(sp_cropped.begin() + max_idx + 1, sp_cropped.begin() + elem.second);
+
+                    double median_left = MathOp::median(left_vec);
+                    double median_right = MathOp::median(right_vec);
+
+                    // normalise bins on the left by left median
+                    for (int i = elem.first; i < max_idx; ++i) {
+                        sp_cropped[i] /= median_left;
+                    }
+                    // normalise bins on the right by right median
+                    for (int j = max_idx + 1; j < elem.second; ++j) {
+                        sp_cropped[j] /= median_right;
+                    }
+
                     all_max_ids.push_back(max_idx);
-                    wait_list.emplace_back(elem.first,max_idx);
-                    wait_list.emplace_back(max_idx,elem.second);
+                    // make sure the bigger one gets pushed into the queue first
+
+                    double max_left = *max_element(left_vec.begin(), left_vec.end());
+                    double max_right = *max_element(right_vec.begin(), right_vec.end());
+
+                    if (max_left > max_right)
+                    {
+                        wait_list.emplace_back(elem.first,max_idx);  // left
+                        wait_list.emplace_back(max_idx + 1,elem.second);
+                    }
+                    else
+                    {
+                        wait_list.emplace_back(max_idx + 1,elem.second);
+                        wait_list.emplace_back(elem.first,max_idx);  // left
+                    }
+
+
+
                 }
             }
         }

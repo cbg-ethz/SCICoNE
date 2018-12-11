@@ -147,9 +147,11 @@ void SignalProcessing::median_normalise(vector<double> &signal) {
     }
 }
 
-int SignalProcessing::find_highest_peak(vector<double> &signal, int lb, int ub, double threshold) {
+int SignalProcessing::find_highest_peak(vector<double> signal, vector<double> sp_cropped_copy, int lb, int ub,
+                                        double threshold_coefficient) {
     /*
      * Returns the index of the highest peak above the threshold in a signal between the lb (lower bound) ub (upper bound) intervals.
+     * Copy signal contains NaN values and it is passed by value.
      * */
 
     assert(lb < ub);
@@ -160,7 +162,7 @@ int SignalProcessing::find_highest_peak(vector<double> &signal, int lb, int ub, 
     vector<double>::const_iterator last = signal.begin() + ub+1; // add +1 here
     vector<double> sub(first, last);
 
-    this->median_normalise(sub);
+    // this->median_normalise(sub);
 
     vector<double> peaks = this->diff(sub);
     peaks = this->sign(peaks);
@@ -189,6 +191,19 @@ int SignalProcessing::find_highest_peak(vector<double> &signal, int lb, int ub, 
             max_idx = bp_indices[j];
         }
     }
+
+    // remove the values at NaN index from the stdev computation
+    for (int k = 0; k < sp_cropped_copy.size(); ++k) {
+
+        if (std::isnan(sp_cropped_copy[k]))
+        {
+            signal.erase(signal.begin() + k);
+        }
+
+    }
+
+    double stdev = MathOp::st_deviation(signal);
+    double threshold = threshold_coefficient * stdev;
 
     if (max_val > threshold)
         return max_idx + lb;
