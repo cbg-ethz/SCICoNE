@@ -169,7 +169,9 @@ int main( int argc, char* argv[]) {
             ("n_nodes","the number of nodes in the random initialised tree", cxxopts::value(n_nodes))
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
-            ("max_region_size","the maximum size that a region can have", cxxopts::value(max_region_size));
+            ("max_region_size","the maximum size that a region can have", cxxopts::value(max_region_size))
+            ("window_size", "the size of the window used in breakpoint detection", cxxopts::value(window_size))
+            ;
 
     auto result = options.parse(argc, argv);
 
