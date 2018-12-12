@@ -315,7 +315,6 @@ int main( int argc, char* argv[]) {
 
         std::sort(all_max_ids.begin(), all_max_ids.end());
 
-
         // filter the peaks within the window range
         set<int> filtered_peaks;
         int i = 0;
@@ -382,7 +381,7 @@ int main( int argc, char* argv[]) {
     Inference mcmc(n_regions, ploidy, verbosity);
 
     try {
-        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 50000); // creates a random tree
+        mcmc.random_initialize(n_nodes, n_regions, 10000); // creates a random tree
     }catch (const std::runtime_error& e)
     {
         std::cerr << " a runtime error was caught during the random tree initialize function, with message '"

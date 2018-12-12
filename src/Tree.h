@@ -1117,7 +1117,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
         // create a map, fill it properly with r amount of labels
         map<u_int, int> distinct_regions;
 
-        Utils::random_initialize_labels_map(distinct_regions, K, lambda_r, lambda_c); // modifies the distinct_regions
+        Utils::random_initialize_labels_map(distinct_regions, K); // modifies the distinct_regions
 
         Node* parent = all_nodes_vec[pos_to_insert];
         // retrieve the first order children of pos_to_insert node

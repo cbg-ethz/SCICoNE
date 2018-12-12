@@ -69,7 +69,7 @@ public:
 
         if (not is_neutral) // tree will generate the data
         {
-            mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree, mcmc.t
+            mcmc.random_initialize(n_nodes, n_regions, 10000); // creates a random tree, mcmc.t
 
             // assign cells uniformly to the nodes
             for (int i = 0; i < n_cells; ++i) {

@@ -193,11 +193,14 @@ int SignalProcessing::find_highest_peak(vector<double> signal, vector<double> sp
     }
 
     // remove the values at NaN index from the stdev computation
+    size_t n_removed = 0;
     for (int k = 0; k < sp_cropped_copy.size(); ++k) {
 
         if (std::isnan(sp_cropped_copy[k]))
         {
-            signal.erase(signal.begin() + k);
+            signal.erase(signal.begin() + k - n_removed);
+            n_removed += 1;
+
         }
 
     }

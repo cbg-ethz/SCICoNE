@@ -28,8 +28,7 @@ bool Utils::is_empty_map(std::map<u_int, int> &dict){
     return true;
 }
 
-void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions, int n_regions, double lambda_r,
-                                         double lambda_c)
+void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions, int n_regions)
 {
     /*
      * Initializes an empty map to represent the c_change attribute of a node.
@@ -43,14 +42,14 @@ void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions,
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
     // n_regions from Poisson(lambda_R)+1
-    boost::random::poisson_distribution<int> poisson_r(lambda_r); // the param is to be specified later
+    // boost::random::poisson_distribution<int> poisson_r(lambda_r); // the param is to be specified later
 
     // n_copies from Poisson(lambda_c)+1
-    boost::random::poisson_distribution<int> poisson_c(lambda_c); // the param is to be specified later
+    // boost::random::poisson_distribution<int> poisson_c(lambda_c); // the param is to be specified later
     // sign
     boost::random::bernoulli_distribution<double> bernoulli_05(0.5);
 
-    int r = poisson_r(generator) + 1; //n_regions to sample
+    int r = 1; // poisson_r(generator) + 1; //n_regions to sample
     // sample r distinct regions uniformly
     int regions_sampled = 0;
     // if r>n_regions then reject the move. n_regions: max region index
@@ -63,7 +62,7 @@ void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions,
 
         if (distinct_regions.find(uniform_val) == distinct_regions.end()) // not found
         {
-            int n_copies = poisson_c(generator) + 1;
+            int n_copies = 1; // poisson_c(generator) + 1;
             bool sign = bernoulli_05(generator);
             distinct_regions[uniform_val] = (sign? n_copies : -n_copies); // key:region id, val: copy number change
             regions_sampled++;

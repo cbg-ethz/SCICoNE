@@ -65,7 +65,7 @@ public:
                         int size_limit=-1);
     void write_best_tree();
     void update_t_scores();
-    void random_initialize(u_int n_nodes, u_int n_regions, double lambda_r, double lambda_c, int max_iters=10000); // randomly initializes a tree and copies it into the other
+    void random_initialize(u_int n_nodes, u_int n_regions, int max_iters); // randomly initializes a tree and copies it into the other
     void initialize_worked_example(); // initializes the trees based on the test example
     void initialize_from_file(string path);
     vector<vector<int>> assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r);
@@ -77,7 +77,7 @@ private:
 
 
 
-void Inference::random_initialize(u_int n_nodes, u_int n_regions, double lambda_r, double lambda_c, int max_iters) {
+void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters) {
 
     Tree *random_tree;
     int i = 0;
@@ -95,7 +95,7 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, double lambda_
             // create a map, fill it properly with r amount of labels
             map<u_int, int> distinct_regions;
             try {
-                Utils::random_initialize_labels_map(distinct_regions, n_regions, lambda_r, lambda_c); // modifies the distinct_regions
+                Utils::random_initialize_labels_map(distinct_regions, n_regions); // modifies the distinct_regions
             }catch (const std::out_of_range& e)
             {
                 if (verbosity > 0)
