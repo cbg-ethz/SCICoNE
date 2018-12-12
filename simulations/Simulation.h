@@ -24,8 +24,6 @@ public:
     int n_bins;
     int n_regions;
     int n_nodes;
-    double lambda_r;
-    double lambda_c;
     int n_cells;
     int n_reads;
     int max_region_size;
@@ -37,13 +35,11 @@ public:
 
 public:
     // constructor
-    Simulation(int n_regions, int n_bins, int n_nodes, double lambda_r, double lambda_c, int n_cells, int n_reads,
-               int max_region_size, int ploidy, int verbosity)
+    Simulation(int n_regions, int n_bins, int n_nodes, int n_cells, int n_reads, int max_region_size, int ploidy,
+               int verbosity)
             : n_regions(n_regions),
               n_bins(n_bins),
               n_nodes(n_nodes),
-              lambda_r(lambda_r),
-              lambda_c(lambda_c),
               ploidy(ploidy),
               n_cells(n_cells),
               n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions), ground_truth(n_cells, vector<int>(n_regions, ploidy)), inferred_cnvs(n_cells, vector<int>(n_regions, ploidy)), D(n_cells, vector<double>(n_regions)), region_sizes(n_regions)
