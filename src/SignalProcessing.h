@@ -18,6 +18,7 @@ public:
     vector<T> crop(vector<T> &signal, int offset);
     vector<double> diff(vector<double> &signal);
     vector<double> sign(vector<double> &signal);
+    void log_transform(vector<double> & signal);
     int find_highest_peak(vector<double> signal, vector<double> sp_cropped_copy, int lb, int ub,
                               double threshold_coefficient);
     vector<double> make_zero_mean(vector<double>& signal);

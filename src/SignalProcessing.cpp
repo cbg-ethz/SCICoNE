@@ -204,15 +204,30 @@ int SignalProcessing::find_highest_peak(vector<double> signal, vector<double> sp
         }
 
     }
+    // take log of the signal
+    this->log_transform(signal);
 
     double stdev = MathOp::st_deviation(signal);
     double threshold = threshold_coefficient * stdev;
 
+    // use log of max_val
+    max_val = log(max_val);
     if (max_val > threshold)
         return max_idx + lb;
     else
         return -1;
 
+}
+
+void SignalProcessing::log_transform(vector<double> &signal) {
+    /*
+     * Takes the input signal and performs log transform on every element of it.
+     * Mutates the original matrix
+     * */
+
+    for (int i = 0; i < signal.size(); ++i) {
+        signal[i] = log(signal[i]);
+    }
 }
 
 template vector<double> SignalProcessing::crop<double>(vector<double>& signal, int offset);
