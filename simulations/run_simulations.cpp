@@ -60,54 +60,14 @@ int main(int argc, char* argv[]) {
 
     auto result = options.parse(argc, argv);
 
-    if (result.count("n_bins")) {
-        n_bins = result["n_bins"].as<int>();
-    }
-    if (result.count("n_nodes")) {
-        n_nodes = result["n_nodes"].as<int>();
-    }
-    if (result.count("n_cells")) {
-        n_cells = result["n_cells"].as<int>();
-    }
-    if (result.count("n_regions")) {
-        n_regions = result["n_regions"].as<int>();
-    }
-    if (result.count("n_reads")) {
-        n_reads = result["n_reads"].as<int>();
-    }
-    if (result.count("n_iters")) {
-        n_iters = result["n_iters"].as<int>();
-    }
-    if (result.count("ploidy")) {
-        ploidy = result["ploidy"].as<int>();
-    }
-    if (result.count("copy_number_limit"))
-    {
-        copy_number_limit = result["copy_number_limit"].as<int>();
-    }
-    if (result.count("verbosity")) {
-        verbosity = result["verbosity"].as<int>();
-    }
-    if (result.count("postfix")) {
-        f_name_postfix = result["postfix"].as<string>();
-    }
+
     if (result.count("seed"))
     {
         seed = result["seed"].as<int>();
         //set a seed number for reproducibility
         SingletonRandomGenerator::get_instance(seed);
     }
-    if (result.count("print_precision")) {
-        print_precision = result["print_precision"].as<int>();
-    }
-    if (result.count("lambda_r")) {
-        lambda_r = result["lambda_r"].as<double>();
-    }
-    if (result.count("lambda_c")) {
-        lambda_c = result["lambda_c"].as<double>();
-    }
-
-
+    
     Simulation sim(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy,
                    verbosity);
 
