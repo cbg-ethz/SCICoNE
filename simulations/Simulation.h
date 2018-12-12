@@ -175,7 +175,7 @@ public:
         ground_truth = ground_truth_bins;
     }
 
-    void sample_region_sizes(int n_bins, int min_width=1)
+    void sample_region_sizes(int n_bins, unsigned min_width = 1)
     {
         /*
          * Uniformly samples the region sizes and returns the vector of region sizes.

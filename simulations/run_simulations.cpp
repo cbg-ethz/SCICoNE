@@ -35,10 +35,11 @@ int main(int argc, char* argv[]) {
     int verbosity = 0;
     int seed = 0;
     copy_number_limit = 15;
-    int window_size = 10;
+    // minimum region size should be bigger than window_size
+    unsigned min_region_size = 10;
     string f_name_postfix = "";
 
-    print_precision = 16;
+    print_precision = 15;
 
     cxxopts::Options options("Mcmc simulations", "Simulates the count matrix. Outputs the count matrix, region sizes, ground truth and the tree that generated the data.");
     options.add_options()
@@ -56,6 +57,7 @@ int main(int argc, char* argv[]) {
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
             ("copy_number_limit", "the maximum copy number profile one bin or region can have", cxxopts::value(copy_number_limit))
+            ("min_reg_size", "the minimum size that a region can have", cxxopts::value(min_region_size))
             ;
 
     auto result = options.parse(argc, argv);
@@ -67,11 +69,11 @@ int main(int argc, char* argv[]) {
         //set a seed number for reproducibility
         SingletonRandomGenerator::get_instance(seed);
     }
-    
+
     Simulation sim(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy,
                    verbosity);
 
-    sim.sample_region_sizes(n_bins, window_size);
+    sim.sample_region_sizes(n_bins, min_region_size);
     sim.simulate_count_matrix(false, verbosity);
     sim.split_regions_to_bins();
 
