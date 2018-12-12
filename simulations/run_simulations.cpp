@@ -35,6 +35,7 @@ int main(int argc, char* argv[]) {
     int verbosity = 0;
     int seed = 0;
     copy_number_limit = 15;
+    int window_size = 10;
     string f_name_postfix = "";
 
     print_precision = 16;
@@ -110,7 +111,7 @@ int main(int argc, char* argv[]) {
     Simulation sim(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy,
                    verbosity);
 
-    sim.sample_region_sizes(n_bins, 1);
+    sim.sample_region_sizes(n_bins, window_size);
     sim.simulate_count_matrix(false, verbosity);
     sim.split_regions_to_bins();
 
