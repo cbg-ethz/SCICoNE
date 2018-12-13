@@ -181,6 +181,9 @@ int SignalProcessing::find_highest_peak(vector<double> signal, vector<double> sp
             bp_indices.push_back(i-1); // push i-1 because that's the real peak
     }
 
+    if (bp_indices.empty()) // no breakpoints are found within this range
+        return -1;
+
     double max_val = numeric_limits<double>::lowest();
     int max_idx = -1;
 
@@ -212,6 +215,11 @@ int SignalProcessing::find_highest_peak(vector<double> signal, vector<double> sp
 
     // use log of max_val
     max_val = log(max_val);
+
+    std::ofstream bp_vals_file("./all_bps_comparison.csv", std::ios_base::app);
+
+    bp_vals_file << max_val << ',' << stdev << std::endl;
+
     if (max_val > threshold)
         return max_idx + lb;
     else
