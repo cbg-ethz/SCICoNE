@@ -257,7 +257,7 @@ int main( int argc, char* argv[]) {
                 int threshold_coef = 3;
                 int max_idx = dsp.find_highest_peak(sp_cropped, sp_cropped_copy, elem.first, elem.second,
                                                     threshold_coef);
-                if (max_idx != -1)
+                if (max_idx != -1) // TODO: instead of checking for -1 use proper exception handling
                 {
 
                     // replace the nearby bins by nan
@@ -316,39 +316,9 @@ int main( int argc, char* argv[]) {
         }
 
         std::sort(all_max_ids.begin(), all_max_ids.end());
-
-        // filter the peaks within the window range
-        set<int> filtered_peaks;
-        int i = 0;
-
-        while(i < all_max_ids.size())
-        {
-            if ((i != all_max_ids.size()-1) && (abs(all_max_ids[i] - all_max_ids[i+1]) <= window_size))
-            {
-                if(s_p[all_max_ids[i]] > s_p[all_max_ids[i+1]])
-                {
-                    filtered_peaks.insert(all_max_ids[i]);
-                    i += 1;
-                }
-                else
-                {
-                    filtered_peaks.insert(all_max_ids[i+1]);
-                    i += 1;
-                }
-            }
-            else
-            {
-                filtered_peaks.insert(all_max_ids[i]);
-            }
-            i += 1;
-        }
+        
 
         vector<bool> sp_breakpoints(sp_cropped.size());
-
-        for (auto const &idx : filtered_peaks)
-        {
-            sp_breakpoints[idx] = true;
-        }
 
         for (int i = 0; i < all_max_ids.size(); ++i) {
             sp_breakpoints[all_max_ids[i]] = true;
