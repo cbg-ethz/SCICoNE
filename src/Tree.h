@@ -75,6 +75,8 @@ public:
     bool subtree_out_of_bound(Node *n) const;// TODO: can be a method of node instead
     bool zero_ploidy_changes(Node* n) const;// TODO: can be a method of node instead
 
+    std::set<u_int> get_effective_regions();
+
     vector<double> omega_condense_split(double lambda_s, bool weighted);
     vector<double> chi_condense_split(bool weighted);
 
@@ -1438,6 +1440,19 @@ vector<double> Tree::omega_insert_delete(double lambda_r, double lambda_c, bool 
     }
 
     return omega;
+}
+
+std::set<u_int> Tree::get_effective_regions() {
+    /*
+     * Returns the set of regions on the tree.
+     * */
+
+    std::set<u_int> regions;
+    for (Node* node : all_nodes_vec)
+        for (auto &x : node->c_change)
+            regions.insert(x.first); // key: x.first
+
+    return regions;
 }
 
 

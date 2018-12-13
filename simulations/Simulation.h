@@ -32,6 +32,7 @@ public:
     vector<int> region_sizes;
     vector<vector<int>> ground_truth; // default init value: ploidy
     vector<vector<int>> inferred_cnvs;
+    vector<unsigned int> effective_reg_starts;
 
 public:
     // constructor
@@ -194,8 +195,29 @@ public:
 
         if (sum != n_bins)
             cout << "WARNING: sum of all of the region sizes is not equal to n_bins since probabilities don't always sum up to 1 due to precision loss"
-                    " (e.g. they can sum up to 0.999999999999997) as a result the last bin may have zero count";
+                    " (e.g. they can sum up to 0.999999999999997) as a result the last bin may have zero count." <<endl;
 
+    }
+
+    void set_effective_regions()
+    {
+        /*
+         * Initialises the effective regions set
+         * */
+        vector<unsigned int> region_starts(this->region_sizes.size());
+
+        unsigned int offset = 0;
+        for (unsigned int i = 0; i < region_starts.size(); ++i) {
+            region_starts[i] = offset;
+            offset += this->region_sizes[i];
+        }
+
+        set<unsigned int> effective_regions = this->tree.get_effective_regions();
+
+        for (auto &region : effective_regions)
+        {
+            this->effective_reg_starts.push_back(region_starts[region]);
+        }
     }
 
 
@@ -229,6 +251,11 @@ public:
         // write the tree that generated the data
         std::ofstream tree_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_tree.txt");
         tree_file << this->tree;
+
+        // write the effective region start positions
+        std::ofstream eff_regs_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_effective_regions.txt");
+        for (auto& item : this->effective_reg_starts)
+            eff_regs_file << item << std::endl;
     }
 
 };
