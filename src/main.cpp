@@ -241,16 +241,17 @@ int main( int argc, char* argv[]) {
         vector<double> sp_cropped_copy(sp_cropped); // the copy sp vector that'll contain the NaN values
 
         int lb = 0;
-        size_t ub = sp_cropped.size()-1;
+        size_t ub = sp_cropped.size();
 
         vector<int> all_max_ids;
-        deque<pair<int,int>> wait_list;
-        wait_list.emplace_back(lb,ub); // initial boundries
+        map<double, pair<unsigned,unsigned>> q_map; // a map that serves as a queue
+        // TODO: do not use maximum here, use the maximum peak! Maximum values can be at the edges (those are already accounted for)
+        q_map.emplace(*max_element(sp_cropped.begin() + lb + 1, sp_cropped.begin() + ub - 1) , std::make_pair(lb,ub)); // initial boundries
 
-        while(!wait_list.empty())
+        while(!q_map.empty())
         {
-            pair<int,int> elem = wait_list.back();
-            wait_list.pop_back();
+            pair<unsigned,unsigned> elem = q_map.rbegin()->second; // use the rbegin to get the largest val
+            q_map.erase(q_map.rbegin()->first); // remove the largest val by it's key
 
             if (elem.second - elem.first > window_size)
             {
@@ -280,43 +281,33 @@ int main( int argc, char* argv[]) {
                     vector<double> left_vec(sp_cropped.begin() + elem.first, sp_cropped.begin() + max_idx);
                     vector<double> right_vec(sp_cropped.begin() + max_idx + 1, sp_cropped.begin() + elem.second);
 
-                    double median_left = MathOp::median(left_vec);
-                    double median_right = MathOp::median(right_vec);
-
-                    // normalise bins on the left by left median
-                    for (int i = elem.first; i < max_idx; ++i) {
-                        sp_cropped[i] /= median_left;
+                    if (!left_vec.empty())
+                    {
+                        double median_left = MathOp::median(left_vec);
+                        // normalise bins on the left by left median
+                        for (int i = elem.first; i < max_idx; ++i) {
+                            sp_cropped[i] /= median_left;
+                        }
+                        q_map.emplace(*max_element(sp_cropped.begin() + elem.first + 1, sp_cropped.begin() + max_idx - 1) , std::make_pair(elem.first,max_idx));
                     }
-                    // normalise bins on the right by right median
-                    for (int j = max_idx + 1; j < elem.second; ++j) {
-                        sp_cropped[j] /= median_right;
+                    if (!right_vec.empty())
+                    {
+                        double median_right = MathOp::median(right_vec);
+                        // normalise bins on the right by right median
+                        for (int j = max_idx + 1; j < elem.second; ++j) {
+                            sp_cropped[j] /= median_right;
+                        }
+                        q_map.emplace(*max_element(sp_cropped.begin() + max_idx + 1 + 1, sp_cropped.begin() + elem.second - 1) , std::make_pair(max_idx + 1,elem.second));
                     }
 
                     all_max_ids.push_back(max_idx);
-                    // make sure the bigger one gets pushed into the queue first
-
-                    double max_left = *max_element(left_vec.begin(), left_vec.end());
-                    double max_right = *max_element(right_vec.begin(), right_vec.end());
-
-                    if (max_left > max_right)
-                    {
-                        wait_list.emplace_back(elem.first,max_idx);  // left
-                        wait_list.emplace_back(max_idx + 1,elem.second);
-                    }
-                    else
-                    {
-                        wait_list.emplace_back(max_idx + 1,elem.second);
-                        wait_list.emplace_back(elem.first,max_idx);  // left
-                    }
-
-
 
                 }
             }
         }
 
         std::sort(all_max_ids.begin(), all_max_ids.end());
-        
+
 
         vector<bool> sp_breakpoints(sp_cropped.size());
 

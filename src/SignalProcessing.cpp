@@ -155,11 +155,11 @@ int SignalProcessing::find_highest_peak(vector<double> signal, vector<double> sp
      * */
 
     assert(lb < ub);
-    assert(ub < signal.size());
+    assert(ub <= signal.size());
 
     // get the subvector
     vector<double>::const_iterator first = signal.begin() + lb;
-    vector<double>::const_iterator last = signal.begin() + ub+1; // add +1 here
+    vector<double>::const_iterator last = signal.begin() + ub;
     vector<double> sub(first, last);
 
     // this->median_normalise(sub);
@@ -180,6 +180,11 @@ int SignalProcessing::find_highest_peak(vector<double> signal, vector<double> sp
         if (breakpoints[i])
             bp_indices.push_back(i-1); // push i-1 because that's the real peak
     }
+    if (bp_indices.empty()) // no breakpoints are found within this range
+        return -1;
+    // add the first or/and the last ones to bp_indices
+    //bp_indices.push_back(0);
+//    bp_indices.push_back(static_cast<int &&>(sub.size() - 1)); // static cast to rvalue
 
     if (bp_indices.empty()) // no breakpoints are found within this range
         return -1;
@@ -215,6 +220,9 @@ int SignalProcessing::find_highest_peak(vector<double> signal, vector<double> sp
 
     // use log of max_val
     max_val = log(max_val);
+
+    if (max_val <= stdev) // reject
+        return -1; // TODO: later get rid of -1 values, throw an exception
 
     std::ofstream bp_vals_file("./all_bps_comparison.csv", std::ios_base::app);
 
