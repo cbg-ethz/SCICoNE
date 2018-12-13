@@ -25,19 +25,21 @@ int main(int argc, char* argv[]) {
     int n_regions = 50;
     int n_nodes = 50;
     lambda_r = 0.1;
-    lambda_c = 0.2;
+    lambda_c = 0.4;
     int n_cells = 500;
     int n_bins = 10000;
     int n_reads = 10000;
     int n_iters = 5000;
-    int max_region_size = 10;
+    int max_region_size = 25;
     int ploidy = 2;
     int verbosity = 0;
-    int seed = 0;
-    copy_number_limit = 5;
+    int seed = -1;
+    copy_number_limit = 15;
+    // minimum region size should be bigger than window_size
+    unsigned min_region_size = 10;
     string f_name_postfix = "";
 
-    print_precision = 16;
+    print_precision = 15;
 
     cxxopts::Options options("Mcmc simulations", "Simulates the count matrix. Outputs the count matrix, region sizes, ground truth and the tree that generated the data.");
     options.add_options()
@@ -52,69 +54,31 @@ int main(int argc, char* argv[]) {
             ("seed", "Seed", cxxopts::value(seed))
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
             ("print_precision", "The precision points of the score values to be printed", cxxopts::value(print_precision))
-            ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
-            ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
             ("copy_number_limit", "the maximum copy number profile one bin or region can have", cxxopts::value(copy_number_limit))
+            ("min_reg_size", "the minimum size that a region can have", cxxopts::value(min_region_size))
             ;
 
     auto result = options.parse(argc, argv);
 
-    if (result.count("n_bins")) {
-        n_bins = result["n_bins"].as<int>();
-    }
-    if (result.count("n_nodes")) {
-        n_nodes = result["n_nodes"].as<int>();
-    }
-    if (result.count("n_cells")) {
-        n_cells = result["n_cells"].as<int>();
-    }
-    if (result.count("n_regions")) {
-        n_regions = result["n_regions"].as<int>();
-    }
-    if (result.count("n_reads")) {
-        n_reads = result["n_reads"].as<int>();
-    }
-    if (result.count("n_iters")) {
-        n_iters = result["n_iters"].as<int>();
-    }
-    if (result.count("ploidy")) {
-        ploidy = result["ploidy"].as<int>();
-    }
-    if (result.count("copy_number_limit"))
-    {
-        copy_number_limit = result["copy_number_limit"].as<int>();
-    }
-    if (result.count("verbosity")) {
-        verbosity = result["verbosity"].as<int>();
-    }
-    if (result.count("postfix")) {
-        f_name_postfix = result["postfix"].as<string>();
-    }
+
     if (result.count("seed"))
     {
         seed = result["seed"].as<int>();
         //set a seed number for reproducibility
         SingletonRandomGenerator::get_instance(seed);
     }
-    if (result.count("print_precision")) {
-        print_precision = result["print_precision"].as<int>();
-    }
-    if (result.count("lambda_r")) {
-        lambda_r = result["lambda_r"].as<double>();
-    }
-    if (result.count("lambda_c")) {
-        lambda_c = result["lambda_c"].as<double>();
-    }
 
+    Simulation sim(n_regions, n_bins, n_nodes, n_cells, n_reads, max_region_size, ploidy, verbosity);
 
-    Simulation sim(n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy,
-                   verbosity);
-
-    sim.sample_region_sizes(n_bins, 1);
+    sim.sample_region_sizes(n_bins, min_region_size);
     sim.simulate_count_matrix(false, verbosity);
     sim.split_regions_to_bins();
 
+    sim.set_effective_regions();
+
     sim.write_output(f_name_postfix);
+
+    std::cout<<"Successfully simulated." << std::endl;
 
     return EXIT_SUCCESS;
 

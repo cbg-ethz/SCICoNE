@@ -18,6 +18,9 @@
 #include "globals.cpp"
 #include "Lgamma.h"
 
+#include <boost/random/uniform_real_distribution.hpp>
+#include <boost/random/discrete_distribution.hpp>
+
 class Inference {
 /*
  * Contains functionality to perform monte carlo markov chains (mcmc) inference
@@ -62,7 +65,7 @@ public:
                         int size_limit=-1);
     void write_best_tree();
     void update_t_scores();
-    void random_initialize(u_int n_nodes, u_int n_regions, double lambda_r, double lambda_c, int max_iters=10000); // randomly initializes a tree and copies it into the other
+    void random_initialize(u_int n_nodes, u_int n_regions, int max_iters); // randomly initializes a tree and copies it into the other
     void initialize_worked_example(); // initializes the trees based on the test example
     void initialize_from_file(string path);
     vector<vector<int>> assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r);
@@ -74,7 +77,7 @@ private:
 
 
 
-void Inference::random_initialize(u_int n_nodes, u_int n_regions, double lambda_r, double lambda_c, int max_iters) {
+void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters) {
 
     Tree *random_tree;
     int i = 0;
@@ -92,7 +95,7 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, double lambda_
             // create a map, fill it properly with r amount of labels
             map<u_int, int> distinct_regions;
             try {
-                Utils::random_initialize_labels_map(distinct_regions, n_regions, lambda_r, lambda_c); // modifies the distinct_regions
+                Utils::random_initialize_labels_map(distinct_regions, n_regions); // modifies the distinct_regions
             }catch (const std::out_of_range& e)
             {
                 if (verbosity > 0)
@@ -254,9 +257,9 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
     //assert(!isinf(nbd_corr));
     // if inf then reject
-    if (isinf(nbd_corr))
+    if (std::isinf(nbd_corr))
         return &t;
-    assert(!isnan(acceptance_prob));
+    assert(!std::isnan(acceptance_prob));
 
 
     if (verbosity > 0)
@@ -268,7 +271,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     else
     {
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
-        std::uniform_real_distribution<double> distribution(0.0,1.0);
+        boost::random::uniform_real_distribution<double> distribution(0.0,1.0);
         double rand_val = distribution(gen);
 
         if (verbosity > 0)
@@ -312,7 +315,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         bool rejected_before_comparison = false;
 
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
-        std::discrete_distribution<> d(move_probs.begin(), move_probs.end());
+        boost::random::discrete_distribution<> d(move_probs.begin(), move_probs.end());
 
         unsigned move_id = d(gen);
 

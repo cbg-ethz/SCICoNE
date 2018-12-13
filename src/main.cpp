@@ -125,7 +125,7 @@ int main( int argc, char* argv[]) {
     int ploidy = 2;
     int verbosity = 0;
     int seed = 0;
-    int window_size = 20;
+    int window_size = 10;
     string f_name_postfix;
     string region_sizes_file;
     string d_matrix_file;
@@ -170,7 +170,9 @@ int main( int argc, char* argv[]) {
             ("n_nodes","the number of nodes in the random initialised tree", cxxopts::value(n_nodes))
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
-            ("max_region_size","the maximum size that a region can have", cxxopts::value(max_region_size));
+            ("max_region_size","the maximum size that a region can have", cxxopts::value(max_region_size))
+            ("window_size", "the size of the window used in breakpoint detection", cxxopts::value(window_size))
+            ;
 
     auto result = options.parse(argc, argv);
 
@@ -227,26 +229,17 @@ int main( int argc, char* argv[]) {
         n_reads = static_cast<int>(accumulate(d_bins[0].begin(), d_bins[0].end(), 0.0));
 
         assert(n_reads != -1); // n_reads is needed for the null model
-        Simulation sim_null(_n_regions, n_bins, n_nodes, lambda_r, lambda_c, n_cells, n_reads, max_region_size, ploidy,
-                            verbosity);
-        sim_null.sample_region_sizes(n_bins, 1);
-        sim_null.simulate_count_matrix(true, verbosity);
-        sim_null.split_regions_to_bins();
-        vector<double> sp_null = breakpoint_detection(sim_null.D, window_size);
-//        std::ofstream output_file0("./"+ to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp_null.txt");
-//        for (const auto &e : sp_null) output_file0 << e << endl;
-        sp_null = dsp.crop(sp_null, window_size); // crop the window sizes
-        // find the threshold on null signal
-        dsp.median_normalise(sp_null);
-        double std = MathOp::st_deviation(sp_null);
-        double threshold = (1+3*std);
-        // create s_p from the input data
+
         vector<double> s_p = breakpoint_detection(d_bins, window_size);
 //        std::ofstream output_file1("./"+ to_string(window_size) + "ws" + to_string(n_regions) + "regions_" + to_string(n_nodes) + "nodes_"+"sim_sp.txt");
 //        for (const auto &e : s_p) output_file1 << e << endl;
 //        cout <<"sp created"<<endl;
 
         vector<double> sp_cropped = dsp.crop(s_p, window_size);
+
+        // median normalise sp_cropped
+        dsp.median_normalise(sp_cropped);
+        vector<double> sp_cropped_copy(sp_cropped); // the copy sp vector that'll contain the NaN values
 
         int lb = 0;
         size_t ub = sp_cropped.size()-1;
@@ -262,51 +255,71 @@ int main( int argc, char* argv[]) {
 
             if (elem.second - elem.first > window_size)
             {
-                int max_idx = dsp.find_highest_peak(sp_cropped, elem.first, elem.second, threshold);
-                if (max_idx != -1)
+                int threshold_coef = 3;
+                int max_idx = dsp.find_highest_peak(sp_cropped, sp_cropped_copy, elem.first, elem.second,
+                                                    threshold_coef);
+                if (max_idx != -1) // TODO: instead of checking for -1 use proper exception handling
                 {
+
+                    // replace the nearby bins by nan
+                    int start_idx, stop_idx;
+                    start_idx = max_idx - window_size;
+                    stop_idx = max_idx + window_size;
+
+                    // check the boundries
+                    if (start_idx < 0)
+                        start_idx = 0;
+                    if (stop_idx > sp_cropped.size())
+                        stop_idx = sp_cropped.size();
+                    // set the nearby bins to nan
+                    for (int i = start_idx; i < stop_idx; ++i) {
+                        sp_cropped_copy[i] = std::nan("");
+                    }
+
+
+                    // compute the left and right medians
+                    vector<double> left_vec(sp_cropped.begin() + elem.first, sp_cropped.begin() + max_idx);
+                    vector<double> right_vec(sp_cropped.begin() + max_idx + 1, sp_cropped.begin() + elem.second);
+
+                    double median_left = MathOp::median(left_vec);
+                    double median_right = MathOp::median(right_vec);
+
+                    // normalise bins on the left by left median
+                    for (int i = elem.first; i < max_idx; ++i) {
+                        sp_cropped[i] /= median_left;
+                    }
+                    // normalise bins on the right by right median
+                    for (int j = max_idx + 1; j < elem.second; ++j) {
+                        sp_cropped[j] /= median_right;
+                    }
+
                     all_max_ids.push_back(max_idx);
-                    wait_list.emplace_back(elem.first,max_idx);
-                    wait_list.emplace_back(max_idx,elem.second);
+                    // make sure the bigger one gets pushed into the queue first
+
+                    double max_left = *max_element(left_vec.begin(), left_vec.end());
+                    double max_right = *max_element(right_vec.begin(), right_vec.end());
+
+                    if (max_left > max_right)
+                    {
+                        wait_list.emplace_back(elem.first,max_idx);  // left
+                        wait_list.emplace_back(max_idx + 1,elem.second);
+                    }
+                    else
+                    {
+                        wait_list.emplace_back(max_idx + 1,elem.second);
+                        wait_list.emplace_back(elem.first,max_idx);  // left
+                    }
+
+
+
                 }
             }
         }
 
         std::sort(all_max_ids.begin(), all_max_ids.end());
-
-
-        // filter the peaks within the window range
-        set<int> filtered_peaks;
-        int i = 0;
-
-        while(i < all_max_ids.size())
-        {
-            if ((i != all_max_ids.size()-1) && (abs(all_max_ids[i] - all_max_ids[i+1]) <= window_size))
-            {
-                if(s_p[all_max_ids[i]] > s_p[all_max_ids[i+1]])
-                {
-                    filtered_peaks.insert(all_max_ids[i]);
-                    i += 1;
-                }
-                else
-                {
-                    filtered_peaks.insert(all_max_ids[i+1]);
-                    i += 1;
-                }
-            }
-            else
-            {
-                filtered_peaks.insert(all_max_ids[i]);
-            }
-            i += 1;
-        }
+        
 
         vector<bool> sp_breakpoints(sp_cropped.size());
-
-        for (auto const &idx : filtered_peaks)
-        {
-            sp_breakpoints[idx] = true;
-        }
 
         for (int i = 0; i < all_max_ids.size(); ++i) {
             sp_breakpoints[all_max_ids[i]] = true;
@@ -341,7 +354,7 @@ int main( int argc, char* argv[]) {
     Inference mcmc(n_regions, ploidy, verbosity);
 
     try {
-        mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 50000); // creates a random tree
+        mcmc.random_initialize(n_nodes, n_regions, 10000); // creates a random tree
     }catch (const std::runtime_error& e)
     {
         std::cerr << " a runtime error was caught during the random tree initialize function, with message '"

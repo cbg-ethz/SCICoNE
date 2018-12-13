@@ -9,6 +9,8 @@
 #include "Inference.h"
 #include "SingletonRandomGenerator.h"
 
+#include <boost/random/discrete_distribution.hpp>
+
 using namespace std;
 
 
@@ -22,8 +24,6 @@ public:
     int n_bins;
     int n_regions;
     int n_nodes;
-    double lambda_r;
-    double lambda_c;
     int n_cells;
     int n_reads;
     int max_region_size;
@@ -32,16 +32,15 @@ public:
     vector<int> region_sizes;
     vector<vector<int>> ground_truth; // default init value: ploidy
     vector<vector<int>> inferred_cnvs;
+    vector<unsigned int> effective_reg_starts;
 
 public:
     // constructor
-    Simulation(int n_regions, int n_bins, int n_nodes, double lambda_r, double lambda_c, int n_cells, int n_reads,
-               int max_region_size, int ploidy, int verbosity)
+    Simulation(int n_regions, int n_bins, int n_nodes, int n_cells, int n_reads, int max_region_size, int ploidy,
+               int verbosity)
             : n_regions(n_regions),
               n_bins(n_bins),
               n_nodes(n_nodes),
-              lambda_r(lambda_r),
-              lambda_c(lambda_c),
               ploidy(ploidy),
               n_cells(n_cells),
               n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions), ground_truth(n_cells, vector<int>(n_regions, ploidy)), inferred_cnvs(n_cells, vector<int>(n_regions, ploidy)), D(n_cells, vector<double>(n_regions)), region_sizes(n_regions)
@@ -67,7 +66,7 @@ public:
 
         if (not is_neutral) // tree will generate the data
         {
-            mcmc.random_initialize(n_nodes, n_regions, lambda_r, lambda_c, 10000); // creates a random tree, mcmc.t
+            mcmc.random_initialize(n_nodes, n_regions, 10000); // creates a random tree, mcmc.t
 
             // assign cells uniformly to the nodes
             for (int i = 0; i < n_cells; ++i) {
@@ -106,7 +105,7 @@ public:
             for (int i = 0; i < D.size(); ++i) // for each cell
             {
                 // assign the read to region by sampling from the dist
-                std::discrete_distribution<> d(p_read_region_cell[i].begin(), p_read_region_cell[i].end()); // distribution will be different for each cell
+                boost::random::discrete_distribution<> d(p_read_region_cell[i].begin(), p_read_region_cell[i].end()); // distribution will be different for each cell
 
                 for (int j = 0; j < n_reads; ++j) // distribute the reads to regions
                 {
@@ -173,7 +172,7 @@ public:
         ground_truth = ground_truth_bins;
     }
 
-    void sample_region_sizes(int n_bins, int min_width=1)
+    void sample_region_sizes(int n_bins, unsigned min_width = 1)
     {
         /*
          * Uniformly samples the region sizes and returns the vector of region sizes.
@@ -196,8 +195,29 @@ public:
 
         if (sum != n_bins)
             cout << "WARNING: sum of all of the region sizes is not equal to n_bins since probabilities don't always sum up to 1 due to precision loss"
-                    " (e.g. they can sum up to 0.999999999999997) as a result the last bin may have zero count";
+                    " (e.g. they can sum up to 0.999999999999997) as a result the last bin may have zero count." <<endl;
 
+    }
+
+    void set_effective_regions()
+    {
+        /*
+         * Initialises the effective regions set
+         * */
+        vector<unsigned int> region_starts(this->region_sizes.size());
+
+        unsigned int offset = 0;
+        for (unsigned int i = 0; i < region_starts.size(); ++i) {
+            region_starts[i] = offset;
+            offset += this->region_sizes[i];
+        }
+
+        set<unsigned int> effective_regions = this->tree.get_effective_regions();
+
+        for (auto &region : effective_regions)
+        {
+            this->effective_reg_starts.push_back(region_starts[region]);
+        }
     }
 
 
@@ -231,6 +251,11 @@ public:
         // write the tree that generated the data
         std::ofstream tree_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_tree.txt");
         tree_file << this->tree;
+
+        // write the effective region start positions
+        std::ofstream eff_regs_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_effective_regions.txt");
+        for (auto& item : this->effective_reg_starts)
+            eff_regs_file << item << std::endl;
     }
 
 };

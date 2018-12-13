@@ -7,6 +7,8 @@
 
 #include "MathOp.h"
 #include <vector>
+#include <fstream>
+
 using namespace std;
 
 
@@ -18,7 +20,9 @@ public:
     vector<T> crop(vector<T> &signal, int offset);
     vector<double> diff(vector<double> &signal);
     vector<double> sign(vector<double> &signal);
-    int find_highest_peak(vector<double> &signal, int lb, int ub, double threshold);
+    void log_transform(vector<double> & signal);
+    int find_highest_peak(vector<double> signal, vector<double> sp_cropped_copy, int lb, int ub,
+                              double threshold_coefficient);
     vector<double> make_zero_mean(vector<double>& signal);
     vector<double> subtract_median(vector<double> &signal);
     void median_normalise(vector<double> &signal);

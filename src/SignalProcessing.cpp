@@ -147,9 +147,11 @@ void SignalProcessing::median_normalise(vector<double> &signal) {
     }
 }
 
-int SignalProcessing::find_highest_peak(vector<double> &signal, int lb, int ub, double threshold) {
+int SignalProcessing::find_highest_peak(vector<double> signal, vector<double> sp_cropped_copy, int lb, int ub,
+                                        double threshold_coefficient) {
     /*
      * Returns the index of the highest peak above the threshold in a signal between the lb (lower bound) ub (upper bound) intervals.
+     * Copy signal contains NaN values and it is passed by value.
      * */
 
     assert(lb < ub);
@@ -160,7 +162,7 @@ int SignalProcessing::find_highest_peak(vector<double> &signal, int lb, int ub, 
     vector<double>::const_iterator last = signal.begin() + ub+1; // add +1 here
     vector<double> sub(first, last);
 
-    this->median_normalise(sub);
+    // this->median_normalise(sub);
 
     vector<double> peaks = this->diff(sub);
     peaks = this->sign(peaks);
@@ -179,6 +181,9 @@ int SignalProcessing::find_highest_peak(vector<double> &signal, int lb, int ub, 
             bp_indices.push_back(i-1); // push i-1 because that's the real peak
     }
 
+    if (bp_indices.empty()) // no breakpoints are found within this range
+        return -1;
+
     double max_val = numeric_limits<double>::lowest();
     int max_idx = -1;
 
@@ -190,11 +195,47 @@ int SignalProcessing::find_highest_peak(vector<double> &signal, int lb, int ub, 
         }
     }
 
+    // remove the values at NaN index from the stdev computation
+    size_t n_removed = 0;
+    for (int k = 0; k < sp_cropped_copy.size(); ++k) {
+
+        if (std::isnan(sp_cropped_copy[k]))
+        {
+            signal.erase(signal.begin() + k - n_removed);
+            n_removed += 1;
+
+        }
+
+    }
+    // take log of the signal
+    this->log_transform(signal);
+
+    double stdev = MathOp::st_deviation(signal);
+    double threshold = threshold_coefficient * stdev;
+
+    // use log of max_val
+    max_val = log(max_val);
+
+    std::ofstream bp_vals_file("./all_bps_comparison.csv", std::ios_base::app);
+
+    bp_vals_file << max_val << ',' << stdev << std::endl;
+
     if (max_val > threshold)
         return max_idx + lb;
     else
         return -1;
 
+}
+
+void SignalProcessing::log_transform(vector<double> &signal) {
+    /*
+     * Takes the input signal and performs log transform on every element of it.
+     * Mutates the original matrix
+     * */
+
+    for (int i = 0; i < signal.size(); ++i) {
+        signal[i] = log(signal[i]);
+    }
 }
 
 template vector<double> SignalProcessing::crop<double>(vector<double>& signal, int offset);

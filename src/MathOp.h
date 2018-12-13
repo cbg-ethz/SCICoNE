@@ -14,6 +14,7 @@
 #include <map>
 #include <algorithm>
 #include "SingletonRandomGenerator.h"
+#include <boost/random/uniform_int_distribution.hpp>
 
 #ifndef SC_DNA_NODE_H
 #include "Node.h"

@@ -226,7 +226,7 @@ vector<double> MathOp::combine_scores(vector<double> aic_vec)
 
 int MathOp::random_uniform(int min, int max) {
     int rand_val = 0;
-    std::uniform_int_distribution<> dis(min,max);
+    boost::random::uniform_int_distribution<> dis(min,max);
     std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
 
     rand_val = dis(gen);

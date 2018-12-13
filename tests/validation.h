@@ -76,9 +76,6 @@ void test_reproducibility()
      * Tests the reproducibility of the markov chain
      * */
 
-    // set the globals
-    lambda_r = 0.1;
-    lambda_c = 0.2;
 
     int ploidy = 2;
     int verbosity = 0;
@@ -98,7 +95,7 @@ void test_reproducibility()
     mcmc.infer_mcmc(D, r, move_probs, 500);
 
     cout<<"Reproducibility score: " << mcmc.best_tree.score << endl;
-    assert(abs(mcmc.best_tree.score - 29.90167) <= epsilon);
+    assert(abs(mcmc.best_tree.score - 26.0712) <= epsilon);
     cout<<"Reproducibility test is passed!"<<endl;
 
 }
@@ -430,7 +427,7 @@ void test_add_remove_event()
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
 
-    mcmc.apply_add_remove_events(0.0, 0.0, D, r, false, true);
+    mcmc.apply_add_remove_events(lambda_r, lambda_c, D, r, false, true);
 
     assert(abs(mcmc.t_prime_sums[0] - 1.383)  <= epsilon);
     assert(abs(mcmc.t_prime_sums[1] - 4.168)  <= epsilon);
