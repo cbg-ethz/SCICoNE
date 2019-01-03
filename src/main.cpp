@@ -245,8 +245,9 @@ int main( int argc, char* argv[]) {
 
         vector<int> all_max_ids;
         map<double, pair<unsigned,unsigned>> q_map; // a map that serves as a queue
-        // TODO: do not use maximum here, use the maximum peak! Maximum values can be at the edges (those are already accounted for)
-        q_map.emplace(*max_element(sp_cropped.begin() + lb + 1, sp_cropped.begin() + ub - 1) , std::make_pair(lb,ub)); // initial boundries
+        // use a map because you want the values to be always sorted
+        // start with the 0.0 value, it will be removed from the map before other values are inserted
+        q_map.emplace(0.0 , std::make_pair(lb,ub)); // initial boundries
 
         while(!q_map.empty())
         {
@@ -255,9 +256,9 @@ int main( int argc, char* argv[]) {
 
             if (elem.second - elem.first > window_size)
             {
-                int threshold_coef = 3;
-                int max_idx = dsp.find_highest_peak(sp_cropped, sp_cropped_copy, elem.first, elem.second,
-                                                    threshold_coef);
+                int threshold_coef = 4;
+                int max_idx = dsp.evaluate_peak(sp_cropped, sp_cropped_copy, elem.first, elem.second,
+                                                threshold_coef);
                 if (max_idx != -1) // TODO: instead of checking for -1 use proper exception handling
                 {
 
@@ -288,7 +289,11 @@ int main( int argc, char* argv[]) {
                         for (int i = elem.first; i < max_idx; ++i) {
                             sp_cropped[i] /= median_left;
                         }
-                        q_map.emplace(*max_element(sp_cropped.begin() + elem.first + 1, sp_cropped.begin() + max_idx - 1) , std::make_pair(elem.first,max_idx));
+                        if (max_idx - elem.first > window_size)
+                        {
+                            int max_left_idx = dsp.find_highest_peak(sp_cropped, elem.first, max_idx);
+                            q_map.emplace(sp_cropped[max_left_idx] , std::make_pair(elem.first,max_idx));
+                        }
                     }
                     if (!right_vec.empty())
                     {
@@ -297,7 +302,11 @@ int main( int argc, char* argv[]) {
                         for (int j = max_idx + 1; j < elem.second; ++j) {
                             sp_cropped[j] /= median_right;
                         }
-                        q_map.emplace(*max_element(sp_cropped.begin() + max_idx + 1 + 1, sp_cropped.begin() + elem.second - 1) , std::make_pair(max_idx + 1,elem.second));
+                        if (elem.second - (max_idx+1) > window_size)
+                        {
+                            int max_right_idx = dsp.find_highest_peak(sp_cropped, max_idx+1, elem.second);
+                            q_map.emplace(sp_cropped[max_right_idx] , std::make_pair(max_idx + 1,elem.second));
+                        }
                     }
 
                     all_max_ids.push_back(max_idx);
@@ -308,6 +317,9 @@ int main( int argc, char* argv[]) {
 
         std::sort(all_max_ids.begin(), all_max_ids.end());
 
+        for (int k = 0; k < all_max_ids.size(); ++k) {
+            cout << all_max_ids[k] + window_size << endl;
+        }
 
         vector<bool> sp_breakpoints(sp_cropped.size());
 
