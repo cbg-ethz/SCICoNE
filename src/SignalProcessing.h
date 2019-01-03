@@ -21,8 +21,10 @@ public:
     vector<double> diff(vector<double> &signal);
     vector<double> sign(vector<double> &signal);
     void log_transform(vector<double> & signal);
-    int find_highest_peak(vector<double> signal, vector<double> sp_cropped_copy, int lb, int ub,
-                              double threshold_coefficient);
+    int evaluate_peak(vector<double> signal, vector<double> sp_cropped_copy, int lb, int ub,
+                      double threshold_coefficient);
+    template<class T>
+    int find_highest_peak(vector<T> &signal, int lb, int ub);
     vector<double> make_zero_mean(vector<double>& signal);
     vector<double> subtract_median(vector<double> &signal);
     void median_normalise(vector<double> &signal);
