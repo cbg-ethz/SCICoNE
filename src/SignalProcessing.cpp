@@ -9,7 +9,13 @@ vector<double> SignalProcessing::diff(vector<double> &signal) {
     /*
      * Performs the diff filter on the input signal and returns the value.
      * The returned signal has length 1 less than the input signal.
+     * Throws logic_error.
      * */
+
+    if (signal.size() <= 1)
+    {
+        throw std::logic_error("The vector you perform diff filter must contain at least 2 elements.");
+    }
 
     vector<double> res(signal.size()-1); // -1 because the first one cannot have a diff
 
@@ -147,53 +153,25 @@ void SignalProcessing::median_normalise(vector<double> &signal) {
     }
 }
 
-int SignalProcessing::find_highest_peak(vector<double> signal, vector<double> sp_cropped_copy, int lb, int ub,
-                                        double threshold_coefficient) {
+int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cropped_copy, int lb, int ub,
+                                    double threshold_coefficient) {
     /*
      * Returns the index of the highest peak above the threshold in a signal between the lb (lower bound) ub (upper bound) intervals.
      * Copy signal contains NaN values and it is passed by value.
      * */
 
-    assert(lb < ub);
-    assert(ub < signal.size());
-
-    // get the subvector
-    vector<double>::const_iterator first = signal.begin() + lb;
-    vector<double>::const_iterator last = signal.begin() + ub+1; // add +1 here
-    vector<double> sub(first, last);
-
-    // this->median_normalise(sub);
-
-    vector<double> peaks = this->diff(sub);
-    peaks = this->sign(peaks);
-    peaks = this->diff(peaks); // real peaks are peaks -1 because of double differentiation.
-    // after 1st diff. peak is the last positive. after 2nd diff. peak is zero but peak+1 is -2
-
-    vector<bool> breakpoints = this->filter_by_val(peaks, -2.0);
-    // add paddings
-//    breakpoints.insert(breakpoints.begin(), false);
-//    breakpoints.push_back(false);
-
-    vector<int> bp_indices;
-
-    for (int i = 0; i < breakpoints.size(); ++i) {
-        if (breakpoints[i])
-            bp_indices.push_back(i-1); // push i-1 because that's the real peak
+    int max_idx;
+    try
+    {
+        max_idx = this->find_highest_peak(signal, lb, ub);
+    }catch (const std::runtime_error& e)
+    {
+        std::cerr << " a runtime error was caught during the find_highest_peak function, with message '"
+                  << e.what() << "'\n";
+        return -1; // peak is not selected as a breakpoint
     }
 
-    if (bp_indices.empty()) // no breakpoints are found within this range
-        return -1;
-
-    double max_val = numeric_limits<double>::lowest();
-    int max_idx = -1;
-
-    for (int j = 0; j < bp_indices.size(); ++j) {
-        if (sub[bp_indices[j]] > max_val)
-        {
-            max_val = sub[bp_indices[j]];
-            max_idx = bp_indices[j];
-        }
-    }
+    double max_val = signal[max_idx];
 
     // remove the values at NaN index from the stdev computation
     size_t n_removed = 0;
@@ -203,9 +181,7 @@ int SignalProcessing::find_highest_peak(vector<double> signal, vector<double> sp
         {
             signal.erase(signal.begin() + k - n_removed);
             n_removed += 1;
-
         }
-
     }
     // take log of the signal
     this->log_transform(signal);
@@ -216,12 +192,14 @@ int SignalProcessing::find_highest_peak(vector<double> signal, vector<double> sp
     // use log of max_val
     max_val = log(max_val);
 
-    std::ofstream bp_vals_file("./all_bps_comparison.csv", std::ios_base::app);
+    if (max_val <= stdev) // reject
+        return -1;
 
-    bp_vals_file << max_val << ',' << stdev << std::endl;
+//    std::ofstream bp_vals_file("./all_bps_comparison.csv", std::ios_base::app);
+//    bp_vals_file << max_val << ',' << stdev << std::endl;
 
     if (max_val > threshold)
-        return max_idx + lb;
+        return max_idx;
     else
         return -1;
 
@@ -238,6 +216,54 @@ void SignalProcessing::log_transform(vector<double> &signal) {
     }
 }
 
+template<class T>
+int SignalProcessing::find_highest_peak(vector<T> &signal, int lb, int ub) {
+    /*
+     * Returns the index of the highest peak above the threshold in a signal between the lb (lower bound) ub (upper bound) intervals.
+     * Throws runtime error.
+     * */
+
+    assert(lb < ub);
+    assert(ub <= signal.size());
+
+    // get the subvector
+    vector<double>::const_iterator first = signal.begin() + lb;
+    vector<double>::const_iterator last = signal.begin() + ub;
+    vector<double> sub(first, last);
+
+    vector<double> peaks = this->diff(sub);
+    peaks = this->sign(peaks);
+    peaks = this->diff(peaks); // real peaks are peaks -1 because of double differentiation.
+    // after 1st diff. peak is the last positive. after 2nd diff. peak is zero but peak+1 is -2
+
+    vector<bool> breakpoints = this->filter_by_val(peaks, -2.0);
+
+    vector<int> bp_indices;
+
+    for (int i = 0; i < breakpoints.size(); ++i) {
+        if (breakpoints[i])
+            bp_indices.push_back(i-1); // push i-1 because that's the real peak
+    }
+
+
+    if (bp_indices.empty()) // no breakpoints are found within this range
+        throw std::runtime_error("no breakpoints are found");
+
+    double max_val = numeric_limits<double>::lowest();
+    int max_idx = -1;
+
+    for (int j = 0; j < bp_indices.size(); ++j) {
+        if (sub[bp_indices[j]] > max_val)
+        {
+            max_val = sub[bp_indices[j]];
+            max_idx = bp_indices[j];
+        }
+    }
+
+    return max_idx + lb;
+}
+
+template int SignalProcessing::find_highest_peak(vector<double> &signal, int lb, int ub);
 template vector<double> SignalProcessing::crop<double>(vector<double>& signal, int offset);
 template vector<long double> SignalProcessing::crop<long double>(vector<long double>& signal, int offset);
 

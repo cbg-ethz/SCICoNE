@@ -241,23 +241,25 @@ int main( int argc, char* argv[]) {
         vector<double> sp_cropped_copy(sp_cropped); // the copy sp vector that'll contain the NaN values
 
         int lb = 0;
-        size_t ub = sp_cropped.size()-1;
+        size_t ub = sp_cropped.size();
 
         vector<int> all_max_ids;
-        deque<pair<int,int>> wait_list;
-        wait_list.emplace_back(lb,ub); // initial boundries
+        map<double, pair<unsigned,unsigned>> q_map; // a map that serves as a queue
+        // use a map because you want the values to be always sorted
+        // start with the 0.0 value, it will be removed from the map before other values are inserted
+        q_map.emplace(0.0 , std::make_pair(lb,ub)); // initial boundries
 
-        while(!wait_list.empty())
+        while(!q_map.empty())
         {
-            pair<int,int> elem = wait_list.back();
-            wait_list.pop_back();
+            pair<unsigned,unsigned> elem = q_map.rbegin()->second; // use the rbegin to get the largest val
+            q_map.erase(q_map.rbegin()->first); // remove the largest val by it's key
 
             if (elem.second - elem.first > window_size)
             {
-                int threshold_coef = 3;
-                int max_idx = dsp.find_highest_peak(sp_cropped, sp_cropped_copy, elem.first, elem.second,
-                                                    threshold_coef);
-                if (max_idx != -1) // TODO: instead of checking for -1 use proper exception handling
+                int threshold_coef = 4;
+                int max_idx = dsp.evaluate_peak(sp_cropped, sp_cropped_copy, elem.first, elem.second,
+                                                threshold_coef);
+                if (max_idx != -1) // -1 means rejected
                 {
 
                     // replace the nearby bins by nan
@@ -280,43 +282,44 @@ int main( int argc, char* argv[]) {
                     vector<double> left_vec(sp_cropped.begin() + elem.first, sp_cropped.begin() + max_idx);
                     vector<double> right_vec(sp_cropped.begin() + max_idx + 1, sp_cropped.begin() + elem.second);
 
-                    double median_left = MathOp::median(left_vec);
-                    double median_right = MathOp::median(right_vec);
-
-                    // normalise bins on the left by left median
-                    for (int i = elem.first; i < max_idx; ++i) {
-                        sp_cropped[i] /= median_left;
+                    if (!left_vec.empty())
+                    {
+                        double median_left = MathOp::median(left_vec);
+                        // normalise bins on the left by left median
+                        for (int i = elem.first; i < max_idx; ++i) {
+                            sp_cropped[i] /= median_left;
+                        }
+                        if (max_idx - elem.first > window_size)
+                        {
+                            int max_left_idx = dsp.find_highest_peak(sp_cropped, elem.first, max_idx);
+                            q_map.emplace(sp_cropped[max_left_idx] , std::make_pair(elem.first,max_idx));
+                        }
                     }
-                    // normalise bins on the right by right median
-                    for (int j = max_idx + 1; j < elem.second; ++j) {
-                        sp_cropped[j] /= median_right;
+                    if (!right_vec.empty())
+                    {
+                        double median_right = MathOp::median(right_vec);
+                        // normalise bins on the right by right median
+                        for (int j = max_idx + 1; j < elem.second; ++j) {
+                            sp_cropped[j] /= median_right;
+                        }
+                        if (elem.second - (max_idx+1) > window_size)
+                        {
+                            int max_right_idx = dsp.find_highest_peak(sp_cropped, max_idx+1, elem.second);
+                            q_map.emplace(sp_cropped[max_right_idx] , std::make_pair(max_idx + 1,elem.second));
+                        }
                     }
 
                     all_max_ids.push_back(max_idx);
-                    // make sure the bigger one gets pushed into the queue first
-
-                    double max_left = *max_element(left_vec.begin(), left_vec.end());
-                    double max_right = *max_element(right_vec.begin(), right_vec.end());
-
-                    if (max_left > max_right)
-                    {
-                        wait_list.emplace_back(elem.first,max_idx);  // left
-                        wait_list.emplace_back(max_idx + 1,elem.second);
-                    }
-                    else
-                    {
-                        wait_list.emplace_back(max_idx + 1,elem.second);
-                        wait_list.emplace_back(elem.first,max_idx);  // left
-                    }
-
-
 
                 }
             }
         }
 
         std::sort(all_max_ids.begin(), all_max_ids.end());
-        
+
+        for (int k = 0; k < all_max_ids.size(); ++k) {
+            cout << all_max_ids[k] + window_size << endl;
+        }
 
         vector<bool> sp_breakpoints(sp_cropped.size());
 
