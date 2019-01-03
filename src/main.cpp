@@ -259,7 +259,7 @@ int main( int argc, char* argv[]) {
                 int threshold_coef = 4;
                 int max_idx = dsp.evaluate_peak(sp_cropped, sp_cropped_copy, elem.first, elem.second,
                                                 threshold_coef);
-                if (max_idx != -1) // TODO: instead of checking for -1 use proper exception handling
+                if (max_idx != -1) // -1 means rejected
                 {
 
                     // replace the nearby bins by nan

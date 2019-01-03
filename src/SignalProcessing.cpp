@@ -9,6 +9,7 @@ vector<double> SignalProcessing::diff(vector<double> &signal) {
     /*
      * Performs the diff filter on the input signal and returns the value.
      * The returned signal has length 1 less than the input signal.
+     * Throws logic_error.
      * */
 
     if (signal.size() <= 1)
@@ -159,7 +160,17 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
      * Copy signal contains NaN values and it is passed by value.
      * */
 
-    int max_idx = this->find_highest_peak(signal, lb, ub);
+    int max_idx;
+    try
+    {
+        max_idx = this->find_highest_peak(signal, lb, ub);
+    }catch (const std::runtime_error& e)
+    {
+        std::cerr << " a runtime error was caught during the find_highest_peak function, with message '"
+                  << e.what() << "'\n";
+        return -1; // peak is not selected as a breakpoint
+    }
+
     double max_val = signal[max_idx];
 
     // remove the values at NaN index from the stdev computation
@@ -182,11 +193,10 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
     max_val = log(max_val);
 
     if (max_val <= stdev) // reject
-        return -1; // TODO: later get rid of -1 values, throw an exception
+        return -1;
 
-    std::ofstream bp_vals_file("./all_bps_comparison.csv", std::ios_base::app);
-
-    bp_vals_file << max_val << ',' << stdev << std::endl;
+//    std::ofstream bp_vals_file("./all_bps_comparison.csv", std::ios_base::app);
+//    bp_vals_file << max_val << ',' << stdev << std::endl;
 
     if (max_val > threshold)
         return max_idx;
@@ -210,6 +220,7 @@ template<class T>
 int SignalProcessing::find_highest_peak(vector<T> &signal, int lb, int ub) {
     /*
      * Returns the index of the highest peak above the threshold in a signal between the lb (lower bound) ub (upper bound) intervals.
+     * Throws runtime error.
      * */
 
     assert(lb < ub);
@@ -236,7 +247,7 @@ int SignalProcessing::find_highest_peak(vector<T> &signal, int lb, int ub) {
 
 
     if (bp_indices.empty()) // no breakpoints are found within this range
-        return -1;
+        throw std::runtime_error("no breakpoints are found");
 
     double max_val = numeric_limits<double>::lowest();
     int max_idx = -1;
