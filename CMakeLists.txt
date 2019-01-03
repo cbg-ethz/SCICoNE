@@ -26,9 +26,9 @@ include_directories(simulations)
 
 add_executable(inference
         src/MathOp.cpp
-        src/main.cpp
+        src/infer_trees.cpp
         src/MathOp.h
-        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/Simulation.h src/globals.cpp src/SignalProcessing.cpp src/SignalProcessing.h src/Lgamma.cpp src/Lgamma.h)
+        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h)
 
 add_executable(tests tests/run_tests.cpp src/MathOp.cpp
         src/MathOp.h
@@ -42,5 +42,7 @@ add_executable(score src/score_tree.cpp src/MathOp.cpp
         src/MathOp.h
         src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h)
 
+add_executable(breakpoint_detection
+        src/breakpoint_detection.cpp src/MathOp.cpp src/MathOp.h  src/Utils.cpp src/Utils.h  src/SignalProcessing.cpp src/SignalProcessing.h src/Lgamma.cpp src/Lgamma.h include/xxhash.h include/xxhash.c )
 
 #src/Inference.h
