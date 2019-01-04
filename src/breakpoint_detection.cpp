@@ -121,8 +121,15 @@ int main( int argc, char* argv[]) {
                     }
                     if (max_idx - elem.first > window_size)
                     {
-                        int max_left_idx = dsp.find_highest_peak(sp_cropped, elem.first, max_idx);
-                        q_map.emplace(sp_cropped[max_left_idx] , std::make_pair(elem.first,max_idx));
+                        try
+                        {
+                            int max_left_idx = dsp.find_highest_peak(sp_cropped, elem.first, max_idx);
+                            q_map.emplace(sp_cropped[max_left_idx] , std::make_pair(elem.first,max_idx));
+                        }
+                        catch (const std::runtime_error& e)
+                        {
+                            std::cerr << e.what() << std::endl;
+                        }
                     }
                 }
                 if (!right_vec.empty())
@@ -134,8 +141,15 @@ int main( int argc, char* argv[]) {
                     }
                     if (elem.second - (max_idx+1) > window_size)
                     {
-                        int max_right_idx = dsp.find_highest_peak(sp_cropped, max_idx+1, elem.second);
-                        q_map.emplace(sp_cropped[max_right_idx] , std::make_pair(max_idx + 1,elem.second));
+                        try
+                        {
+                            int max_right_idx = dsp.find_highest_peak(sp_cropped, max_idx+1, elem.second);
+                            q_map.emplace(sp_cropped[max_right_idx] , std::make_pair(max_idx + 1,elem.second));
+                        }
+                        catch (const std::runtime_error& e)
+                        {
+                            std::cerr << e.what() << std::endl;
+                        }
                     }
                 }
 

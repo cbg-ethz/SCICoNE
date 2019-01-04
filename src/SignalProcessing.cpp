@@ -192,11 +192,8 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
     // use log of max_val
     max_val = log(max_val);
 
-    if (max_val <= stdev) // reject
-        return -1;
-
-//    std::ofstream bp_vals_file("./all_bps_comparison.csv", std::ios_base::app);
-//    bp_vals_file << max_val << ',' << stdev << std::endl;
+    std::ofstream bp_vals_file("./all_bps_comparison.csv", std::ios_base::app);
+    bp_vals_file << max_idx + 10 << ',' << max_val << ',' << stdev << std::endl; // 10 for window size
 
     if (max_val > threshold)
         return max_idx;
@@ -247,7 +244,7 @@ int SignalProcessing::find_highest_peak(vector<T> &signal, int lb, int ub) {
 
 
     if (bp_indices.empty()) // no breakpoints are found within this range
-        throw std::runtime_error("no breakpoints are found");
+        throw std::runtime_error("no breakpoints are found within the interval: (" + to_string(lb) + ',' + to_string(ub) + ')');
 
     double max_val = numeric_limits<double>::lowest();
     int max_idx = -1;
