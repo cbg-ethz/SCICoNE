@@ -1,0 +1,12 @@
+{
+    "bin":"/cluster/work/bewi/members/tuncel/sc-dna/bin/",
+    "params": 
+    {
+        "n_bins": 1000,
+        "n_regions": 40,
+        "n_nodes": 10,
+        "n_reads": 10000,
+        "n_cells": 50,
+        "window_size": 10
+    }
+}
