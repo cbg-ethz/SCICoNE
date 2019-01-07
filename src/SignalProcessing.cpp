@@ -153,8 +153,8 @@ void SignalProcessing::median_normalise(vector<double> &signal) {
     }
 }
 
-int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cropped_copy, int lb, int ub,
-                                    double threshold_coefficient) {
+int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cropped_copy, int lb, int ub, double threshold_coefficient,
+                                    int window_size) {
     /*
      * Returns the index of the highest peak above the threshold in a signal between the lb (lower bound) ub (upper bound) intervals.
      * Copy signal contains NaN values and it is passed by value.
@@ -195,7 +195,7 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
     if (verbosity >= 3.0)
     {
         std::ofstream bp_vals_file("./" + f_name_postfix + "_all_bps_comparison.csv", std::ios_base::app);
-        bp_vals_file << max_idx << ',' << max_val << ',' << stdev << std::endl; // 10 for window size
+        bp_vals_file << max_idx + window_size << ',' << max_val << ',' << stdev << std::endl; // 10 for window size
     }
 
     if (max_val > threshold)

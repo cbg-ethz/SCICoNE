@@ -96,8 +96,8 @@ int main( int argc, char* argv[]) {
 
         if (elem.second - elem.first > window_size)
         {
-            int max_idx = dsp.evaluate_peak(sp_cropped, sp_cropped_copy, elem.first, elem.second,
-                                            threshold_coefficient);
+            int max_idx = dsp.evaluate_peak(sp_cropped, sp_cropped_copy, elem.first, elem.second, threshold_coefficient,
+                                            window_size);
             if (max_idx != -1) // -1 means rejected
             {
 
