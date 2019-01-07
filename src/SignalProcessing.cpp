@@ -3,7 +3,7 @@
 //
 
 #include "SignalProcessing.h"
-
+#include "globals.cpp"
 
 vector<double> SignalProcessing::diff(vector<double> &signal) {
     /*
@@ -192,8 +192,11 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
     // use log of max_val
     max_val = log(max_val);
 
-    std::ofstream bp_vals_file("./all_bps_comparison.csv", std::ios_base::app);
-    bp_vals_file << max_idx + 10 << ',' << max_val << ',' << stdev << std::endl; // 10 for window size
+    if (verbosity >= 3.0)
+    {
+        std::ofstream bp_vals_file("./" + f_name_postfix + "_all_bps_comparison.csv", std::ios_base::app);
+        bp_vals_file << max_idx << ',' << max_val << ',' << stdev << std::endl; // 10 for window size
+    }
 
     if (max_val > threshold)
         return max_idx;

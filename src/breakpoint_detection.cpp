@@ -10,6 +10,12 @@
 
 #include "SignalProcessing.h"
 #include "Utils.h"
+#include "globals.cpp"
+
+// globals
+int verbosity;
+string f_name_postfix;
+// end of globals
 
 using namespace std;
 
@@ -21,9 +27,10 @@ int main( int argc, char* argv[]) {
     int n_bins = 10000;
     int window_size = 10;
     double threshold_coefficient = 3.0;
-    string f_name_postfix;
+    f_name_postfix = "";
     string region_sizes_file;
     string d_matrix_file;
+    verbosity = 0;
 
     cxxopts::Options options("Breakpoint detection executable", "detects the breakpoints in the genome across all cells.");
     options.add_options()
@@ -33,6 +40,7 @@ int main( int argc, char* argv[]) {
             ("window_size", "the size of the window used in breakpoint detection", cxxopts::value(window_size))
             ("threshold", "the coefficient of the breakpoint threshold", cxxopts::value(threshold_coefficient))
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
+            ("verbosity", "verbosity", cxxopts::value(verbosity))
             ;
 
     auto result = options.parse(argc, argv);
