@@ -40,7 +40,7 @@ public:
     Node* root;
     std::vector<Node*> all_nodes_vec; // for random selection, destructor, insertion by position, iterating without order (e.g. for each node)
     u_int n_regions; // number of regions
-    double score; // log posterior score of the tree
+    double posterior_score; // log posterior score of the tree
 public:
     // constructor
     Tree(u_int ploidy, u_int n_regions);
@@ -108,7 +108,7 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
 
     vector<Node*> nodes = t.root->get_descendents(true);
 
-    os << "Tree score: " << setprecision(print_precision) << t.score << endl;
+    os << "Tree score: " << setprecision(print_precision) << t.posterior_score << endl;
     for (auto const &x : nodes)
     {
         os << *x << std::endl;
@@ -233,7 +233,7 @@ Tree::Tree(u_int ploidy, u_int n_regions)
     this->ploidy = ploidy;
     this->n_regions = n_regions;
     n_nodes = 0;
-    score = 0.0;
+    posterior_score = 0.0;
     // creates a copy of the root ptr and stores it in the vector
 
 
@@ -422,7 +422,7 @@ void Tree::copy_tree(const Tree& source_tree) {
 
     this->ploidy = source_tree.ploidy;
     this->counter = source_tree.counter;
-    this->score = source_tree.score;
+    this->posterior_score = source_tree.posterior_score;
     this->n_regions = source_tree.n_regions;
 
     // copy the nodes using struct copy constructor

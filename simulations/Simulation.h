@@ -122,7 +122,7 @@ public:
                 int m = D.size(); //n_cells
                 double log_post_t = mcmc.log_posterior(t_sum, m, mcmc.t);
                 // assign the tree score
-                mcmc.t.score = log_post_t;
+                mcmc.t.posterior_score = log_post_t;
             }
 
             this->tree = mcmc.t;

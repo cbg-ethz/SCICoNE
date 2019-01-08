@@ -216,7 +216,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
 
     int m = D.size();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
-    t.score = log_posterior(t_sum, m, t);
+    t.posterior_score = log_posterior(t_sum, m, t);
 
     // update t_prime
     // calls the copy constructor
@@ -233,17 +233,17 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
      * Returns the pointer to the accepted tree
      * m is size(D)
      * */
-    
+
     double log_post_t_prime = 0.0;
 
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
     log_post_t_prime = log_posterior(t_prime_sum, m, t_prime);
 
-    t_prime.score = log_post_t_prime;
+    t_prime.posterior_score = log_post_t_prime;
 
     // acceptance probability computations
     double acceptance_prob;
-    double score_diff = t_prime.score - t.score;
+    double score_diff = t_prime.posterior_score - t.posterior_score;
     double nbd_corr = nbd(move_id);
     acceptance_prob = exp(gamma*score_diff) * nbd_corr;
 
@@ -480,10 +480,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         else
             accepted = comparison(m, gamma, move_id);
 
-        static double first_score = accepted->score; // the first value will be kept in whole program
+        static double first_score = accepted->posterior_score; // the first value will be kept in whole program
         // print accepted log_posterior
-        mcmc_scores_file << std::setprecision(print_precision) << accepted->score << ',';
-        rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->score - first_score << ',';
+        mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score << ',';
+        rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score - first_score << ',';
 
         // update trees and the matrices
         if (accepted == &t_prime)
@@ -493,7 +493,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             t_sums = t_prime_sums;
             update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
             t = t_prime;
-            if (t_prime.score > best_tree.score)
+            if (t_prime.posterior_score > best_tree.posterior_score)
                 best_tree = t_prime;
         }
         else

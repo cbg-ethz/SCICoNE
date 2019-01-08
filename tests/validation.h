@@ -94,8 +94,8 @@ void test_reproducibility()
     //-------------------------------w-pr------------------------------w-id--------w-cs-------
     mcmc.infer_mcmc(D, r, move_probs, 500);
 
-    cout<<"Reproducibility score: " << mcmc.best_tree.score << endl;
-    assert(abs(mcmc.best_tree.score - 26.0712) <= epsilon);
+    cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << endl;
+    assert(abs(mcmc.best_tree.posterior_score - 26.0712) <= epsilon);
     cout<<"Reproducibility test is passed!"<<endl;
 
 }
@@ -127,8 +127,8 @@ void test_swap_label()
     // compute the log posterior
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
     double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, mcmc.t_prime);
-    mcmc.t_prime.score = log_post_t_prime;
-    assert(abs(mcmc.t_prime.score - 11.597) <= epsilon);
+    mcmc.t_prime.posterior_score = log_post_t_prime;
+    assert(abs(mcmc.t_prime.posterior_score - 11.597) <= epsilon);
 
     cout<<"Swap label validation test passed!"<<endl;
 
@@ -225,13 +225,13 @@ void test_condense_split_weights(bool weighted)
 
     int m = D.size();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
-    t.score = mcmc.log_posterior(t_sum, m, t);
+    t.posterior_score = mcmc.log_posterior(t_sum, m, t);
 
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
-    t_prime.score = mcmc.log_posterior(t_prime_sum, m, t_prime);
+    t_prime.posterior_score = mcmc.log_posterior(t_prime_sum, m, t_prime);
     // check the scores
-    assert(abs(t.score - 21.26) <= epsilon);
-    assert(abs(t_prime.score - 10.792) <= epsilon);
+    assert(abs(t.posterior_score - 21.26) <= epsilon);
+    assert(abs(t_prime.posterior_score - 10.792) <= epsilon);
 
     double lambda_s = 0.5;
 
@@ -264,7 +264,7 @@ void test_condense_split_weights(bool weighted)
         assert(abs(sum_omega_prime - 0.488) <= epsilon);
 
 
-    double score_diff = t_prime.score - t.score;
+    double score_diff = t_prime.posterior_score - t.posterior_score;
     assert(abs(score_diff + 10.467) <= epsilon);
 
 
@@ -307,7 +307,7 @@ void test_insert_delete_weights()
 
     int m = D.size();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
-    t.score = mcmc.log_posterior(t_sum, m, t);
+    t.posterior_score = mcmc.log_posterior(t_sum, m, t);
 
     int K = t.n_regions;
     double lambda_r = 2.0;
@@ -346,7 +346,7 @@ void test_prune_reattach()
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
 
-    assert(abs(mcmc.t.score - 21.26) <= epsilon);
+    assert(abs(mcmc.t.posterior_score - 21.26) <= epsilon);
 
     mcmc.apply_prune_reattach(D, r, false, false, true);
 
@@ -358,8 +358,8 @@ void test_prune_reattach()
 
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
     double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, mcmc.t_prime);
-    mcmc.t_prime.score = log_post_t_prime;
-    assert(abs(mcmc.t_prime.score - 18.649) <= epsilon);
+    mcmc.t_prime.posterior_score = log_post_t_prime;
+    assert(abs(mcmc.t_prime.posterior_score - 18.649) <= epsilon);
 
 
     cout<<"Prune and reattach validation test passed!"<<endl;
@@ -437,8 +437,8 @@ void test_add_remove_event()
 
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
     double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, mcmc.t_prime);
-    mcmc.t_prime.score = log_post_t_prime;
-    assert(abs(mcmc.t_prime.score - 16.47) <= epsilon);
+    mcmc.t_prime.posterior_score = log_post_t_prime;
+    assert(abs(mcmc.t_prime.posterior_score - 16.47) <= epsilon);
 
     cout<<"Add / remove event validation test passed!"<<endl;
 }
