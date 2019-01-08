@@ -205,8 +205,8 @@ bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vect
 
 void Inference::compute_t_table(const vector<vector<double>> &D, const vector<int> &r) {
 
-    int n = static_cast<int>(D.size());
-    for (int i = 0; i < n; ++i)
+    int j = static_cast<int>(D.size());
+    for (int i = 0; i < j; ++i)
     {
         this->t.compute_tree(D[i], r);
         std::map<int, double> scores_vec = this->t.get_children_id_score(this->t.root);
@@ -216,7 +216,9 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
     }
 
     int m = D.size();
+    int n = t.get_n_nodes();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
+    t.prior_score = log_prior(t_sum,m, n);
     t.posterior_score = log_posterior(t_sum, m, t);
 
     // update t_prime
@@ -232,35 +234,47 @@ void Inference::destroy() {
 Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
     /*
      * Returns the pointer to the accepted tree
-     * m is size(D)
+     * m is size(D), i.e. number of cells
      * */
 
-    double log_post_t_prime = 0.0;
-
+    double acceptance_prob = 0.0;
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
-    log_post_t_prime = log_posterior(t_prime_sum, m, t_prime);
 
-    t_prime.posterior_score = log_post_t_prime;
+    if (move_id == 10) // genotype preserving prune&reattach
+    {
+        // only compare the priors
+        int n = t_prime.get_n_nodes();
+        t_prime.prior_score = log_prior(t_prime_sum, m, n);
+        double score_diff = t_prime.prior_score - t.prior_score;
+        acceptance_prob = exp(gamma*score_diff);
+    }
+    else
+    {
+        // compare the posteriors
+        double log_post_t_prime = 0.0;
+        log_post_t_prime = log_posterior(t_prime_sum, m, t_prime);
 
-    // acceptance probability computations
-    double acceptance_prob;
-    double score_diff = t_prime.posterior_score - t.posterior_score;
-    double nbd_corr = nbd(move_id);
-    acceptance_prob = exp(gamma*score_diff) * nbd_corr;
+        t_prime.posterior_score = log_post_t_prime;
 
-    //assert(!isinf(nbd_corr));
-    // if inf then reject
-    if (std::isinf(nbd_corr))
-        return &t;
+        // acceptance probability computations
+        double score_diff = t_prime.posterior_score - t.posterior_score;
+        double nbd_corr = nbd(move_id);
+        acceptance_prob = exp(gamma*score_diff) * nbd_corr;
+        //assert(!isinf(nbd_corr));
+        // if inf then reject
+        if (std::isinf(nbd_corr))
+            return &t;
+
+    }
+
+
     assert(!std::isnan(acceptance_prob));
-
 
     if (verbosity > 0)
         cout<<"acceptance prob: "<<acceptance_prob<<endl;
 
     if (acceptance_prob > 1)
         return &t_prime;
-
     else
     {
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
@@ -274,7 +288,6 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
             return &t_prime;
         else
             return &t;
-
     }
 }
 
