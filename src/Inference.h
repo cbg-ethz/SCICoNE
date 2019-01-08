@@ -228,18 +228,13 @@ void Inference::destroy() {
     // nothing to deallocate
 }
 
-Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
+Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
     /*
      * Returns the pointer to the accepted tree
      * m is size(D)
      * */
-
-
-    double log_post_t = 0.0;
+    
     double log_post_t_prime = 0.0;
-
-    double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
-    log_post_t = log_posterior(t_sum, m, t);
 
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
     log_post_t_prime = log_posterior(t_prime_sum, m, t_prime);
