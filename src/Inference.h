@@ -47,6 +47,7 @@ public:
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);
+    double log_prior(double tree_sum, int m, int n);
     double log_posterior(double tree_sum, int m, Tree &tree);
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
                                   bool weighted, bool validation_test_mode);
@@ -528,13 +529,25 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     }
 }
 
+double Inference::log_prior(double tree_sum, int m, int n) {
+    /*
+     * Computes and returns the tree prior.
+     * m: n_cells
+     * n: n_nodes
+     * tree_sum: sum of all scores across all cells and attachment points
+     * */
+
+    double log_prior = tree_sum - (n -1 + m) * log(n+1); // tree prior
+    return log_prior;
+}
+
 double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     // TODO: move to the mathop
     // m: n_cells, n: n_nodes
 
     int n = tree.get_n_nodes();
     double log_posterior = 0.0;
-    log_posterior = tree_sum - (n -1 + m ) * log(n+1); // tree prior
+    log_posterior = this->log_prior(tree_sum, m, n); // initialise posterior with prior then add posterior
 
     /*
      * compute penalization term
