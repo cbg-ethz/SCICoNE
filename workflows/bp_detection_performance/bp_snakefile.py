@@ -1,6 +1,6 @@
 
-
-sim_data = ['simdata_'+ str(x) for x in range(0,3)]
+n_rep = config['params']['n_rep']
+sim_data = ['simdata_'+ str(x) for x in range(0,n_rep)]
 SIM_OUTPUT = 'results/'
 
 
@@ -39,7 +39,7 @@ rule simulate:
         "{params.binary} --n_bins {params.n_bins} --n_regions {params.n_regions} --n_nodes {params.n_nodes} --n_reads {params.n_reads} \
         --n_cells {params.n_cells} --postfix {wildcards.dataset_id} --verbosity 2 --ploidy 2; mv {params.dmatrix_name} {output.dmatrix}; \
         mv {params.effective_regions_name} {output.effective_regions}"
-    
+
 
 rule bp_detect:
     params:

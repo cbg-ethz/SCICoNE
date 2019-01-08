@@ -1,7 +1,8 @@
 {
-    "bin":"/cluster/work/bewi/members/tuncel/sc-dna/bin/",
+    "bin":"/Users/mtuncel/git_repos/sc-dna/cmake-build-debug/",
     "params": 
     {
+        "n_rep":100,
         "n_bins": 1000,
         "n_regions": 40,
         "n_nodes": 10,
