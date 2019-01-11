@@ -192,6 +192,9 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
     // use log of max_val
     max_val = log(max_val);
 
+    if (threshold == 0) // reject the breakpoint if stdev is zero
+        return -1;
+
     if (verbosity >= 3.0)
     {
         std::ofstream bp_vals_file("./" + f_name_postfix + "_all_bps_comparison.csv", std::ios_base::app);
