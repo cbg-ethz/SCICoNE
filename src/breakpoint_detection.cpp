@@ -164,6 +164,11 @@ int main( int argc, char* argv[]) {
                 all_max_ids.push_back(max_idx);
 
             }
+            else // max_idx = -1, empty the q_map
+            {
+                q_map.clear();
+            }
+
         }
     }
 
@@ -195,6 +200,8 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
     /*
      * Performs the breakpoint detection
      * */
+
+    // TODO: get rid of unnecessary push_backs
 
     size_t n_cells = mat.size();
 
