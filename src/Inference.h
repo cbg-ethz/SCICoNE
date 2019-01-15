@@ -259,14 +259,15 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
         // acceptance probability computations
         double score_diff = t_prime.posterior_score - t.posterior_score;
         double nbd_corr = nbd(move_id);
-        acceptance_prob = exp(gamma*score_diff) * nbd_corr;
-        //assert(!isinf(nbd_corr));
-        // if inf then reject
+
         if (std::isinf(nbd_corr))
             return &t;
 
-    }
+        acceptance_prob = exp(gamma*score_diff) * nbd_corr;
+        //assert(!isinf(nbd_corr));
+        // if inf then reject
 
+    }
 
     assert(!std::isnan(acceptance_prob));
 
@@ -981,6 +982,7 @@ double Inference::nbd(unsigned move_id) {
 
     if (move_id == 1)
     {
+
         // TODO: weighted prune-reattach
     }
     else if (move_id == 6) // insert/delete move
