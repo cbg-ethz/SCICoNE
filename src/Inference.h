@@ -980,10 +980,9 @@ double Inference::nbd(unsigned move_id) {
 
     double nbd_corr= 1.0;
 
-    if (move_id == 1)
+    if (move_id == 1) // weighted prune-reattach
     {
-
-        // TODO: weighted prune-reattach
+        nbd_corr = t.cost() / t_prime.cost();
     }
     else if (move_id == 6) // insert/delete move
     {
