@@ -75,6 +75,7 @@ public:
     bool is_valid_subtree(Node* node) const;// TODO: can be a method of node instead
     bool subtree_out_of_bound(Node *n) const;// TODO: can be a method of node instead
     bool zero_ploidy_changes(Node* n) const;// TODO: can be a method of node instead
+    double cost();
 
     std::set<u_int> get_effective_regions();
 
@@ -1476,6 +1477,25 @@ std::set<u_int> Tree::get_effective_regions() {
     }
 
     return regions;
+}
+
+double Tree::cost() {
+    /*
+     * Returns the cost of recomputing the children nodes in case of a move
+     * */
+
+    vector<Node*> nodes = root->get_descendents(false); // get all of the children of root
+
+    // vector<double> weights;
+    double zeta = 0.0;
+    for (auto const &x : nodes)
+    {
+        float weight = (1.0 / x->n_descendents); // weights are inversely proportional to n_descendents
+        // weights.push_back(weight);
+        zeta += weight;
+    }
+
+    return zeta;
 }
 
 
