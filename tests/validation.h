@@ -384,31 +384,13 @@ void test_weighted_prune_reattach()
     mcmc.apply_prune_reattach(D, r, false, false, true);
 
 
-    // get the subvector
-    vector<Node*>::const_iterator first = mcmc.t_prime.all_nodes_vec.begin() + 1;
-    vector<Node*>::const_iterator last = mcmc.t_prime.all_nodes_vec.end();
-    vector<Node*> nodes_to_sample(first, last);
+    double zeta = mcmc.t.cost();
+    double zeta_prime = mcmc.t_prime.cost();
 
-    // re-ordering is needed since prune and reattach does not preserve the order in the all_nodes vector
-    std::sort(nodes_to_sample.begin(),nodes_to_sample.end(), [](Node* a, Node* b) { return *a < *b; });
+    assert(abs(zeta - 3.533) <= epsilon);
+    assert(abs(zeta_prime - 2.783) <= epsilon);
 
-    vector<double> weights;
-    double zeta = 0.0;
-    for (auto const &x : nodes_to_sample)
-    {
-        float weight = (1.0 / x->n_descendents); // weights are inversely proportional to n_descendents
-        weights.push_back(weight);
-        zeta += weight;
-    }
-
-    assert(abs(weights[0] - 0.2)  <= epsilon);
-    assert(abs(weights[1] - 0.333)  <= epsilon);
-    assert(abs(weights[2] - 1.0)  <= epsilon);
-    assert(abs(weights[3] - 1.0)  <= epsilon);
-    assert(abs(weights[4] - 0.25)  <= epsilon);
-    assert(abs(zeta - 2.783) <= epsilon);
-
-    cout<<"Weighted prune &reattaach validation test passed!"<<endl;
+    cout<<"Weighted prune &reattach validation test passed!"<<endl;
 
 }
 
