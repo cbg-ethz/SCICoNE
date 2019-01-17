@@ -28,5 +28,7 @@ parser.add_argument("-b", "--bins", required=False, help="list of low quality bi
 
 args = parser.parse_args()
 
-if args.bins == None:
+if args.bins is None:
     print("no bins are provided")
+else:
+    print(args.bins)
