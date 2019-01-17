@@ -129,8 +129,8 @@ int main( int argc, char* argv[]) {
     // run mcmc inference
 
     // move probabilities
-    vector<float> move_probs = {1.0f,1.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f};
-    //-------------------------------w-pr------------------------------w-id--------w-cs-------
+    vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f};
+    //---------------------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno--
 
     Inference mcmc(n_regions, ploidy, verbosity);
 
