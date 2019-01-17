@@ -675,7 +675,7 @@ void Tree::load_from_file(string file) {
 
 }
 
-map<int, double> Tree::get_children_id_score(Node *node) {
+map<int, double> Tree::get_children_id_score(Node *node) { // TODO: make it a method of node instead
 /*
  * Returns the ids and the log scores of the descendent nodes
  * */

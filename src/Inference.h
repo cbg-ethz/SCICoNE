@@ -267,6 +267,62 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
         //assert(!isinf(nbd_corr));
         // if inf then reject
 
+        if (move_id == 7 || move_id == 9) // weighted insert-delete or weighted condense-split
+        {
+            // find if insert or delete
+            u_int t_n_nodes = t.get_n_nodes();
+            u_int t_prime_n_nodes = t_prime.get_n_nodes();
+
+            if (t_n_nodes > t_prime_n_nodes) // delete
+            {
+                // find the node that is deleted
+                // use the get_id_score function since it returns a map having node id as a key
+                map<int,double> t_prime_scores = t_prime.get_children_id_score(t_prime.root);
+
+                Node* deleted = nullptr;
+                for (auto const &t_node : t.root->get_descendents(false)) // root won't be contained!
+                {
+                    if (!t_prime_scores.count(t_node->id))
+                    {
+                        deleted = t_node;
+                        break;
+                    }
+                }
+
+                double p_del_corr_num = (deleted->get_n_children() / 2) + 1; // /2 because with 0.5 prob. children will be siblings, +1 because including itself
+                double p_del_corr_denom =  (deleted->get_n_children());
+
+                double ratio = p_del_corr_num / p_del_corr_denom;
+
+                if (ratio != 0.0 && !std::isnan(ratio) && !std::isinf(ratio))
+                    acceptance_prob *= ratio;
+            }
+            else // insert
+            {
+                // find the node that is inserted
+                map<int,double> t_scores = t.get_children_id_score(t.root);
+
+                Node* added = nullptr;
+                for (auto const &t_prime_node : t_prime.root->get_descendents(false)) // without root
+                {
+                    if (!t_scores.count(t_prime_node->id))
+                    {
+                        added = t_prime_node;
+                        break;
+                    }
+                }
+
+                double p_add_corr_num = added->get_n_children(); // in case of delete to go back, just the probability of t_prime added's children
+                double p_add_corr_denom = (added->get_n_children() / 2) + 1; // t_prime added n_children / 2 and +1 for the added node
+
+                double ratio = p_add_corr_num / p_add_corr_denom;
+
+                if (ratio != 0.0 && !std::isnan(ratio) && !std::isinf(ratio))
+                    acceptance_prob *= ratio;
+            }
+
+        }
+
     }
 
     assert(!std::isnan(acceptance_prob));
@@ -984,7 +1040,7 @@ double Inference::nbd(unsigned move_id) {
     {
         nbd_corr = t.cost() / t_prime.cost();
     }
-    else if (move_id == 6) // insert/delete move
+    else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
     {
 
         vector<double> chi = t.chi_insert_delete(weighted);
