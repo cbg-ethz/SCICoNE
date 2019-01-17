@@ -26,6 +26,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-h5", "--hdf5", required=True, help="cellranger-dna hdf5 output")
 parser.add_argument("-b", "--bins", required=False, help="list of low quality bins to exclude")
 parser.add_argument("-o","--output_path",required=False, default="./", help="path to the output")
+parser.add_argument("-s", "--sample_name",required=False, default="", help="name of the sample")
 
 args = parser.parse_args()
 
@@ -67,8 +68,8 @@ mat = mat[:,negative_bins_filter_mask]
 
 print(mat.shape)
 
-np.savetxt(args.output_path + '/' +"filtered_counts.tsv", mat, delimiter='\t')
+np.savetxt(args.output_path + '/' + args.sample_name +"_filtered_counts.tsv", mat, delimiter='\t')
 
 print("Output written to: " + args.output_path)
 
-
+h5f.close()
