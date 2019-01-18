@@ -52,4 +52,4 @@ avg_clusters_df = pd.DataFrame(avg_clusters)
 
 avg_clusters_df['cluster_ids'] = community_ids # add the community_ids
 
-avg_clusters_df.to_csv(args.output_path + '/' + args.sample_name + "_clusters_phenograph_profiles.tsv",sep='\t',index=False, header=False)
+avg_clusters_df.to_csv(args.output_path + '/' + args.sample_name + "_clusters_phenograph_profiles.tsv",sep='\t',index=False, header=True)
