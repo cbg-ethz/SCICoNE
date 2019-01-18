@@ -31,6 +31,11 @@ communities_df.head()
 
 communities_df.to_csv(args.output_path + '/' + args.sample_name + "_clusters_phenograph_assignment.tsv",sep='\t',index=False)
 
+# write the modularity score, for stability
+f = open( args.output_path + '/' + args.sample_name + "_clustering_score.txt", 'w' )
+f.write(str(Q))
+f.close()
+
 
 cells_by_cluster = []
 for cluster in sorted(list(Counter(communities))):

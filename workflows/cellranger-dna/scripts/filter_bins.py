@@ -6,11 +6,11 @@ import numpy as np
 def merge_chromosomes(h5):
 
     n_cells = h5['cell_barcodes'][:].shape[0]
-    all_chromosomes = list(h5['cnvs'].keys())
+    all_chromosomes = list(h5['normalized_counts'].keys())
     # list of all cnv arrays
     cnv_matrices = []
     for chr in all_chromosomes:
-        cnv_matrices.append(h5['cnvs'][chr][:][0:n_cells,:]) # select only the cells, not cell groups
+        cnv_matrices.append(h5['normalized_counts'][chr][:][0:n_cells,:]) # select only the cells, not cell groups
 
     cell_all_chrs = np.concatenate(cnv_matrices, axis=1)
     return cell_all_chrs
@@ -83,7 +83,7 @@ print(bin_df.shape)
 
 np.savetxt(args.output_path + '/' + args.sample_name +"_filtered_counts.tsv", mat, delimiter='\t')
 
-bin_df.to_csv(args.output_path + '/' + args.sample_name + "_bins_genome.tsv",sep='\t',index=False, header=False)
+bin_df.to_csv(args.output_path + '/' + args.sample_name + "_bins_genome.tsv",sep='\t',index=False)
 
 print("Output written to: " + args.output_path)
 
