@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import phenograph
 from collections import Counter
+from sklearn.preprocessing import normalize
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input", required=True, help="filtered counts input")
@@ -19,8 +20,9 @@ n_jobs = 16
 weight='distance'
 
 filtered_counts = np.loadtxt(args.input)
+normalized_filtered_counts = normalize(filtered_counts,axis=1, norm='l1')
 
-communities, graph, Q = phenograph.cluster(data=filtered_counts,k=n_neighbours,n_jobs=n_jobs, jaccard=True)
+communities, graph, Q = phenograph.cluster(data=normalized_filtered_counts,k=n_neighbours,n_jobs=n_jobs, jaccard=True)
 
 print(communities) # one of the outputs
 
@@ -38,11 +40,16 @@ f.close()
 
 
 cells_by_cluster = []
-for cluster in sorted(list(Counter(communities))):
+
+community_ids = sorted(list(Counter(communities)))
+
+for cluster in community_ids:
     cells_by_cluster.append(filtered_counts[communities==cluster])
 
 avg_clusters = [m.mean(0) for m in cells_by_cluster] # 2nd output
 
 avg_clusters_df = pd.DataFrame(avg_clusters)
+
+avg_clusters_df['cluster_ids'] = community_ids # add the community_ids
 
 avg_clusters_df.to_csv(args.output_path + '/' + args.sample_name + "_clusters_phenograph_profiles.tsv",sep='\t',index=False, header=False)
