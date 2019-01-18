@@ -22,6 +22,14 @@ weight='distance'
 filtered_counts = np.loadtxt(args.input)
 normalized_filtered_counts = normalize(filtered_counts,axis=1, norm='l1')
 
+
+n_cells = normalized_filtered_counts.shape[0]
+
+print("n_cells: " + str(n_cells))
+    
+if n_neighbours >= n_cells:
+    n_neighbours = int(n_cells/2)
+
 communities, graph, Q = phenograph.cluster(data=normalized_filtered_counts,k=n_neighbours,n_jobs=n_jobs, jaccard=True)
 
 print(communities) # one of the outputs
@@ -30,6 +38,7 @@ communities_df = pd.DataFrame(communities,columns=['cluster'])
 communities_df['cell_barcode'] = communities_df.index
 communities_df = communities_df[['cell_barcode','cluster']] # order the columns
 communities_df.head()
+
 
 communities_df.to_csv(args.output_path + '/' + args.sample_name + "_clusters_phenograph_assignment.tsv",sep='\t',index=False)
 
