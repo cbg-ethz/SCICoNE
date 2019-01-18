@@ -1,6 +1,7 @@
 import h5py
 import argparse
 import numpy as np
+import pandas as pd
 import phenograph
 from collections import Counter
 
@@ -23,8 +24,20 @@ communities, graph, Q = phenograph.cluster(data=filtered_counts,k=n_neighbours,n
 
 print(communities) # one of the outputs
 
+communities_df = pd.DataFrame(communities,columns=['cluster'])
+communities_df['cell_barcode'] = communities_df.index
+communities_df = communities_df[['cell_barcode','cluster']] # order the columns
+communities_df.head()
+
+communities_df.to_csv(args.output_path + '/' + args.sample_name + "_clusters_phenograph_assignment.tsv",sep='\t',index=False)
+
+
 cells_by_cluster = []
 for cluster in sorted(list(Counter(communities))):
     cells_by_cluster.append(filtered_counts[communities==cluster])
 
 avg_clusters = [m.mean(0) for m in cells_by_cluster] # 2nd output
+
+avg_clusters_df = pd.DataFrame(avg_clusters)
+
+avg_clusters_df.to_csv(args.output_path + '/' + args.sample_name + "_clusters_phenograph_profiles.tsv",sep='\t',index=False, header=False)
