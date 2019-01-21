@@ -106,7 +106,7 @@ int main( int argc, char* argv[]) {
                 // replace the nearby bins by nan
                 int start_idx, stop_idx;
                 start_idx = max_idx - smaller_window_size;
-                stop_idx = max_idx + smaller_window_size;
+                stop_idx = max_idx + smaller_window_size + 1; // +1 because if max_id = 100 and window_size = 4, then 101,102,103,104 must be NaN
 
                 // check the boundries
                 if (start_idx < 0)
