@@ -32,7 +32,6 @@ public:
     vector<int> region_sizes;
     vector<vector<int>> ground_truth; // default init value: ploidy
     vector<vector<int>> inferred_cnvs;
-    vector<unsigned int> effective_reg_starts;
 
 public:
     // constructor
@@ -199,27 +198,6 @@ public:
 
     }
 
-    void set_effective_regions()
-    {
-        /*
-         * Initialises the effective regions set
-         * */
-        vector<unsigned int> region_starts(this->region_sizes.size());
-
-        unsigned int offset = 0;
-        for (unsigned int i = 0; i < region_starts.size(); ++i) {
-            region_starts[i] = offset;
-            offset += this->region_sizes[i];
-        }
-
-        set<unsigned int> effective_regions = this->tree.get_effective_regions();
-
-        for (auto &region : effective_regions)
-        {
-            this->effective_reg_starts.push_back(region_starts[region]);
-        }
-    }
-
 
     void write_output(const string& f_name_postfix)
     {
@@ -252,10 +230,6 @@ public:
         std::ofstream tree_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_tree.txt");
         tree_file << this->tree;
 
-        // write the effective region start positions
-        std::ofstream eff_regs_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_effective_regions.txt");
-        for (auto& item : this->effective_reg_starts)
-            eff_regs_file << item << std::endl;
     }
 
 };

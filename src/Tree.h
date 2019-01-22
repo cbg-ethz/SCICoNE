@@ -77,8 +77,6 @@ public:
     bool zero_ploidy_changes(Node* n) const;// TODO: can be a method of node instead
     double cost();
 
-    std::set<u_int> get_effective_regions();
-
     vector<double> omega_condense_split(double lambda_s, bool weighted);
     vector<double> chi_condense_split(bool weighted);
 
@@ -1446,38 +1444,6 @@ vector<double> Tree::omega_insert_delete(double lambda_r, double lambda_c, bool 
     return omega;
 }
 
-std::set<u_int> Tree::get_effective_regions() {
-    /*
-     * Returns the set of regions on the tree.
-     * For each node it finds the breakpoint regions and adds them into a set.
-     * */
-
-    std::set<u_int> regions;
-    for (Node* node : all_nodes_vec)
-    {
-        int prev_first = -1; // the first region
-        int prev_second = 0;
-        for (auto &x : node->c)
-        {
-            if (x.first == prev_first +1) // consecutive
-            {
-                if (x.second != prev_second) // different than the previous
-                {
-                    regions.insert(x.first);
-                }
-            }
-            else // not consecutive
-            {
-                regions.insert(x.first);
-            }
-            prev_first = x.first;
-            prev_second = x.second;
-        }
-
-    }
-
-    return regions;
-}
 
 double Tree::cost() {
     /*
