@@ -1,0 +1,24 @@
+{
+    "simulations_bin":"../../bin/simulation",
+    "inference_bin": "../../bin/inference",
+    "parameters":
+    {
+    },
+    "cnv_trees":
+    {
+        "threads":1,
+        "scratch":"20000",
+        "mem":"3200",
+        "time":"1440",
+        "n_nodes": 10
+    },
+    "hmm_copy":
+    {
+        "script": "./HMMCopyInference.R",
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time": "600"
+    }
+}
+
