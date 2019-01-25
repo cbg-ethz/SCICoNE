@@ -78,6 +78,21 @@ int main( int argc, char* argv[]) {
 
     // median normalise sp_cropped
     dsp.median_normalise(sp_cropped);
+
+    /* if s_p contains zero, then replace those with the previous
+     * Otherwise log(0) creates -INF that messes up mean, std, even median
+     * Replacing zeros with a minimum value is not a good idea, because a breakpoint can be introduced by this imputation.
+     */
+
+    for (int l = 0; l < sp_cropped.size(); ++l)
+        if(sp_cropped[l] == 0.0)
+        {
+            if (l > 0)
+                sp_cropped[l] = sp_cropped[l - 1];
+            else // if zero is the first element
+                sp_cropped[l] = 1e-8; // a small positive number
+        }
+
     vector<double> sp_cropped_copy(sp_cropped); // the copy sp vector that'll contain the NaN values
 
     int lb = 0;

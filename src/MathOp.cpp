@@ -9,7 +9,10 @@
 
 template<class T>
 double MathOp::vec_avg(const vector<T> &v) {
-    double average = accumulate( v.begin(), v.end(), 0.0)/v.size();
+
+    double sum = accumulate( v.begin(), v.end(), 0.0);
+    int v_size = v.size();
+    double average = sum / v_size;
     return average;
 }
 
