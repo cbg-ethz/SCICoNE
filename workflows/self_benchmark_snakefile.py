@@ -2,7 +2,6 @@ import datetime
 
 # configfile: "self_benchmark_config.json"
 
-
 '''
 parameters
 '''
@@ -21,12 +20,11 @@ n_reads = [10000, 30000, 100000] # add 300000
 n_repetitions = 100
 n_inference_reps = 10
 n_cells = 500
-n_iters = int(1000000*n_nodes/10) # 1 million iters for each setting
+n_iters = config["cnv_trees"]["n_iterations"]  # int(1000000*n_nodes/10)
 
 output_file_exts = ['d_mat.txt','ground_truth.txt','region_sizes.txt', 'tree.txt', 'inferred_cnvs.txt', 'tree_inferred.txt', 'HMMcopy_inferred.txt','inferred_cnvs_segmented.txt', 'tree_inferred_segmented.txt']
 
 trees_inf_output_exts = ['tree_inferred.txt', 'inferred_cnvs.txt', 'inferred_cnvs_segmented.txt', 'tree_inferred_segmented.txt']
-
 
 SIM_OUTPUT= config["sim_output"]
 
@@ -38,8 +36,8 @@ rules
 
 rule all:
     input:
-        read_region_sims = expand(SIM_OUTPUT + '_' + prefix +'/'+ str(n_nodes) + 'nodes_'  + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/'+ '{rep_id}' +'_' + '{output_ext}', \
-                output_ext=output_file_exts, regions=n_regions,reads=n_reads, rep_id=[x for x in range(0,n_repetitions)]),
+#        read_region_sims = expand(SIM_OUTPUT + '_' + prefix +'/'+ str(n_nodes) + 'nodes_'  + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/'+ '{rep_id}' +'_' + '{output_ext}', \
+#                output_ext=output_file_exts, regions=n_regions,reads=n_reads, rep_id=[x for x in range(0,n_repetitions)]),
         inferences_with_rep = expand(SIM_OUTPUT + '_' + prefix +'/'+ str(n_nodes) + 'nodes_'  + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/'+ \ 
                 '{rep_id}_infrep{rep_inf}'+'_' + '{output_ext}', output_ext=trees_inf_output_exts, regions=n_regions,reads=n_reads, rep_id=[x for x in range(0,n_repetitions)], rep_inf=[x for x in range(0,n_inference_reps)])
     output:
@@ -131,6 +129,4 @@ rule run_sim:
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_ground_truth.txt {output.ground_truth}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_region_sizes.txt {output.region_sizes}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_tree.txt {output.tree}"
-
-
 

@@ -12,7 +12,8 @@
         "scratch":"20000",
         "mem":"3200",
         "time":"1440",
-        "n_nodes": 10
+        "n_nodes": 10,
+        "n_iterations":1000000
     },
     "hmm_copy":
     {
