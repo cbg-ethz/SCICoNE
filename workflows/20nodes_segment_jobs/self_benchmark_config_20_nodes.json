@@ -1,6 +1,8 @@
 {
     "simulations_bin":"../../bin/simulation",
     "inference_bin": "../../bin/inference",
+    "sim_output":"/cluster/work/bewi/members/tuncel/data/dna/recomb_simulations",
+    "prefix": "25-10-2018",
     "parameters":
     {
     },

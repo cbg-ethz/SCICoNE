@@ -28,9 +28,9 @@ output_file_exts = ['d_mat.txt','ground_truth.txt','region_sizes.txt', 'tree.txt
 trees_inf_output_exts = ['tree_inferred.txt', 'inferred_cnvs.txt', 'inferred_cnvs_segmented.txt', 'tree_inferred_segmented.txt']
 
 
-SIM_OUTPUT= "/cluster/work/bewi/members/tuncel/data/dna/recomb_simulations" # "simulations_output"
+SIM_OUTPUT= config["sim_output"]
 
-prefix = "25-10-2018"
+prefix = config["prefix"]
 
 '''
 rules
