@@ -17,8 +17,17 @@ n_nodes = config["cnv_trees"]["n_nodes"] # values: [10,20,30]
 n_regions = [n_nodes,2*n_nodes,4*n_nodes]
 n_bins = 10000
 n_reads = [10000, 30000, 100000] # add 300000
-n_repetitions = 100
-n_inference_reps = 10
+
+try:
+    n_repetitions = config["simulation"]["n_reps"]
+except KeyError:
+    n_repetitions = 100 
+
+try:
+    n_inference_reps = config["cnv_trees"]["n_reps"]
+except KeyError:
+    n_inference_reps = 10
+
 n_cells = 500
 n_iters = config["cnv_trees"]["n_iterations"]  # int(1000000*n_nodes/10)
 
