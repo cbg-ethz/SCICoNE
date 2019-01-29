@@ -33,7 +33,7 @@ n_iters = config["cnv_trees"]["n_iterations"]  # int(1000000*n_nodes/10)
 
 output_file_exts = ['d_mat.txt','ground_truth.txt','region_sizes.txt', 'tree.txt', 'inferred_cnvs.txt', 'tree_inferred.txt', 'HMMcopy_inferred.txt','inferred_cnvs_segmented.txt', 'tree_inferred_segmented.txt']
 
-trees_inf_output_exts = ['tree_inferred.txt', 'inferred_cnvs.txt', 'inferred_cnvs_segmented.txt', 'tree_inferred_segmented.txt']
+trees_inf_output_exts = ['tree_inferred.txt', 'inferred_cnvs.txt'] # , 'inferred_cnvs_segmented.txt', 'tree_inferred_segmented.txt']
 
 SIM_OUTPUT= config["sim_output"]
 
