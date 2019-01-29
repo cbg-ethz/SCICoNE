@@ -1,0 +1,31 @@
+{
+    "simulations_bin":"../../bin/simulation",
+    "inference_bin": "../../bin/inference",
+    "sim_output":"/cluster/work/bewi/members/tuncel/data/dna/recomb_simulations",
+    "sim_prefix": "25-10-2018",
+    "inference_output": "/cluster/work/bewi/members/tuncel/data/dna/recomb_satellite_simulations",
+    "inference_prefix": "/determining_n_iters_unweighted",
+    "simulation":
+    {
+        "n_reps":3
+    },
+    "cnv_trees":
+    {
+        "threads":1,
+        "scratch":"20000",
+        "mem":"3200",
+        "time":"1439",
+        "n_nodes": 10,
+        "n_iterations":[100000,300000,500000,1000000,2000000],
+        "n_reps":10
+    },
+    "hmm_copy":
+    {
+        "script": "./HMMCopyInference.R",
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time": "600"
+    }
+}
+
