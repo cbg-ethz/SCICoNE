@@ -15,23 +15,14 @@ def merge_chromosomes(h5):
     cell_all_chrs = np.concatenate(cnv_matrices, axis=1)
     return cell_all_chrs
 
-def filter_negative_bins(mat):
-    df_arr = pd.DataFrame(mat)
-    df_arr[df_arr < 0] = None
-    column_filter_mask = ~df_arr.isnull().any()
-    return column_filter_mask
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-h5", "--hdf5", required=True, help="cellranger-dna hdf5 output")
-parser.add_argument("-b", "--bins", required=False, help="list of low quality bins to exclude")
+parser.add_argument("-b", "--bins", required=True, help="list of 10xgenomics artifacts (always low quality) bins to exclude")
 parser.add_argument("-o","--output_path",required=False, default="./", help="path to the output")
 parser.add_argument("-s", "--sample_name",required=False, default="", help="name of the sample")
 
 args = parser.parse_args()
-
-
-# TODO: perform filtering based on the bins
 
 h5f = h5py.File(args.hdf5, 'r')
 
@@ -46,39 +37,24 @@ bin_df["start"] = bin_df["bin_ids"] * bin_size
 bin_df["end"] = bin_df["start"] + bin_size
 print(bin_df.head())
 
-# all_chromosomes = list(h5f['cnvs'].keys())
-# # list of all cnv arrays
-# chr_sizes = []
-#
-# for chr in all_chromosomes:
-#     chr_sizes.append(h5f['cnvs'][chr][:].shape[1])
-#
-# all_chr_ids = []
-# for i in range(0,len(chr_sizes)):
-#     all_chr_ids += [all_chromosomes[i]]*chr_sizes[i]
+# exclude 10x artifact bins
+artifact_bins = np.loadtxt(args.bins, delimiter='\t').astype(bool)
 
+assert(artifact_bins.shape[0] == mat.shape[1])
 
-if args.bins is None:
-    print("no bins to exclude are provided")
-else:
-    print(args.bins)
+print("artifact bins mask len")
+print(len(artifact_bins))
+print("artifact bins mask sum")
+print(sum(artifact_bins))
 
-
-negative_bins_filter_mask = filter_negative_bins(mat)
-
-print("negative mask len")
-print(len(negative_bins_filter_mask))
-print("negative mask sum")
-print(sum(negative_bins_filter_mask))
-
-print("matrix shape before & after filtering for negatives")
+print("matrix shape before & after filtering")
 print(mat.shape)
-mat = mat[:,negative_bins_filter_mask]
+mat = mat[:,~artifact_bins]
 print(mat.shape)
 
-print("bin_df shape before & after filtering for negatives")
+print("bin_df shape before & after filtering")
 print(bin_df.shape)
-bin_df = bin_df[negative_bins_filter_mask]
+bin_df = bin_df[~artifact_bins]
 print(bin_df.shape)
 
 np.savetxt(args.output_path + '/' + args.sample_name +"_filtered_counts.tsv", mat, delimiter='\t')
