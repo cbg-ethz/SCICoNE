@@ -238,21 +238,25 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
      * */
 
     double acceptance_prob = 0.0;
-    double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
+    double t_prime_sum = accumulate(t_prime_sums.begin(), t_prime_sums.end(), 0.0);
+    int n = t_prime.get_n_nodes();
 
     if (move_id == 10) // genotype preserving prune&reattach
     {
         // only compare the priors
-        int n = t_prime.get_n_nodes();
+
         t_prime.prior_score = log_prior(t_prime_sum, m, n);
         double score_diff = t_prime.prior_score - t.prior_score;
         acceptance_prob = exp(gamma*score_diff);
-        // t_prime posterior will only be connected in case move is accepted.
+        // t_prime posterior will be computed iff move is accepted.
     }
     else
     {
         // compare the posteriors
         t_prime.posterior_score = log_posterior(t_prime_sum, m, t_prime);
+
+        // update the tree prior as well
+        t_prime.prior_score = log_prior(t_prime_sum, m, n);
 
         // acceptance probability computations
         double score_diff = t_prime.posterior_score - t.posterior_score;
