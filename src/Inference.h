@@ -47,7 +47,7 @@ public:
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);
-    double log_tree_prior(double tree_sum, int m, int n);
+    double log_tree_prior(int m, int n);
     double log_posterior(double tree_sum, int m, Tree &tree);
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
                                   bool weighted, bool validation_test_mode);
@@ -218,7 +218,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
     int m = D.size();
     int n = t.get_n_nodes();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
-    t.prior_score = log_tree_prior(t_sum, m, n);
+    t.prior_score = log_tree_prior(m, n);
     t.posterior_score = log_posterior(t_sum, m, t);
 
     // update t_prime
@@ -246,7 +246,7 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
     t_prime.posterior_score = log_posterior(t_prime_sum, m, t_prime);
 
     // update the tree prior as well
-    t_prime.prior_score = log_tree_prior(t_prime_sum, m, n);
+    t_prime.prior_score = log_tree_prior(m, n);
 
     // acceptance probability computations
     double score_diff = t_prime.posterior_score - t.posterior_score;
@@ -595,7 +595,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     }
 }
 
-double Inference::log_tree_prior(double tree_sum, int m, int n) {
+double Inference::log_tree_prior(int m, int n) {
     /*
      * Computes and returns the tree prior.
      * m: n_cells
@@ -603,7 +603,7 @@ double Inference::log_tree_prior(double tree_sum, int m, int n) {
      * tree_sum: sum of all scores across all cells and attachment points
      * */
 
-    double log_prior = tree_sum - (n -1 + m) * log(n+1); // tree prior
+    double log_prior = - (n -1 + m) * log(n+1); // tree prior
     return log_prior;
 }
 
@@ -613,7 +613,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
 
     int n = tree.get_n_nodes();
     double log_posterior = 0.0;
-    log_posterior = this->log_tree_prior(tree_sum, m, n); // initialise posterior with prior then add posterior
+    log_posterior = tree_sum + this->log_tree_prior(m, n); // initialise posterior with prior then add posterior
 
     /*
      * compute penalization term
