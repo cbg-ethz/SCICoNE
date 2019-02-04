@@ -247,14 +247,12 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
         t_prime.prior_score = log_prior(t_prime_sum, m, n);
         double score_diff = t_prime.prior_score - t.prior_score;
         acceptance_prob = exp(gamma*score_diff);
+        // t_prime posterior will only be connected in case move is accepted.
     }
     else
     {
         // compare the posteriors
-        double log_post_t_prime = 0.0;
-        log_post_t_prime = log_posterior(t_prime_sum, m, t_prime);
-
-        t_prime.posterior_score = log_post_t_prime;
+        t_prime.posterior_score = log_posterior(t_prime_sum, m, t_prime);
 
         // acceptance probability computations
         double score_diff = t_prime.posterior_score - t.posterior_score;
@@ -331,7 +329,12 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
         cout<<"acceptance prob: "<<acceptance_prob<<endl;
 
     if (acceptance_prob > 1)
+    {
+        if (move_id == 10)
+            t_prime.posterior_score = log_posterior(t_prime_sum, m, t_prime);
         return &t_prime;
+    }
+
     else
     {
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
@@ -342,7 +345,11 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
             cout<<"rand_val: "<<rand_val<<endl;
 
         if (acceptance_prob > rand_val)
+        {
+            if (move_id == 10)
+                t_prime.posterior_score = log_posterior(t_prime_sum, m, t_prime);
             return &t_prime;
+        }
         else
             return &t;
     }
