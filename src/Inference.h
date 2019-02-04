@@ -557,11 +557,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         {
             n_accepted++;
 
-            if(t.posterior_score == t_prime.posterior_score)
-            {
-                cout << "scores are equal, move id: " << move_id << endl;
-            }
-
             t_sums = t_prime_sums;
             update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
             t = t_prime;
