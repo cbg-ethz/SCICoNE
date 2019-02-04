@@ -420,9 +420,11 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     cout << "swap labels" << endl;
                 bool swap_success = apply_swap(D, r, false); // weighted=false
                 if (not swap_success)
+                {
                     rejected_before_comparison = true;
-                if (verbosity > 0)
-                    cout << "Swap labels is rejected before comparison"<<endl;
+                    if (verbosity > 0)
+                        cout << "Swap labels is rejected before comparison" << endl;
+                }
                 break;
             }
             case 3:
@@ -432,9 +434,11 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     cout << "weighted swap labels" << endl;
                 bool weighted_swap_success = apply_swap(D, r, true); // weighted=true
                 if (not weighted_swap_success)
+                {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
-                        cout << "Weighted swap labels is rejected before comparison"<<endl;
+                        cout << "Weighted swap labels is rejected before comparison" << endl;
+                }
                 break;
             }
             case 4:
@@ -560,6 +564,11 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         if (accepted == &t_prime)
         {
             n_accepted++;
+
+            if(t.posterior_score == t_prime.posterior_score)
+            {
+                cout << "scores are equal, move id: " << move_id << endl;
+            }
 
             t_sums = t_prime_sums;
             update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
