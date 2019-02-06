@@ -630,7 +630,7 @@ void Tree::load_from_file(string file) {
         string token_r = c.substr(c.find(del3)+1, c.length());
         int parent_id = stoi(token.substr(5,token.size()));
         string s = token_r.substr(1, token_r.find(delim_cp)-1);
-        cout <<" node id: " << node_id << " parent id: " << parent_id <<"s=" <<s<<  endl;
+        // cout <<" node id: " << node_id << " parent id: " << parent_id <<"s=" <<s<<  endl;
         // process pair (a,b)
         size_t pos = 0;
         vector<string> pairs;

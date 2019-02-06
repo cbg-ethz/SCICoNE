@@ -37,7 +37,7 @@ int main( int argc, char* argv[]) {
     int n_bins = 10000;
     size_t n_regions;
     int ploidy=2;
-    int verbosity=2;
+    int verbosity=0;
     string file;
     string region_sizes_file = "";
     string d_matrix_file = "";
@@ -75,9 +75,9 @@ int main( int argc, char* argv[]) {
     mcmc.compute_t_table(d_regions,region_sizes);
 
     // write the tree
-    std::ofstream tree_file("./" +f_name_postfix+"_tree_rescored" + ".txt");
-    tree_file << mcmc.t;
-
+    // std::ofstream tree_file("./" +f_name_postfix+"_tree_rescored" + ".txt");
+    // tree_file << mcmc.t;
+    std::cout << mcmc.t;
 
 
     return EXIT_SUCCESS;
