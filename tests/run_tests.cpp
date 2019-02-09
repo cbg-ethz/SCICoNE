@@ -20,7 +20,7 @@ double lambda_c;
 
 int main()
 {
-    print_precision = 16;
+    print_precision = 15;
     copy_number_limit = 5;
     lambda_s = 0.5;
     lambda_r = 0.1;

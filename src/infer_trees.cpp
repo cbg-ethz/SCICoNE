@@ -53,7 +53,7 @@ int main( int argc, char* argv[]) {
     int n_reads = -1; // -1 means not specified
 
     // set the globals
-    print_precision = 16;
+    print_precision = 15;
     lambda_s = 0.5;
     copy_number_limit = 5;
 

@@ -27,7 +27,7 @@ using namespace std;
 int main( int argc, char* argv[]) {
 
     // set the globals
-    print_precision = 16;
+    print_precision = 15;
     lambda_s = 0.5;
     lambda_r = 2.0;
     lambda_c = 1.0;
