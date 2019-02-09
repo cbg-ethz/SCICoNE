@@ -2,21 +2,21 @@
     "simulations_bin":"../../bin/simulation",
     "inference_bin": "../../bin/inference",
     "sim_output":"/cluster/work/bewi/members/tuncel/data/dna/recomb_simulations",
-    "sim_prefix": "25-10-2018",
+    "sim_prefix": "06.02.2019_sim",
     "inference_output": "/cluster/work/bewi/members/tuncel/data/dna/recomb_satellite_simulations",
-    "inference_prefix": "/determining_n_iters_unweighted",
+    "inference_prefix": "/06.02.2019/determining_n_iters_weighted",
     "simulation":
     {
-        "n_reps":3
+        "n_reps":100
     },
     "cnv_trees":
     {
         "threads":1,
         "scratch":"20000",
         "mem":"3200",
-        "time":"239",
+        "time":"238",
         "n_nodes": 10,
-        "n_iterations":[100000,300000,500000,1000000,2000000],
+        "n_iterations":[10000,20000,35000],
         "n_reps":10
     },
     "hmm_copy":
