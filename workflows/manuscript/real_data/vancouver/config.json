@@ -1,0 +1,34 @@
+{
+  "verbosity": 0,
+  "inference_output": "/Users/mtuncel/git_repos/sc-dna/workflows/manuscript/real_data/test_run",
+  "bp_output": "/Users/mtuncel/git_repos/sc-dna/workflows/manuscript/real_data/test_run/vancouver_bp",
+  "inference_prefix": "vancouver_inference",
+  "cnv_trees": {
+    "bin": "/Users/mtuncel/git_repos/sc-dna/bin/inference",
+    "threads": 1,
+    "scratch": "20000",
+    "mem": "3200",
+    "time": "1438",
+    "n_nodes": 10,
+    "n_iterations": [
+      200
+    ],
+    "n_reps": 10,
+    "ploidy": 2,
+    "copy_number_limit": 3
+  },
+  "dataset": {
+    "n_bins": 18175,
+    "n_cells": 260,
+    "name": "vancouver",
+    "matrix_path": "/Users/mtuncel/git_repos/sc-dna/data/adi_steif/read_count_tables/SA501X3F_corr_amp.txt"
+  },
+  "breakpoint_detection": {
+    "bin": "/Users/mtuncel/git_repos/sc-dna/bin/breakpoint_detection",
+    "window_size": 10,
+    "threshold": 3,
+    "scratch": "20000",
+    "mem": "3200",
+    "time": "238"
+  }
+}
