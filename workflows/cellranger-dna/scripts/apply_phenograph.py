@@ -14,7 +14,6 @@ parser.add_argument("-s", "--sample_name",required=False, default="", help="name
 args = parser.parse_args()
 
 # clustering/classification params
-n_neighbours = 100
 n_jobs = 16
 # points in the knn neighbourhood are weighted by the distance
 weight='distance'
@@ -26,11 +25,24 @@ normalized_filtered_counts = normalize(filtered_counts,axis=1, norm='l1')
 n_cells = normalized_filtered_counts.shape[0]
 
 print("n_cells: " + str(n_cells))
-    
-if n_neighbours >= n_cells:
-    n_neighbours = int(n_cells/2)
-
+n_neighbours = int(n_cells/10)
+print("n_neighbours: " + str(n_neighbours))
 communities, graph, Q = phenograph.cluster(data=normalized_filtered_counts,k=n_neighbours,n_jobs=n_jobs, jaccard=True)
+
+# computing the distance matrix from graph
+arr = graph.toarray()
+arr_full = arr+arr.T
+np.fill_diagonal(arr_full, 1)
+dist = (arr_full- arr_full.max())*(-1)
+np.fill_diagonal(dist, 0)
+
+print("shape of the distance matrix:")
+print(dist.shape)
+
+# write dist to file
+# later use dist for all of the plots
+dist_fname = args.output_path+'/'+args.sample_name+"_phenograph_distance.csv"
+np.savetxt(fname=dist_fname, X=dist, delimiter=',')
 
 print(communities) # one of the outputs
 
