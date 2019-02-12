@@ -14,7 +14,6 @@ parser.add_argument("-s", "--sample_name",required=False, default="", help="name
 args = parser.parse_args()
 
 # clustering/classification params
-n_neighbours = 100
 n_jobs = 16
 # points in the knn neighbourhood are weighted by the distance
 weight='distance'
@@ -26,10 +25,8 @@ normalized_filtered_counts = normalize(filtered_counts,axis=1, norm='l1')
 n_cells = normalized_filtered_counts.shape[0]
 
 print("n_cells: " + str(n_cells))
-    
-if n_neighbours >= n_cells:
-    n_neighbours = int(n_cells/2)
-
+n_neighbours = int(n_cells/10)
+print("n_neighbours: " + str(n_neighbours))
 communities, graph, Q = phenograph.cluster(data=normalized_filtered_counts,k=n_neighbours,n_jobs=n_jobs, jaccard=True)
 
 print(communities) # one of the outputs
