@@ -29,6 +29,21 @@ n_neighbours = int(n_cells/10)
 print("n_neighbours: " + str(n_neighbours))
 communities, graph, Q = phenograph.cluster(data=normalized_filtered_counts,k=n_neighbours,n_jobs=n_jobs, jaccard=True)
 
+# computing the distance matrix from graph
+arr = graph.toarray()
+arr_full = arr+arr.T
+np.fill_diagonal(arr_full, 1)
+dist = (arr_full- arr_full.max())*(-1)
+np.fill_diagonal(dist, 0)
+
+print("shape of the distance matrix:")
+print(dist.shape)
+
+# write dist to file
+# later use dist for all of the plots
+dist_fname = args.output_path+'/'+args.sample_name+"_phenograph_distance.csv"
+np.savetxt(fname=dist_fname, X=dist, delimiter=',')
+
 print(communities) # one of the outputs
 
 communities_df = pd.DataFrame(communities,columns=['cluster'])
