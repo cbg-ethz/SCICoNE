@@ -29,7 +29,7 @@
         "time": "600"
     },
     "breakpoint_detection": {
-      "bin": "/Users/mtuncel/git_repos/sc-dna/bin/breakpoint_detection",
+      "bin": "/cluster/work/bewi/members/tuncel/sc-dna/bin/breakpoint_detection",
       "window_size": 10,
       "threshold": 3,
       "scratch": "20000",
