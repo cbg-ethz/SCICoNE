@@ -2,7 +2,7 @@
   "verbosity": 0,
   "inference_output": "/cluster/work/bewi/members/tuncel/data/dna/manuscript/real_data/vancouver",
   "bp_output": "/cluster/work/bewi/members/tuncel/data/dna/manuscript/real_data/vancouver/vancouver_bp",
-  "inference_prefix": "vancouver_inference_1M_iters_cn_limit_2_size_limit_10",
+  "inference_prefix": "vancouver_inference_5M_iters_cn_limit_2_size_limit_10",
   "cnv_trees": {
     "bin": "/cluster/work/bewi/members/tuncel/sc-dna/bin/inference",
     "threads": 1,
