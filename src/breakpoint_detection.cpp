@@ -41,6 +41,7 @@ int main( int argc, char* argv[]) {
             ("threshold", "the coefficient of the breakpoint threshold", cxxopts::value(threshold_coefficient))
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
+            ("c_penalise","term that penalises trees containing cancelling events to be added to tree event prior",cxxopts::value(c_penalise))
             ;
 
     auto result = options.parse(argc, argv);
