@@ -15,6 +15,7 @@ int copy_number_limit;
 double lambda_r;
 double lambda_c;
 double lambda_s;
+double c_penalise;
 // endof globals
 
 using namespace std;
@@ -26,6 +27,7 @@ int main(int argc, char* argv[]) {
     int n_nodes = 50;
     lambda_r = 0.1;
     lambda_c = 0.4;
+    c_penalise = 1.0;
     int n_cells = 500;
     int n_bins = 10000;
     int n_reads = 10000;
@@ -56,6 +58,7 @@ int main(int argc, char* argv[]) {
             ("print_precision", "The precision points of the score values to be printed", cxxopts::value(print_precision))
             ("copy_number_limit", "the maximum copy number profile one bin or region can have", cxxopts::value(copy_number_limit))
             ("min_reg_size", "the minimum size that a region can have", cxxopts::value(min_region_size))
+            ("c_penalise","term that penalises trees containing cancelling events to be added to tree event prior",cxxopts::value(c_penalise))
             ;
 
     auto result = options.parse(argc, argv);
