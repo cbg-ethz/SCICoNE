@@ -344,7 +344,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                            int size_limit) {
 
     int m = static_cast<int>(D.size());
-    int n_accepted = 0;
+    int n_strongly_accepted = 0;
     int n_rejected = 0;
     int n_attached_to_the_same_pos = 0;
     int add_remove_move_rejected = 0;
@@ -555,10 +555,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         // update trees and the matrices
         if (accepted == &t_prime)
         {
-            //n_accepted++;
+            //n_strongly_accepted++;
 
           if(abs(t.posterior_score - t_prime.posterior_score) > 1e-10){
-            n_accepted++;
+            n_strongly_accepted++;
             //std::cout << "tree score:" << t.posterior_score << " tree prime score:" << t_prime.posterior_score << endl;
           } 
           
@@ -584,21 +584,21 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             double target_rate = 2*(N+1)*(N+2);
             double c = log(2) / log(target_rate); // +2 because root is not counted and log(1) is zero (it goes to the denominator)
 
-            double acceptance_ratio = double(n_accepted+1) / double((n_accepted + n_rejected + target_rate));
+            double acceptance_ratio = double(n_strongly_accepted+1) / double((n_strongly_accepted + n_rejected + target_rate));
             
             
             //
-std::cout << "iteration" << i <<  "tree score" << t.posterior_score << endl; 
-std::cout << "acceptance ratio:" << acceptance_ratio << "tree size" << N << "gamma change?" << exp(0.5 - pow(acceptance_ratio, c)) << endl;
+            cout << "iteration" << i <<  "tree score" << t.posterior_score << endl;
+            cout << "acceptance ratio:" << acceptance_ratio << "tree size" << N << "gamma change?" << exp(0.5 - pow(acceptance_ratio, c)) << endl;
             gamma = gamma / exp(0.5 - pow(acceptance_ratio, c));
             // TODO: Jack will change the way gamma is computed
-            n_accepted = n_rejected = 0;
+            n_strongly_accepted = n_rejected = 0;
             std::cout << "gamma val:" << gamma << endl;
         }
     }
     if (verbosity > 0)
     {
-        cout<<"n_accepted: "<<n_accepted<<endl;
+        cout<<"n_strongly_accepted: "<<n_strongly_accepted<<endl;
         cout<<"n_rejected: "<<n_rejected<<endl;
         cout<<"n_attached_to_the_same_pos: "<<n_attached_to_the_same_pos<<endl;
         cout<<"add_remove_move_rejected: "<<add_remove_move_rejected<<endl;
@@ -626,6 +626,9 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     double log_posterior = 0.0;
     log_posterior = tree_sum + this->log_tree_prior(m, n); // initialise posterior with prior then add posterior
 
+    int repetition_count = 0; // the repetition count to be used in the penalisation
+    double c_penalisation = c_penalise; // the penalisation coefficient, global var
+
     /*
      * compute penalization term
      * K: max region index
@@ -643,23 +646,40 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
 
         auto last_elem_id = c_change.rbegin()->first;
 
-        for (auto const &it : c_change)
+        for (auto const &event_it : c_change)
         {
+
+            // penalisation for repetition
+            int parent_state = 0;
+
+            try
+            {
+                parent_state = node->parent->c.at(event_it.first);
+                int c_change_val = event_it.second;
+
+                if (signbit(c_change_val) != signbit(parent_state))
+                    repetition_count++;
+            }
+            catch (const std::out_of_range& e)
+            {
+                // pass
+            }
+
             int diff;
-            if (it.first - 1 != i_prev) // if the region is adjacent to its previous
+            if (event_it.first - 1 != i_prev) // if the region is adjacent to its previous
             {
                 int diff_right = 0 - v_prev; // the right hand side change at the end of the last consecutive region
                 if (diff_right > 0)
                     v += diff_right;
                 v_prev = 0;
             }
-            diff = it.second - v_prev;
+            diff = event_it.second - v_prev;
             if (diff > 0)
                 v += diff;
-            v_prev = it.second;
-            i_prev = it.first;
+            v_prev = event_it.second;
+            i_prev = event_it.first;
 
-            if (it.first == last_elem_id)
+            if (event_it.first == last_elem_id)
             {
                 int diff_last = 0 - v_prev;
 
@@ -685,6 +705,8 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     PV -= Lgamma::get_val(n+1);
 
     log_posterior += PV;
+
+    log_posterior -= c_penalisation*repetition_count; // penalise the repetitions
 
     return log_posterior;
 }
