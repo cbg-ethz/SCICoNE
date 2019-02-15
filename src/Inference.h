@@ -615,6 +615,9 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     double log_posterior = 0.0;
     log_posterior = tree_sum + this->log_tree_prior(m, n); // initialise posterior with prior then add posterior
 
+    int repetition_count = 0; // the repetition count to be used in the penalisation
+    double c_penalisation = 10; // the penalisation coefficient
+
     /*
      * compute penalization term
      * K: max region index
@@ -632,23 +635,40 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
 
         auto last_elem_id = c_change.rbegin()->first;
 
-        for (auto const &it : c_change)
+        for (auto const &event_it : c_change)
         {
+
+            // penalisation for repetition
+            int parent_state = 0;
+
+            try
+            {
+                parent_state = node->parent->c.at(event_it.first);
+                int c_change_val = event_it.second;
+
+                if (signbit(c_change_val) != signbit(parent_state))
+                    repetition_count++;
+            }
+            catch (const std::out_of_range& e)
+            {
+                // pass
+            }
+
             int diff;
-            if (it.first - 1 != i_prev) // if the region is adjacent to its previous
+            if (event_it.first - 1 != i_prev) // if the region is adjacent to its previous
             {
                 int diff_right = 0 - v_prev; // the right hand side change at the end of the last consecutive region
                 if (diff_right > 0)
                     v += diff_right;
                 v_prev = 0;
             }
-            diff = it.second - v_prev;
+            diff = event_it.second - v_prev;
             if (diff > 0)
                 v += diff;
-            v_prev = it.second;
-            i_prev = it.first;
+            v_prev = event_it.second;
+            i_prev = event_it.first;
 
-            if (it.first == last_elem_id)
+            if (event_it.first == last_elem_id)
             {
                 int diff_last = 0 - v_prev;
 
@@ -674,6 +694,8 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     PV -= Lgamma::get_val(n+1);
 
     log_posterior += PV;
+
+    log_posterior -= c_penalisation*repetition_count; // penalise the repetitions
 
     return log_posterior;
 }
