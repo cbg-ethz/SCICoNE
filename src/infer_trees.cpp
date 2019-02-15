@@ -21,6 +21,7 @@ int copy_number_limit;
 double lambda_s;
 double lambda_r;
 double lambda_c;
+double c_penalise;
 
 // endof globals
 
@@ -49,6 +50,8 @@ int main( int argc, char* argv[]) {
     int n_nodes = 50;
     lambda_r = 0.1;
     lambda_c = 0.2;
+    c_penalise = 1.0;
+
 
     int n_reads = -1; // -1 means not specified
 
@@ -78,6 +81,7 @@ int main( int argc, char* argv[]) {
             ("n_nodes","the number of nodes in the random initialised tree", cxxopts::value(n_nodes))
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
+            ("c_penalise","term that penalises trees containing cancelling events to be added to tree event prior",cxxopts::value(c_penalise))
             ;
 
     auto result = options.parse(argc, argv);

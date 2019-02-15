@@ -616,7 +616,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     log_posterior = tree_sum + this->log_tree_prior(m, n); // initialise posterior with prior then add posterior
 
     int repetition_count = 0; // the repetition count to be used in the penalisation
-    double c_penalisation = 10; // the penalisation coefficient
+    double c_penalisation = c_penalise; // the penalisation coefficient, global var
 
     /*
      * compute penalization term

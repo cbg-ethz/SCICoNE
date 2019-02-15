@@ -14,6 +14,7 @@ int copy_number_limit;
 double lambda_s;
 double lambda_r;
 double lambda_c;
+double c_penalise;
 
 // endof globals
 
@@ -25,6 +26,7 @@ int main()
     lambda_s = 0.5;
     lambda_r = 0.1;
     lambda_c = 0.2;
+    c_penalise = 1.0;
     std::cout<<"UNIT TESTS" <<std::endl;
 //     set a seed number for reproducibility
     SingletonRandomGenerator::get_instance(42);
