@@ -284,7 +284,7 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
             double p_del_corr_num = (deleted->get_n_children() / 2) + 1; // /2 because with 0.5 prob. children will be siblings, +1 because including itself
             double p_del_corr_denom =  (deleted->get_n_children());
 
-            double ratio = p_del_corr_num / p_del_corr_denom;
+            double ratio = (1.0/100.0)*p_del_corr_num / p_del_corr_denom;
 
             if (ratio != 0.0 && !std::isnan(ratio) && !std::isinf(ratio))
                 acceptance_prob *= ratio;
@@ -307,7 +307,7 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
             double p_add_corr_num = added->get_n_children(); // in case of delete to go back, just the probability of t_prime added's children
             double p_add_corr_denom = (added->get_n_children() / 2) + 1; // t_prime added n_children / 2 and +1 for the added node
 
-            double ratio = p_add_corr_num / p_add_corr_denom;
+            double ratio = 100.0*p_add_corr_num / p_add_corr_denom;
 
             if (ratio != 0.0 && !std::isnan(ratio) && !std::isinf(ratio))
                 acceptance_prob *= ratio;
@@ -555,8 +555,13 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         // update trees and the matrices
         if (accepted == &t_prime)
         {
-            n_accepted++;
+            //n_accepted++;
 
+          if(abs(t.posterior_score - t_prime.posterior_score) > 1e-10){
+            n_accepted++;
+            //std::cout << "tree score:" << t.posterior_score << " tree prime score:" << t_prime.posterior_score << endl;
+          } 
+          
             t_sums = t_prime_sums;
             update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
             t = t_prime;
@@ -573,17 +578,23 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
         // TODO: update gamma every 100 iterations, adaptive stuff
         // N: n_nodes of tree t
-//        if ((i > 1000) && (i % 100 == 0))
-//        {
-//            double acceptance_ratio = double(n_accepted) / double((n_accepted + n_rejected));
-//            double N = t.get_n_nodes();
-//            double c = -1 * (log(2) / log(N+2)); // +2 because root is not counted and log(1) is zero (it goes to the denominator)
-//
-//            gamma = gamma * exp(0.5 - pow(acceptance_ratio, c));
+        if ((i > 1000) && (i % 1000 == 0))
+        {
+            double N = t.get_n_nodes();
+            double target_rate = 2*(N+1)*(N+2);
+            double c = log(2) / log(target_rate); // +2 because root is not counted and log(1) is zero (it goes to the denominator)
+
+            double acceptance_ratio = double(n_accepted+1) / double((n_accepted + n_rejected + target_rate));
+            
+            
+            //
+std::cout << "iteration" << i <<  "tree score" << t.posterior_score << endl; 
+std::cout << "acceptance ratio:" << acceptance_ratio << "tree size" << N << "gamma change?" << exp(0.5 - pow(acceptance_ratio, c)) << endl;
+            gamma = gamma / exp(0.5 - pow(acceptance_ratio, c));
             // TODO: Jack will change the way gamma is computed
-            //n_accepted = n_rejected = 0;
-//            std::cout << "gamma val:" << gamma << endl;
-//        }
+            n_accepted = n_rejected = 0;
+            std::cout << "gamma val:" << gamma << endl;
+        }
     }
     if (verbosity > 0)
     {
@@ -615,9 +626,6 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     double log_posterior = 0.0;
     log_posterior = tree_sum + this->log_tree_prior(m, n); // initialise posterior with prior then add posterior
 
-    int repetition_count = 0; // the repetition count to be used in the penalisation
-    double c_penalisation = c_penalise; // the penalisation coefficient, global var
-
     /*
      * compute penalization term
      * K: max region index
@@ -635,40 +643,23 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
 
         auto last_elem_id = c_change.rbegin()->first;
 
-        for (auto const &event_it : c_change)
+        for (auto const &it : c_change)
         {
-
-            // penalisation for repetition
-            int parent_state = 0;
-
-            try
-            {
-                parent_state = node->parent->c.at(event_it.first);
-                int c_change_val = event_it.second;
-
-                if (signbit(c_change_val) != signbit(parent_state))
-                    repetition_count++;
-            }
-            catch (const std::out_of_range& e)
-            {
-                // pass
-            }
-
             int diff;
-            if (event_it.first - 1 != i_prev) // if the region is adjacent to its previous
+            if (it.first - 1 != i_prev) // if the region is adjacent to its previous
             {
                 int diff_right = 0 - v_prev; // the right hand side change at the end of the last consecutive region
                 if (diff_right > 0)
                     v += diff_right;
                 v_prev = 0;
             }
-            diff = event_it.second - v_prev;
+            diff = it.second - v_prev;
             if (diff > 0)
                 v += diff;
-            v_prev = event_it.second;
-            i_prev = event_it.first;
+            v_prev = it.second;
+            i_prev = it.first;
 
-            if (event_it.first == last_elem_id)
+            if (it.first == last_elem_id)
             {
                 int diff_last = 0 - v_prev;
 
@@ -694,8 +685,6 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
     PV -= Lgamma::get_val(n+1);
 
     log_posterior += PV;
-
-    log_posterior -= c_penalisation*repetition_count; // penalise the repetitions
 
     return log_posterior;
 }
