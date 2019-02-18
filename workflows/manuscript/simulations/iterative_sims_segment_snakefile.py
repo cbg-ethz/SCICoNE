@@ -117,7 +117,7 @@ rule breakpoint_detection:
     output:
         region_sizes = SIM_OUTPUT+ '_' + sim_prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + "_segmented_region_sizes.txt"
     shell:
-        "{params.binary} --n_bins {params.n_bins} --n_cells {params.n_cells} --postfix {params.postfix} --d_matrix_file {input.d_mat};\
+        "{params.binary} --n_bins {params.n_bins} --threshold {params.threshold}  --n_cells {params.n_cells} --postfix {params.postfix} --d_matrix_file {input.d_mat};\
         mv {params.postfix}_segmented_region_sizes.txt {output.region_sizes}"
 
 
