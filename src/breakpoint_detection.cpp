@@ -207,6 +207,7 @@ int main( int argc, char* argv[]) {
         else
             reg_sizes_file << all_max_ids[k] - all_max_ids[k-1] << endl;
     }
+    reg_sizes_file << ub+window_size - all_max_ids[all_max_ids.size()-1] << endl; // add the last one
 
     return EXIT_SUCCESS;
 }
