@@ -590,7 +590,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             //
             cout << "iteration" << i <<  "tree score" << t.posterior_score << endl;
             cout << "acceptance ratio:" << acceptance_ratio << "tree size" << N << "gamma change?" << exp(0.5 - pow(acceptance_ratio, c)) << endl;
-            gamma = gamma / exp(0.5 - pow(acceptance_ratio, c));
+            // gamma = gamma / exp(0.5 - pow(acceptance_ratio, c));
             // TODO: Jack will change the way gamma is computed
             n_strongly_accepted = n_rejected = 0;
             std::cout << "gamma val:" << gamma << endl;
