@@ -576,24 +576,24 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         t_prime_sums.clear();
         t_prime_scores.clear();
 
-        // TODO: update gamma every 100 iterations, adaptive stuff
+        // TODO: update gamma every 10000 iterations, adaptive stuff
         // N: n_nodes of tree t
-        if ((i > 1000) && (i % 1000 == 0))
+        if ((i > 10000) && (i % 10000 == 0))
         {
-            double N = t.get_n_nodes();
-            double target_rate = 2*(N+1)*(N+2);
-            double c = log(2) / log(target_rate); // +2 because root is not counted and log(1) is zero (it goes to the denominator)
+            // double N = t.get_n_nodes();
+            // double target_rate = 2*(N+1)*(N+2);
+            // double c = log(2) / log(target_rate); // +2 because root is not counted and log(1) is zero (it goes to the denominator)
 
-            double acceptance_ratio = double(n_strongly_accepted+1) / double((n_strongly_accepted + n_rejected + target_rate));
+            // double acceptance_ratio = double(n_strongly_accepted+1) / double((n_strongly_accepted + n_rejected + target_rate));
             
             
             //
             cout << "iteration" << i <<  "tree score" << t.posterior_score << endl;
-            cout << "acceptance ratio:" << acceptance_ratio << "tree size" << N << "gamma change?" << exp(0.5 - pow(acceptance_ratio, c)) << endl;
-            gamma = gamma / exp(0.5 - pow(acceptance_ratio, c));
+            // cout << "acceptance ratio:" << acceptance_ratio << "tree size" << N << "gamma change?" << exp(0.5 - pow(acceptance_ratio, c)) << endl;
+            // gamma = gamma / exp(0.5 - pow(acceptance_ratio, c));
             // TODO: Jack will change the way gamma is computed
-            n_strongly_accepted = n_rejected = 0;
-            std::cout << "gamma val:" << gamma << endl;
+            // n_strongly_accepted = n_rejected = 0;
+            // std::cout << "gamma val:" << gamma << endl;
         }
     }
     if (verbosity > 0)
