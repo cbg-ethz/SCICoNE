@@ -26,6 +26,23 @@ args = parser.parse_args()
 
 h5f = h5py.File(args.hdf5, 'r')
 
+n_cells = h5f['cell_barcodes'].value.shape[0]
+all_chromosomes = list(h5f['normalized_counts'].keys())
+
+number_chromosomes = sorted([int(x) for x in sorted(all_chromosomes)[:-2]])
+ordered_chromosomes = [str(x) for x in number_chromosomes] + sorted(all_chromosomes)[-2:]
+
+chr_lengths = []
+for ch in ordered_chromosomes:
+    chr_lengths.append(h5f['normalized_counts'][ch][0:n_cells,:].shape[1])
+
+chr_ends = np.cumsum(chr_lengths)
+
+chr_start_positions = [None for x in range(0,chr_ends[-1])]
+for idx, pos in enumerate(chr_ends):
+    chr_start_positions[pos-1] = ordered_chromosomes[idx] # -1 because it is a size info
+
+
 mat = merge_chromosomes(h5f)
 
 bin_size = h5f["constants"]["bin_size"][()]
@@ -57,9 +74,22 @@ print(bin_df.shape)
 bin_df = bin_df[~artifact_bins]
 print(bin_df.shape)
 
+print("filtering chromosome start positions")
+filtered_chr_starts = np.array(chr_start_positions)[~artifact_bins]
+
+df_chr_starts = pd.DataFrame(columns=["chr"])
+for idx,val in enumerate(filtered_chr_starts):
+    if(val != None):
+        #print((idx,val))
+        df_chr_starts.loc[idx] = val
+
+print("writing output...")
+
 np.savetxt(args.output_path + '/' + args.sample_name +"_filtered_counts.tsv", mat, delimiter='\t')
 
 bin_df.to_csv(args.output_path + '/' + args.sample_name + "_bins_genome.tsv",sep='\t',index=False)
+
+df_chr_starts.to_csv(args.output_path + '/' + args.sample_name + "_chr_starts.tsv",sep='\t')
 
 print("Output written to: " + args.output_path)
 
