@@ -28,22 +28,23 @@ dist = np.loadtxt(args.dist,delimiter=',')
 communities = pd.read_csv(args.communities,sep='\t')
 communities = communities['cluster'].values
 
+cmap = matplotlib.cm.get_cmap('Dark2')
 tsne = TSNE(n_components=2, perplexity= 30,metric='precomputed').fit_transform(dist)
 df_tsne = pd.DataFrame(tsne)
 df_tsne['cluster'] = communities
-ax = df_tsne.plot(kind='scatter', x=0, y=1, c='cluster', figsize=(10,8), colorbar=False,colormap='Dark2', grid=True, title='Phenograph Clusters on CNV Data')
+df_tsne['color'] = (df_tsne['cluster']+1)/len(cluster_means.index) # +1 because outliers are -1
+ax = df_tsne.plot(kind='scatter', x=0, y=1, c=cmap(df_tsne['color']), figsize=(10,8), colorbar=False, grid=True, title='Phenograph Clusters on CNV Data')
 fig = ax.get_figure()
 fig.savefig(args.output_path + '/' + args.sample_name +  "_tsne_output.png")
 
 chr_stops_df = pd.read_csv(args.genomic_coordinates, sep='\t')
 chr_stops_df.columns = ["idx", "pos"]
 
-cmap = matplotlib.cm.get_cmap('Dark2')
 # use the formula below to get the distinct colors
 # color = cmap(float(i)/N)
 for i, cluster_idx in enumerate(cluster_means.index):
     plt.figure(figsize=(20,6))
-    ax = plt.plot(cluster_means.iloc[i].values,label="cluster id: " + str(cluster_idx), color=cmap(float(i)/max(communities)))
+    ax = plt.plot(cluster_means.iloc[i].values, label="cluster id: " + str(cluster_idx), color=cmap(float(cluster_idx+1)/len(cluster_means.index)))
     plt.axis([None, None, 0, max_val]) # to make the axises same
     plt.legend(loc='upper left')
     plt.xticks([], [])
@@ -54,7 +55,7 @@ for i, cluster_idx in enumerate(cluster_means.index):
 
 plt.figure(figsize=(20,6))
 for i, cluster_idx in enumerate(cluster_means.index):
-    ax = plt.plot(cluster_means.iloc[i].values, label="cluster id: " + str(cluster_idx), color=cmap(float(i)/max(communities)), alpha=0.6)
+    ax = plt.plot(cluster_means.iloc[i].values, label="cluster id: " + str(cluster_idx), color=cmap(float(cluster_idx+1)/len(cluster_means.index)), alpha=0.6)
     plt.axis([None, None, 0, max_val]) # to make the axises same
     plt.legend(loc='upper left')
     plt.xticks([], [])
