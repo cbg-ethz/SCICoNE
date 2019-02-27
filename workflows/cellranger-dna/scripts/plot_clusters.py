@@ -11,7 +11,7 @@ parser.add_argument("-d","--dist", required=True, help="the distance matrix used
 parser.add_argument("-c","--communities",required=True,help="the cluster assignments")
 parser.add_argument("-o","--output_path",required=False, default="./", help="path to the output")
 parser.add_argument("-s", "--sample_name",required=False, default="", help="name of the sample")
-parser.add_argument("-g", "--genomic_coordinates", required=True, help="chromosome start positions")
+parser.add_argument("-g", "--genomic_coordinates", required=True, help="chromosome stop positions")
 
 args = parser.parse_args()
 
@@ -35,8 +35,8 @@ ax = df_tsne.plot(kind='scatter', x=0, y=1, c='cluster', figsize=(10,8), colorba
 fig = ax.get_figure()
 fig.savefig(args.output_path + '/' + args.sample_name +  "_tsne_output.png")
 
-chr_starts_df = pd.read_csv(args.genomic_coordinates, sep='\t')
-chr_starts_df.columns = ["idx", "pos"]
+chr_stops_df = pd.read_csv(args.genomic_coordinates, sep='\t')
+chr_stops_df.columns = ["idx", "pos"]
 
 cmap = matplotlib.cm.get_cmap('Dark2')
 # use the formula below to get the distinct colors
@@ -47,7 +47,7 @@ for i, cluster_idx in enumerate(cluster_means.index):
     plt.axis([None, None, 0, max_val]) # to make the axises same
     plt.legend(loc='upper left')
     plt.xticks([], [])
-    for index, row in chr_starts_df.iterrows():
+    for index, row in chr_stops_df.iterrows():
         plt.text(row['idx'],-0.5,"chr " + row['pos'],rotation=90)
     plt.savefig(args.output_path + '/' + args.sample_name + "_cluster_profile_"+str(cluster_idx)+".png")
 
@@ -58,7 +58,7 @@ for i, cluster_idx in enumerate(cluster_means.index):
     plt.axis([None, None, 0, max_val]) # to make the axises same
     plt.legend(loc='upper left')
     plt.xticks([], [])
-    for index, row in chr_starts_df.iterrows():
+    for index, row in chr_stops_df.iterrows():
         plt.text(row['idx'],-0.5,"chr " + row['pos'],rotation=90)
 plt.savefig(args.output_path + '/' + args.sample_name + "_cluster_profile_overlapping.png")
 
