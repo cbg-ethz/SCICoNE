@@ -48,7 +48,7 @@ for i, cluster_idx in enumerate(cluster_means.index):
     plt.legend(loc='upper left')
     plt.xticks([], [])
     for index, row in chr_starts_df.iterrows():
-        plt.text(row['idx'],-1.2,"chr " + row['pos'],rotation=90)
+        plt.text(row['idx'],-0.5,"chr " + row['pos'],rotation=90)
     plt.savefig(args.output_path + '/' + args.sample_name + "_cluster_profile_"+str(cluster_idx)+".png")
 
 
@@ -59,7 +59,7 @@ for i, cluster_idx in enumerate(cluster_means.index):
     plt.legend(loc='upper left')
     plt.xticks([], [])
     for index, row in chr_starts_df.iterrows():
-        plt.text(row['idx'],-1.2,"chr " + row['pos'],rotation=90)
+        plt.text(row['idx'],-0.5,"chr " + row['pos'],rotation=90)
 plt.savefig(args.output_path + '/' + args.sample_name + "_cluster_profile_overlapping.png")
 
 
