@@ -38,9 +38,9 @@ for ch in ordered_chromosomes:
 
 chr_ends = np.cumsum(chr_lengths)
 
-chr_start_positions = [None for x in range(0,chr_ends[-1])]
+chr_stop_positions = [None for x in range(0,chr_ends[-1])]
 for idx, pos in enumerate(chr_ends):
-    chr_start_positions[pos-1] = ordered_chromosomes[idx] # -1 because it is a size info
+    chr_stop_positions[pos-1] = ordered_chromosomes[idx] # -1 because it is a size info
 
 
 mat = merge_chromosomes(h5f)
@@ -50,8 +50,8 @@ n_bins = mat.shape[1]
 bin_ids = [x for x in range(0,n_bins)]
 bin_df = pd.DataFrame(bin_ids, columns=["bin_ids"])
 
-bin_df["start"] = bin_df["bin_ids"] * bin_size
-bin_df["end"] = bin_df["start"] + bin_size
+bin_df["stop"] = bin_df["bin_ids"] * bin_size
+bin_df["end"] = bin_df["stop"] + bin_size
 print(bin_df.head())
 
 # exclude 10x artifact bins
@@ -74,14 +74,14 @@ print(bin_df.shape)
 bin_df = bin_df[~artifact_bins]
 print(bin_df.shape)
 
-print("filtering chromosome start positions")
-filtered_chr_starts = np.array(chr_start_positions)[~artifact_bins]
+print("filtering chromosome stop positions")
+filtered_chr_stops = np.array(chr_stop_positions)[~artifact_bins]
 
-df_chr_starts = pd.DataFrame(columns=["chr"])
-for idx,val in enumerate(filtered_chr_starts):
+df_chr_stops = pd.DataFrame(columns=["chr"])
+for idx,val in enumerate(filtered_chr_stops):
     if(val != None):
         #print((idx,val))
-        df_chr_starts.loc[idx] = val
+        df_chr_stops.loc[idx] = val
 
 print("writing output...")
 
@@ -89,7 +89,7 @@ np.savetxt(args.output_path + '/' + args.sample_name +"_filtered_counts.tsv", ma
 
 bin_df.to_csv(args.output_path + '/' + args.sample_name + "_bins_genome.tsv",sep='\t',index=False)
 
-df_chr_starts.to_csv(args.output_path + '/' + args.sample_name + "_chr_starts.tsv",sep='\t')
+df_chr_stops.to_csv(args.output_path + '/' + args.sample_name + "_chr_stops.tsv",sep='\t')
 
 print("Output written to: " + args.output_path)
 
