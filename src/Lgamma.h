@@ -17,7 +17,7 @@ class Lgamma {
 public:
 
     static std::vector<double> lgamma_values;
-    static double get_val(int index);
+    static double get_val(size_t index);
 
 };
 

@@ -1021,7 +1021,7 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
 
     vector<vector<int>> cell_regions(n_cells, vector<int>(this->n_regions, ploidy)); //fill ctor, initialise with ploidy
 
-    for (int j = 0; j < n_cells; ++j) {
+    for (size_t j = 0; j < n_cells; ++j) {
         // t_scores[i] is the map
         pair<const int, double> max_pair = *max_element(t_scores[j].begin(), t_scores[j].end(), [] (const pair<const int, double>& p1, const pair<const int, double>& p2)
         {
@@ -1038,8 +1038,8 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
         }
 
     }
-    for (int k = 0; k < n_cells; ++k) {
-        for (int i = 0; i < n_regions; ++i) {
+    for (size_t k = 0; k < n_cells; ++k) {
+        for (u_int i = 0; i < n_regions; ++i) {
             if (verbosity > 1)
                 cell_node_cnvs_file << cell_regions[k][i] << '\t';
         }

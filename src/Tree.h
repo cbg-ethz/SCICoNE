@@ -1109,7 +1109,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
    if(rand_val < 0.5)
     {
         // add is chosen
-        if (all_nodes_vec.size() >= size_limit)
+        if (all_nodes_vec.size() >= static_cast<size_t>(size_limit))
             throw std::logic_error("Tree size limit is reached, insert node move will be rejected!");
 
         boost::random::discrete_distribution<>* dd;
