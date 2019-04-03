@@ -90,12 +90,14 @@ void test_reproducibility()
     mcmc.compute_t_table(D,r);
 
     // move probabilities
-    vector<float> move_probs = {1.0f,0.0f,1.0f,1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f};
-    //-------------------------------w-pr------------------------------w-id--------w-cs-------
+    vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f};
+    //---------------------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno--
     mcmc.infer_mcmc(D, r, move_probs, 500);
 
     cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << endl;
-    assert(abs(mcmc.best_tree.posterior_score - 31.152) <= epsilon);
+    cout<<"Epsilon: " << epsilon << endl;
+    cout << "Diff: " << abs(mcmc.best_tree.posterior_score - 30.7013) << endl;
+    assert(abs(mcmc.best_tree.posterior_score - 30.7013) <= epsilon);
     cout<<"Reproducibility test is passed!"<<endl;
 
 }
