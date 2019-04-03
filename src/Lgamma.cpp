@@ -7,7 +7,7 @@
 // define the static variables
 std::vector<double> Lgamma::lgamma_values;
 
-double Lgamma::get_val(size_t index) {
+double Lgamma::get_val(unsigned long index) {
     if (lgamma_values.size() > index)
     {
         return lgamma_values[index];
