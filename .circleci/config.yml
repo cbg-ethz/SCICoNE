@@ -19,14 +19,27 @@ jobs:
           name: Install CMAKE
           command: 'apt-get update && sudo apt-get install -y cmake'
       - run:
-          name: Creating Build Folder
-          command: 'mkdir build && cd build'
+          name: Creating Debug Build Folder
+          command: 'mkdir debug'
       - run:
           name: Running CMAKE
-          command: 'cd build && cmake ..'
+          command: 'cd debug && cmake -DCMAKE_BUILD_TYPE=Debug ..'
       - run:
           name: Running MAKE
-          command: 'cd build && make'
+          command: 'cd debug && make VERBOSE=1'
       - run:
-          name: Unit Tests
-          command: './build/tests'
+          name: Unit Tests (Debug)
+          command: './debug/tests'
+      - run:
+          name: Creating Release Build Folder
+          command: 'mkdir release'
+      - run:
+          name: Running CMAKE
+          command: 'cd release && cmake -DCMAKE_BUILD_TYPE=Release ..'
+      - run:
+          name: Running MAKE
+          command: 'cd release && make VERBOSE=1'
+      - run:
+          name: Unit Tests (Release)
+          command: './release/tests'
+
