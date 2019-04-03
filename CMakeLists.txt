@@ -3,10 +3,10 @@ project(sc_dna)
 
 set(CMAKE_CXX_STANDARD 14)
 
-set(CMAKE_CXX_FLAGS "-g") # icc needs -O3 after -g
-set(CMAKE_CXX_FLAGS "-Wpedantic")
-set(CMAKE_CXX_FLAGS "-Wall")
-set(CMAKE_CXX_FLAGS "-Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG  "-g") # icc needs -O3 after -g
+set(CMAKE_CXX_FLAGS_DEBUG "-Wpedantic")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wextra")
 
 
 
