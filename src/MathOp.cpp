@@ -64,7 +64,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
         int end = i + window_size;
 
         // end cannot be equal to bp_size because cellranger DNA is putting 0 to the end
-        if (start < 0 || end >= bp_size) {
+        if (start < 0 || end >= static_cast<int>(bp_size)) {
             //cout << "continue" << endl;
             continue;
         }
