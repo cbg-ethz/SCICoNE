@@ -275,7 +275,7 @@ double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtr
      * computes the sum in the log space, replaces the old elements of the vector (subtracts) then adds the new ones
      * */
 
-    double res; // the return value
+    double res = 0.0; // the return value
 
     if (to_add.size() >= unchanged_vals.size())
     {
