@@ -284,10 +284,14 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
             double p_del_corr_num = (deleted->get_n_children() / 2) + 1; // /2 because with 0.5 prob. children will be siblings, +1 because including itself
             double p_del_corr_denom =  (deleted->get_n_children());
 
-            double ratio = (1.0/100.0)*p_del_corr_num / p_del_corr_denom;
+            // handles divided by zero case
+            if (p_del_corr_denom != 0.0 && p_del_corr_num != 0.0)
+            {
+                double ratio = (1.0/100.0)*p_del_corr_num / p_del_corr_denom;
+                if (!std::isnan(ratio))
+                    acceptance_prob *= ratio;
+            }
 
-            if (ratio != 0.0 && !std::isnan(ratio) && !std::isinf(ratio))
-                acceptance_prob *= ratio;
         }
         else // insert
         {
