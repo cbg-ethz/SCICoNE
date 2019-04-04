@@ -58,7 +58,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
     // u_int cell_no = 0;
     vector<vector<double>> aic_vec(bp_size,vector<double>(n_cells)); // fill constructor
 
-    for (int i = 0; i < bp_size; ++i) {
+    for (unsigned i = 0; i < bp_size; ++i) {
 
         int start = i - window_size;
         int end = i + window_size;
@@ -69,7 +69,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             continue;
         }
 
-        for (int j = 0; j < n_cells; ++j) {
+        for (unsigned j = 0; j < n_cells; ++j) {
 
             vector<double> lbins = vector<double>(mat[j].begin() + start, mat[j].begin() + i);
             vector<double> rbins = vector<double>(mat[j].begin() + i, mat[j].begin() + end);
@@ -183,20 +183,16 @@ vector<double> MathOp::combine_scores(vector<double> aic_vec)
     vector<double> res(1,0.0);
 
     // iterate over n_cells
-    for (int j = 0; j < m; ++j) { // j : cells
+    for (unsigned j = 0; j < m; ++j) { // j : cells
         row2.clear();
         // inner computation of row2
-        for (int k = 0; k < m-j; ++k) {
+        for (unsigned k = 0; k < m-j; ++k) {
             double value=0.0;
-            if (k==0)
-            {
-                value = row1[k] + aic_vec[k+j];
-            }
-            else
-            {
-                value = log_add(row2[k-1] , row1[k] + aic_vec[k+j]);
 
-            }
+            if (k==0)
+                value = row1[k] + aic_vec[k+j];
+            else
+                value = log_add(row2[k-1] , row1[k] + aic_vec[k+j]);
 
             if (std::isinf(value))
                 cerr << "inf value detected";
@@ -421,9 +417,9 @@ double MathOp::frobenius_avg(vector<vector<int>> &mat, vector<vector<int>> &grou
 
     size_t n = mat.size();
     size_t m = mat[0].size();
-    for (int i = 0; i < n; ++i)
+    for (unsigned i = 0; i < n; ++i)
     {
-        for (int j = 0; j < m; ++j)
+        for (unsigned j = 0; j < m; ++j)
         {
             delta += pow(mat[i][j] - ground_truth[i][j] , 2 );
         }
@@ -446,14 +442,14 @@ vector<long double> MathOp::dirichlet_sample(size_t len, double alpha) {
 
     // sample from gamma
     long double sum_gamma = 0.0;
-    for (int i = 0; i < len; ++i) {
+    for (unsigned i = 0; i < len; ++i) {
         y_vals[i] = distribution(gen);
         sum_gamma += y_vals[i];
     }
 
     // normalize them, that's it
     vector<long double> x_vals(len);
-    for (int j = 0; j < len; ++j) {
+    for (unsigned j = 0; j < len; ++j) {
         x_vals[j] = y_vals[j]/sum_gamma;
     }
 
@@ -485,7 +481,7 @@ T MathOp::percentile_val(vector<T> vec, double percentile_val) {
     return vec[percentile_idx];
 }
 
-double MathOp::compute_omega_condense_split(Node *node, double lambda_s, int n_regions, bool weighted) {
+double MathOp::compute_omega_condense_split(Node *node, double lambda_s, unsigned int n_regions, bool weighted) {
 
     /*
      * Computes the omega probability of the condense/split move.
@@ -568,7 +564,7 @@ double MathOp::st_deviation(vector<T> &v) {
     double mean = MathOp::vec_avg(v);
     double var = 0.0;
 
-    for (int i = 0; i < v.size(); ++i) {
+    for (unsigned i = 0; i < v.size(); ++i) {
         var += pow(v[i] - mean, 2);
     }
     var /= v.size();
@@ -593,7 +589,7 @@ double MathOp::compute_linear_regression_slope(const vector<double> &x, const ve
     double numerator = 0.0;
     double denominator = 0.0;
 
-    for(int i=0; i<x.size(); ++i){
+    for(unsigned i=0; i<x.size(); ++i){
         numerator += (x[i] - mean_x) * (y[i] - mean_y);
         denominator += (x[i] - mean_x) * (x[i] - mean_x);
     }
