@@ -92,7 +92,7 @@ private:
     void copy_tree(const Tree& source_tree);
     void copy_tree_nodes(Node *destination, Node *source);
     void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta = 0.0001f);
-    void compute_root_score(double &sum_d, const vector<int> &r);
+    void compute_root_score(const vector<int> &r);
     Node* prune(Node *pos); // does not deallocate,
     Node* insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
@@ -118,7 +118,7 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
 
 
 
-void Tree::compute_root_score(double &sum_d, const vector<int> &r) {
+void Tree::compute_root_score(const vector<int> &r) {
 
     /*
      * Computes the score of the root.
@@ -127,8 +127,7 @@ void Tree::compute_root_score(double &sum_d, const vector<int> &r) {
     int z = 0;
     for (auto const &x : r)
         z += x * this->ploidy;
-
-    //root->log_score = sum_d * log(this->ploidy) - sum_d * log(z);
+    
     root->log_score = 0;
     root->z = z;
 }
@@ -141,7 +140,7 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
 
     if (node->parent == nullptr)
     {
-        compute_root_score(sum_D, r);
+        compute_root_score(r);
     }
     else
 
