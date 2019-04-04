@@ -481,7 +481,7 @@ T MathOp::percentile_val(vector<T> vec, double percentile_val) {
     return vec[percentile_idx];
 }
 
-double MathOp::compute_omega_condense_split(Node *node, double lambda_s, unsigned int n_regions, bool weighted) {
+double MathOp::compute_omega_condense_split(Node *node, double lambda_s, unsigned int n_regions) {
 
     /*
      * Computes the omega probability of the condense/split move.

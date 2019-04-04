@@ -55,7 +55,7 @@ public:
     template <class T>
     static double st_deviation(vector<T>& v);
     static double compute_omega_insert_delete(Node *node, double lambda_r, double lambda_c, double K);
-    static double compute_omega_condense_split(Node *node, double lambda_s, unsigned int n_regions, bool weighted);
+    static double compute_omega_condense_split(Node *node, double lambda_s, unsigned int n_regions);
     static double frobenius_avg(vector<vector<int>>& mat, vector<vector<int>>& ground_truth);
     static vector<long double> dirichlet_sample(size_t len, double alpha = 1.0);
 

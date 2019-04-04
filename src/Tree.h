@@ -1367,7 +1367,7 @@ vector<double> Tree::omega_condense_split(double lambda_s, bool weighted) {
 
     for (auto const &node : descendents_of_root)
     {
-        double omega_val = MathOp::compute_omega_condense_split(node, lambda_s, this->n_regions, weighted);
+        double omega_val = MathOp::compute_omega_condense_split(node, lambda_s, this->n_regions);
         if (weighted)
             omega_val /= (node->parent->n_descendents-1);
         omega.push_back(omega_val);
