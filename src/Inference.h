@@ -86,7 +86,7 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters)
     {
         i++;
         random_tree = new Tree(ploidy, n_regions);
-        for (unsigned i = 0; i < n_nodes; ++i)
+        for (unsigned j = 0; j < n_nodes; ++j)
         {
             /*
              * Create a c_change hashmap using poisson and bernoulli
