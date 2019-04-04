@@ -3,10 +3,15 @@ project(sc_dna)
 
 set(CMAKE_CXX_STANDARD 14)
 
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+#set(CMAKE_CXX_FLAGS "-fsanitize=undefined")
+#set(CMAKE_CXX_FLAGS "-fsanitize=address")
+
 set(CMAKE_CXX_FLAGS_DEBUG  "-g") # icc needs -O3 after -g
-# set(CMAKE_CXX_FLAGS_DEBUG "-Wpedantic")
-# set(CMAKE_CXX_FLAGS_DEBUG "-Wall")
-# set(CMAKE_CXX_FLAGS_DEBUG "-Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wuninitialized")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wpedantic")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "-Wextra")
 
 
 
