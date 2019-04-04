@@ -55,10 +55,10 @@ public:
                                  const vector<int> &r,
                                  bool weighted = false,
                                  bool validation_test_mode = false);
-    bool apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<double>> &D, const vector<int> &r,
-                                      unsigned int size_limit, bool weighted=false, bool validation_test_mode=false);
-    bool apply_condense_split(double lambda_s, const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
-                                  bool weighted=false, bool validation_test_mode=false);
+    bool apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<double>> &D,
+                                      const vector<int> &r, unsigned int size_limit, bool weighted);
+    bool apply_condense_split(double lambda_s, const vector<vector<double>> &D, const vector<int> &r,
+                                  unsigned int size_limit, bool weighted);
     bool apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted = false,
                     bool test_mode = false);
     Tree *comparison(int m, double gamma, unsigned move_id);
@@ -473,8 +473,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // insert delete node
                 if (verbosity > 0)
                     cout << "insert/delete node" << endl;
-                bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, size_limit, false,
-                                                                      false); // weighted=false
+                bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, size_limit, false); // weighted=false
                 if (not insert_delete_success) {
                     insert_delete_move_rejection++;
                     rejected_before_comparison = true;
@@ -488,7 +487,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted insert delete node
                 if (verbosity > 0)
                     cout << "weighted insert/delete node" << endl;
-                bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, size_limit, true, false); // weighted=true
+                bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, size_limit, true); // weighted=true
                 if (not insert_delete_success) {
                     insert_delete_move_rejection++;
                     rejected_before_comparison = true;
@@ -502,7 +501,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // condense split move
                 if (verbosity > 0)
                     cout << "condense split move " <<endl;
-                bool condense_split_success = apply_condense_split(lambda_s, D, r, size_limit, false, false);
+                bool condense_split_success = apply_condense_split(lambda_s, D, r, size_limit, false);
                 if (not condense_split_success)
                 {
                     condense_split_move_rejection++;
@@ -517,7 +516,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted condense split move
                 if (verbosity > 0)
                     cout << "weighted condense split move " <<endl;
-                bool condense_split_success = apply_condense_split(lambda_s, D, r, size_limit, true, false); //weighted=true
+                bool condense_split_success = apply_condense_split(lambda_s, D, r, size_limit, true); //weighted=true
                 if (not condense_split_success)
                 {
                     condense_split_move_rejection++;
@@ -906,8 +905,8 @@ bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const 
         return false;
 }
 
-bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<double>> &D, const vector<int> &r,
-                                         unsigned int size_limit, bool weighted, bool validation_test_mode) {
+bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<double>> &D,
+                                         const vector<int> &r, unsigned int size_limit, bool weighted) {
     /*
      * Applies the insert/delete move on t_prime
      * Updates the sums and scores tables partially
@@ -960,8 +959,8 @@ int Inference::deleted_node_idx() {
     return deleted_index;
 }
 
-bool Inference::apply_condense_split(double lambda_s, const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
-                                     bool weighted, bool validation_test_mode) {
+bool Inference::apply_condense_split(double lambda_s, const vector<vector<double>> &D, const vector<int> &r,
+                                     unsigned int size_limit, bool weighted) {
     /*
      * Applies the condense/delete move on t_prime
      * Updates the sums and scores tables partially
