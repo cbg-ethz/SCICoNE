@@ -86,7 +86,7 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters)
     {
         i++;
         random_tree = new Tree(ploidy, n_regions);
-        for (int i = 0; i < n_nodes; ++i)
+        for (unsigned i = 0; i < n_nodes; ++i)
         {
             /*
              * Create a c_change hashmap using poisson and bernoulli
@@ -670,7 +670,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
             }
 
             int diff;
-            if (event_it.first - 1 != i_prev) // if the region is adjacent to its previous
+            if (static_cast<int>(event_it.first) - 1 != i_prev) // if the region is adjacent to its previous
             {
                 int diff_right = 0 - v_prev; // the right hand side change at the end of the last consecutive region
                 if (diff_right > 0)
@@ -703,7 +703,7 @@ double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
 
     }
 
-    assert(n==p_v.size());
+    assert(n==static_cast<int>(p_v.size()));
     double PV = 0.0;
     PV += std::accumulate(p_v.begin(), p_v.end(), 0.0);
     PV -= Lgamma::get_val(n+1);
