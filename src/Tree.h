@@ -53,8 +53,8 @@ public:
     Node *prune_reattach(bool genotype_preserving, bool weighted, bool validation_test_mode);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
-    Node *insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted=false, bool validation_test_mode=false);
-    Node *condense_split_node(double lambda_s, unsigned int size_limit, bool weighted=false, bool validation_test_mode=false);
+    Node *insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted);
+    Node *condense_split_node(double lambda_s, unsigned int size_limit, bool weighted);
     Node* delete_node(u_int64_t idx_tobe_deleted);
     Node* delete_node(Node* node);
     Node* uniform_sample(bool with_root=true) const;
@@ -1076,7 +1076,7 @@ Node * Tree::delete_node(u_int64_t idx_tobe_deleted) {
     return delete_node(tobe_deleted);
 }
 
-Node *Tree::insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted, bool validation_test_mode) {
+Node *Tree::insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted) {
     /*
      * Adds or deletes nodes move, that takes the mcmc transition probabilities into account.
      * Returns the node to perform partial score computation on.
@@ -1175,7 +1175,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, unsigned int si
     return return_node;
 }
 
-Node *Tree::condense_split_node(double lambda_s, unsigned int size_limit, bool weighted, bool validation_test_mode) {
+Node *Tree::condense_split_node(double lambda_s, unsigned int size_limit, bool weighted) {
     /*
      * Condenses two nodes into one or splits a node into two.
      * */

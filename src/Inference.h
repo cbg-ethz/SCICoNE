@@ -915,7 +915,7 @@ bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const
 
     Node* tobe_computed;
     try {
-        tobe_computed = t_prime.insert_delete_node(lambda_r, lambda_c, size_limit, weighted, validation_test_mode);
+        tobe_computed = t_prime.insert_delete_node(lambda_r, lambda_c, size_limit, weighted);
     }catch (const std::out_of_range& e)
     {
         if (verbosity > 0)
@@ -970,7 +970,7 @@ bool Inference::apply_condense_split(double lambda_s, const vector<vector<double
     Node* tobe_computed;
     try
     {
-        tobe_computed = t_prime.condense_split_node(lambda_s, size_limit, weighted, validation_test_mode);
+        tobe_computed = t_prime.condense_split_node(lambda_s, size_limit, weighted);
     }catch (const std::exception& e) {
         if (verbosity > 0)
             std::cout << " a standard exception was caught during the split/condense node move, with message '"
