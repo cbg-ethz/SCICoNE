@@ -79,7 +79,7 @@ void Utils::read_counts(vector<vector<double>> &mat, const string &path) {
 
     ifstream filein(path);
 
-    int i = 0;
+    unsigned i = 0;
     for (std::string line; std::getline(filein, line); )
     {
 
@@ -117,7 +117,7 @@ vector<vector<double>> Utils::condense_matrix(vector<vector<double>>& D, vector<
 
     vector<vector<double>> condensed_mat(n_rows, vector<double>(n_regions));
 
-    for (int i = 0; i < n_rows; ++i)
+    for (unsigned i = 0; i < n_rows; ++i)
     {
         int region_id = 0;
         int region_count = 0;
@@ -168,10 +168,10 @@ vector<vector<int>> Utils::regions_to_bins_cnvs(vector<vector<int>> &cnvs, vecto
     double n_rows = cnvs.size();
     vector<vector<int>> bins_vec(n_rows, vector<int>(n_bins));
 
-    for (int i = 0; i < n_rows; ++i) {
+    for (unsigned i = 0; i < n_rows; ++i) {
         int region_offset = 0;
 
-        for (int j = 0; j < cnvs[0].size(); ++j) {
+        for (unsigned j = 0; j < cnvs[0].size(); ++j) {
 
             for (int k = 0; k < region_sizes[j]; ++k) {
                 bins_vec[i][k + region_offset] = cnvs[i][j];
