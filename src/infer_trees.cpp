@@ -3,7 +3,7 @@
 #include <vector>
 #include <sstream>
 #include <string>
-
+#include <limits>
 #include "MathOp.h"
 #include "Tree.h"
 #include "Inference.h"
@@ -41,7 +41,7 @@ int main( int argc, char* argv[]) {
     string region_sizes_file;
     string d_matrix_file;
 
-    int size_limit = -1;
+    unsigned size_limit = std::numeric_limits<unsigned>::max();
 
     size_t n_regions;
     size_t n_regions_initial = 0; // used for naming the output for I/O workflow purposes

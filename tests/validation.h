@@ -92,7 +92,9 @@ void test_reproducibility()
     // move probabilities
     vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f};
     //---------------------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno--
-    mcmc.infer_mcmc(D, r, move_probs, 500);
+
+    unsigned size_limit = std::numeric_limits<unsigned>::max();
+    mcmc.infer_mcmc(D, r, move_probs, 500, size_limit);
 
     cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << endl;
     cout<<"Epsilon: " << epsilon << endl;

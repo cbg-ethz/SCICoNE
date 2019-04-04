@@ -53,8 +53,8 @@ public:
     Node *prune_reattach(bool genotype_preserving, bool weighted, bool validation_test_mode);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
-    Node* insert_delete_node(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false, int size_limit=-1);
-    Node* condense_split_node(double lambda_s, bool weighted = false, bool validation_test_mode = false, int size_limit=-1);
+    Node *insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted=false, bool validation_test_mode=false);
+    Node *condense_split_node(double lambda_s, unsigned int size_limit, bool weighted=false, bool validation_test_mode=false);
     Node* delete_node(u_int64_t idx_tobe_deleted);
     Node* delete_node(Node* node);
     Node* uniform_sample(bool with_root=true) const;
@@ -1076,7 +1076,7 @@ Node * Tree::delete_node(u_int64_t idx_tobe_deleted) {
     return delete_node(tobe_deleted);
 }
 
-Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode, int size_limit) {
+Node *Tree::insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted, bool validation_test_mode) {
     /*
      * Adds or deletes nodes move, that takes the mcmc transition probabilities into account.
      * Returns the node to perform partial score computation on.
@@ -1109,7 +1109,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
    if(rand_val < 0.5)
     {
         // add is chosen
-        if (all_nodes_vec.size() >= static_cast<size_t>(size_limit))
+        if (all_nodes_vec.size() >= size_limit)
             throw std::logic_error("Tree size limit is reached, insert node move will be rejected!");
 
         boost::random::discrete_distribution<>* dd;
@@ -1175,7 +1175,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, bool weighted, 
     return return_node;
 }
 
-Node *Tree::condense_split_node(double lambda_s, bool weighted, bool validation_test_mode, int size_limit) {
+Node *Tree::condense_split_node(double lambda_s, unsigned int size_limit, bool weighted, bool validation_test_mode) {
     /*
      * Condenses two nodes into one or splits a node into two.
      * */
