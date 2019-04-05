@@ -281,10 +281,8 @@ double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtr
     {
         vector<double> to_log_add = to_add;
         for (auto const &u_map : unchanged_vals)
-        {
             to_log_add.push_back(u_map.second);
-            res = log_sum(to_log_add);
-        }
+        res = log_sum(to_log_add);
     }
     else
     {
@@ -308,10 +306,9 @@ double MathOp::log_replace_sum(const double &sum, const vector<double> &to_subtr
             //cout << "POSSIBLE PRECISION LOSS: " << sum_in_normal_space << endl;
             vector<double> to_log_add = to_add;
             for (auto const &u_map : unchanged_vals)
-            {
                 to_log_add.push_back(u_map.second);
-                res = log_sum(to_log_add);
-            }
+            res = log_sum(to_log_add);
+
         }
         else
         {
