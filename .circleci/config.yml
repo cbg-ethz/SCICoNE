@@ -28,8 +28,8 @@ jobs:
           name: Running MAKE
           command: 'cd debug && make VERBOSE=1'
       - run:
-          name: Unit Tests (Debug)
-          command: './debug/tests'
+          name: Testing (Debug)
+          command: 'cd debug && ctest'
       - run:
           name: Creating Release Build Folder
           command: 'mkdir release'
@@ -40,6 +40,6 @@ jobs:
           name: Running MAKE
           command: 'cd release && make VERBOSE=1'
       - run:
-          name: Unit Tests (Release)
-          command: './release/tests'
+          name: Testing (Release)
+          command: 'cd release && ctest'
 
