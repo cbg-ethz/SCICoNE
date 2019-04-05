@@ -34,9 +34,7 @@ add_executable(inference
         src/MathOp.h
         src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h)
 
-add_executable(tests tests/run_tests.cpp src/MathOp.cpp
-        src/MathOp.h
-        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h tests/validation.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h)
+
 
 add_executable(simulation simulations/run_simulations.cpp src/MathOp.cpp
         src/MathOp.h
@@ -48,5 +46,17 @@ add_executable(score src/score_tree.cpp src/MathOp.cpp
 
 add_executable(breakpoint_detection
         src/breakpoint_detection.cpp src/MathOp.cpp src/MathOp.h  src/Utils.cpp src/Utils.h  src/SignalProcessing.cpp src/SignalProcessing.h src/Lgamma.cpp src/Lgamma.h include/xxhash.h include/xxhash.c )
+
+
+
+# tests
+enable_testing()
+
+add_executable(tests tests/run_tests.cpp src/MathOp.cpp
+        src/MathOp.h
+        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h tests/validation.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h)
+
+# the test can be the same name as the target
+add_test(tests_name tests)
 
 #src/Inference.h
