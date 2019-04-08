@@ -154,17 +154,17 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
             // if log zero then use eta value, not to have -infinity
             int cf = (node->c.count(x.first)?node->c[x.first]:0); // use count to check without initializing the not found element
             // the above part can also be done by using map::at and exception handling
-
-            val += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)));
-
             int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
 
-            val -= D[x.first] * (log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
+            val += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)) - log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
+            // val += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)));
+            // val -= D[x.first] * (log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
 
             z += r[x.first] * (cf - cp_f);
 
         }
 
+        // this quantity is smt. to subtract, that's why signs are reversed
         val -= sum_D*log(z);
         val += sum_D*log(node->parent->z);
 
