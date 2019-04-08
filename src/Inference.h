@@ -70,7 +70,6 @@ public:
     void initialize_worked_example(); // initializes the trees based on the test example
     void initialize_from_file(string path);
     vector<vector<int>> assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r);
-    double nbd(unsigned move_id);
 private:
     int deleted_node_idx();
 };
@@ -248,13 +247,58 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
     // update the tree prior as well
     t_prime.prior_score = log_tree_prior(m, n);
 
+    // check if move is weighted
+    bool weighted;
+    if ((move_id %2 == 1) && (move_id <=9)) // weighted move ids
+        weighted = true;
+    else
+        weighted = false;
+
     // acceptance probability computations
     double score_diff = t_prime.posterior_score - t.posterior_score;
-    double nbd_corr = nbd(move_id);
+
+    // compute nbd correction
+    double nbd_corr= 1.0;
+
+    if (move_id == 1) // weighted prune-reattach
+    {
+        nbd_corr = t.cost() / t_prime.cost();
+    }
+    else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
+    {
+
+        vector<double> chi = t.chi_insert_delete(weighted);
+        double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+        vector<double> chi_prime = t_prime.chi_insert_delete(weighted);
+        double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
+
+        vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted);
+        double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+        vector<double> omega_prime = t_prime.omega_insert_delete(lambda_r, lambda_c, weighted);
+        double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
+
+        nbd_corr = (sum_chi+sum_omega) / (sum_chi_prime + sum_omega_prime);
+    }
+    else if (move_id == 8 || move_id == 9) // condense/split move or weighted cs
+    {
+        vector<double> chi = t.chi_condense_split(weighted);
+        double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+        vector<double> chi_prime = t_prime.chi_condense_split(weighted);
+        double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
+
+        vector<double> omega = t.omega_condense_split(lambda_s, weighted);
+        double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+        vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, weighted);
+        double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
+
+        nbd_corr = (sum_chi+sum_omega) / (sum_chi_prime + sum_omega_prime);
+    }
+
 
     if (std::isinf(nbd_corr))
         return &t;
 
+    // ro variable
     acceptance_prob = exp(gamma*score_diff) * nbd_corr;
     //assert(!isinf(nbd_corr));
     // if inf then reject
@@ -291,7 +335,6 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
                 if (!std::isnan(ratio))
                     acceptance_prob *= ratio;
             }
-
         }
         else // insert
         {
@@ -316,9 +359,6 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
             if (ratio != 0.0 && !std::isnan(ratio) && !std::isinf(ratio))
                 acceptance_prob *= ratio;
         }
-
-
-
     }
 
     assert(!std::isnan(acceptance_prob));
@@ -1055,57 +1095,6 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
     return cell_regions;
 }
 
-double Inference::nbd(unsigned move_id) {
-    /*
-     * Computes the neighbourhood correction between trees t and t_prime.
-     * Neighbourhood correction assures the transition probabilities between t->t_prime and vice versa are close (ideally equal).
-     * */
-
-    bool weighted;
-    if ((move_id %2 == 1) && (move_id <=9)) // weighted move ids
-        weighted = true;
-    else
-        weighted = false;
-
-    double nbd_corr= 1.0;
-
-    if (move_id == 1) // weighted prune-reattach
-    {
-        nbd_corr = t.cost() / t_prime.cost();
-    }
-    else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
-    {
-
-        vector<double> chi = t.chi_insert_delete(weighted);
-        double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-        vector<double> chi_prime = t_prime.chi_insert_delete(weighted);
-        double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
-
-        vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted);
-        double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-        vector<double> omega_prime = t_prime.omega_insert_delete(lambda_r, lambda_c, weighted);
-        double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
-
-        nbd_corr = (sum_chi+sum_omega) / (sum_chi_prime + sum_omega_prime);
-    }
-    else if (move_id == 8 || move_id == 9) // condense/split move or weighted cs
-    {
-        vector<double> chi = t.chi_condense_split(weighted);
-        double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-        vector<double> chi_prime = t_prime.chi_condense_split(weighted);
-        double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
-
-        vector<double> omega = t.omega_condense_split(lambda_s, weighted);
-        double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-        vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, weighted);
-        double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
-
-        nbd_corr = (sum_chi+sum_omega) / (sum_chi_prime + sum_omega_prime);
-    }
-
-
-    return nbd_corr;
-}
 
 void Inference::initialize_from_file(string path) {
     /*
