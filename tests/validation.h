@@ -24,8 +24,35 @@ const vector<int> r = {4,2,3,5,2};
 const double epsilon = 0.001;
 const double epsilon_sens = 1e-06;
 
-u_int ploidy = 2;
+unsigned ploidy = 2;
 
+void test_ploidy_attachment_score()
+{
+    /*
+     * Checks if two nodes on different trees with same ploidy have the same attachment scores
+     * */
+
+    vector<int> reg_sizes = {4,2};
+
+    Tree t_two(2, reg_sizes.size());
+    t_two.insert_at(0,{{0, 1}, {1,1}});
+    t_two.compute_weights();
+
+    Tree t_three(3, reg_sizes.size());
+    t_three.compute_weights();
+
+    vector<double> counts = {10, 40, 80, 120, 500};
+
+    t_two.compute_tree(counts, reg_sizes);
+    std::map<int, double> scores_vec = t_two.get_children_id_score(t_two.root);
+    t_three.compute_tree(counts, reg_sizes);
+    std::map<int, double> scores_vec_prime = t_three.get_children_id_score(t_three.root);
+
+    assert(scores_vec[0]==scores_vec_prime[0]);
+    cout<<"Cell attachment with different ploidies validation test passed!"<<endl;
+
+
+}
 
 void test_mathop()
 {
@@ -77,7 +104,7 @@ void test_reproducibility()
      * */
 
 
-    int ploidy = 2;
+    unsigned ploidy = 2;
     int verbosity = 0;
 
 
@@ -110,7 +137,7 @@ void test_swap_label()
      * Tests the swap label move
      * */
 
-    int ploidy = 2;
+    unsigned ploidy = 2;
     int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
@@ -147,7 +174,7 @@ void test_weighted_sample()
      * */
 
 
-    int ploidy = 2;
+    unsigned ploidy = 2;
     int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
@@ -186,7 +213,7 @@ void test_condense_split_weights(bool weighted)
      * */
 
 
-    int ploidy = 2;
+    unsigned ploidy = 2;
     int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     std::vector<std::map<int, double>> t_scores;
@@ -283,7 +310,7 @@ void test_insert_delete_weights()
      * Validation test for the weights of the insert_delete node move.
      * */
 
-    int ploidy = 2;
+    unsigned ploidy = 2;
     int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     std::vector<std::map<int, double>> t_scores;
@@ -341,7 +368,7 @@ void test_prune_reattach()
      * Tests the prune and reattach move
      * */
 
-    int ploidy = 2;
+    unsigned ploidy = 2;
     int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
@@ -376,7 +403,7 @@ void test_weighted_prune_reattach()
      * Tests the weighted prune reattach move
      * */
 
-    int ploidy = 2;
+    unsigned ploidy = 2;
     int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
@@ -404,7 +431,7 @@ void test_add_remove_event()
      * Tests the add remove event move
      * */
 
-    int ploidy = 2;
+    unsigned ploidy = 2;
     int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();

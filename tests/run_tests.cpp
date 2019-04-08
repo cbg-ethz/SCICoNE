@@ -33,6 +33,7 @@ int main()
     test_mathop();
     test_xxhash();
     test_swap_label();
+    test_ploidy_attachment_score();
     test_weighted_sample();
     test_prune_reattach();
     test_weighted_prune_reattach();
@@ -41,5 +42,6 @@ int main()
     test_condense_split_weights(true);
     test_condense_split_weights(false);
     test_reproducibility();
+
     return EXIT_SUCCESS;
 }
