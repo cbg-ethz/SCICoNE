@@ -82,6 +82,7 @@ public:
 
     vector<double> omega_insert_delete(double lambda_r, double lambda_c, bool weighted);
     vector<double> chi_insert_delete(bool weighted);
+    double chi_insert_delete_reweighted(bool weighted);
 
     void load_from_file(string file);
 
@@ -1465,6 +1466,24 @@ double Tree::cost() {
     }
 
     return zeta;
+}
+
+double Tree::chi_insert_delete_reweighted(bool weighted) {
+    /*
+     * Returns the reweighted chi that includes a weighting corresponding to
+     * the tree prior which increases with larger trees.
+     * weighted: is move computationally weighted
+     * m: number of cells
+     * */
+
+    double n = static_cast<double>(this->get_n_nodes());
+
+    vector<double> chi = this->chi_insert_delete(weighted);
+    double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+    double reweighting_term = 1.0/pow(n,2) * pow(n/(n+2), n);
+    double reweighted_chi = reweighting_term * sum_chi;
+
+    return reweighted_chi;
 }
 
 

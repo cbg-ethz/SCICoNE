@@ -266,11 +266,8 @@ Tree* Inference::comparison(int m, double gamma, unsigned move_id) {
     }
     else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
     {
-
-        vector<double> chi = t.chi_insert_delete(weighted);
-        double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-        vector<double> chi_prime = t_prime.chi_insert_delete(weighted);
-        double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
+        double sum_chi = t.chi_insert_delete_reweighted(weighted);
+        double sum_chi_prime = t_prime.chi_insert_delete_reweighted(weighted);
 
         vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted);
         double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
