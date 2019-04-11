@@ -110,6 +110,10 @@ inline std::ostream& operator<<(std::ostream& os, Node& n) {
 }
 
 inline int Node::get_n_children() const{
+/*
+ * Returns the number of first order children.
+ * Number of children does not have to be equal to number of descendents!
+ * */
 
     int n_children = 0;
     for (Node* temp = this->first_child; temp != nullptr; temp=temp->next)
