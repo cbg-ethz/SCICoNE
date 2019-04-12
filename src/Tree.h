@@ -79,6 +79,7 @@ public:
 
     vector<double> omega_condense_split(double lambda_s, bool weighted);
     vector<double> chi_condense_split(bool weighted);
+    double chi_condense_split_reweighted(bool weighted);
 
     vector<double> omega_insert_delete(double lambda_r, double lambda_c, bool weighted);
     vector<double> chi_insert_delete(bool weighted);
@@ -1470,15 +1471,31 @@ double Tree::cost() {
 
 double Tree::chi_insert_delete_reweighted(bool weighted) {
     /*
-     * Returns the reweighted chi that includes a weighting corresponding to
+     * Returns the reweighted chi for the insert/delete move that includes a weighting corresponding to
      * the tree prior which increases with larger trees.
      * weighted: is move computationally weighted
-     * m: number of cells
      * */
 
     double n = static_cast<double>(this->get_n_nodes());
 
     vector<double> chi = this->chi_insert_delete(weighted);
+    double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+    double reweighting_term = 1.0/pow(n,2) * pow(n/(n+2), n);
+    double reweighted_chi = reweighting_term * sum_chi;
+
+    return reweighted_chi;
+}
+
+double Tree::chi_condense_split_reweighted(bool weighted) {
+    /*
+     * Returns the reweighted chi for the condense/split move that includes a weighting corresponding to
+     * the tree prior which increases with larger trees.
+     * weighted: is move computationally weighted
+     * */
+
+    double n = static_cast<double>(this->get_n_nodes());
+
+    vector<double> chi = this->chi_condense_split(weighted);
     double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
     double reweighting_term = 1.0/pow(n,2) * pow(n/(n+2), n);
     double reweighted_chi = reweighting_term * sum_chi;
