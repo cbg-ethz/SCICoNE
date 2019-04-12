@@ -22,6 +22,7 @@ double lambda_s;
 double lambda_r;
 double lambda_c;
 double c_penalise;
+double v;
 
 // endof globals
 
@@ -51,6 +52,7 @@ int main( int argc, char* argv[]) {
     lambda_r = 0.1;
     lambda_c = 0.2;
     c_penalise = 1.0;
+    v = std::nan("");
 
 
     int n_reads = -1; // -1 means not specified
@@ -82,6 +84,7 @@ int main( int argc, char* argv[]) {
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
             ("c_penalise","term that penalises trees containing cancelling events to be added to tree event prior",cxxopts::value(c_penalise))
+            ("v","v value used in size changing moves",cxxopts::value(v))
             ;
 
     auto result = options.parse(argc, argv);

@@ -15,7 +15,7 @@ double lambda_s;
 double lambda_r;
 double lambda_c;
 double c_penalise;
-
+double v;
 // endof globals
 
 
@@ -27,6 +27,7 @@ int main()
     lambda_r = 0.1;
     lambda_c = 0.2;
     c_penalise = 1.0;
+    v = std::nan("");
     std::cout<<"UNIT TESTS" <<std::endl;
 //     set a seed number for reproducibility
     SingletonRandomGenerator::get_instance(42);
