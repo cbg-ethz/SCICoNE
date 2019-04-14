@@ -331,7 +331,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
             acceptance_prob *= weight;
 
             // add v' X' v W terms
-            double correction = (1.0 - v_prime)*sum_chi_prime/(v*sum_omega_prime);
+            double correction = (1.0 - v_prime)*sum_chi/(v*sum_omega_prime);
             acceptance_prob *= correction;
         }
         else // delete, condense
