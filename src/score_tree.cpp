@@ -17,6 +17,8 @@ double lambda_r;
 double lambda_c;
 double c_penalise;
 int copy_number_limit;
+double v;
+unsigned tree_prior_in_chi;
 
 // endof globals
 
@@ -45,6 +47,9 @@ int main( int argc, char* argv[]) {
     string d_matrix_file = "";
     string f_name_postfix = ""; //posfix
 
+    v = std::nan("");
+    tree_prior_in_chi = 1;
+
     cxxopts::Options options("Score tree", "Scores the tree written in a file");
     options.add_options()
             ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
@@ -53,7 +58,10 @@ int main( int argc, char* argv[]) {
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
-            ("file", "file", cxxopts::value(file));
+            ("v","v value used in size changing moves",cxxopts::value(v))
+            ("tree_prior_chi", "whether to include the tree prior in X", cxxopts::value(tree_prior_in_chi))
+            ("file", "file", cxxopts::value(file))
+            ;
     auto result = options.parse(argc, argv);
 
 
