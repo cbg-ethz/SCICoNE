@@ -16,6 +16,8 @@ double lambda_r;
 double lambda_c;
 double lambda_s;
 double c_penalise;
+double v;
+unsigned tree_prior_in_chi;
 // endof globals
 
 using namespace std;
@@ -37,6 +39,9 @@ int main(int argc, char* argv[]) {
     int verbosity = 0;
     int seed = -1;
     copy_number_limit = 15;
+    v = std::nan("");
+    tree_prior_in_chi = 1;
+
     // minimum region size should be bigger than window_size
     unsigned min_region_size = 10;
     string f_name_postfix = "";
@@ -59,6 +64,8 @@ int main(int argc, char* argv[]) {
             ("copy_number_limit", "the maximum copy number profile one bin or region can have", cxxopts::value(copy_number_limit))
             ("min_reg_size", "the minimum size that a region can have", cxxopts::value(min_region_size))
             ("c_penalise","term that penalises trees containing cancelling events to be added to tree event prior",cxxopts::value(c_penalise))
+            ("v","v value used in size changing moves",cxxopts::value(v))
+            ("tree_prior_chi", "whether to include the tree prior in X", cxxopts::value(tree_prior_in_chi))
             ;
 
     auto result = options.parse(argc, argv);
