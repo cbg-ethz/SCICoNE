@@ -16,6 +16,7 @@ double lambda_r;
 double lambda_c;
 double c_penalise;
 double v;
+unsigned tree_prior_in_chi;
 // endof globals
 
 
@@ -28,6 +29,8 @@ int main()
     lambda_c = 0.2;
     c_penalise = 1.0;
     v = std::nan("");
+    tree_prior_in_chi = 1;
+
     std::cout<<"UNIT TESTS" <<std::endl;
 //     set a seed number for reproducibility
     SingletonRandomGenerator::get_instance(42);

@@ -23,6 +23,7 @@ double lambda_r;
 double lambda_c;
 double c_penalise;
 double v;
+unsigned tree_prior_in_chi;
 
 // endof globals
 
@@ -53,7 +54,7 @@ int main( int argc, char* argv[]) {
     lambda_c = 0.2;
     c_penalise = 1.0;
     v = std::nan("");
-
+    tree_prior_in_chi = 1;
 
     int n_reads = -1; // -1 means not specified
 
@@ -85,6 +86,7 @@ int main( int argc, char* argv[]) {
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
             ("c_penalise","term that penalises trees containing cancelling events to be added to tree event prior",cxxopts::value(c_penalise))
             ("v","v value used in size changing moves",cxxopts::value(v))
+            ("tree_prior_chi", "whether to include the tree prior in X", cxxopts::value(tree_prior_in_chi))
             ;
 
     auto result = options.parse(argc, argv);
