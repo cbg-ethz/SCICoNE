@@ -94,7 +94,11 @@ int main( int argc, char* argv[]) {
     if (result.count("v"))
     {
         if (v == -1)
+        {
             v = std::nan("");
+            cout << "v value: " << v << endl;
+        }
+
     }
 
     if (result.count("region_sizes_file"))
