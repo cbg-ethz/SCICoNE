@@ -91,6 +91,12 @@ int main( int argc, char* argv[]) {
 
     auto result = options.parse(argc, argv);
 
+    if (result.count("v"))
+    {
+        if (v == -1)
+            v = std::nan("");
+    }
+
     if (result.count("region_sizes_file"))
     {
         region_sizes_file = result["region_sizes_file"].as<string>();
