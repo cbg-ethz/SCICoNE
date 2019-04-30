@@ -93,7 +93,7 @@ private:
     bool region_changes(Node *n, u_int region_id) const;
     void copy_tree(const Tree& source_tree);
     void copy_tree_nodes(Node *destination, Node *source);
-    void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta = 0.0001f);
+    void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta);
     void compute_root_score(const vector<int> &r);
     Node* prune(Node *pos); // does not deallocate,
     Node* insert_child(Node *pos, Node *source);
@@ -134,7 +134,8 @@ void Tree::compute_root_score(const vector<int> &r) {
     root->z = z;
 }
 
-void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta) {
+void
+Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta) {
 
     /*
      * Computes the score of a node.
@@ -145,10 +146,24 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
         compute_root_score(r);
     }
     else
-
     {
-        double val = node->parent->log_score;
+        double n_bins = static_cast<double>(D.size());
+        double nu = 1.0 / n_bins;
+
+        double log_likelihood = node->parent->log_score;
         int z = node->parent->z;
+        int z_parent = node->parent->z;
+
+        // update z first
+        for (auto const &x : node->c_change)
+        {
+            int cf = (node->c.count(x.first)?node->c[x.first]:0); // use count to check without initializing the not found element
+            int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
+            z += r[x.first] * (cf - cp_f);
+        }
+
+        double new_weight_term = lgamma(sum_D+nu*z);
+        double old_weight_term = lgamma(sum_D+nu*z_parent);
 
         for (auto const &x : node->c_change)
         {
@@ -158,20 +173,42 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
             // the above part can also be done by using map::at and exception handling
             int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
 
-            val += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)) - log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
-            // val += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)));
-            // val -= D[x.first] * (log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
+            // option for the overdispersed version
+            if (is_overdispersed)
+            {
+                log_likelihood -= new_weight_term*lgamma(D[x.first] + nu*(cf+ploidy)*r[x.first]);
+                log_likelihood += old_weight_term*lgamma(D[x.first] + nu*(cp_f+ploidy)*r[x.first]);
 
-            z += r[x.first] * (cf - cp_f);
+                log_likelihood -= lgamma(nu*(cf+ploidy)*r[x.first]);
+                log_likelihood += lgamma(nu*(cp_f+ploidy)*r[x.first]);
+
+            }
+            else
+            {
+                log_likelihood += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)) - log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
+            }
 
         }
 
-        // this quantity is smt. to subtract, that's why signs are reversed
-        val -= sum_D*log(z);
-        val += sum_D*log(node->parent->z);
+        if (is_overdispersed)
+        {
+            // updates c independent parts
+            log_likelihood += lgamma(nu*z);
+            log_likelihood -= lgamma(nu*z_parent);
 
-        assert(!std::isnan(val));
-        node->log_score = val;
+        }
+        else
+        {
+            // this quantity is smt. to subtract, that's why signs are reversed
+            log_likelihood -= sum_D*log(z);
+            log_likelihood += sum_D*log(node->parent->z);
+        }
+
+
+
+
+        assert(!std::isnan(log_likelihood));
+        node->log_score = log_likelihood;
         node->z = z;
     }
 
@@ -208,7 +245,7 @@ void Tree::compute_stack(Node *node, const vector<double> &D, double &sum_D, con
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
         }
-        compute_score(top, D, sum_D, r);
+        compute_score(top, D, sum_D, r, 1e-5);
         // TODO: reuse this part of the code (the recursive iteration of nodes)
     }
 
