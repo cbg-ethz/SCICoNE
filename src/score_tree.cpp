@@ -62,6 +62,7 @@ int main( int argc, char* argv[]) {
             ("v","v value used in size changing moves",cxxopts::value(v))
             ("tree_prior_chi", "whether to include the tree prior in X", cxxopts::value(tree_prior_in_chi))
             ("file", "file", cxxopts::value(file))
+            ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
             ;
     auto result = options.parse(argc, argv);
 
