@@ -19,6 +19,7 @@ double c_penalise;
 int copy_number_limit;
 double v;
 unsigned tree_prior_in_chi;
+unsigned is_overdispersed;
 
 // endof globals
 
@@ -36,7 +37,7 @@ int main( int argc, char* argv[]) {
     lambda_c = 1.0;
     c_penalise = 1.0;
     copy_number_limit = 5;
-
+    is_overdispersed = 1;
     int n_cells;
     int n_bins = 10000;
     size_t n_regions;

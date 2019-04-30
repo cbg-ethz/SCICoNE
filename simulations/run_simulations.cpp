@@ -18,6 +18,7 @@ double lambda_s;
 double c_penalise;
 double v;
 unsigned tree_prior_in_chi;
+unsigned is_overdispersed;
 // endof globals
 
 using namespace std;
@@ -41,6 +42,7 @@ int main(int argc, char* argv[]) {
     copy_number_limit = 15;
     v = std::nan("");
     tree_prior_in_chi = 1;
+    is_overdispersed = 0;
 
     // minimum region size should be bigger than window_size
     unsigned min_region_size = 10;
