@@ -42,6 +42,10 @@ public:
     u_int n_regions; // number of regions
     double posterior_score; // log posterior score of the tree
     double prior_score; // log prior score of the tree
+
+    // overdispersed params
+    double nu;
+    double od_root_score; //overdispersed root score
 public:
     // constructor
     Tree(u_int ploidy, u_int n_regions);
@@ -130,8 +134,23 @@ void Tree::compute_root_score(const vector<int> &r) {
     for (auto const &x : r)
         z += x * this->ploidy;
 
-    root->log_score = 0;
     root->z = z;
+
+    double log_likelihood = 0.0;
+
+    if (is_overdispersed)
+    {
+//        log_likelihood += lgamma(nu*z);
+//        log_likelihood -= lgamma(sum_D+nu*z);
+
+        root->log_score = log_likelihood;
+    }
+    else
+    {
+        root->log_score = 0.0;
+
+    }
+
 }
 
 void
@@ -147,8 +166,6 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
     }
     else
     {
-        double n_bins = static_cast<double>(D.size());
-        double nu = 1.0 / n_bins;
 
         double log_likelihood = node->parent->log_score;
         int z = node->parent->z;
@@ -275,7 +292,8 @@ Tree::Tree(u_int ploidy, u_int n_regions)
     posterior_score = 0.0;
     // creates a copy of the root ptr and stores it in the vector
 
-
+    nu = 1.0 / static_cast<double>(n_regions);
+    od_root_score = 0.0;
 
     all_nodes_vec.push_back(root);
 
