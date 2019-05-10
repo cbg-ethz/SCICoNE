@@ -98,7 +98,7 @@ private:
     void copy_tree(const Tree& source_tree);
     void copy_tree_nodes(Node *destination, Node *source);
     void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta);
-    void compute_root_score(const vector<int> &r);
+    void compute_root_score(const vector<int> &r, double &sum_D, const vector<double> &D);
     Node* prune(Node *pos); // does not deallocate,
     Node* insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
@@ -124,7 +124,7 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
 
 
 
-void Tree::compute_root_score(const vector<int> &r) {
+void Tree::compute_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) {
 
     /*
      * Computes the score of the root.
@@ -140,16 +140,19 @@ void Tree::compute_root_score(const vector<int> &r) {
 
     if (is_overdispersed)
     {
-//        log_likelihood += lgamma(nu*z);
-//        log_likelihood -= lgamma(sum_D+nu*z);
+        log_likelihood += lgamma(nu*z);
+        log_likelihood -= lgamma(sum_D+nu*z);
 
-        root->log_score = log_likelihood;
-    }
-    else
-    {
-        root->log_score = 0.0;
+        for (u_int i = 0; i < r.size(); ++i)
+        {
+            log_likelihood += lgamma(D[i] + nu*ploidy*r[i]);
+            log_likelihood -= lgamma(nu*ploidy*r[i]);
+        }
 
+        od_root_score = log_likelihood;
     }
+
+    root->log_score = 0.0;
 
 }
 
@@ -162,7 +165,7 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
 
     if (node->parent == nullptr)
     {
-        compute_root_score(r);
+        compute_root_score(r, sum_D, D);
     }
     else
     {
