@@ -35,8 +35,10 @@ public:
     int ploidy;
     std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
+    std::vector<double> t_od_root_scores;
     std::vector<std::map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
+    std::vector<double> t_prime_od_root_scores;
     std::string f_name;
     int verbosity;
 
@@ -44,6 +46,8 @@ public:
     Inference(u_int n_regions, int ploidy=2, int verbosity=2);
     ~Inference();
     void destroy();
+    void compute_t_od_root_scores();
+    void compute_t_prime_od_root_scores();
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);

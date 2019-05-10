@@ -45,7 +45,6 @@ public:
 
     // overdispersed params
     double nu;
-    double od_root_score; //overdispersed root score
 public:
     // constructor
     Tree(u_int ploidy, u_int n_regions);
@@ -90,6 +89,7 @@ public:
     double chi_insert_delete_reweighted(bool weighted);
 
     void load_from_file(string file);
+    double get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D);
 
 private:
     void update_label(std::map<u_int,int>& c_parent, Node* node);
@@ -98,7 +98,7 @@ private:
     void copy_tree(const Tree& source_tree);
     void copy_tree_nodes(Node *destination, Node *source);
     void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta);
-    void compute_root_score(const vector<int> &r, double &sum_D, const vector<double> &D);
+    void compute_root_score(const vector<int> &r);
     Node* prune(Node *pos); // does not deallocate,
     Node* insert_child(Node *pos, Node *source);
     Node* insert_child(Node *pos, Node& source);
@@ -124,7 +124,7 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
 
 
 
-void Tree::compute_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) {
+void Tree::compute_root_score(const vector<int> &r) {
 
     /*
      * Computes the score of the root.
@@ -134,26 +134,8 @@ void Tree::compute_root_score(const vector<int> &r, double &sum_D, const vector<
     for (auto const &x : r)
         z += x * this->ploidy;
 
+    root->log_score = 0;
     root->z = z;
-
-    double log_likelihood = 0.0;
-
-    if (is_overdispersed)
-    {
-        log_likelihood += lgamma(nu*z);
-        log_likelihood -= lgamma(sum_D+nu*z);
-
-        for (u_int i = 0; i < r.size(); ++i)
-        {
-            log_likelihood += lgamma(D[i] + nu*ploidy*r[i]);
-            log_likelihood -= lgamma(nu*ploidy*r[i]);
-        }
-
-        od_root_score = log_likelihood;
-    }
-
-    root->log_score = 0.0;
-
 }
 
 void
@@ -165,7 +147,7 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
 
     if (node->parent == nullptr)
     {
-        compute_root_score(r, sum_D, D);
+        compute_root_score(r);
     }
     else
     {
@@ -296,7 +278,6 @@ Tree::Tree(u_int ploidy, u_int n_regions)
     // creates a copy of the root ptr and stores it in the vector
 
     nu = 1.0 / static_cast<double>(n_regions);
-    od_root_score = 0.0;
 
     all_nodes_vec.push_back(root);
 
@@ -1559,6 +1540,30 @@ double Tree::chi_condense_split_reweighted(bool weighted) {
     double reweighted_chi = reweighting_term * sum_chi;
 
     return reweighted_chi;
+}
+
+double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) {
+    /*
+     * Returns the overdispersed root score
+     * */
+
+    int z = 0;
+    for (auto const &x : r)
+        z += x * this->ploidy;
+
+    double od_root_score = 0.0;
+
+    od_root_score += lgamma(nu*z);
+    od_root_score -= lgamma(sum_D+nu*z);
+
+    for (u_int i = 0; i < r.size(); ++i)
+    {
+        od_root_score += lgamma(D[i] + nu*ploidy*r[i]);
+        od_root_score -= lgamma(nu*ploidy*r[i]);
+    }
+
+    return od_root_score;
+
 }
 
 
