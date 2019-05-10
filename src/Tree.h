@@ -162,9 +162,6 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
             z += r[x.first] * (cf - cp_f);
         }
 
-        double new_weight_term = lgamma(sum_D+nu*z);
-        double old_weight_term = lgamma(sum_D+nu*z_parent);
-
         for (auto const &x : node->c_change)
         {
 
@@ -176,8 +173,8 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
             // option for the overdispersed version
             if (is_overdispersed)
             {
-                log_likelihood -= new_weight_term*lgamma(D[x.first] + nu*(cf+ploidy)*r[x.first]);
-                log_likelihood += old_weight_term*lgamma(D[x.first] + nu*(cp_f+ploidy)*r[x.first]);
+                log_likelihood += lgamma(D[x.first] + nu*(cf+ploidy)*r[x.first]);
+                log_likelihood -= lgamma(D[x.first] + nu*(cp_f+ploidy)*r[x.first]);
 
                 log_likelihood -= lgamma(nu*(cf+ploidy)*r[x.first]);
                 log_likelihood += lgamma(nu*(cp_f+ploidy)*r[x.first]);
@@ -195,6 +192,9 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
             // updates c independent parts
             log_likelihood += lgamma(nu*z);
             log_likelihood -= lgamma(nu*z_parent);
+
+            log_likelihood -= lgamma(sum_D+nu*z);
+            log_likelihood += lgamma(sum_D+nu*z_parent);
 
         }
         else
