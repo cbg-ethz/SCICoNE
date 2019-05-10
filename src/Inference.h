@@ -46,8 +46,8 @@ public:
     Inference(u_int n_regions, int ploidy=2, int verbosity=2);
     ~Inference();
     void destroy();
-    void compute_t_od_root_scores();
-    void compute_t_prime_od_root_scores();
+    std::vector<double>
+    get_tree_od_root_scores(const vector<vector<double>> &D, const vector<int> &r, const Tree &tree);
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);
@@ -1162,6 +1162,23 @@ void Inference::initialize_from_file(string path) {
     t.load_from_file(path);
 
 
+}
+
+std::vector<double>
+Inference::get_tree_od_root_scores(const vector<vector<double>> &D, const vector<int> &r, const Tree &tree) {
+    /*
+     * Returns the vector of overdispersed root scores for every cell
+     * */
+
+    u_int n_cells = D.size();
+
+    vector<double> scores(n_cells);
+    for (u_int i = 0; i < n_cells; ++i) {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        scores[i] = tree.get_od_root_score(r, sum_d, D[i]);
+    }
+
+    return scores;
 }
 
 

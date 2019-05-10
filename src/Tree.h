@@ -89,7 +89,7 @@ public:
     double chi_insert_delete_reweighted(bool weighted);
 
     void load_from_file(string file);
-    double get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D);
+    double get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) const;
 
 private:
     void update_label(std::map<u_int,int>& c_parent, Node* node);
@@ -1542,7 +1542,7 @@ double Tree::chi_condense_split_reweighted(bool weighted) {
     return reweighted_chi;
 }
 
-double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) {
+double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) const{
     /*
      * Returns the overdispersed root score
      * */
