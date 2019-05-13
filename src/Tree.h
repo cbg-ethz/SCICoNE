@@ -466,12 +466,14 @@ void Tree::copy_tree(const Tree& source_tree) {
     this->prior_score = source_tree.prior_score;
     this->posterior_score = source_tree.posterior_score;
     this->n_regions = source_tree.n_regions;
+    this->nu = source_tree.nu;
 
     // copy the nodes using struct copy constructor
     this->root = new Node(*source_tree.root);
     this->all_nodes_vec.push_back(root); // all nodes cannot be copied since 2 trees cannot have nodes pointing to the same address
     copy_tree_nodes(this->root, source_tree.root); // the nodes of the source tree are inserted into the destination tree
     this->n_nodes = source_tree.n_nodes; // copy this after the insertions are done (insertions change this value).
+
  }
 
 void Tree::copy_tree_nodes(Node *destination, Node *source) {
