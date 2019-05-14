@@ -268,7 +268,10 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         double t_prime_sum_od_root = std::accumulate(t_prime_od_root_scores.begin(), t_prime_od_root_scores.end(), 0.0);
         double t_sum_od_root = std::accumulate(t_od_root_scores.begin(), t_od_root_scores.end(), 0.0);
 
-        score_diff = t_prime_sum_od_root - t_sum_od_root + t_prime.posterior_score - t.posterior_score;
+        double od_score_diff = t_prime_sum_od_root - t_sum_od_root;
+        double posterior_score_diff = t_prime.posterior_score - t.posterior_score;
+
+        score_diff = od_score_diff + posterior_score_diff;
     }
     else
         score_diff = t_prime.posterior_score - t.posterior_score;
@@ -746,7 +749,7 @@ bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, con
     try
     {
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
-        boost::random::normal_distribution<double> distribution(0.0,1.0);
+        boost::random::normal_distribution<double> distribution(0.0,this->t.nu);
         double rand_val = distribution(gen);
 
         t_prime.nu += rand_val;
