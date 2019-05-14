@@ -20,6 +20,7 @@
 
 #include <boost/random/uniform_real_distribution.hpp>
 #include <boost/random/discrete_distribution.hpp>
+#include <boost/random/normal_distribution.hpp>
 
 class Inference {
 /*
@@ -46,6 +47,8 @@ public:
     Inference(u_int n_regions, int ploidy=2, int verbosity=2);
     ~Inference();
     void destroy();
+    void compute_t_od_scores(const vector<vector<double>> &D, const vector<int> &r);
+    void compute_t_prime_od_scores(const vector<vector<double>> &D, const vector<int> &r);
     std::vector<double>
     get_tree_od_root_scores(const vector<vector<double>> &D, const vector<int> &r, const Tree &tree);
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
@@ -65,6 +68,7 @@ public:
                                   unsigned int size_limit, bool weighted);
     bool apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted = false,
                     bool test_mode = false);
+    bool apply_overdispersion_change(const vector<vector<double>> &D, const vector<int> &r);
     Tree *comparison(int m, double gamma, unsigned move_id);
     void infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters,
                     unsigned int size_limit);
@@ -258,7 +262,17 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         weighted = false;
 
     // acceptance probability computations
-    double score_diff = t_prime.posterior_score - t.posterior_score;
+    double score_diff = 0.0;
+    if (move_id == 11) // overdispersion change
+    {
+        double t_prime_sum_od_root = std::accumulate(t_prime_od_root_scores.begin(), t_prime_od_root_scores.end(), 0.0);
+        double t_sum_od_root = std::accumulate(t_od_root_scores.begin(), t_od_root_scores.end(), 0.0);
+
+        score_diff = t_prime_sum_od_root - t_sum_od_root + t_prime.posterior_score - t.posterior_score;
+    }
+    else
+        score_diff = t_prime.posterior_score - t.posterior_score;
+
     double acceptance_prob = exp(gamma*score_diff); // later gets modified
 
     // compute nbd correction
@@ -639,6 +653,20 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
+            case 11:
+            {
+                // changing overdispersion move
+                if (verbosity > 0)
+                    cout<<"Overdispersion changing move"<<endl;
+                bool od_change_success = apply_overdispersion_change(D, r);
+                if (not od_change_success)
+                {
+                    rejected_before_comparison = true;
+                    if (verbosity > 0)
+                        cout << "Overdispersion changing move is rejected before comparison"<<endl;
+                }
+                break;
+            }
             default:
                 throw std::logic_error("undefined move index");
         }
@@ -708,6 +736,30 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         cout<<"add_remove_move_rejected: "<<add_remove_move_rejected<<endl;
         cout<<"condense/split rejected: " << condense_split_move_rejection<<endl;
     }
+}
+
+bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, const vector<int> &r) {
+    /*
+     * Changes the current overdispersion parameter nu using gaussian random walk.
+     * */
+
+    try
+    {
+        std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
+        boost::random::normal_distribution<double> distribution(0.0,1.0);
+        double rand_val = distribution(gen);
+
+        t_prime.nu += rand_val;
+        this->compute_t_prime_od_scores(D,r);
+    }
+    catch (const std::exception& e) { // caught by reference to base
+        if (verbosity > 0)
+            std::cout << " a standard exception was caught during the apply overdispersion change move, with message '"
+                      << e.what() << "'\n";
+        return false;
+    }
+
+    return true;
 }
 
 double Inference::log_tree_prior(int m, int n) {
@@ -1179,6 +1231,20 @@ Inference::get_tree_od_root_scores(const vector<vector<double>> &D, const vector
     }
 
     return scores;
+}
+
+void Inference::compute_t_od_scores(const vector<vector<double>> &D, const vector<int> &r) {
+/*
+ * Computes and stores the overdispersed root scores for tree t
+ * */
+    this->t_od_root_scores = get_tree_od_root_scores(D,r,this->t);
+}
+
+void Inference::compute_t_prime_od_scores(const vector<vector<double>> &D, const vector<int> &r) {
+/*
+ * Computes and stores the overdispersed root scores for tree t prime
+ * */
+    this->t_prime_od_root_scores = get_tree_od_root_scores(D,r,this->t_prime);
 }
 
 
