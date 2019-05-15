@@ -278,7 +278,6 @@ Tree::Tree(u_int ploidy, u_int n_regions)
     // creates a copy of the root ptr and stores it in the vector
 
     nu = 1.0 / static_cast<double>(n_regions);
-
     all_nodes_vec.push_back(root);
 
 

@@ -36,10 +36,10 @@ public:
     int ploidy;
     std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
-    std::vector<double> t_od_root_scores;
+    double t_od_root_sums;
     std::vector<std::map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
-    std::vector<double> t_prime_od_root_scores;
+    double t_prime_od_root_sums;
     std::string f_name;
     int verbosity;
 
@@ -169,6 +169,8 @@ Inference::Inference(u_int n_regions, int ploidy, int verbosity) : t(ploidy, n_r
     long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
     f_name = std::to_string(seed);
 
+    t_od_root_sums = t_prime_od_root_sums = 0.0;
+
 
 }
 
@@ -265,10 +267,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     double score_diff = 0.0;
     if (move_id == 11) // overdispersion change
     {
-        double t_prime_sum_od_root = std::accumulate(t_prime_od_root_scores.begin(), t_prime_od_root_scores.end(), 0.0);
-        double t_sum_od_root = std::accumulate(t_od_root_scores.begin(), t_od_root_scores.end(), 0.0);
-
-        double od_score_diff = t_prime_sum_od_root - t_sum_od_root;
+        double od_score_diff = t_prime_od_root_sums - t_od_root_sums;
         double posterior_score_diff = t_prime.posterior_score - t.posterior_score;
 
         score_diff = od_score_diff + posterior_score_diff;
@@ -698,6 +697,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
           } 
           
             t_sums = t_prime_sums;
+            t_od_root_sums = t_prime_od_root_sums;
             update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
             t = t_prime;
             if (t_prime.posterior_score > best_tree.posterior_score)
@@ -710,6 +710,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         }
         t_prime_sums.clear();
         t_prime_scores.clear();
+        t_prime_od_root_sums = 0.0;
 
         // TODO: update gamma every 10000 iterations, adaptive stuff
         // N: n_nodes of tree t
@@ -749,11 +750,13 @@ bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, con
     try
     {
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
-        boost::random::normal_distribution<double> distribution(0.0,this->t.nu);
+        boost::random::normal_distribution<double> distribution(0.0,this->t.nu/200.0);
         double rand_val = distribution(gen);
 
         t_prime.nu += rand_val;
         this->compute_t_prime_od_scores(D,r);
+        compute_t_prime_scores(t_prime.root, D, r);
+        compute_t_prime_sums(D);
     }
     catch (const std::exception& e) { // caught by reference to base
         if (verbosity > 0)
@@ -1238,16 +1241,21 @@ Inference::get_tree_od_root_scores(const vector<vector<double>> &D, const vector
 
 void Inference::compute_t_od_scores(const vector<vector<double>> &D, const vector<int> &r) {
 /*
- * Computes and stores the overdispersed root scores for tree t
+ * Computes and stores the overdispersed root sum for tree t across all cells
  * */
-    this->t_od_root_scores = get_tree_od_root_scores(D,r,this->t);
+    vector<double> t_od_root_scores = get_tree_od_root_scores(D,r,this->t);
+    double sum_t_od_root_scores = std::accumulate(t_od_root_scores.begin(), t_od_root_scores.end(), 0.0);
+    this->t_od_root_sums = sum_t_od_root_scores;
+
 }
 
 void Inference::compute_t_prime_od_scores(const vector<vector<double>> &D, const vector<int> &r) {
 /*
- * Computes and stores the overdispersed root scores for tree t prime
+ * Computes and stores the overdispersed root sum for tree t prime across all cells
  * */
-    this->t_prime_od_root_scores = get_tree_od_root_scores(D,r,this->t_prime);
+    vector<double> t_prime_od_root_scores = get_tree_od_root_scores(D,r,this->t_prime);
+    double sum_t_prime_od_root_scores = std::accumulate(t_prime_od_root_scores.begin(), t_prime_od_root_scores.end(), 0.0);
+    this->t_prime_od_root_sums = sum_t_prime_od_root_scores;
 }
 
 
