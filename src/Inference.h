@@ -458,12 +458,9 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                            unsigned int size_limit) {
 
     int m = static_cast<int>(D.size());
-    int n_strongly_accepted = 0;
-    int n_rejected = 0;
-    int n_attached_to_the_same_pos = 0;
-    int add_remove_move_rejected = 0;
-    int insert_delete_move_rejection = 0;
-    int condense_split_move_rejection = 0;
+
+    u_int n_rejected = 0;
+    u_int n_accepted = 0;
 
     double gamma = 1.0; // gamma param to amplify the difference in log likelihoods
 
@@ -497,7 +494,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     cout << "Prune and reattach" << endl;
                 bool prune_reattach_success = apply_prune_reattach(D, r, false, false, false);
                 if (not prune_reattach_success) {
-                    n_attached_to_the_same_pos++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "Prune and reattach is rejected before comparison"<<endl;
@@ -512,7 +508,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 bool weighted_prune_reattach_success = apply_prune_reattach(D, r, false, true, false); // weighted=true
                 if (not weighted_prune_reattach_success)
                 {
-                    n_attached_to_the_same_pos++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "Weighted prune and reattach is rejected before comparison"<<endl;
@@ -555,7 +550,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // pass 0.0 to the poisson distributions to have 1 event added/removed
                 bool add_remove_success = apply_add_remove_events(lambda_r, lambda_c, D, r, false); // weighted=false
                 if (not add_remove_success) {
-                    add_remove_move_rejected++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "Add or remove event is rejected before comparison"<<endl;
@@ -570,7 +564,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // pass 0.0 to the poisson distributions to have 1 event added/removed
                 bool add_remove_success = apply_add_remove_events(lambda_r, lambda_c, D, r, true); // weighted=true
                 if (not add_remove_success) {
-                    add_remove_move_rejected++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "Weighted add or remove event is rejected before comparison"<<endl;
@@ -584,7 +577,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     cout << "insert/delete node" << endl;
                 bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, size_limit, false); // weighted=false
                 if (not insert_delete_success) {
-                    insert_delete_move_rejection++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "insert/delete rejected before comparison" << endl;
@@ -598,7 +590,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     cout << "weighted insert/delete node" << endl;
                 bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, size_limit, true); // weighted=true
                 if (not insert_delete_success) {
-                    insert_delete_move_rejection++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "weighted insert/delete rejected before comparison" << endl;
@@ -613,7 +604,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 bool condense_split_success = apply_condense_split(lambda_s, D, r, size_limit, false);
                 if (not condense_split_success)
                 {
-                    condense_split_move_rejection++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "condense/split move is rejected before comparison"<<endl;
@@ -628,7 +618,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 bool condense_split_success = apply_condense_split(lambda_s, D, r, size_limit, true); //weighted=true
                 if (not condense_split_success)
                 {
-                    condense_split_move_rejection++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "weighted condense/split move is rejected before comparison"<<endl;
@@ -683,14 +672,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         // update trees and the matrices
         if (accepted == &t_prime)
         {
-            //n_strongly_accepted++;
-
-          if(abs(t.posterior_score - t_prime.posterior_score) > 1e-10){
-              // TODO: remove
-            n_strongly_accepted++;
-            //std::cout << "tree score:" << t.posterior_score << " tree prime score:" << t_prime.posterior_score << endl;
-          }
-
+            n_accepted++;
             t_sums = t_prime_sums;
             update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
             t = t_prime;
@@ -705,34 +687,13 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         t_prime_sums.clear();
         t_prime_scores.clear();
 
-        // TODO: update gamma every 10000 iterations, adaptive stuff
         // N: n_nodes of tree t
         if ((i > 10000) && (i % 10000 == 0))
         {
-            // double N = t.get_n_nodes();
-            // double target_rate = 2*(N+1)*(N+2);
-            // double c = log(2) / log(target_rate); // +2 because root is not counted and log(1) is zero (it goes to the denominator)
-
-            // double acceptance_ratio = double(n_strongly_accepted+1) / double((n_strongly_accepted + n_rejected + target_rate));
-
-
-            //
             cout << "iteration" << i <<  "tree score" << t.posterior_score + t.od_score  << endl;
-            // cout << "acceptance ratio:" << acceptance_ratio << "tree size" << N << "gamma change?" << exp(0.5 - pow(acceptance_ratio, c)) << endl;
-            // gamma = gamma / exp(0.5 - pow(acceptance_ratio, c));
-            // TODO: Jack will change the way gamma is computed
-            // n_strongly_accepted = n_rejected = 0;
-            // std::cout << "gamma val:" << gamma << endl;
         }
     }
-    if (verbosity > 0)
-    {
-        cout<<"n_strongly_accepted: "<<n_strongly_accepted<<endl;
-        cout<<"n_rejected: "<<n_rejected<<endl;
-        cout<<"n_attached_to_the_same_pos: "<<n_attached_to_the_same_pos<<endl;
-        cout<<"add_remove_move_rejected: "<<add_remove_move_rejected<<endl;
-        cout<<"condense/split rejected: " << condense_split_move_rejection<<endl;
-    }
+
 }
 
 bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, const vector<int> &r) {
