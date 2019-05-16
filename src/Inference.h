@@ -36,10 +36,10 @@ public:
     int ploidy;
     std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
-    double t_od_root_sums;
+    double t_od_root_sum;
     std::vector<std::map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
-    double t_prime_od_root_sums;
+    double t_prime_od_root_sum;
     std::string f_name;
     int verbosity;
 
@@ -169,7 +169,7 @@ Inference::Inference(u_int n_regions, int ploidy, int verbosity) : t(ploidy, n_r
     long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
     f_name = std::to_string(seed);
 
-    t_od_root_sums = t_prime_od_root_sums = 0.0;
+    t_od_root_sum = t_prime_od_root_sum = 0.0;
 
 
 }
@@ -267,7 +267,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     double score_diff = 0.0;
     if (move_id == 11) // overdispersion change
     {
-        double od_score_diff = t_prime_od_root_sums - t_od_root_sums;
+        double od_score_diff = t_prime_od_root_sum - t_od_root_sum;
         double posterior_score_diff = t_prime.posterior_score - t.posterior_score;
 
         score_diff = od_score_diff + posterior_score_diff;
@@ -698,7 +698,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
           }
 
             t_sums = t_prime_sums;
-            t_od_root_sums = t_prime_od_root_sums;
+            t_od_root_sum = t_prime_od_root_sum;
             update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
             t = t_prime;
             if ((t_prime.posterior_score + t_prime.od_score)  > (best_tree.posterior_score + best_tree.od_score))
@@ -711,7 +711,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         }
         t_prime_sums.clear();
         t_prime_scores.clear();
-        t_prime_od_root_sums = 0.0;
+        t_prime_od_root_sum = 0.0;
 
         // TODO: update gamma every 10000 iterations, adaptive stuff
         // N: n_nodes of tree t
@@ -1246,7 +1246,7 @@ void Inference::compute_t_od_scores(const vector<vector<double>> &D, const vecto
  * */
     vector<double> t_od_root_scores = get_tree_od_root_scores(D,r,this->t);
     double sum_t_od_root_scores = std::accumulate(t_od_root_scores.begin(), t_od_root_scores.end(), 0.0);
-    this->t_od_root_sums = sum_t_od_root_scores;
+    this->t_od_root_sum = sum_t_od_root_scores;
 
 }
 
@@ -1256,7 +1256,7 @@ void Inference::compute_t_prime_od_scores(const vector<vector<double>> &D, const
  * */
     vector<double> t_prime_od_root_scores = get_tree_od_root_scores(D,r,this->t_prime);
     double sum_t_prime_od_root_scores = std::accumulate(t_prime_od_root_scores.begin(), t_prime_od_root_scores.end(), 0.0);
-    this->t_prime_od_root_sums = sum_t_prime_od_root_scores;
+    this->t_prime_od_root_sum = sum_t_prime_od_root_scores;
 }
 
 
