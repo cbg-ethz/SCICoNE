@@ -681,10 +681,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         else
             accepted = comparison(m, gamma, move_id);
 
-        static double first_score = accepted->posterior_score; // the first value will be kept in whole program
+        static double first_score = accepted->posterior_score + accepted->od_score; // the first value will be kept in whole program
         // print accepted log_posterior
-        mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score << ',';
-        rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score - first_score << ',';
+        mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score << ',';
+        rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score << ',';
 
         // update trees and the matrices
         if (accepted == &t_prime)
@@ -692,15 +692,16 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             //n_strongly_accepted++;
 
           if(abs(t.posterior_score - t_prime.posterior_score) > 1e-10){
+              // TODO: remove
             n_strongly_accepted++;
             //std::cout << "tree score:" << t.posterior_score << " tree prime score:" << t_prime.posterior_score << endl;
-          } 
-          
+          }
+
             t_sums = t_prime_sums;
             t_od_root_sums = t_prime_od_root_sums;
             update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
             t = t_prime;
-            if (t_prime.posterior_score > best_tree.posterior_score)
+            if ((t_prime.posterior_score + t_prime.od_score)  > (best_tree.posterior_score + best_tree.od_score))
                 best_tree = t_prime;
         }
         else
@@ -721,10 +722,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             // double c = log(2) / log(target_rate); // +2 because root is not counted and log(1) is zero (it goes to the denominator)
 
             // double acceptance_ratio = double(n_strongly_accepted+1) / double((n_strongly_accepted + n_rejected + target_rate));
-            
-            
+
+
             //
-            cout << "iteration" << i <<  "tree score" << t.posterior_score << endl;
+            cout << "iteration" << i <<  "tree score" << t.posterior_score + t.od_score  << endl;
             // cout << "acceptance ratio:" << acceptance_ratio << "tree size" << N << "gamma change?" << exp(0.5 - pow(acceptance_ratio, c)) << endl;
             // gamma = gamma / exp(0.5 - pow(acceptance_ratio, c));
             // TODO: Jack will change the way gamma is computed

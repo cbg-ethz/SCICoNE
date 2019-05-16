@@ -42,6 +42,7 @@ public:
     u_int n_regions; // number of regions
     double posterior_score; // log posterior score of the tree
     double prior_score; // log prior score of the tree
+    double od_score; // overdispersed score of the tree
 
     // overdispersed params
     double nu;
@@ -114,7 +115,7 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
 
     vector<Node*> nodes = t.root->get_descendents(true);
 
-    os << "Tree score: " << setprecision(print_precision) << t.posterior_score << endl;
+    os << "Tree score: " << setprecision(print_precision) << t.posterior_score + t.od_score << endl;
     for (auto const &x : nodes)
     {
         os << *x << std::endl;
@@ -275,6 +276,7 @@ Tree::Tree(u_int ploidy, u_int n_regions)
     n_nodes = 0;
     prior_score = 0.0;
     posterior_score = 0.0;
+    od_score = 0.0;
     // creates a copy of the root ptr and stores it in the vector
 
     nu = 1.0 / static_cast<double>(n_regions);
@@ -464,6 +466,7 @@ void Tree::copy_tree(const Tree& source_tree) {
     this->counter = source_tree.counter;
     this->prior_score = source_tree.prior_score;
     this->posterior_score = source_tree.posterior_score;
+    this->od_score = source_tree.od_score;
     this->n_regions = source_tree.n_regions;
     this->nu = source_tree.nu;
 
