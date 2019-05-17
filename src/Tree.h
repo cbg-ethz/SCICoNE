@@ -116,6 +116,8 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
     vector<Node*> nodes = t.root->get_descendents(true);
 
     os << "Tree score: " << setprecision(print_precision) << t.posterior_score + t.od_score << endl;
+    os << "Nu: " << setprecision(print_precision) << t.nu<< endl;
+
     for (auto const &x : nodes)
     {
         os << *x << std::endl;
