@@ -47,6 +47,7 @@ int main( int argc, char* argv[]) {
     string region_sizes_file = "";
     string d_matrix_file = "";
     string f_name_postfix = ""; //posfix
+    double nu = 1.0;
 
     v = std::nan("");
     tree_prior_in_chi = 1;
@@ -63,6 +64,7 @@ int main( int argc, char* argv[]) {
             ("tree_prior_chi", "whether to include the tree prior in X", cxxopts::value(tree_prior_in_chi))
             ("file", "file", cxxopts::value(file))
             ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
+            ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))
             ;
     auto result = options.parse(argc, argv);
 
@@ -82,7 +84,7 @@ int main( int argc, char* argv[]) {
 
     Inference mcmc(n_regions, ploidy, verbosity);
     mcmc.initialize_from_file(file);
-
+    mcmc.t.nu = nu;
     //mcmc.compute_neutral_table(d_regions, region_sizes);
     mcmc.compute_t_table(d_regions,region_sizes);
 
