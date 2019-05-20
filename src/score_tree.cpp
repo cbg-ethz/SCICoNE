@@ -61,6 +61,7 @@ int main( int argc, char* argv[]) {
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
             ("v","v value used in size changing moves",cxxopts::value(v))
+            ("ploidy", "ploidy", cxxopts::value(ploidy))
             ("tree_prior_chi", "whether to include the tree prior in X", cxxopts::value(tree_prior_in_chi))
             ("file", "file", cxxopts::value(file))
             ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
