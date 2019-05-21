@@ -88,6 +88,7 @@ int main( int argc, char* argv[]) {
     mcmc.t.nu = nu;
     //mcmc.compute_neutral_table(d_regions, region_sizes);
     mcmc.compute_t_table(d_regions,region_sizes);
+    mcmc.compute_t_od_scores(d_regions, region_sizes);
 
     // write the tree
     // std::ofstream tree_file("./" +f_name_postfix+"_tree_rescored" + ".txt");
