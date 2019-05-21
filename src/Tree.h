@@ -1554,21 +1554,33 @@ double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector
      * Returns the overdispersed root score
      * */
 
-    int z = 0;
-    for (auto const &x : r)
-        z += x * this->ploidy;
-
     double od_root_score = 0.0;
 
-    od_root_score += lgamma(nu*z);
-    od_root_score -= lgamma(sum_D+nu*z);
-
-    for (u_int i = 0; i < r.size(); ++i)
+    if (is_overdispersed)
     {
-        od_root_score += lgamma(D[i] + nu*ploidy*r[i]);
-        od_root_score -= lgamma(nu*ploidy*r[i]);
-    }
+        int z = 0;
+        for (auto const &x : r)
+            z += x * this->ploidy;
 
+        od_root_score += lgamma(nu*z);
+        od_root_score -= lgamma(sum_D+nu*z);
+
+        for (u_int i = 0; i < r.size(); ++i)
+        {
+            od_root_score += lgamma(D[i] + nu*ploidy*r[i]);
+            od_root_score -= lgamma(nu*ploidy*r[i]);
+        }
+    }
+    else
+    {
+        int sum_r = std::accumulate(r.begin(),r.end(),0);
+        double term1 = -sum_D*sum_r;
+        double term2 = 0.0;
+        for (u_int i = 0; i < r.size(); ++i)
+            term2 += D[i]*r[i];
+
+        od_root_score += term1+term2;
+    }
     return od_root_score;
 
 }
