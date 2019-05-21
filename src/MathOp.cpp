@@ -600,8 +600,10 @@ double MathOp::compute_linear_regression_slope(const vector<double> &x, const ve
 
 
 template double MathOp::st_deviation(vector<double> &v);
+template double MathOp::st_deviation(vector<int> &v);
 template double MathOp::median(vector<double> v);
 template double MathOp::vec_avg(const vector<double> &v);
+template double MathOp::vec_avg(const vector<int> &v);
 template double MathOp::percentile_val<double>(vector<double>, double percentile_val);
 template long double MathOp::percentile_val<long double>(vector<long double>, double percentile_val);
 
