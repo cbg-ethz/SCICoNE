@@ -712,9 +712,9 @@ bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, con
         if (n_nu_vals >= 10)
         {
             double nu_std = MathOp::st_deviation(nu_vals);
-            double nu_change = std::sqrt((nu_std + 0.1) / n_nu_vals);
+            double nu_change_limit = std::sqrt((nu_std + 0.1) / n_nu_vals);
 
-            boost::random::normal_distribution<double> distribution(0.0,nu_change);
+            boost::random::normal_distribution<double> distribution(0.0,nu_change_limit);
             rand_val = distribution(gen);
         }
         else
