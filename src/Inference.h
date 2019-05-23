@@ -40,7 +40,6 @@ public:
     std::vector<double> t_prime_sums;
     std::string f_name;
     int verbosity;
-    vector<double> nu_vals;
 
 public:
     Inference(u_int n_regions, int ploidy=2, int verbosity=2);
@@ -476,8 +475,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
     best_tree = t; //start with the t
 
-    this->nu_vals.push_back(t.nu);
-
     for (int i = 0; i < n_iters; ++i) {
 
 
@@ -707,24 +704,17 @@ bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, con
     try
     {
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
-        size_t n_nu_vals = this->nu_vals.size();
         double rand_val = 0.0;
-        if (n_nu_vals >= 10)
-        {
-            double nu_std = MathOp::st_deviation(nu_vals);
-            double nu_change_limit = std::sqrt((nu_std + 0.1) / n_nu_vals);
+        boost::random::normal_distribution<double> distribution(0.0,0.02);
+        rand_val = distribution(gen);
 
-            boost::random::normal_distribution<double> distribution(0.0,nu_change_limit);
-            rand_val = distribution(gen);
-        }
-        else
-        {
-            boost::random::normal_distribution<double> distribution(0.0,0.1);
-            rand_val = distribution(gen);
-        }
+        double log_t_prime_nu = std::log(t_prime.nu) + rand_val;
 
-        t_prime.nu += rand_val;
-        this->nu_vals.push_back(t_prime.nu);
+        if (log_t_prime_nu > 10.0)
+            return false; // reject the move
+
+        t_prime.nu = std::exp(log_t_prime_nu); // real space
+
         this->compute_t_prime_od_scores(D,r);
         compute_t_prime_scores(t_prime.root, D, r);
         compute_t_prime_sums(D);
