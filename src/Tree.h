@@ -1574,10 +1574,10 @@ double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector
     else
     {
         int sum_r = std::accumulate(r.begin(),r.end(),0);
-        double term1 = -sum_D*sum_r;
+        double term1 = -sum_D*std::log(sum_r);
         double term2 = 0.0;
         for (u_int i = 0; i < r.size(); ++i)
-            term2 += D[i]*r[i];
+            term2 += D[i]*std::log(r[i]);
 
         od_root_score += term1+term2;
     }
