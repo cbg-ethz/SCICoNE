@@ -5,7 +5,7 @@
     "bp_output":"/cluster/work/bewi/members/tuncel/data/dna/recomb_simulations/breakpoint_detection",
     "sim_prefix": "06.02.2019_sim",
     "inference_output": "/cluster/work/bewi/members/tuncel/data/dna/manuscript",
-    "inference_prefix": "/iterative_simulations_segmented_threshold_3",
+    "inference_prefix": "/iterative_simulations_segmented_threshold_2",
     "simulation":
     {
         "n_reps":100
@@ -15,9 +15,9 @@
         "threads":1,
         "scratch":"20000",
         "mem":"3200",
-        "time":"238",
+        "time":"1438",
         "n_nodes": 20,
-        "n_iterations":[204800],
+        "n_iterations":[819200],
         "n_reps":10
     },
     "hmm_copy":
@@ -31,7 +31,7 @@
     "breakpoint_detection": {
       "bin": "/cluster/work/bewi/members/tuncel/sc-dna/bin/breakpoint_detection",
       "window_size": 10,
-      "threshold": 3,
+      "threshold": 2,
       "scratch": "20000",
       "mem": "3200",
       "time": "238",

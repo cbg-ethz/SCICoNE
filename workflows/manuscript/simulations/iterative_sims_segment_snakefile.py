@@ -48,11 +48,13 @@ rules
 rule all:
     input:
         inferences_with_rep = expand(INFERENCE_OUTPUT + '_' + inference_prefix +'/'+ str(n_nodes) + 'nodes_'  + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/'+ \
-                '{rep_id}_infrep{rep_inf}'+'_' + '{output_ext}', output_ext=trees_inf_output_exts, regions=n_regions,reads=n_reads, rep_id=[x for x in range(0,n_repetitions)], rep_inf=[x for x in range(0,n_inference_reps)])
+        '{rep_id}_infrep{rep_inf}'+'_' + '{output_ext}', output_ext=trees_inf_output_exts, regions=n_regions,reads=n_reads, rep_id=[x for x in range(0,n_repetitions)], rep_inf=[x for x in range(0,n_inference_reps)])
+        #region_sizes = expand(SIM_OUTPUT+ '_' + sim_prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + \
+        #        "_segmented_region_sizes.txt", regions=n_regions, reads=n_reads, rep_id=[x for x in range(0,n_repetitions)])
     output:
     shell:
-	    "echo STATUS:SUCCESS. All of the rules are ran through."
-
+	    "echo STATUS:SUCCESS. All of the rules are ran through.; touch done.txt"
+"""
 rule hmm_copy_inference:
     params:
         script = config["hmm_copy"]["script"],
@@ -70,7 +72,7 @@ rule hmm_copy_inference:
         inferred_cnvs = INFERENCE_OUTPUT+ '_' + inference_prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_HMMcopy_inferred.txt'
     shell:
         " Rscript {params.script} {input.d_mat}"
-
+"""
 rule run_sim:
     params:
         sim_bin = config["simulations_bin"],
@@ -84,6 +86,8 @@ rule run_sim:
         time = config["cnv_trees"]["time"]
     threads:
         config["cnv_trees"]["threads"]
+    wildcard_constraints:
+        rep_id="\d+"
     output:
         d_mat = SIM_OUTPUT+ '_' + sim_prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_d_mat.txt',
         ground_truth = SIM_OUTPUT+ '_' + sim_prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_ground_truth.txt',
@@ -96,7 +100,6 @@ rule run_sim:
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_ground_truth.txt {output.ground_truth}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_region_sizes.txt {output.region_sizes}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_{wildcards.rep_id}_tree.txt {output.tree}"
-
 
 
 rule breakpoint_detection:
@@ -113,12 +116,13 @@ rule breakpoint_detection:
         mem = config["breakpoint_detection"]["mem"],
         time = config["breakpoint_detection"]["time"]
     input:
-        d_mat = rules.run_sim.output.d_mat
+        d_mat = SIM_OUTPUT+ '_' + sim_prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_d_mat.txt'
+        # d_mat = rules.run_sim.output.d_mat
     output:
         region_sizes = SIM_OUTPUT+ '_' + sim_prefix +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + "_segmented_region_sizes.txt"
     shell:
-        "{params.binary} --n_bins {params.n_bins} --threshold {params.threshold}  --n_cells {params.n_cells} --postfix {params.postfix} --d_matrix_file {input.d_mat};\
-        mv {params.postfix}_segmented_region_sizes.txt {output.region_sizes}"
+        "{params.binary} --n_bins {params.n_bins} --threshold {params.threshold}  --n_cells {params.n_cells} --postfix {wildcards.rep_id} --d_matrix_file {input.d_mat};\
+        mv {wildcards.rep_id}_segmented_region_sizes.txt {output.region_sizes}"
 
 
 rule infer_trees:
