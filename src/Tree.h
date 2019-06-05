@@ -666,7 +666,8 @@ void Tree::load_from_file(string file) {
     std::getline(infile, line);
     std::getline(infile, line);
     std::getline(infile, line);
-    std::getline(infile, line); // pass the first 4 lines
+    std::getline(infile, line);
+    std::getline(infile, line); // pass the first 5 lines, including the root
     while (std::getline(infile, line))
     {
         std::istringstream iss(line);
