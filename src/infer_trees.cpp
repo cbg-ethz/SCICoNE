@@ -99,7 +99,7 @@ int main( int argc, char* argv[]) {
         if (v == -1)
         {
             v = std::nan("");
-            cout << "v value: " << v << endl;
+            cout << "v value is not specified a priori and is going to be learned from the data." << endl;
         }
 
     }
