@@ -474,6 +474,11 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
     for (int i = 0; i < n_iters; ++i) {
 
+        if ((i > 10000) && (i % 10000 == 0))
+        {
+            cout << "iteration" << i <<  "tree score" << t.posterior_score + t.od_score  << endl;
+            cout << "nu: " << t.nu << "od score: " << t.od_score << endl;
+        }
 
         bool rejected_before_comparison = false;
 
@@ -684,12 +689,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         t_prime_sums.clear();
         t_prime_scores.clear();
 
-        // N: n_nodes of tree t
-        if ((i > 10000) && (i % 10000 == 0))
-        {
-            cout << "iteration" << i <<  "tree score" << t.posterior_score + t.od_score  << endl;
-            cout << "nu: " << t.nu << "od score: " << t.od_score << endl;
-        }
     }
 
 }
