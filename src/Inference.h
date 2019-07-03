@@ -691,6 +691,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         if ((i > 10000) && (i % 10000 == 0))
         {
             cout << "iteration" << i <<  "tree score" << t.posterior_score + t.od_score  << endl;
+            cout << "nu: " << t.nu << "od score: " << t.od_score << endl;
         }
     }
 
