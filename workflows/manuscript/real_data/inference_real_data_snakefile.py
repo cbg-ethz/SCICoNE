@@ -28,7 +28,7 @@ try:
 except KeyError:
     n_inference_reps = 10
 
-v_values = [0.01,0.1,0.5,-1]
+v_values = [-1]
 
 '''
 rules
@@ -86,7 +86,10 @@ rule infer_trees:
         inferred_cnvs = INFERENCE_OUTPUT+ '/' + inference_prefix +'/' + '{v}' + 'v_' + str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + 'infrep{rep_inf}' + '_inferred_cnvs.txt',
         inferred_tree = INFERENCE_OUTPUT+ '/' + inference_prefix +'/'+ '{v}' + 'v_' + str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + 'infrep{rep_inf}' + '_tree_inferred.txt'
     shell:
-        "{params.binary} --n_reads {wildcards.reads} --tree_prior_chi {params.tree_prior_chi} -v {wildcards.v}  --n_regions {wildcards.regions} --size_limit {params.size_limit}  --copy_number_limit {params.cn_limit}  --n_nodes {params.n_nodes} --n_bins {params.n_bins} --n_iters {params.n_iters} --n_cells {params.n_cells} --verbosity 0 \
+        "{params.binary} --n_reads {wildcards.reads} --tree_prior_chi {params.tree_prior_chi} -v {wildcards.v}  --n_regions {wildcards.regions}\
+        --size_limit {params.size_limit}\
+        --copy_number_limit {params.cn_limit}  --n_nodes {params.n_nodes} --n_bins {params.n_bins} --n_iters {params.n_iters} --n_cells {params.n_cells} \
+        --verbosity 0 --seed {wildcards.rep_inf} \
         --ploidy 2  --postfix infrep{wildcards.rep_inf} --d_matrix_file {input.d_mat} --region_sizes_file {input.region_sizes}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_infrep{wildcards.rep_inf}_tree_inferred.txt {output.inferred_tree}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_infrep{wildcards.rep_inf}_inferred_cnvs.txt {output.inferred_cnvs}"
