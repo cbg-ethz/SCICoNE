@@ -180,6 +180,8 @@ int main( int argc, char* argv[]) {
     mcmc.compute_t_table(d_regions,region_sizes);
     mcmc.compute_t_od_scores(d_regions, region_sizes);
 
+    mcmc.update_t_prime(); // set t_prime to t
+
     // Get starting timepoint
     auto start = high_resolution_clock::now();
     mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters, size_limit);

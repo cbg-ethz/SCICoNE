@@ -52,6 +52,7 @@ public:
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);
+    void update_t_prime();
     double log_tree_prior(int m, int n);
     double log_posterior(double tree_sum, int m, Tree &tree);
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
@@ -223,10 +224,6 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
     t.prior_score = log_tree_prior(m, n);
     t.posterior_score = log_posterior(t_sum, m, t);
-
-    // update t_prime
-    // calls the copy constructor
-    t_prime = t;
 
 }
 
@@ -1218,6 +1215,14 @@ void Inference::compute_t_prime_od_scores(const vector<vector<double>> &D, const
     vector<double> t_prime_od_root_scores = get_tree_od_root_scores(D,r,this->t_prime);
     double sum_t_prime_od_root_scores = std::accumulate(t_prime_od_root_scores.begin(), t_prime_od_root_scores.end(), 0.0);
     this->t_prime.od_score = sum_t_prime_od_root_scores;
+}
+
+void Inference::update_t_prime() {
+    /*
+     * Sets t_prime to t
+     * */
+
+    this->t_prime = this->t;
 }
 
 
