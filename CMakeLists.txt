@@ -56,6 +56,12 @@ add_executable(tests tests/run_tests.cpp src/MathOp.cpp
         src/MathOp.h
         src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h tests/validation.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h)
 
+
+add_executable(save_root_per_nu tests/save_root_score_per_nu.cpp src/MathOp.cpp
+        src/MathOp.h
+        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h tests/validation.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h)
+
+
 # unit tests
 add_test(unit_tests tests)
 
