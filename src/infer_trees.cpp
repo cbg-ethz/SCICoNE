@@ -65,6 +65,8 @@ int main( int argc, char* argv[]) {
     lambda_s = 0.5;
     copy_number_limit = 5;
 
+    double nu = 1.0;
+
 
     cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
     options.add_options()
@@ -90,6 +92,7 @@ int main( int argc, char* argv[]) {
             ("v","v value used in size changing moves",cxxopts::value(v))
             ("tree_prior_chi", "whether to include the tree prior in X", cxxopts::value(tree_prior_in_chi))
             ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
+            ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))
             ;
 
     auto result = options.parse(argc, argv);
@@ -150,22 +153,6 @@ int main( int argc, char* argv[]) {
     n_regions = region_sizes.size();
 
     // run mcmc inference
-
-    // move probabilities
-    vector<float> move_probs;
-    if (is_overdispersed)
-        move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f};
-        //------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od--
-    else
-        move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f};
-        //-------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od--
-
-//    vector<float> move_probs = {0.0f,0.0f,0.0f,0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
-//    //---------------------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od--
-
-
-
-
     Inference mcmc(n_regions, ploidy, verbosity);
 
     try {
@@ -176,6 +163,34 @@ int main( int argc, char* argv[]) {
                   << e.what() << "'\n";
         return EXIT_FAILURE; // reject the move
     }
+
+    // move probabilities
+    vector<float> move_probs;
+    if (is_overdispersed)
+    {
+        if(result.count("nu"))
+        {
+            // Scoring is overdispersed but nu is fixed (not to be learned)
+            move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f};
+            //-------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od--
+            mcmc.t.nu = mcmc.t_prime.nu = nu;
+            std::cout<<"Overdispersed setting with the initial nu value specified."<<std::endl;
+        }
+        else
+        {   // nu is going to be learned
+            move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+            //------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od--
+            std::cout<<"Overdispersed setting, the nu value is going to be learned from the data"<<std::endl;
+        }
+    }
+    else
+    {
+        // non-overdispersed setting
+        move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f};
+        //-------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od--
+        std::cout<<"Non-overdispersed tree setting"<<std::endl;
+    }
+
 
     mcmc.compute_t_table(d_regions,region_sizes);
     mcmc.compute_t_od_scores(d_regions, region_sizes);
