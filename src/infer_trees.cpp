@@ -50,7 +50,7 @@ int main( int argc, char* argv[]) {
     size_t n_regions_initial = 0; // used for naming the output for I/O workflow purposes
 
     // random tree parameters
-    int n_nodes = 50;
+    int n_nodes = 5;
     lambda_r = 0.1;
     lambda_c = 0.2;
     c_penalise = 1.0;
