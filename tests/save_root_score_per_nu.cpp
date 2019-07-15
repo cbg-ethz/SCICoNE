@@ -27,6 +27,7 @@ struct double_iota
     /*
      * std::iota for double data type
      * */
+
     double_iota(double inc, double init_value = 0.0) : _value(init_value), _inc(inc) {}
 
     operator double() const { return _value; }
@@ -41,6 +42,7 @@ void save_root_by_nu(int ploidy, size_t n_regions, int n_cells, const vector<vec
     /*
      * Writes the overdispersed root scores for various values of nu.
      * */
+
     double min = 10e-6;
     double max = 0.05;
     double step = 0.001;
