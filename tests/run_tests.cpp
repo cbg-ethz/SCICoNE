@@ -15,7 +15,6 @@ double lambda_s;
 double lambda_r;
 double lambda_c;
 double c_penalise;
-double v;
 unsigned tree_prior_in_chi;
 unsigned is_overdispersed;
 // endof globals
@@ -29,7 +28,6 @@ int main()
     lambda_r = 0.1;
     lambda_c = 0.2;
     c_penalise = 1.0;
-    v = std::nan("");
     tree_prior_in_chi = 1;
     is_overdispersed = 0;
 

@@ -54,7 +54,6 @@ int main( int argc, char* argv[]) {
     lambda_r = 0.1;
     lambda_c = 0.2;
     c_penalise = 1.0;
-    v = std::nan("");
     tree_prior_in_chi = 1;
     is_overdispersed = 1;
 
@@ -89,23 +88,12 @@ int main( int argc, char* argv[]) {
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
             ("c_penalise","term that penalises trees containing cancelling events to be added to tree event prior",cxxopts::value(c_penalise))
-            ("v","v value used in size changing moves",cxxopts::value(v))
             ("tree_prior_chi", "whether to include the tree prior in X", cxxopts::value(tree_prior_in_chi))
             ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
             ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))
             ;
 
     auto result = options.parse(argc, argv);
-
-    if (result.count("v"))
-    {
-        if (v == -1)
-        {
-            v = std::nan("");
-            cout << "v value is not specified a priori and is going to be learned from the data." << endl;
-        }
-
-    }
 
     if (result.count("region_sizes_file"))
     {

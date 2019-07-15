@@ -327,13 +327,9 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     if (move_id == 6 || move_id == 7 || move_id == 8 || move_id == 9) // moves that require nbd correction
     {
         double v_prime = 0.0;
-        if (std::isnan(v)) //v is global
-        {
-            v = sum_chi / (sum_chi + sum_omega);
-            v_prime = sum_chi_prime / (sum_chi_prime + sum_omega_prime);
-        }
-        else
-            v_prime = v;
+        double v = 0.0;
+        v = sum_chi / (sum_chi + sum_omega);
+        v_prime = sum_chi_prime / (sum_chi_prime + sum_omega_prime);
 
         if (t_n_nodes < t_prime_n_nodes) // insert, split
         {

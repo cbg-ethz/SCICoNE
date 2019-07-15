@@ -49,7 +49,6 @@ int main( int argc, char* argv[]) {
     string f_name_postfix = ""; //posfix
     double nu = 1.0;
 
-    v = std::nan("");
     tree_prior_in_chi = 1;
 
     cxxopts::Options options("Score tree", "Scores the tree written in a file");
@@ -60,7 +59,6 @@ int main( int argc, char* argv[]) {
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
-            ("v","v value used in size changing moves",cxxopts::value(v))
             ("ploidy", "ploidy", cxxopts::value(ploidy))
             ("tree_prior_chi", "whether to include the tree prior in X", cxxopts::value(tree_prior_in_chi))
             ("file", "file", cxxopts::value(file))
