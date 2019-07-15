@@ -24,6 +24,9 @@ unsigned is_overdispersed;
 
 struct double_iota
 {
+    /*
+     * std::iota for double data type
+     * */
     double_iota(double inc, double init_value = 0.0) : _value(init_value), _inc(inc) {}
 
     operator double() const { return _value; }
