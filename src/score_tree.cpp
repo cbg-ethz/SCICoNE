@@ -49,8 +49,6 @@ int main( int argc, char* argv[]) {
     string f_name_postfix = ""; //posfix
     double nu = 1.0;
 
-    tree_prior_in_chi = 1;
-
     cxxopts::Options options("Score tree", "Scores the tree written in a file");
     options.add_options()
             ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
@@ -60,7 +58,6 @@ int main( int argc, char* argv[]) {
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
             ("ploidy", "ploidy", cxxopts::value(ploidy))
-            ("tree_prior_chi", "whether to include the tree prior in X", cxxopts::value(tree_prior_in_chi))
             ("file", "file", cxxopts::value(file))
             ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
             ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))

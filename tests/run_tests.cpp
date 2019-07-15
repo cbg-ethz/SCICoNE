@@ -28,7 +28,6 @@ int main()
     lambda_r = 0.1;
     lambda_c = 0.2;
     c_penalise = 1.0;
-    tree_prior_in_chi = 1;
     is_overdispersed = 0;
 
     std::cout<<"UNIT TESTS" <<std::endl;

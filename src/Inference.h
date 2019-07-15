@@ -283,18 +283,9 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     }
     else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
     {
-        if (tree_prior_in_chi)
-        {
-            sum_chi = t.chi_insert_delete_reweighted(weighted);
-            sum_chi_prime = t_prime.chi_insert_delete_reweighted(weighted);
-        }
-        else
-        {
-            vector<double> chi = t.chi_insert_delete(weighted);
-            sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-            vector<double> chi_prime = t_prime.chi_insert_delete(weighted);
-            sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
-        }
+
+        sum_chi = t.chi_insert_delete_reweighted(weighted);
+        sum_chi_prime = t_prime.chi_insert_delete_reweighted(weighted);
 
         vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted);
         sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
@@ -304,19 +295,9 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     else if (move_id == 8 || move_id == 9) // condense/split move or weighted cs
     {
 
-        if (tree_prior_in_chi)
-        {
-            // new chi weighting
-            sum_chi = t.chi_condense_split_reweighted(weighted);
-            sum_chi_prime = t_prime.chi_condense_split_reweighted(weighted);
-        }
-        else
-        {
-            vector<double> chi = t.chi_condense_split(weighted);
-            sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-            vector<double> chi_prime = t_prime.chi_condense_split(weighted);
-            sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
-        }
+        // new chi weighting
+        sum_chi = t.chi_condense_split_reweighted(weighted);
+        sum_chi_prime = t_prime.chi_condense_split_reweighted(weighted);
 
         vector<double> omega = t.omega_condense_split(lambda_s, weighted);
         sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
