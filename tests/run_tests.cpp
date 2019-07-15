@@ -15,7 +15,6 @@ double lambda_s;
 double lambda_r;
 double lambda_c;
 double c_penalise;
-unsigned tree_prior_in_chi;
 unsigned is_overdispersed;
 // endof globals
 

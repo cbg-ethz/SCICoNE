@@ -17,8 +17,6 @@ double lambda_r;
 double lambda_c;
 double c_penalise;
 int copy_number_limit;
-double v;
-unsigned tree_prior_in_chi;
 unsigned is_overdispersed;
 
 // endof globals
