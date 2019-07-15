@@ -42,6 +42,10 @@ public:
     u_int n_regions; // number of regions
     double posterior_score; // log posterior score of the tree
     double prior_score; // log prior score of the tree
+    double od_score; // overdispersed score of the tree
+
+    // overdispersed params
+    double nu;
 public:
     // constructor
     Tree(u_int ploidy, u_int n_regions);
@@ -86,6 +90,7 @@ public:
     double chi_insert_delete_reweighted(bool weighted);
 
     void load_from_file(string file);
+    double get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) const;
 
 private:
     void update_label(std::map<u_int,int>& c_parent, Node* node);
@@ -93,7 +98,7 @@ private:
     bool region_changes(Node *n, u_int region_id) const;
     void copy_tree(const Tree& source_tree);
     void copy_tree_nodes(Node *destination, Node *source);
-    void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta = 0.0001f);
+    void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta);
     void compute_root_score(const vector<int> &r);
     Node* prune(Node *pos); // does not deallocate,
     Node* insert_child(Node *pos, Node *source);
@@ -110,7 +115,11 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
 
     vector<Node*> nodes = t.root->get_descendents(true);
 
-    os << "Tree score: " << setprecision(print_precision) << t.posterior_score << endl;
+    os << "Tree posterior: " << setprecision(print_precision) << t.posterior_score << endl;
+    os << "Tree prior: " << setprecision(print_precision) << t.prior_score << endl;
+    os << "Root score: " << setprecision(print_precision) << t.od_score << endl;
+    os << "Nu: " << setprecision(print_precision) << t.nu<< endl;
+
     for (auto const &x : nodes)
     {
         os << *x << std::endl;
@@ -134,7 +143,8 @@ void Tree::compute_root_score(const vector<int> &r) {
     root->z = z;
 }
 
-void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta) {
+void
+Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta) {
 
     /*
      * Computes the score of a node.
@@ -145,10 +155,19 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
         compute_root_score(r);
     }
     else
-
     {
-        double val = node->parent->log_score;
+
+        double log_likelihood = node->parent->log_score;
         int z = node->parent->z;
+        int z_parent = node->parent->z;
+
+        // update z first
+        for (auto const &x : node->c_change)
+        {
+            int cf = (node->c.count(x.first)?node->c[x.first]:0); // use count to check without initializing the not found element
+            int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
+            z += r[x.first] * (cf - cp_f);
+        }
 
         for (auto const &x : node->c_change)
         {
@@ -158,20 +177,45 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
             // the above part can also be done by using map::at and exception handling
             int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
 
-            val += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)) - log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
-            // val += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)));
-            // val -= D[x.first] * (log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
+            // option for the overdispersed version
+            if (is_overdispersed)
+            {
+                log_likelihood += lgamma(D[x.first] + nu*(cf+ploidy)*r[x.first]);
+                log_likelihood -= lgamma(D[x.first] + nu*(cp_f+ploidy)*r[x.first]);
 
-            z += r[x.first] * (cf - cp_f);
+                log_likelihood -= lgamma(nu*(cf+ploidy)*r[x.first]);
+                log_likelihood += lgamma(nu*(cp_f+ploidy)*r[x.first]);
+
+            }
+            else
+            {
+                log_likelihood += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)) - log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
+            }
 
         }
 
-        // this quantity is smt. to subtract, that's why signs are reversed
-        val -= sum_D*log(z);
-        val += sum_D*log(node->parent->z);
+        if (is_overdispersed)
+        {
+            // updates c independent parts
+            log_likelihood += lgamma(nu*z);
+            log_likelihood -= lgamma(nu*z_parent);
 
-        assert(!std::isnan(val));
-        node->log_score = val;
+            log_likelihood -= lgamma(sum_D+nu*z);
+            log_likelihood += lgamma(sum_D+nu*z_parent);
+
+        }
+        else
+        {
+            // this quantity is smt. to subtract, that's why signs are reversed
+            log_likelihood -= sum_D*log(z);
+            log_likelihood += sum_D*log(node->parent->z);
+        }
+
+
+
+
+        assert(!std::isnan(log_likelihood));
+        node->log_score = log_likelihood;
         node->z = z;
     }
 
@@ -208,7 +252,7 @@ void Tree::compute_stack(Node *node, const vector<double> &D, double &sum_D, con
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
         }
-        compute_score(top, D, sum_D, r);
+        compute_score(top, D, sum_D, r, 1e-5);
         // TODO: reuse this part of the code (the recursive iteration of nodes)
     }
 
@@ -236,10 +280,10 @@ Tree::Tree(u_int ploidy, u_int n_regions)
     n_nodes = 0;
     prior_score = 0.0;
     posterior_score = 0.0;
+    od_score = 0.0;
     // creates a copy of the root ptr and stores it in the vector
 
-
-
+    nu = 1.0 / static_cast<double>(n_regions);
     all_nodes_vec.push_back(root);
 
 
@@ -426,13 +470,16 @@ void Tree::copy_tree(const Tree& source_tree) {
     this->counter = source_tree.counter;
     this->prior_score = source_tree.prior_score;
     this->posterior_score = source_tree.posterior_score;
+    this->od_score = source_tree.od_score;
     this->n_regions = source_tree.n_regions;
+    this->nu = source_tree.nu;
 
     // copy the nodes using struct copy constructor
     this->root = new Node(*source_tree.root);
     this->all_nodes_vec.push_back(root); // all nodes cannot be copied since 2 trees cannot have nodes pointing to the same address
     copy_tree_nodes(this->root, source_tree.root); // the nodes of the source tree are inserted into the destination tree
     this->n_nodes = source_tree.n_nodes; // copy this after the insertions are done (insertions change this value).
+
  }
 
 void Tree::copy_tree_nodes(Node *destination, Node *source) {
@@ -617,7 +664,10 @@ void Tree::load_from_file(string file) {
     std::string line;
 
     std::getline(infile, line);
-    std::getline(infile, line); // pass the first 2 lines
+    std::getline(infile, line);
+    std::getline(infile, line);
+    std::getline(infile, line);
+    std::getline(infile, line); // pass the first 5 lines, including the root
     while (std::getline(infile, line))
     {
         std::istringstream iss(line);
@@ -1501,6 +1551,42 @@ double Tree::chi_condense_split_reweighted(bool weighted) {
     double reweighted_chi = reweighting_term * sum_chi;
 
     return reweighted_chi;
+}
+
+double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) const{
+    /*
+     * Returns the overdispersed root score
+     * */
+
+    double od_root_score = 0.0;
+
+    if (is_overdispersed)
+    {
+        int z = 0;
+        for (auto const &x : r)
+            z += x * this->ploidy;
+
+        od_root_score += lgamma(nu*z);
+        od_root_score -= lgamma(sum_D+nu*z);
+
+        for (u_int i = 0; i < r.size(); ++i)
+        {
+            od_root_score += lgamma(D[i] + nu*ploidy*r[i]);
+            od_root_score -= lgamma(nu*ploidy*r[i]);
+        }
+    }
+    else
+    {
+        int sum_r = std::accumulate(r.begin(),r.end(),0);
+        double term1 = -sum_D*std::log(sum_r);
+        double term2 = 0.0;
+        for (u_int i = 0; i < r.size(); ++i)
+            term2 += D[i]*std::log(r[i]);
+
+        od_root_score += term1+term2;
+    }
+    return od_root_score;
+
 }
 
 

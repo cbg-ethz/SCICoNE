@@ -8,10 +8,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 #set(CMAKE_CXX_FLAGS "-fsanitize=address")
 
 set(CMAKE_CXX_FLAGS_DEBUG  "-g") # icc needs -O3 after -g
-set(CMAKE_CXX_FLAGS_DEBUG "-Wuninitialized")
-set(CMAKE_CXX_FLAGS_DEBUG "-Wpedantic")
-set(CMAKE_CXX_FLAGS_DEBUG "-Wall")
-set(CMAKE_CXX_FLAGS_DEBUG "-Wextra")
+#set(CMAKE_CXX_FLAGS_DEBUG "-Wuninitialized")
+#set(CMAKE_CXX_FLAGS_DEBUG "-Wpedantic")
+#set(CMAKE_CXX_FLAGS_DEBUG "-Wall")
+#set(CMAKE_CXX_FLAGS_DEBUG "-Wextra")
 
 
 
@@ -55,6 +55,12 @@ enable_testing()
 add_executable(tests tests/run_tests.cpp src/MathOp.cpp
         src/MathOp.h
         src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h tests/validation.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h)
+
+
+add_executable(save_root_per_nu tests/save_root_score_per_nu.cpp src/MathOp.cpp
+        src/MathOp.h
+        src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h tests/validation.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h)
+
 
 # unit tests
 add_test(unit_tests tests)

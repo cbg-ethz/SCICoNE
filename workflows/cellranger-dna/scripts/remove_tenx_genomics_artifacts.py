@@ -29,6 +29,8 @@ h5f = h5py.File(args.hdf5, 'r')
 n_cells = h5f['cell_barcodes'].value.shape[0]
 all_chromosomes = list(h5f['normalized_counts'].keys())
 
+print(sorted(all_chromosomes)[:-2])
+
 number_chromosomes = sorted([int(x) for x in sorted(all_chromosomes)[:-2]])
 ordered_chromosomes = [str(x) for x in number_chromosomes] + sorted(all_chromosomes)[-2:]
 

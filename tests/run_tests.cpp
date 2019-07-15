@@ -17,6 +17,7 @@ double lambda_c;
 double c_penalise;
 double v;
 unsigned tree_prior_in_chi;
+unsigned is_overdispersed;
 // endof globals
 
 
@@ -30,6 +31,7 @@ int main()
     c_penalise = 1.0;
     v = std::nan("");
     tree_prior_in_chi = 1;
+    is_overdispersed = 0;
 
     std::cout<<"UNIT TESTS" <<std::endl;
 //     set a seed number for reproducibility

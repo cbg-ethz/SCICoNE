@@ -17,6 +17,7 @@ extern double lambda_r; // lambda param for the poisson that generates the numbe
 extern double lambda_c; // lambda param for the poisson that generates the copy number state of a region
 extern double c_penalise; // the penalisation term for cancelling events
 extern unsigned tree_prior_in_chi; // whether to use the tree prior in chi
+extern unsigned is_overdispersed; // param to specify if tree scoring will use the overdispersed model
 extern int verbosity; // the verbosity of the output
 extern string f_name_postfix; // postfix for the output files created
 #endif //SC_DNA_GLOBALS_H

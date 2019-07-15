@@ -20,6 +20,7 @@
 
 #include <boost/random/uniform_real_distribution.hpp>
 #include <boost/random/discrete_distribution.hpp>
+#include <boost/random/normal_distribution.hpp>
 
 class Inference {
 /*
@@ -44,9 +45,14 @@ public:
     Inference(u_int n_regions, int ploidy=2, int verbosity=2);
     ~Inference();
     void destroy();
+    void compute_t_od_scores(const vector<vector<double>> &D, const vector<int> &r);
+    void compute_t_prime_od_scores(const vector<vector<double>> &D, const vector<int> &r);
+    std::vector<double>
+    get_tree_od_root_scores(const vector<vector<double>> &D, const vector<int> &r, const Tree &tree);
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);
+    void update_t_prime();
     double log_tree_prior(int m, int n);
     double log_posterior(double tree_sum, int m, Tree &tree);
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
@@ -61,6 +67,7 @@ public:
                                   unsigned int size_limit, bool weighted);
     bool apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted = false,
                     bool test_mode = false);
+    bool apply_overdispersion_change(const vector<vector<double>> &D, const vector<int> &r);
     Tree *comparison(int m, double gamma, unsigned move_id);
     void infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters,
                     unsigned int size_limit);
@@ -160,8 +167,6 @@ Inference::Inference(u_int n_regions, int ploidy, int verbosity) : t(ploidy, n_r
     std::ofstream outfile;
     long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
     f_name = std::to_string(seed);
-
-
 }
 
 Inference::~Inference() {
@@ -220,10 +225,6 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
     t.prior_score = log_tree_prior(m, n);
     t.posterior_score = log_posterior(t_sum, m, t);
 
-    // update t_prime
-    // calls the copy constructor
-    t_prime = t;
-
 }
 
 void Inference::destroy() {
@@ -254,7 +255,17 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         weighted = false;
 
     // acceptance probability computations
-    double score_diff = t_prime.posterior_score - t.posterior_score;
+    double score_diff = 0.0;
+    if (move_id == 11) // overdispersion change
+    {
+        double od_score_diff = t_prime.od_score - t.od_score;
+        double posterior_score_diff = t_prime.posterior_score - t.posterior_score;
+
+        score_diff = od_score_diff + posterior_score_diff;
+    }
+    else
+        score_diff = t_prime.posterior_score - t.posterior_score;
+
     double acceptance_prob = exp(gamma*score_diff); // later gets modified
 
     // compute nbd correction
@@ -444,12 +455,9 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                            unsigned int size_limit) {
 
     int m = static_cast<int>(D.size());
-    int n_strongly_accepted = 0;
-    int n_rejected = 0;
-    int n_attached_to_the_same_pos = 0;
-    int add_remove_move_rejected = 0;
-    int insert_delete_move_rejection = 0;
-    int condense_split_move_rejection = 0;
+
+    u_int n_rejected = 0;
+    u_int n_accepted = 0;
 
     double gamma = 1.0; // gamma param to amplify the difference in log likelihoods
 
@@ -466,6 +474,11 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
     for (int i = 0; i < n_iters; ++i) {
 
+        if ((i > 10000) && (i % 10000 == 0))
+        {
+            cout << "iteration" << i <<  "tree score" << t.posterior_score + t.od_score  << endl;
+            cout << "nu: " << t.nu << "od score: " << t.od_score << endl;
+        }
 
         bool rejected_before_comparison = false;
 
@@ -483,7 +496,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     cout << "Prune and reattach" << endl;
                 bool prune_reattach_success = apply_prune_reattach(D, r, false, false, false);
                 if (not prune_reattach_success) {
-                    n_attached_to_the_same_pos++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "Prune and reattach is rejected before comparison"<<endl;
@@ -498,7 +510,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 bool weighted_prune_reattach_success = apply_prune_reattach(D, r, false, true, false); // weighted=true
                 if (not weighted_prune_reattach_success)
                 {
-                    n_attached_to_the_same_pos++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "Weighted prune and reattach is rejected before comparison"<<endl;
@@ -541,7 +552,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // pass 0.0 to the poisson distributions to have 1 event added/removed
                 bool add_remove_success = apply_add_remove_events(lambda_r, lambda_c, D, r, false); // weighted=false
                 if (not add_remove_success) {
-                    add_remove_move_rejected++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "Add or remove event is rejected before comparison"<<endl;
@@ -556,7 +566,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // pass 0.0 to the poisson distributions to have 1 event added/removed
                 bool add_remove_success = apply_add_remove_events(lambda_r, lambda_c, D, r, true); // weighted=true
                 if (not add_remove_success) {
-                    add_remove_move_rejected++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "Weighted add or remove event is rejected before comparison"<<endl;
@@ -570,7 +579,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     cout << "insert/delete node" << endl;
                 bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, size_limit, false); // weighted=false
                 if (not insert_delete_success) {
-                    insert_delete_move_rejection++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "insert/delete rejected before comparison" << endl;
@@ -584,7 +592,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     cout << "weighted insert/delete node" << endl;
                 bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, size_limit, true); // weighted=true
                 if (not insert_delete_success) {
-                    insert_delete_move_rejection++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "weighted insert/delete rejected before comparison" << endl;
@@ -599,7 +606,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 bool condense_split_success = apply_condense_split(lambda_s, D, r, size_limit, false);
                 if (not condense_split_success)
                 {
-                    condense_split_move_rejection++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "condense/split move is rejected before comparison"<<endl;
@@ -614,7 +620,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 bool condense_split_success = apply_condense_split(lambda_s, D, r, size_limit, true); //weighted=true
                 if (not condense_split_success)
                 {
-                    condense_split_move_rejection++;
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "weighted condense/split move is rejected before comparison"<<endl;
@@ -635,6 +640,20 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
+            case 11:
+            {
+                // changing overdispersion move
+                if (verbosity > 0)
+                    cout<<"Overdispersion changing move"<<endl;
+                bool od_change_success = apply_overdispersion_change(D, r);
+                if (not od_change_success)
+                {
+                    rejected_before_comparison = true;
+                    if (verbosity > 0)
+                        cout << "Overdispersion changing move is rejected before comparison"<<endl;
+                }
+                break;
+            }
             default:
                 throw std::logic_error("undefined move index");
         }
@@ -647,25 +666,19 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         else
             accepted = comparison(m, gamma, move_id);
 
-        static double first_score = accepted->posterior_score; // the first value will be kept in whole program
+        static double first_score = accepted->posterior_score + accepted->od_score; // the first value will be kept in whole program
         // print accepted log_posterior
-        mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score << ',';
-        rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score - first_score << ',';
+        mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score << ',';
+        rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score << ',';
 
         // update trees and the matrices
         if (accepted == &t_prime)
         {
-            //n_strongly_accepted++;
-
-          if(abs(t.posterior_score - t_prime.posterior_score) > 1e-10){
-            n_strongly_accepted++;
-            //std::cout << "tree score:" << t.posterior_score << " tree prime score:" << t_prime.posterior_score << endl;
-          } 
-          
+            n_accepted++;
             t_sums = t_prime_sums;
             update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
             t = t_prime;
-            if (t_prime.posterior_score > best_tree.posterior_score)
+            if ((t_prime.posterior_score + t_prime.od_score)  > (best_tree.posterior_score + best_tree.od_score))
                 best_tree = t_prime;
         }
         else
@@ -676,34 +689,41 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         t_prime_sums.clear();
         t_prime_scores.clear();
 
-        // TODO: update gamma every 10000 iterations, adaptive stuff
-        // N: n_nodes of tree t
-        if ((i > 10000) && (i % 10000 == 0))
-        {
-            // double N = t.get_n_nodes();
-            // double target_rate = 2*(N+1)*(N+2);
-            // double c = log(2) / log(target_rate); // +2 because root is not counted and log(1) is zero (it goes to the denominator)
+    }
 
-            // double acceptance_ratio = double(n_strongly_accepted+1) / double((n_strongly_accepted + n_rejected + target_rate));
-            
-            
-            //
-            cout << "iteration" << i <<  "tree score" << t.posterior_score << endl;
-            // cout << "acceptance ratio:" << acceptance_ratio << "tree size" << N << "gamma change?" << exp(0.5 - pow(acceptance_ratio, c)) << endl;
-            // gamma = gamma / exp(0.5 - pow(acceptance_ratio, c));
-            // TODO: Jack will change the way gamma is computed
-            // n_strongly_accepted = n_rejected = 0;
-            // std::cout << "gamma val:" << gamma << endl;
-        }
-    }
-    if (verbosity > 0)
+}
+
+bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, const vector<int> &r) {
+    /*
+     * Changes the current overdispersion parameter nu using gaussian random walk.
+     * */
+
+    try
     {
-        cout<<"n_strongly_accepted: "<<n_strongly_accepted<<endl;
-        cout<<"n_rejected: "<<n_rejected<<endl;
-        cout<<"n_attached_to_the_same_pos: "<<n_attached_to_the_same_pos<<endl;
-        cout<<"add_remove_move_rejected: "<<add_remove_move_rejected<<endl;
-        cout<<"condense/split rejected: " << condense_split_move_rejection<<endl;
+        std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
+        double rand_val = 0.0;
+        boost::random::normal_distribution<double> distribution(0.0,0.02);
+        rand_val = distribution(gen);
+
+        double log_t_prime_nu = std::log(t_prime.nu) + rand_val;
+
+        if (log_t_prime_nu > 10.0)
+            return false; // reject the move
+
+        t_prime.nu = std::exp(log_t_prime_nu); // real space
+
+        this->compute_t_prime_od_scores(D,r);
+        compute_t_prime_scores(t_prime.root, D, r);
+        compute_t_prime_sums(D);
     }
+    catch (const std::exception& e) { // caught by reference to base
+        if (verbosity > 0)
+            std::cout << " a standard exception was caught during the apply overdispersion change move, with message '"
+                      << e.what() << "'\n";
+        return false;
+    }
+
+    return true;
 }
 
 double Inference::log_tree_prior(int m, int n) {
@@ -1158,6 +1178,50 @@ void Inference::initialize_from_file(string path) {
     t.load_from_file(path);
 
 
+}
+
+std::vector<double>
+Inference::get_tree_od_root_scores(const vector<vector<double>> &D, const vector<int> &r, const Tree &tree) {
+    /*
+     * Returns the vector of overdispersed root scores for every cell
+     * */
+
+    u_int n_cells = D.size();
+
+    vector<double> scores(n_cells);
+    for (u_int i = 0; i < n_cells; ++i) {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        scores[i] = tree.get_od_root_score(r, sum_d, D[i]);
+    }
+
+    return scores;
+}
+
+void Inference::compute_t_od_scores(const vector<vector<double>> &D, const vector<int> &r) {
+/*
+ * Computes and stores the overdispersed root sum for tree t across all cells
+ * */
+    vector<double> t_od_root_scores = get_tree_od_root_scores(D,r,this->t);
+    double sum_t_od_root_scores = std::accumulate(t_od_root_scores.begin(), t_od_root_scores.end(), 0.0);
+    this->t.od_score = sum_t_od_root_scores;
+
+}
+
+void Inference::compute_t_prime_od_scores(const vector<vector<double>> &D, const vector<int> &r) {
+/*
+ * Computes and stores the overdispersed root sum for tree t prime across all cells
+ * */
+    vector<double> t_prime_od_root_scores = get_tree_od_root_scores(D,r,this->t_prime);
+    double sum_t_prime_od_root_scores = std::accumulate(t_prime_od_root_scores.begin(), t_prime_od_root_scores.end(), 0.0);
+    this->t_prime.od_score = sum_t_prime_od_root_scores;
+}
+
+void Inference::update_t_prime() {
+    /*
+     * Sets t_prime to t
+     * */
+
+    this->t_prime = this->t;
 }
 
 

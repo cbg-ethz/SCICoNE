@@ -115,6 +115,7 @@ void test_reproducibility()
 
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
+    mcmc.update_t_prime(); // set t_prime to t
 
     // move probabilities
     vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f};
@@ -141,7 +142,8 @@ void test_swap_label()
     int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
-    mcmc.compute_t_table(D,r); // t prime is copied from t, order is changed
+    mcmc.compute_t_table(D,r);
+    mcmc.update_t_prime(); // set t_prime to t
 
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
@@ -373,6 +375,7 @@ void test_prune_reattach()
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
+    mcmc.update_t_prime(); // set t_prime to t
 
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
@@ -408,6 +411,7 @@ void test_weighted_prune_reattach()
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
+    mcmc.update_t_prime(); // set t_prime to t
 
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
@@ -436,6 +440,7 @@ void test_add_remove_event()
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r); // assignment operator changes the order
+    mcmc.update_t_prime(); // set t_prime to t
 
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });

@@ -19,6 +19,7 @@ double c_penalise;
 int copy_number_limit;
 double v;
 unsigned tree_prior_in_chi;
+unsigned is_overdispersed;
 
 // endof globals
 
@@ -36,7 +37,7 @@ int main( int argc, char* argv[]) {
     lambda_c = 1.0;
     c_penalise = 1.0;
     copy_number_limit = 5;
-
+    is_overdispersed = 1;
     int n_cells;
     int n_bins = 10000;
     size_t n_regions;
@@ -46,6 +47,7 @@ int main( int argc, char* argv[]) {
     string region_sizes_file = "";
     string d_matrix_file = "";
     string f_name_postfix = ""; //posfix
+    double nu = 1.0;
 
     v = std::nan("");
     tree_prior_in_chi = 1;
@@ -59,8 +61,11 @@ int main( int argc, char* argv[]) {
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
             ("v","v value used in size changing moves",cxxopts::value(v))
+            ("ploidy", "ploidy", cxxopts::value(ploidy))
             ("tree_prior_chi", "whether to include the tree prior in X", cxxopts::value(tree_prior_in_chi))
             ("file", "file", cxxopts::value(file))
+            ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
+            ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))
             ;
     auto result = options.parse(argc, argv);
 
@@ -80,9 +85,11 @@ int main( int argc, char* argv[]) {
 
     Inference mcmc(n_regions, ploidy, verbosity);
     mcmc.initialize_from_file(file);
-
+    mcmc.t.nu = nu;
     //mcmc.compute_neutral_table(d_regions, region_sizes);
     mcmc.compute_t_table(d_regions,region_sizes);
+    mcmc.compute_t_od_scores(d_regions, region_sizes);
+    mcmc.update_t_prime(); // set t_prime to t
 
     // write the tree
     // std::ofstream tree_file("./" +f_name_postfix+"_tree_rescored" + ".txt");
