@@ -62,6 +62,7 @@ int main( int argc, char* argv[]) {
     copy_number_limit = 5;
 
     double nu = 1.0;
+    unsigned learn_nu = 1;
 
 
     cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
@@ -85,8 +86,9 @@ int main( int argc, char* argv[]) {
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
             ("c_penalise","term that penalises trees containing cancelling events to be added to tree event prior",cxxopts::value(c_penalise))
-            ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
+            // ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
             ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))
+            ("learn_nu", "Boolean parameter to enable learing of nu", cxxopts::value(learn_nu))
             ;
 
     auto result = options.parse(argc, argv);
@@ -150,7 +152,25 @@ int main( int argc, char* argv[]) {
 
     // move probabilities
     vector<float> move_probs;
-    if (is_overdispersed)
+
+    if(learn_nu)
+    {
+        if(result.count("nu"))
+        {
+            // Nu is given and is going to be learned further
+            move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+            //-------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od--
+            mcmc.t.nu = mcmc.t_prime.nu = nu;
+            std::cout<<"Nu is given and going to be updated further by the chain"<<std::endl;
+        }
+        else
+        {   // nu is going to be learned
+            move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+            //------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od--
+            std::cout<<"Nu is not given and going to be learned from the data"<<std::endl;
+        }
+    }
+    else
     {
         if(result.count("nu"))
         {
@@ -158,23 +178,17 @@ int main( int argc, char* argv[]) {
             move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f};
             //-------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od--
             mcmc.t.nu = mcmc.t_prime.nu = nu;
-            std::cout<<"Overdispersed setting with the initial nu value specified."<<std::endl;
+            std::cout<<"Nu is given and not going to be changed"<<std::endl;
         }
         else
-        {   // nu is going to be learned
-            move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f};
-            //------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od--
-            std::cout<<"Overdispersed setting, the nu value is going to be learned from the data"<<std::endl;
+        {
+            //non-overdispersed version
+            is_overdispersed = 0;
+            move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f};
+            //-------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od--
+            std::cout<<"Non-overdispersed tree setting"<<std::endl;
         }
     }
-    else
-    {
-        // non-overdispersed setting
-        move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f};
-        //-------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od--
-        std::cout<<"Non-overdispersed tree setting"<<std::endl;
-    }
-
 
     mcmc.compute_t_table(d_regions,region_sizes);
     mcmc.compute_t_od_scores(d_regions, region_sizes);
