@@ -460,5 +460,25 @@ void test_add_remove_event()
     cout<<"Add / remove event validation test passed!"<<endl;
 }
 
+void test_children_repeat_genotype()
+{
+    /*
+     * Tests if two siblings repeat the same region sign
+     * */
+
+    Tree t(ploidy, r.size());
+    t.random_insert({{0, 1}, {1, 1}}); // 1
+    t.insert_at(0,{{3,1}});  // 2
+    t.insert_at(0,{{1, -2}, {2, 1}}); // 3
+    t.insert_at(3,{{0, -1}}); // 4
+
+    assert(!t.root->children_repeat_genotype());
+
+    t.insert_at(0,{{3,-1}, {2,2}}); // 5
+    assert(t.root->children_repeat_genotype());
+
+    cout<<"Children repeat genotype validation test passed!"<<endl;
+}
+
 
 #endif //SC_DNA_VALIDATION_H

@@ -44,6 +44,7 @@ int main()
     test_condense_split_weights(true);
     test_condense_split_weights(false);
     test_reproducibility();
+    test_children_repeat_genotype();
 
     return EXIT_SUCCESS;
 }

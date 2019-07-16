@@ -8,6 +8,7 @@
 #include <map>
 #include <iostream>
 #include <stack>
+#include <set>
 
 using namespace std;
 
@@ -50,6 +51,7 @@ struct Node{
     inline int get_n_children() const;
     inline bool is_leaf() const;
     inline vector<Node*> get_descendents(bool with_n=true) const;
+    inline bool children_repeat_genotype() const;
 
     // copy constructor
     Node(Node& source_node): c(source_node.c), c_hash(source_node.c_hash), c_change(source_node.c_change)
@@ -140,6 +142,35 @@ inline vector<Node *> Node::get_descendents(bool with_n) const {
         descendents.erase(descendents.begin()); // erase the first node, which is n
 
     return descendents;
+}
+
+bool Node::children_repeat_genotype() const {
+    /*
+     * Returns true if any first order children of a node repeat the same change sign on the same region.
+     * */
+
+    std::set<std::pair<u_int, bool>> region_signs;
+    // iterate over the first order children
+    for (Node* temp = this->first_child; temp != nullptr; temp=temp->next)
+    {
+
+        for (auto const& x : temp->c_change)
+        {
+            std::pair<u_int, bool> region_sign = std::make_pair(x.first,std::signbit(x.second));
+            if (!region_signs.count(region_sign)) // use count to check without initialising
+            {
+                // cannot be found
+                region_signs.insert(region_sign);
+            }
+            else
+            {
+                // found
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 #endif //SC_DNA_NODE_H

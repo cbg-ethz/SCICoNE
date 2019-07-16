@@ -936,11 +936,17 @@ bool Tree::is_valid_subtree(Node *node) const{
      * Returns true if the subtree is valid
      * */
 
-    if (subtree_out_of_bound(node))
+    if (subtree_out_of_bound(node)) // does it for the subtree
         return false;
 
-    if (zero_ploidy_changes(node))
+    if (zero_ploidy_changes(node)) // does it for the subtree
         return false;
+
+    vector<Node*> descendents = node->get_descendents(true);
+    for (auto const &elem : descendents)
+        if (elem->children_repeat_genotype()) // does it for a node
+            return false;
+
 
     return true;
 
