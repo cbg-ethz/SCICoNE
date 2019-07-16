@@ -1036,6 +1036,7 @@ bool Tree::subtree_out_of_bound(Node *n) const{
 /*
  * Returns true if any of the descendent nodes contain a value less than -ploidy in the c hashmap
  * */
+
     int lb = -ploidy;
     int ub = copy_number_limit; // global variable
     vector<Node*> descendents = n->get_descendents(true);
@@ -1048,6 +1049,10 @@ bool Tree::subtree_out_of_bound(Node *n) const{
 }
 
 bool Tree::zero_ploidy_changes(Node *n) const{
+/*
+ * Returns true if the ploidy value changes after hitting zero.
+ * This is a domain knowledge constraint.
+ * */
 
     vector<Node*> descendents = n->get_descendents(true);
     vector<int> checked_regions;
