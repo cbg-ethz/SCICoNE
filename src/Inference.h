@@ -267,6 +267,10 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         score_diff = t_prime.posterior_score - t.posterior_score;
 
     double acceptance_prob = exp(gamma*score_diff); // later gets modified
+    if (acceptance_prob == 0.0)
+        return &t;
+    if (std::isinf(acceptance_prob))
+        return &t_prime;
 
     // compute nbd correction
     double nbd_corr= 1.0;
@@ -276,7 +280,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     {
         nbd_corr = t.cost() / t_prime.cost();
         if (std::isinf(nbd_corr))
-            return &t;
+            return &t; // reject
 
         // ro variable
         acceptance_prob *= nbd_corr;
