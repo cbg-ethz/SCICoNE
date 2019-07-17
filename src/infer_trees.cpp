@@ -146,7 +146,7 @@ int main( int argc, char* argv[]) {
     }catch (const std::runtime_error& e)
     {
         std::cerr << " a runtime error was caught during the random tree initialize function, with message '"
-                  << e.what() << "'\n";
+                  << e.what() << '\'' << std::endl;
         return EXIT_FAILURE; // reject the move
     }
 
