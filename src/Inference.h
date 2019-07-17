@@ -114,13 +114,14 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters)
             }
             random_tree->random_insert(static_cast<map<u_int, int> &&>(distinct_regions));
         }
-        if (random_tree->get_n_nodes() == 0)
-            continue;
 
         if (i > max_iters)
         {
             throw runtime_error("a valid tree cannot be found after " + to_string(max_iters)  + " iterations. Please re-set the lambda_r, lambda_c and n_nodes variables.");
         }
+
+        if (random_tree->get_n_nodes() == 0)
+            continue;
 
         bool is_valid_tree = random_tree->is_valid_subtree(random_tree->root);
         bool is_redundant = random_tree->is_redundant();
