@@ -428,7 +428,12 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         cout<<"acceptance prob: "<<acceptance_prob<<endl;
 
     if (acceptance_prob > 1)
+    {
+        if (verbosity > 0)
+            std::cout << "Move is accepted." << std::endl;
         return &t_prime;
+    }
+
     else
     {
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
@@ -439,9 +444,18 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
             cout<<"rand_val: "<<rand_val<<endl;
 
         if (acceptance_prob > rand_val)
+        {
+            if (verbosity > 0)
+                std::cout << "Move is accepted." << std::endl;
             return &t_prime;
+        }
         else
+        {
+            if (verbosity > 0)
+                std::cout << "Move is rejected." << std::endl;
             return &t;
+        }
+
     }
 }
 
@@ -468,6 +482,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     best_tree = t; //start with the t
 
     for (int i = 0; i < n_iters; ++i) {
+
+        if (verbosity > 0)
+            std::cout << "MCMC iteration " << i << ":" <<std::endl;
+
 
         if ((i > 10000) && (i % 10000 == 0))
         {
@@ -717,7 +735,10 @@ bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, con
         if (log_t_prime_nu > 10.0)
             return false; // reject the move
 
+        std::cout<<"Old nu value: " << t_prime.nu << ",\t";
         t_prime.nu = std::exp(log_t_prime_nu); // real space
+        std::cout<<"new nu value: " << t_prime.nu << std::endl;
+
 
         this->compute_t_prime_od_scores(D,r);
         compute_t_prime_scores(t_prime.root, D, r);
