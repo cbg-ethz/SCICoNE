@@ -88,6 +88,10 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters)
 
     Tree *random_tree;
     int i = 0;
+
+    if (n_nodes == 0)
+        return;
+
     while(true)
     {
         i++;
@@ -236,6 +240,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     /*
      * Returns the pointer to the accepted tree
      * m is size(D), i.e. number of cells
+     * Throws std::out_of_range exception
      * */
 
     double t_prime_sum = accumulate(t_prime_sums.begin(), t_prime_sums.end(), 0.0);
@@ -291,6 +296,9 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
         sum_chi = t.chi_insert_delete_reweighted(weighted);
         sum_chi_prime = t_prime.chi_insert_delete_reweighted(weighted);
+
+        if (std::isinf(sum_chi))
+            throw std::out_of_range("sum_chi is infinity, insert/delete move will be rejected");
 
         vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted);
         sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
@@ -651,7 +659,19 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         if (rejected_before_comparison)
             accepted = &t;
         else
-            accepted = comparison(m, gamma, move_id);
+            try
+            {
+                accepted = comparison(m, gamma, move_id);
+            } catch (const std::out_of_range& e)
+            {
+                if (verbosity > 0)
+                {
+                    std::cout << " an out of range error was caught during the comparison function, with message '"
+                              << e.what() << '\'' << std::endl;
+                    accepted = &t;
+                }
+            }
+
 
         static double first_score = accepted->posterior_score + accepted->od_score; // the first value will be kept in whole program
         // print accepted log_posterior
