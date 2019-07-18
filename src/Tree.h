@@ -664,10 +664,11 @@ void Tree::load_from_file(string file) {
     std::ifstream infile(file);
     std::string line;
 
-    std::getline(infile, line);
-    std::getline(infile, line);
-    std::getline(infile, line);
-    std::getline(infile, line);
+    std::getline(infile, line); // tree posterior
+    std::getline(infile, line); // tree prior
+    std::getline(infile, line); // root score
+    std::getline(infile, line); // tree score
+    std::getline(infile, line); // nu value
     std::getline(infile, line); // pass the first 5 lines, including the root
     while (std::getline(infile, line))
     {
