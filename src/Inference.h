@@ -773,8 +773,12 @@ double Inference::log_tree_prior(int m, int n) {
 }
 
 double Inference::log_tree_posterior(double tree_sum, int m, Tree &tree) {
-    // m: n_cells, n: n_nodes
+    /*
+     * Computes and returns the posterior log score of the tree
+     * m: n_cells
+     * */
 
+    // n: n_nodes
     int n = tree.get_n_nodes();
     double log_posterior = 0.0;
     log_posterior = tree_sum + this->log_tree_prior(m, n); // initialise posterior with prior then add posterior
