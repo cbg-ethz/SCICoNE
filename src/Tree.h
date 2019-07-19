@@ -148,7 +148,7 @@ void
 Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta) {
 
     /*
-     * Computes the score of a node.
+     * Computes the attachment score of a node per cell.
      * */
 
     if (node->parent == nullptr)
