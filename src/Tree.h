@@ -1609,7 +1609,7 @@ double Tree::event_prior() {
      * */
 
     int n = this->get_n_nodes(); //n_nodes
-    
+
     vector<double> p_v;
     for (auto it = this->all_nodes_vec.begin()+1; it != this->all_nodes_vec.end(); ++it) // without the root
     {

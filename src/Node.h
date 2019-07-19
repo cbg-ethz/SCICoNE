@@ -20,7 +20,6 @@ struct Node{
     uint64_t  c_hash = 0;
     std::map<u_int,int> c_change= {};
     double attachment_score = 0.0;
-    double event_prior = 0.0;
     int z = 0;
     unsigned n_descendents = 1; // including itself
     Node* first_child = nullptr;
