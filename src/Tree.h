@@ -1609,71 +1609,14 @@ double Tree::event_prior() {
      * */
 
     int n = this->get_n_nodes(); //n_nodes
-
-    /* Compute penalization term
-     * K: max region index  */
-
-    int repetition_count = 0; // the repetition count to be used in the penalisation
-    double c_penalisation = c_penalise; // the penalisation coefficient, global var
-
+    
     vector<double> p_v;
     for (auto it = this->all_nodes_vec.begin()+1; it != this->all_nodes_vec.end(); ++it) // without the root
     {
         Node* node = *it;
         map<u_int,int>& c_change = node->c_change;
-        int v = 0;
-        int v_prev = 0; // the first region is zero
-        int i_prev = -1; // the initial index is -1, it'll be updated later
 
-        auto last_elem_id = c_change.rbegin()->first;
-
-        for (auto const &event_it : c_change)
-        {
-            // penalisation for repetition
-            int parent_state = 0;
-            try
-            {
-                parent_state = node->parent->c.at(event_it.first);
-                int c_change_val = event_it.second;
-
-                if (signbit(c_change_val) != signbit(parent_state))
-                    repetition_count++;
-            }
-            catch (const std::out_of_range& e)
-            {
-                // pass
-            }
-
-            int diff;
-            if (static_cast<int>(event_it.first) - 1 != i_prev) // if the region is adjacent to its previous
-            {
-                int diff_right = 0 - v_prev; // the right hand side change at the end of the last consecutive region
-                if (diff_right > 0)
-                    v += diff_right;
-                v_prev = 0;
-            }
-            diff = event_it.second - v_prev;
-            if (diff > 0)
-                v += diff;
-            v_prev = event_it.second;
-            i_prev = event_it.first;
-
-            if (event_it.first == last_elem_id)
-            {
-                int diff_last = 0 - v_prev;
-
-                if (diff_last > 0)
-                {
-                    v += diff_last;
-                    assert(v>0);
-                }
-            }
-        }
-
-        double pv_i = 0.0;
-
-        int K = this->n_regions;
-        pv_i -= v*log(2*K); // the event prior
+        double pv_i = node->compute_event_prior(this->n_regions);
         p_v.push_back(pv_i);
 
     }
@@ -1683,7 +1626,6 @@ double Tree::event_prior() {
     PV += std::accumulate(p_v.begin(), p_v.end(), 0.0);
     PV -= Lgamma::get_val(n+1);
 
-    PV -= c_penalisation*repetition_count; // penalise the repetitions
 
     return PV;
 }
