@@ -141,7 +141,7 @@ void Tree::compute_root_score(const vector<int> &r) {
     for (auto const &x : r)
         z += x * this->ploidy;
 
-    root->log_score = 0;
+    root->attachment_score = 0;
     root->z = z;
 }
 
@@ -159,7 +159,7 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
     else
     {
 
-        double log_likelihood = node->parent->log_score;
+        double log_likelihood = node->parent->attachment_score;
         int z = node->parent->z;
         int z_parent = node->parent->z;
 
@@ -217,7 +217,7 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
 
 
         assert(!std::isnan(log_likelihood));
-        node->log_score = log_likelihood;
+        node->attachment_score = log_likelihood;
         node->z = z;
     }
 
@@ -390,7 +390,7 @@ void Tree::destroy() {
      * */
     for (auto elem: all_nodes_vec)
     {
-        //std::cout<<"deleting " << elem->log_score <<std::endl;
+        //std::cout<<"deleting " << elem->attachment_score <<std::endl;
         elem->first_child = elem->next = nullptr;
         elem->c.clear();
         delete elem;
@@ -746,7 +746,7 @@ map<int, double> Tree::get_children_id_score(Node *node) { // TODO: make it a me
         }
         // make sure the id is not in the map before
         assert(id_score_pairs.find(top->id) == id_score_pairs.end());
-        id_score_pairs[top->id] = top->log_score;
+        id_score_pairs[top->id] = top->attachment_score;
     }
     return id_score_pairs;
 }

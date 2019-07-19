@@ -18,7 +18,7 @@ struct Node{
     std::map<u_int,int> c = {};
     uint64_t  c_hash = 0;
     std::map<u_int,int> c_change= {};
-    double log_score = 0.0;
+    double attachment_score = 0.0;
     int z = 0;
     unsigned n_descendents = 1; // including itself
     Node* first_child = nullptr;
@@ -59,7 +59,7 @@ struct Node{
     {
         id = source_node.id;
         // log scores are not copied since they rely on cells
-        log_score = 0.0;
+        attachment_score = 0.0;
         z = source_node.z;
         n_descendents = source_node.n_descendents;
         first_child = next = parent = nullptr;

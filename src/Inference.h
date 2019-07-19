@@ -829,7 +829,7 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
         double sum_d = accumulate( d.begin(), d.end(), 0.0);
 
         if (attached_node != t_prime.root)
-            attached_node->parent->log_score = t_scores[j][attached_node->parent->id]; // the indices must match
+            attached_node->parent->attachment_score = t_scores[j][attached_node->parent->id]; // the indices must match
         // attached node->parent->id must match the all_nodes_vec index
         t_prime.compute_stack(attached_node, d, sum_d,r);
 
