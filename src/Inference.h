@@ -53,10 +53,12 @@ public:
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);
     void update_t_prime();
+    
     double log_tree_prior(int m, int n);
     double log_posterior(double tree_sum, int m, Tree &tree);
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
                                   bool weighted, bool validation_test_mode);
+    bool apply_genotype_preserving_pr(const vector<vector<double>> &D, const vector<int> &r);
     bool apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<double>> &D,
                                  const vector<int> &r,
                                  bool weighted = false,
@@ -652,6 +654,9 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                         cout << "Genotype preserving prune/reattach is rejected before comparison"<<endl;
                 }
                 break;
+
+                // TODO: accept the move here
+
             }
             case 11:
             {
@@ -1250,6 +1255,16 @@ void Inference::update_t_prime() {
      * */
 
     this->t_prime = this->t;
+}
+
+bool Inference::apply_genotype_preserving_pr(const vector<vector<double>> &D, const vector<int> &r) {
+    /*
+     * Applies the genotype preserving prune and reattach move in a gibbs sample setting.
+     * */
+
+
+
+    return false;
 }
 
 
