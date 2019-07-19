@@ -237,7 +237,7 @@ double Node::compute_event_prior(u_int n_regions) const {
 
     /* K: max region index  */
     int K = n_regions;
-    pv_i -= v*log(2*K); // the event prior
+    pv_i -= std::pow(log(2*K),v); // the event prior
     pv_i -= c_penalisation*repetition_count; // penalise the repetitions
 
     return pv_i;
