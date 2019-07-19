@@ -119,7 +119,7 @@ public:
                 mcmc.compute_t_table(D,region_sizes);
                 double t_sum = accumulate( mcmc.t_sums.begin(), mcmc.t_sums.end(), 0.0);
                 int m = D.size(); //n_cells
-                double log_post_t = mcmc.log_posterior(t_sum, m, mcmc.t);
+                double log_post_t = mcmc.log_tree_posterior(t_sum, m, mcmc.t);
                 // assign the tree score
                 mcmc.t.posterior_score = log_post_t;
             }

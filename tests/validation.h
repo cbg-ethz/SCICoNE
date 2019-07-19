@@ -158,7 +158,7 @@ void test_swap_label()
 
     // compute the log posterior
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
-    double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, mcmc.t_prime);
+    double log_post_t_prime = mcmc.log_tree_posterior(t_prime_sum, m, mcmc.t_prime);
     mcmc.t_prime.posterior_score = log_post_t_prime;
     assert(abs(mcmc.t_prime.posterior_score - 11.597 + 1*c_penalise) <= epsilon);
 
@@ -257,10 +257,10 @@ void test_condense_split_weights(bool weighted)
 
     int m = D.size();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
-    t.posterior_score = mcmc.log_posterior(t_sum, m, t);
+    t.posterior_score = mcmc.log_tree_posterior(t_sum, m, t);
 
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
-    t_prime.posterior_score = mcmc.log_posterior(t_prime_sum, m, t_prime);
+    t_prime.posterior_score = mcmc.log_tree_posterior(t_prime_sum, m, t_prime);
     // check the scores
     assert(abs(t.posterior_score - 21.26 + 1*c_penalise) <= epsilon);
     assert(abs(t_prime.posterior_score - 10.792 + 1*c_penalise) <= epsilon);
@@ -339,7 +339,7 @@ void test_insert_delete_weights()
 
     int m = D.size();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
-    t.posterior_score = mcmc.log_posterior(t_sum, m, t);
+    t.posterior_score = mcmc.log_tree_posterior(t_sum, m, t);
 
     int K = t.n_regions;
     double lambda_r = 2.0;
@@ -390,7 +390,7 @@ void test_prune_reattach()
     assert(abs(mcmc.t_prime_sums[4] - 9.252)  <= epsilon);
 
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
-    double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, mcmc.t_prime);
+    double log_post_t_prime = mcmc.log_tree_posterior(t_prime_sum, m, mcmc.t_prime);
     mcmc.t_prime.posterior_score = log_post_t_prime;
     assert(abs(mcmc.t_prime.posterior_score - 18.649 + 1*c_penalise) <= epsilon);
 
@@ -453,7 +453,7 @@ void test_add_remove_event()
     assert(abs(mcmc.t_prime_sums[4] - 9.233)  <= epsilon);
 
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
-    double log_post_t_prime = mcmc.log_posterior(t_prime_sum, m, mcmc.t_prime);
+    double log_post_t_prime = mcmc.log_tree_posterior(t_prime_sum, m, mcmc.t_prime);
     mcmc.t_prime.posterior_score = log_post_t_prime;
     assert(abs(mcmc.t_prime.posterior_score - 16.47 + 1*c_penalise) <= epsilon);
 

@@ -53,9 +53,9 @@ public:
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);
     void update_t_prime();
-    
+
     double log_tree_prior(int m, int n);
-    double log_posterior(double tree_sum, int m, Tree &tree);
+    double log_tree_posterior(double tree_sum, int m, Tree &tree);
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
                                   bool weighted, bool validation_test_mode);
     bool apply_genotype_preserving_pr(const vector<vector<double>> &D, const vector<int> &r);
@@ -230,7 +230,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
     int n = t.get_n_nodes();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
     t.prior_score = log_tree_prior(m, n);
-    t.posterior_score = log_posterior(t_sum, m, t);
+    t.posterior_score = log_tree_posterior(t_sum, m, t);
 
 }
 
@@ -251,7 +251,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     u_int t_prime_n_nodes = t_prime.get_n_nodes();
 
     // compare the posteriors
-    t_prime.posterior_score = log_posterior(t_prime_sum, m, t_prime);
+    t_prime.posterior_score = log_tree_posterior(t_prime_sum, m, t_prime);
     // update the tree prior as well
     t_prime.prior_score = log_tree_prior(m, t_prime_n_nodes);
 
@@ -771,7 +771,7 @@ double Inference::log_tree_prior(int m, int n) {
     return log_prior;
 }
 
-double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
+double Inference::log_tree_posterior(double tree_sum, int m, Tree &tree) {
     // TODO: move to the mathop
     // m: n_cells, n: n_nodes
 
