@@ -56,6 +56,7 @@ public:
     virtual ~Tree();
     // moves
     Node *prune_reattach(bool genotype_preserving, bool weighted, bool validation_test_mode);
+    void genotype_preserving_prune_reattach();
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
     Node *insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted);
@@ -1628,6 +1629,43 @@ double Tree::event_prior() {
 
 
     return PV;
+}
+
+void Tree::genotype_preserving_prune_reattach() {
+    /*
+     * Prunes a node and reattaches it to another node which is not among the descendents of the pruned node.
+     * Preserves the genotypes of all nodes.
+     * Performs gibbs sampling and returns the tree.
+     * Requires more than two nodes to perform.
+     * */
+
+    if (all_nodes_vec.size() <= 2)
+        throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
+
+
+
+    Node* prune_pos = uniform_sample(false); //without the root
+    double current_score = prune_pos->compute_event_prior(this->n_regions);
+
+    // copy all nodes
+    std::vector<Node*> destination_nodes = this->all_nodes_vec;
+
+    // remove all the descendents of the prune_pos
+
+    std::stack<Node*> stk;
+    stk.push(prune_pos);
+
+    while (!stk.empty()) {
+        Node* top = static_cast<Node*> (stk.top());
+        stk.pop();
+        for (Node *temp = top->first_child; temp != nullptr; temp = temp->next) {
+            stk.push(temp);
+        }
+        destination_nodes.erase(std::remove(destination_nodes.begin(), destination_nodes.end(), top), destination_nodes.end());
+    }
+
+
+
 }
 
 

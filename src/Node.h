@@ -10,6 +10,7 @@
 #include <stack>
 #include <set>
 #include <cmath>
+#include <cassert>
 #include "globals.cpp"
 
 using namespace std;
