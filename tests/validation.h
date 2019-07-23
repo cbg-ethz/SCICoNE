@@ -126,7 +126,7 @@ void test_reproducibility()
 
     cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << endl;
     cout<<"Epsilon: " << epsilon << endl;
-    assert(abs(mcmc.best_tree.posterior_score - 30.603) <= epsilon);
+    assert(abs(mcmc.best_tree.posterior_score - 31.299) <= epsilon);
     cout<<"Reproducibility test is passed!"<<endl;
 
 }
@@ -455,7 +455,7 @@ void test_add_remove_event()
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
     double log_post_t_prime = mcmc.log_tree_posterior(t_prime_sum, m, mcmc.t_prime);
     mcmc.t_prime.posterior_score = log_post_t_prime;
-    assert(abs(mcmc.t_prime.posterior_score - 14.773) <= epsilon);
+    assert(abs(mcmc.t_prime.posterior_score - 16.47 + 1*c_penalise) <= epsilon);
 
     cout<<"Add / remove event validation test passed!"<<endl;
 }
