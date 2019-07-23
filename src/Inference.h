@@ -646,17 +646,20 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // genotype_preserving prune & reattach
                 if (verbosity > 0)
                     cout<<"Genotype preserving prune and reattach"<<endl;
-                bool genotype_prune_reattach_success = apply_prune_reattach(D, r, true, false, false); // weighted=false
+                bool genotype_prune_reattach_success = apply_genotype_preserving_pr(D, r);
                 if (not genotype_prune_reattach_success)
                 {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "Genotype preserving prune/reattach is rejected before comparison"<<endl;
                 }
+                else
+                {
+                    // update t score
+                    double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
+                    t.posterior_score = log_tree_posterior(t_sum, m, t);
+                }
                 break;
-
-                // TODO: accept the move here
-
             }
             case 11:
             {
@@ -674,50 +677,54 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             }
             default:
                 throw std::logic_error("undefined move index");
-        }
-
-        // compare the trees
+        } // end of switch
 
         Tree* accepted;
-        if (rejected_before_comparison)
-            accepted = &t;
-        else
-            try
-            {
-                accepted = comparison(m, gamma, move_id);
-            } catch (const std::out_of_range& e)
-            {
-                if (verbosity > 0)
-                {
-                    std::cout << " an out of range error was caught during the comparison function, with message '"
-                              << e.what() << '\'' << std::endl;
-                    accepted = &t;
-                }
-            }
 
+        if (move_id == 10) //genotype preserving prune reattach, gibbs sampling
+            accepted = &t;
+        else // metropolis hasting sampling
+        {
+            // compare the trees
+            if (rejected_before_comparison)
+                accepted = &t;
+            else
+                try
+                {
+                    accepted = comparison(m, gamma, move_id);
+                } catch (const std::out_of_range& e)
+                {
+                    if (verbosity > 0)
+                    {
+                        std::cout << " an out of range error was caught during the comparison function, with message '"
+                                  << e.what() << '\'' << std::endl;
+                        accepted = &t;
+                    }
+                }
+
+            // update trees and the matrices
+            if (accepted == &t_prime)
+            {
+                n_accepted++;
+                t_sums = t_prime_sums;
+                update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
+                t = t_prime;
+                if ((t_prime.posterior_score + t_prime.od_score)  > (best_tree.posterior_score + best_tree.od_score))
+                    best_tree = t_prime;
+            }
+            else
+            {
+                n_rejected++;
+                t_prime = t;
+            }
+            t_prime_sums.clear();
+            t_prime_scores.clear();
+        }
 
         static double first_score = accepted->posterior_score + accepted->od_score; // the first value will be kept in whole program
         // print accepted log_posterior
         mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score << ',';
         rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score << ',';
-
-        // update trees and the matrices
-        if (accepted == &t_prime)
-        {
-            n_accepted++;
-            t_sums = t_prime_sums;
-            update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
-            t = t_prime;
-            if ((t_prime.posterior_score + t_prime.od_score)  > (best_tree.posterior_score + best_tree.od_score))
-                best_tree = t_prime;
-        }
-        else
-        {
-            n_rejected++;
-            t_prime = t;
-        }
-        t_prime_sums.clear();
-        t_prime_scores.clear();
 
     }
 
@@ -1186,9 +1193,18 @@ bool Inference::apply_genotype_preserving_pr(const vector<vector<double>> &D, co
      * Applies the genotype preserving prune and reattach move in a gibbs sample setting.
      * */
 
+    try
+    {
+        this->t.genotype_preserving_prune_reattach();
+    }
+    catch (const std::exception& e) { // caught by reference to base
+        if (verbosity > 0)
+            std::cout << " a standard exception was caught during the genotype preserving prune and reattach move,"
+                         " with message '" << e.what() << '\'' << std::endl;
+        return false;
+    }
 
-
-    return false;
+    return true;
 }
 
 #endif //SC_DNA_INFERENCE_H

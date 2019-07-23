@@ -1639,33 +1639,91 @@ void Tree::genotype_preserving_prune_reattach() {
      * Requires more than two nodes to perform.
      * */
 
-    if (all_nodes_vec.size() <= 2)
+    if (this->all_nodes_vec.size() <= 2)
         throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
 
+    std::vector<Tree*> trees; // whole possible trees
+    std::vector<double> tree_scores; // their scores
 
+    for (int i = 1; i < this->all_nodes_vec.size(); ++i) // i=1, excluding the root
+    {
+        // i: prune position index
+        int prune_pos_idx = this->all_nodes_vec[i]->id;
+        Node* prune_pos = this->all_nodes_vec[i];
+        double original_node_event_prior = prune_pos->compute_event_prior(this->n_regions);
+        trees.push_back(this);
+        tree_scores.push_back(0.0); //exp(0) is 1.
 
-    Node* prune_pos = uniform_sample(false); //without the root
-    double current_score = prune_pos->compute_event_prior(this->n_regions);
+        // copy all nodes
+        std::vector<Node*> destination_nodes = this->all_nodes_vec;
 
-    // copy all nodes
-    std::vector<Node*> destination_nodes = this->all_nodes_vec;
+        // remove all the descendents of the prune_pos
+        std::stack<Node*> stk;
+        stk.push(prune_pos);
 
-    // remove all the descendents of the prune_pos
-
-    std::stack<Node*> stk;
-    stk.push(prune_pos);
-
-    while (!stk.empty()) {
-        Node* top = static_cast<Node*> (stk.top());
-        stk.pop();
-        for (Node *temp = top->first_child; temp != nullptr; temp = temp->next) {
-            stk.push(temp);
+        while (!stk.empty()) {
+            Node* top = static_cast<Node*> (stk.top());
+            stk.pop();
+            for (Node *temp = top->first_child; temp != nullptr; temp = temp->next) {
+                stk.push(temp);
+            }
+            destination_nodes.erase(std::remove(destination_nodes.begin(), destination_nodes.end(), top), destination_nodes.end());
         }
-        destination_nodes.erase(std::remove(destination_nodes.begin(), destination_nodes.end(), top), destination_nodes.end());
+
+        for (Node* attach_pos : destination_nodes)
+        {
+            int attach_pos_idx = attach_pos->id;
+            //do not recompute if you attach at the same pos
+            if (prune_pos->parent->id != attach_pos_idx)
+            {
+                Tree* current_tree = new Tree(*this);
+                // use current_tree's nodes
+                Node* pruned_node = current_tree->prune(current_tree->all_nodes_vec[prune_pos_idx]);
+                std::map<u_int,int> pruned_c = pruned_node->c; // copy
+
+                Node* attached_node = current_tree->insert_child(current_tree->all_nodes_vec[attach_pos_idx], pruned_node);
+
+                // update the c_change of the attached node, c of the attached node won't change
+                std::map<u_int,int> parent_c = attached_node->parent->c;
+                attached_node->c_change = Utils::map_diff(pruned_c, parent_c);
+
+                double current_node_event_prior = attached_node->compute_event_prior(n_regions);
+
+                if (!is_valid_subtree(attached_node) || is_redundant())
+                {
+                    // invalid tree found
+                    delete current_tree;
+                    continue;
+                }
+                else
+                {
+                    trees.emplace_back(current_tree);
+                    tree_scores.push_back(original_node_event_prior - current_node_event_prior);
+                }
+            }
+        }
+
     }
 
+    double max_tree_score = *std::max_element(tree_scores.begin(), tree_scores.end());
+    for (int j = 0; j < tree_scores.size(); ++j)
+        tree_scores[j] = std::exp(tree_scores[j] - max_tree_score);
 
+    // sample from the tree scores
+    std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
+    boost::random::discrete_distribution<> d(tree_scores.begin(), tree_scores.end());
+    unsigned sampled_tree_index = d(gen);
 
+    *this = *trees[sampled_tree_index]; // copy the tree
+
+    for (Tree* tree : trees) // deallocate 'em all
+    {
+        if (tree != this)
+        {
+            delete tree;
+            tree = nullptr;
+        }
+    }
 }
 
 
