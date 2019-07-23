@@ -63,6 +63,7 @@ public:
     Node *condense_split_node(double lambda_s, unsigned int size_limit, bool weighted);
     Node* delete_node(u_int64_t idx_tobe_deleted);
     Node* delete_node(Node* node);
+    Node* find_node(int id);
     Node* uniform_sample(bool with_root=true) const;
     Node* weighted_sample() const;
     void random_insert(std::map<u_int, int>&&);
@@ -1642,8 +1643,13 @@ void Tree::genotype_preserving_prune_reattach() {
     if (this->all_nodes_vec.size() <= 2)
         throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
 
-    std::vector<Tree*> trees; // whole possible trees
-    std::vector<double> tree_scores; // their scores
+
+    std::vector<double> all_possible_scores; // event priors of all valid attachments
+    std::vector<std::tuple<int,int>> prune_attach_indices;
+
+    // the score for the original tree
+    all_possible_scores.push_back(0.0); //exp(0) is 1.
+    prune_attach_indices.emplace_back(std::make_pair(std::nan(""),std::nan("")));
 
     for (int i = 1; i < this->all_nodes_vec.size(); ++i) // i=1, excluding the root
     {
@@ -1651,8 +1657,6 @@ void Tree::genotype_preserving_prune_reattach() {
         int prune_pos_idx = this->all_nodes_vec[i]->id;
         Node* prune_pos = this->all_nodes_vec[i];
         double original_node_event_prior = prune_pos->compute_event_prior(this->n_regions);
-        trees.push_back(this);
-        tree_scores.push_back(0.0); //exp(0) is 1.
 
         // copy all nodes
         std::vector<Node*> destination_nodes = this->all_nodes_vec;
@@ -1672,58 +1676,77 @@ void Tree::genotype_preserving_prune_reattach() {
 
         for (Node* attach_pos : destination_nodes)
         {
+
             int attach_pos_idx = attach_pos->id;
             //do not recompute if you attach at the same pos
             if (prune_pos->parent->id != attach_pos_idx)
             {
-                Tree* current_tree = new Tree(*this);
-                // use current_tree's nodes
-                Node* pruned_node = current_tree->prune(current_tree->all_nodes_vec[prune_pos_idx]);
-                std::map<u_int,int> pruned_c = pruned_node->c; // copy
 
-                Node* attached_node = current_tree->insert_child(current_tree->all_nodes_vec[attach_pos_idx], pruned_node);
+                // Think as if a node is pruned and reattached somewhere without having to create the entire tree
+                // copy the nodes
+                Node copy_pruned(*prune_pos);
+                Node copy_attach_pos(*attach_pos);
 
-                // update the c_change of the attached node, c of the attached node won't change
-                std::map<u_int,int> parent_c = attached_node->parent->c;
-                attached_node->c_change = Utils::map_diff(pruned_c, parent_c);
+                // create parent-child relationship
+                copy_attach_pos.first_child = &copy_pruned;
+                copy_pruned.parent = &copy_attach_pos;
 
-                double current_node_event_prior = attached_node->compute_event_prior(n_regions);
+                // update c_change
+                copy_pruned.c_change = Utils::map_diff(copy_pruned.c, copy_attach_pos.c);
 
-                if (!is_valid_subtree(attached_node) || is_redundant())
-                {
-                    // invalid tree found
-                    delete current_tree;
+                // compute event prior
+                double event_prior = copy_pruned.compute_event_prior(this->n_regions);
+
+                if (!is_valid_subtree(&copy_pruned))
                     continue;
-                }
                 else
                 {
-                    trees.emplace_back(current_tree);
-                    tree_scores.push_back(original_node_event_prior - current_node_event_prior);
+                    prune_attach_indices.emplace_back(std::make_pair(prune_pos_idx,attach_pos_idx));
+                    all_possible_scores.push_back(event_prior - original_node_event_prior);
                 }
             }
         }
-
     }
 
-    double max_tree_score = *std::max_element(tree_scores.begin(), tree_scores.end());
-    for (int j = 0; j < tree_scores.size(); ++j)
-        tree_scores[j] = std::exp(tree_scores[j] - max_tree_score);
+    double max_tree_score = *std::max_element(all_possible_scores.begin(), all_possible_scores.end());
+    for (int j = 0; j < all_possible_scores.size(); ++j)
+        all_possible_scores[j] = std::exp(all_possible_scores[j] - max_tree_score);
 
     // sample from the tree scores
     std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
-    boost::random::discrete_distribution<> d(tree_scores.begin(), tree_scores.end());
+    boost::random::discrete_distribution<> d(all_possible_scores.begin(), all_possible_scores.end());
     unsigned sampled_tree_index = d(gen);
 
-    *this = *trees[sampled_tree_index]; // copy the tree
-
-    for (Tree* tree : trees) // deallocate 'em all
+    // perform prune & reattach if needed
+    if (sampled_tree_index != 0)
     {
-        if (tree != this)
-        {
-            delete tree;
-            tree = nullptr;
-        }
+        std::pair<int,int> prune_attach_pos = prune_attach_indices[sampled_tree_index];
+        Node* to_prune = this->find_node(prune_attach_pos.first);
+        Node* pruned_node = this->prune(to_prune);
+
+        Node* attach_pos = this->find_node(prune_attach_pos.second);
+        this->insert_child(attach_pos, pruned_node);
+
+        to_prune = pruned_node = attach_pos = nullptr;
     }
+    else
+    {
+        throw std::logic_error("The node is reattached to the same position.");
+    }
+}
+
+Node *Tree::find_node(int id) {
+    /*
+     * Finds and returns the pointer to the node with the given id.
+     * id: The node id to look for
+     * */
+    vector<Node*> nodes = this->root->get_descendents(true);
+
+    for (Node* const x : nodes)
+        if (x->id == id)
+            return x;
+
+    return nullptr; // not found
 }
 
 
