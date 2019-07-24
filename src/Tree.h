@@ -14,7 +14,6 @@
 #include <limits>
 #include "Node.h"
 #include "MathOp.h"
-#include <tuple>
 #include <random>
 #include "SingletonRandomGenerator.h"
 #include <set>
@@ -1634,7 +1633,7 @@ void Tree::genotype_preserving_prune_reattach() {
 
 
     std::vector<double> all_possible_scores; // event priors of all valid attachments
-    std::vector<std::tuple<int,int>> prune_attach_indices;
+    std::vector<std::pair<int,int>> prune_attach_indices;
 
     // the score for the original tree
     all_possible_scores.push_back(0.0); //exp(0) is 1.
