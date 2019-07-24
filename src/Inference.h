@@ -56,8 +56,8 @@ public:
 
     double log_tree_prior(int m, int n);
     double log_tree_posterior(double tree_sum, int m, Tree &tree);
-    bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
-                                  bool weighted, bool validation_test_mode);
+    bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
+                              bool validation_test_mode);
     bool apply_genotype_preserving_pr(const vector<vector<double>> &D, const vector<int> &r);
     bool apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<double>> &D,
                                  const vector<int> &r,
@@ -180,8 +180,8 @@ Inference::~Inference() {
     destroy();
 }
 
-bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
-                                     bool weighted, bool validation_test_mode) {
+bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
+                                     bool validation_test_mode) {
     /*
      * Applies prune and reattach to t_prime
      * Updates the sums and scores tables partially
@@ -189,7 +189,7 @@ bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vect
 
     Node* attached_node;
     try {
-        attached_node = t_prime.prune_reattach(genotype_preserving, weighted, validation_test_mode);
+        attached_node = t_prime.prune_reattach(weighted, validation_test_mode);
     }catch (const std::logic_error& e)
     {
         if (verbosity > 0)
@@ -509,7 +509,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // prune & reattach
                 if (verbosity > 0)
                     cout << "Prune and reattach" << endl;
-                bool prune_reattach_success = apply_prune_reattach(D, r, false, false, false);
+                bool prune_reattach_success = apply_prune_reattach(D, r, false, false);
                 if (not prune_reattach_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -522,7 +522,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted prune & reattach
                 if (verbosity > 0)
                     cout<<"Weighted prune and reattach"<<endl;
-                bool weighted_prune_reattach_success = apply_prune_reattach(D, r, false, true, false); // weighted=true
+                bool weighted_prune_reattach_success = apply_prune_reattach(D, r, true, false); // weighted=true
                 if (not weighted_prune_reattach_success)
                 {
                     rejected_before_comparison = true;

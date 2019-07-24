@@ -55,7 +55,7 @@ public:
     // destructor
     virtual ~Tree();
     // moves
-    Node *prune_reattach(bool genotype_preserving, bool weighted, bool validation_test_mode);
+    Node *prune_reattach(bool weighted, bool validation_test_mode);
     void genotype_preserving_prune_reattach();
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
@@ -507,7 +507,7 @@ void Tree::copy_tree_nodes(Node *destination, Node *source) {
     }
 }
 
-Node * Tree::prune_reattach(bool genotype_preserving, bool weighted, bool validation_test_mode) {
+Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     /*
      * Prunes a node and reattaches it to another node which is not among the descendents of the pruned node.
      * Returns the pruned node (which also happens to be the attached node)
@@ -569,18 +569,7 @@ Node * Tree::prune_reattach(bool genotype_preserving, bool weighted, bool valida
 
         std::map<u_int,int> pruned_c;
 
-        if(genotype_preserving)
-        {
-            pruned_c = pruned_node->c; // copy
-        }
-
         auto attached_node = insert_child(attach_pos, pruned_node);
-
-        if (genotype_preserving)
-        {
-            std::map<u_int,int> parent_c = attached_node->parent->c;
-            attached_node->c_change = Utils::map_diff(pruned_c, parent_c);
-        }
 
         //update the c vectors of the attached node and its descendents
         update_desc_labels(attached_node);
