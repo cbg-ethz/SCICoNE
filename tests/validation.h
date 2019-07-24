@@ -126,7 +126,7 @@ void test_reproducibility()
 
     cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << endl;
     cout<<"Epsilon: " << epsilon << endl;
-    assert(abs(mcmc.best_tree.posterior_score - 31.299) <= epsilon);
+    assert(abs(mcmc.best_tree.posterior_score - 30.653) <= epsilon);
     cout<<"Reproducibility test is passed!"<<endl;
 
 }
