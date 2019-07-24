@@ -1682,6 +1682,10 @@ void Tree::genotype_preserving_prune_reattach() {
                 // update c_change
                 copy_pruned.c_change = Utils::map_diff(copy_pruned.c, copy_attach_pos.c);
 
+                if (copy_pruned.c_change.empty()) //reject the attachment if c_change becomes empty
+                    continue;
+
+
                 // compute event prior
                 double event_prior = copy_pruned.compute_event_prior(this->n_regions);
 
