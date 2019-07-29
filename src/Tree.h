@@ -100,7 +100,7 @@ private:
     bool region_changes(Node *n, u_int region_id) const;
     void copy_tree(const Tree& source_tree);
     void copy_tree_nodes(Node *destination, Node *source);
-    void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta);
+    void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, double eta);
     void compute_root_score(const vector<int> &r);
     Node* prune(Node *pos); // does not deallocate,
     Node* insert_child(Node *pos, Node *source);
@@ -147,7 +147,7 @@ void Tree::compute_root_score(const vector<int> &r) {
 }
 
 void
-Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta) {
+Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, double eta) {
 
     /*
      * Computes the attachment score of a node per cell.
@@ -180,19 +180,22 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
             // the above part can also be done by using map::at and exception handling
             int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
 
+            double node_cn = (cf+ploidy)==0?(eta):(cf+ploidy);
+            double parent_cn = (cp_f+ploidy)==0?(eta):(cp_f+ploidy);
+
             // option for the overdispersed version
             if (is_overdispersed)
             {
-                log_likelihood += lgamma(D[x.first] + nu*(cf+ploidy)*r[x.first]);
-                log_likelihood -= lgamma(D[x.first] + nu*(cp_f+ploidy)*r[x.first]);
+                log_likelihood += lgamma(D[x.first] + nu*(node_cn)*r[x.first]);
+                log_likelihood -= lgamma(D[x.first] + nu*(parent_cn)*r[x.first]);
 
-                log_likelihood -= lgamma(nu*(cf+ploidy)*r[x.first]);
-                log_likelihood += lgamma(nu*(cp_f+ploidy)*r[x.first]);
+                log_likelihood -= lgamma(nu*(node_cn)*r[x.first]);
+                log_likelihood += lgamma(nu*(parent_cn)*r[x.first]);
 
             }
             else
             {
-                log_likelihood += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)) - log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
+                log_likelihood += D[x.first] * (log(node_cn) - log(parent_cn));
             }
 
         }
@@ -214,10 +217,9 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
             log_likelihood += sum_D*log(node->parent->z);
         }
 
-
-
-
         assert(!std::isnan(log_likelihood));
+        assert(!std::isinf(log_likelihood));
+
         node->attachment_score = log_likelihood;
         node->z = z;
     }
@@ -1054,7 +1056,7 @@ bool Tree::zero_ploidy_changes(Node *n) const{
  * */
 
     vector<Node*> descendents = n->get_descendents(true);
-    vector<int> checked_regions;
+        vector<int> checked_regions;
 
     for (auto const &node : descendents)
         for (auto const &it : node->c)
