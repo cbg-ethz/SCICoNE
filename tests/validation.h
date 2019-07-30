@@ -458,20 +458,20 @@ void test_prune_reattach()
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
 
-    assert(abs(mcmc.t.posterior_score - 21.26) <= epsilon);
+    assert(abs(mcmc.t.posterior_score - 13.424) <= epsilon);
 
     mcmc.apply_prune_reattach(D, r, false, true);
 
-    assert(abs(mcmc.t_prime_sums[0] - 2.713)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[1] - 2.596)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[2] - 29.343)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[3] - 7.169)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[4] - 9.252)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[0] - 1.057)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[1] - 1.695)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[2] - 24.169)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[3] - 8.264)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[4] - 10.511)  <= epsilon);
 
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
     double log_post_t_prime = mcmc.log_tree_posterior(t_prime_sum, m, mcmc.t_prime);
     mcmc.t_prime.posterior_score = log_post_t_prime;
-    assert(abs(mcmc.t_prime.posterior_score - 18.649 + 1*c_penalise) <= epsilon);
+    assert(abs(mcmc.t_prime.posterior_score - 3.269) <= epsilon);
 
 
     cout<<"Prune and reattach validation test passed!"<<endl;
