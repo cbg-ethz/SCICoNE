@@ -36,7 +36,7 @@ int main()
     test_xxhash();
     test_tree_prior();
     test_event_prior();
-    test_tree_computation();
+    test_tree_attachment();
     test_prune_reattach();
     test_swap_label();
     test_ploidy_attachment_score();

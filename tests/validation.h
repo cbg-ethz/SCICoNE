@@ -409,7 +409,7 @@ void test_event_prior()
     std::cout<<"Event prior computation test passed!"<<std::endl;
 }
 
-void test_tree_computation()
+void test_tree_attachment()
 {
     /*
      * Tests the correctness of tree score computation methods on worked example
