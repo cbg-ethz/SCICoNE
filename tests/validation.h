@@ -15,7 +15,13 @@ using namespace std;
 // number of cells
 const int m = 5;
 // counts per region per cell
-const vector<vector<double>> D = {{39,37,45,49,30},{31,28,34,46,11},{69,58,68,34,21},{72,30,31,46,21},{50,32,20,35,13}};
+const vector<vector<double>> D = {
+    {39, 37, 45, 49, 30},
+    {31, 28, 34, 46, 11},
+    {69, 58, 68, 34, 21},
+    {72, 30, 31, 46, 21},
+    {64, 17, 19, 37, 13}
+};
 
 // region sizes
 const vector<int> r = {4,2,3,5,2};
@@ -122,7 +128,7 @@ void test_reproducibility()
     //---------------------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno--
 
     unsigned size_limit = std::numeric_limits<unsigned>::max();
-    mcmc.infer_mcmc(D, r, move_probs, 500, size_limit);
+    mcmc.infer_mcmc(D, r, move_probs, 2500, size_limit);
 
     cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << endl;
     cout<<"Epsilon: " << epsilon << endl;
@@ -363,6 +369,38 @@ void test_insert_delete_weights()
 
 }
 
+void test_tree_computation()
+{
+    /*
+    * Tests the correctness of tree score computation methods on worked example
+    */
+
+    unsigned ploidy = 2;
+    int verbosity = 0;
+    Inference mcmc(r.size(), ploidy, verbosity);
+    mcmc.initialize_worked_example();
+    mcmc.compute_t_table(D,r);
+
+    std::vector<std::vector<double>> ground_truth = {
+        {0.0,-3.555, 0.613, 4.327, -8.629, -12.352},
+        {0.0, -1.855, 1.444, 3.520, -11.899, -7.949},
+        {0.0, 8.532, 21.885, 18.318, 29.222, 3.361},
+        {0.0, 6.987, 3.464, -6.201, -3.698, 7.684},
+        {0.0, 7.064, 1.117, -10.187, -5.987, 10.464}
+    };
+
+    for (size_t i=0; i < ground_truth.size(); ++i)
+        for (size_t j=0; j < ground_truth[0].size(); ++ j)
+            assert(abs(mcmc.t_scores[i][j] - ground_truth[i][j])  <= epsilon);
+
+
+    std::cout<<"Tree score computation test passed!"<<endl;
+
+
+
+
+}
+
 void test_prune_reattach()
 {
     /*
@@ -379,7 +417,7 @@ void test_prune_reattach()
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
 
-    assert(abs(mcmc.t.posterior_score - 21.26 + 1*c_penalise) <= epsilon);
+    assert(abs(mcmc.t.posterior_score - 21.26) <= epsilon);
 
     mcmc.apply_prune_reattach(D, r, false, true);
 
