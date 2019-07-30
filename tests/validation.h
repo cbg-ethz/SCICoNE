@@ -439,7 +439,7 @@ void test_tree_computation()
     for (size_t i = 0; i < t_sums_gt.size(); ++i)
         assert(abs(mcmc.t_sums[i] - t_sums_gt[i])  <= epsilon);
 
-    std::cout<<"Tree score computation test passed!"<<std::endl;
+    std::cout<<"Tree attachment computation test passed!"<<std::endl;
 }
 
 void test_prune_reattach()
