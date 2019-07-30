@@ -8,6 +8,7 @@
 
 #include "Inference.h"
 #include <vector>
+#include <numeric>
 #include "xxhash.h"
 
 using namespace std;
@@ -381,18 +382,23 @@ void test_tree_computation()
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
 
-    std::vector<std::vector<double>> ground_truth = {
+    std::vector<std::vector<double>> t_scores_gt = {
         {0.0,-3.555, 0.613, 4.327, -8.629, -12.352},
         {0.0, -1.855, 1.444, 3.520, -11.899, -7.949},
         {0.0, 8.532, 21.885, 18.318, 29.222, 3.361},
         {0.0, 6.987, 3.464, -6.201, -3.698, 7.684},
-        {0.0, 7.064, 1.117, -10.187, -5.987, 10.464}
+        {0.0, 7.065, 1.117, -10.187, -5.987, 10.464}
     };
 
-    for (size_t i=0; i < ground_truth.size(); ++i)
-        for (size_t j=0; j < ground_truth[0].size(); ++ j)
-            assert(abs(mcmc.t_scores[i][j] - ground_truth[i][j])  <= epsilon);
+    // the natural sum on the log space values
+    std::vector<double> t_sums_gt = {4.364, 3.668, 29.222, 8.098, 10.497};
 
+    for (size_t i = 0; i < t_scores_gt.size(); ++i)
+        for (size_t j = 0; j < t_scores_gt[0].size(); ++ j)
+            assert(abs(mcmc.t_scores[i][j] - t_scores_gt[i][j])  <= epsilon);
+
+    for (size_t i = 0; i < t_sums_gt.size(); ++i)
+        assert(abs(mcmc.t_sums[i] - t_sums_gt[i])  <= epsilon);
 
     std::cout<<"Tree score computation test passed!"<<endl;
 
