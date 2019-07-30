@@ -370,11 +370,50 @@ void test_insert_delete_weights()
 
 }
 
+void test_tree_prior()
+{
+    /*
+     * Validation test for the tree prior computation
+     * */
+
+    unsigned ploidy = 2;
+    int verbosity = 0;
+    Inference mcmc(r.size(), ploidy, verbosity);
+    mcmc.initialize_worked_example();
+    u_int n = mcmc.t.get_n_nodes();
+
+
+    double tree_prior = mcmc.log_tree_prior(m,n);
+    double tree_prior_gt = -16.12583;
+    assert(abs(tree_prior - tree_prior_gt) <= epsilon);
+
+    std::cout<<"Tree prior validation test passed!"<<std::endl;
+}
+
+void test_event_prior()
+{
+    /*
+     * Validation test for the event prior computation
+     * */
+
+    unsigned ploidy = 2;
+    int verbosity = 0;
+    Inference mcmc(r.size(), ploidy, verbosity);
+    mcmc.initialize_worked_example();
+    mcmc.compute_t_table(D,r);
+
+    double event_prior = mcmc.t.event_prior();
+    double event_prior_gt = -26.3;
+    assert(abs(event_prior - event_prior_gt)  <= epsilon);
+
+    std::cout<<"Event prior computation test passed!"<<std::endl;
+}
+
 void test_tree_computation()
 {
     /*
-    * Tests the correctness of tree score computation methods on worked example
-    */
+     * Tests the correctness of tree score computation methods on worked example
+     * */
 
     unsigned ploidy = 2;
     int verbosity = 0;
@@ -400,11 +439,7 @@ void test_tree_computation()
     for (size_t i = 0; i < t_sums_gt.size(); ++i)
         assert(abs(mcmc.t_sums[i] - t_sums_gt[i])  <= epsilon);
 
-    std::cout<<"Tree score computation test passed!"<<endl;
-
-
-
-
+    std::cout<<"Tree score computation test passed!"<<std::endl;
 }
 
 void test_prune_reattach()

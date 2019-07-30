@@ -26,7 +26,7 @@ int main()
     lambda_s = 0.5;
     lambda_r = 0.1;
     lambda_c = 0.2;
-    c_penalise = 1.0;
+    c_penalise = 10.0;
     is_overdispersed = 0;
 
     std::cout<<"UNIT TESTS" <<std::endl;
@@ -34,6 +34,8 @@ int main()
     SingletonRandomGenerator::get_instance(42);
     test_mathop();
     test_xxhash();
+    test_tree_prior();
+    test_event_prior();
     test_tree_computation();
     test_prune_reattach();
     test_swap_label();
