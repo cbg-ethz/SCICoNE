@@ -164,6 +164,9 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
         double z = node->parent->z;
         double z_parent = node->parent->z;
 
+        // for debug purposes
+        double z_orig = z;
+
         // update z first
         for (auto const &x : node->c_change)
         {
@@ -859,7 +862,7 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
     {
         if (validation_test_mode)
         {
-            node1 = all_nodes_vec[2]; //without the root
+            node1 = all_nodes_vec[3]; //without the root
             node2 = all_nodes_vec[5];
         }
         else
@@ -941,7 +944,7 @@ bool Tree::is_valid_subtree(Node *node) const{
     if (zero_ploidy_changes(node)) // does it for the subtree
         return false;
 
-    vector<Node*> descendents = node->get_descendents(true);
+    vector<Node*> descendents = node->parent->get_descendents(true); // use parent to detect siblings
     for (auto const &elem : descendents)
         if (elem->children_repeat_genotype()) // does it for a node
             return false;
@@ -967,6 +970,7 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
     if (validation_test_mode)
     {
         node = all_nodes_vec[3];
+        node->c_change = {{3,-2}};
     }
     else
     {
@@ -974,53 +978,49 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
             node = weighted_sample();
         else
             node = uniform_sample(false); //without the root
-    }
-    std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
+        std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
-    // n_regions from Poisson(lambda_R)+1
-    boost::random::poisson_distribution<int> poisson_dist(lambda_r); // the param is to be specified later
-    int n_regions_to_sample = poisson_dist(generator);
-    if (n_regions_to_sample == 0)
-        n_regions_to_sample += 1; // to have a region to sample
-    // sample n_regions_to_sample distinct regions uniformly
-    int n_regions = this->n_regions;
-    int regions_sampled = 0;
-    std::set<u_int> distinct_regions;
+        // n_regions from Poisson(lambda_R)+1
+        boost::random::poisson_distribution<int> poisson_dist(lambda_r); // the param is to be specified later
+        int n_regions_to_sample = poisson_dist(generator);
+        if (n_regions_to_sample == 0)
+            n_regions_to_sample += 1; // to have a region to sample
+        // sample n_regions_to_sample distinct regions uniformly
+        int n_regions = this->n_regions;
+        int regions_sampled = 0;
+        std::set<u_int> distinct_regions;
 
-    // otherwise we cannot sample distinct uniform regions
-    if (n_regions_to_sample > n_regions)
-        throw std::logic_error("the number of distinct regions to sample cannot be bigger than the total number of distinct regions available");
+        // otherwise we cannot sample distinct uniform regions
+        if (n_regions_to_sample > n_regions)
+            throw std::logic_error("the number of distinct regions to sample cannot be bigger than the total number of distinct regions available");
 
-
-    while (regions_sampled < n_regions_to_sample)
-    {
-        u_int uniform_val = static_cast<u_int> (MathOp::random_uniform(0, n_regions-1));
-        if (validation_test_mode)
-            uniform_val =3;
-        if (distinct_regions.find(uniform_val) == distinct_regions.end())
+        while (regions_sampled < n_regions_to_sample)
         {
-            distinct_regions.insert(uniform_val);
-            regions_sampled++;
+            u_int uniform_val = static_cast<u_int> (MathOp::random_uniform(0, n_regions-1));
+            if (distinct_regions.find(uniform_val) == distinct_regions.end())
+            {
+                distinct_regions.insert(uniform_val);
+                regions_sampled++;
+            }
         }
-    }
 
-    // n_copies from Poisson(lambda_c)+1
-    boost::random::poisson_distribution<int> copy_dist(lambda_c); // the param is to be specified later
-    // sign
-    boost::random::bernoulli_distribution<double> bernoulli(0.5);
-    for (auto const& elem : distinct_regions)
-    {
-        int n_copies = copy_dist(generator) + 1;
-        bool sign = bernoulli(generator);
-        if (validation_test_mode)
-            sign = true;
+        // n_copies from Poisson(lambda_c)+1
+        boost::random::poisson_distribution<int> copy_dist(lambda_c); // the param is to be specified later
+        // sign
+        boost::random::bernoulli_distribution<double> bernoulli(0.5);
+        for (auto const& elem : distinct_regions)
+        {
+            int n_copies = copy_dist(generator) + 1;
+            bool sign = bernoulli(generator);
+            if (validation_test_mode)
+                sign = true;
 
-    node->c_change[elem] += (sign? n_copies : -n_copies);
+        node->c_change[elem] += (sign? n_copies : -n_copies);
 
-        if (node->c_change.at(elem) == 0)
-            node->c_change.erase(elem); //erase the zero instead of storing it
-
+            if (node->c_change.at(elem) == 0)
+                node->c_change.erase(elem); //erase the zero instead of storing it
+        }
     }
 
     if (Utils::is_empty_map(node->c_change))
@@ -1060,20 +1060,17 @@ bool Tree::zero_ploidy_changes(Node *n) const{
  * */
 
     vector<Node*> descendents = n->get_descendents(true);
-        vector<int> checked_regions;
 
     for (auto const &node : descendents)
-        for (auto const &it : node->c)
-            // if the ploidy becomes 0, i.e. hashmap value = -2 for humans, then it cannot change due to biological constraints.
-            if(it.second == (-1 * ploidy) && (find(checked_regions.begin(), checked_regions.end(), it.first) == checked_regions.end()))
+        for (auto const &it : node->parent->c)
+            if(it.second <= (-1 * ploidy))
             {
                 bool does_change = region_changes(node, it.first);
                 if (does_change)
                     return true;
-                else
-                    checked_regions.push_back(it.first);
             }
     return false;
+
 }
 
 bool Tree::region_changes(Node *n, u_int region_id) const{
