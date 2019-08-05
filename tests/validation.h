@@ -468,13 +468,30 @@ void test_prune_reattach()
     assert(abs(mcmc.t_prime_sums[3] - 8.264)  <= epsilon);
     assert(abs(mcmc.t_prime_sums[4] - 10.511)  <= epsilon);
 
+    // compute the root score
+    size_t n_cells = D.size();
+    double sum_root_score = 0.0;
+    for (u_int i = 0; i < n_cells; ++i) {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
+        sum_root_score += root_score;
+    }
+
+    double sum_root_score_gt = -1510.724;
+    assert(abs(sum_root_score - sum_root_score_gt) <= epsilon);
+
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
     double log_post_t_prime = mcmc.log_tree_posterior(t_prime_sum, m, mcmc.t_prime);
     mcmc.t_prime.posterior_score = log_post_t_prime;
     assert(abs(mcmc.t_prime.posterior_score - 3.269) <= epsilon);
 
+    // total score
+    double total_score_gt = -1507.455;
+    double total_score = mcmc.t_prime.posterior_score + sum_root_score;
+    assert(abs(total_score - total_score_gt) <= epsilon);
 
-    cout<<"Prune and reattach validation test passed!"<<endl;
+
+    cout<<"Prune and reattach validation test passed!"<<std::endl;
 }
 
 void test_weighted_prune_reattach()
