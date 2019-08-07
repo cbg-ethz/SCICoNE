@@ -342,12 +342,12 @@ void test_insert_delete_weights()
     t.insert_at(2,{{1, 1}, {2, 1}}); // 3
     t.insert_at(3,{{0, -1}}); // 4
     t.insert_at(3,{{3, -1}}); // 5
-    t.insert_at(1,{{1, 1}}); // 6
+    t.insert_at(1,{{0, 1}}); // 6
 
     t.compute_weights();
 
-    int n = static_cast<int>(D.size());
-    for (int i = 0; i < n; ++i)
+    size_t n_cells = static_cast<int>(D.size());
+    for (size_t i = 0; i < n_cells; ++i)
     {
         t.compute_tree(D[i], r);
         std::map<int, double> scores_vec = t.get_children_id_score(t.root);
@@ -355,27 +355,54 @@ void test_insert_delete_weights()
         t_scores.push_back(scores_vec);
         t_sums.push_back(MathOp::log_sum(scores_vec));
     }
+    double sum_root_score = 0.0;
+    for (u_int i = 0; i < n_cells; ++i) {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
+        sum_root_score += root_score;
+    }
 
     int m = D.size();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
     t.posterior_score = mcmc.log_tree_posterior(t_sum, m, t);
+
+    double event_prior = t.event_prior();
+    double event_prior_gt = -40.395;
+    assert(abs(event_prior - event_prior_gt) <= epsilon);
+
+    double total_score = sum_root_score + t.posterior_score;
+    double total_score_gt = -1524.053;
+    assert(abs(total_score - total_score_gt) <= epsilon);
+
 
     int K = t.n_regions;
     double lambda_r = 2.0;
     double lambda_c = 1.0;
 
     vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, false); // delete weights
-    vector<double> upsilon = t.omega_insert_delete(lambda_r, lambda_c, true); // cost weighted omega
-    vector<double> chi = t.chi_insert_delete(false); // weighted = false;
-    vector<double> xi = t.chi_insert_delete(true); // cost weighted chi;
-
-    double sum_chi = accumulate(chi.begin(), chi.end(), 0.0);
-    double sum_xi = accumulate(xi.begin(), xi.end(), 0.0);
-
     assert(abs(omega[0] - 0.916e-03) <=epsilon_sens);
     assert(abs(omega.back() - 4.979e-03) <=epsilon_sens);
-    assert(abs(sum_chi - 15.0) <= epsilon);
-    assert(abs(sum_xi - 7.443) <= epsilon);
+
+    double sum_omega = accumulate(omega.begin(), omega.end(), 0.0);
+    double sum_omega_gt = 0.0217;
+    assert(abs(sum_omega - sum_omega_gt) <= epsilon);
+
+
+    double sum_chi = t.chi_insert_delete_reweighted(false); // weighted = false;
+    double sum_chi_gt = 0.0742;
+    assert(abs(sum_chi - sum_chi_gt) <= epsilon);
+
+    vector<double> upsilon = t.omega_insert_delete(lambda_r, lambda_c, true); // cost weighted omega
+    vector<double> xi = t.chi_insert_delete(true); // cost weighted chi;
+
+    double sum_upsilon = accumulate(upsilon.begin(), upsilon.end(), 0.0);
+    double sum_upsilon_gt = 0.0166;
+    assert(abs(sum_upsilon - sum_upsilon_gt) <= epsilon);
+
+    double sum_xi = t.chi_insert_delete_reweighted(true);
+    double sum_xi_gt = 0.0368;
+
+    assert(abs(sum_xi - sum_xi_gt) <= epsilon);
 
 
     cout<<"Insert and delete node weights validation test passed!"<<endl;
