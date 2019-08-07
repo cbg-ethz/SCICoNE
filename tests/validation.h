@@ -226,7 +226,7 @@ void test_weighted_sample()
 
 }
 
-void test_condense_split_weights(bool weighted)
+void test_condense_split_weights()
 {
     /*
      * Tests the condense split weights
@@ -236,8 +236,6 @@ void test_condense_split_weights(bool weighted)
     unsigned ploidy = 2;
     int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
-    std::vector<std::map<int, double>> t_scores;
-    std::vector<double> t_sums;
     std::vector<std::map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
 
@@ -246,7 +244,7 @@ void test_condense_split_weights(bool weighted)
     t.insert_at(1,{{1, 1}, {2, 1}}); // 2
     t.insert_at(2,{{0, -1}}); // 3
     t.insert_at(2,{{3, -1}}); // 4
-    t.insert_at(1,{{1, 1}}); // 5
+    t.insert_at(1,{{0, 1}}); // 5
 
     t.compute_weights();
 
@@ -257,70 +255,79 @@ void test_condense_split_weights(bool weighted)
     t_prime.insert_at(2,{{1, 1}}); // 3
     t_prime.insert_at(3,{{0, -1}}); // 4
     t_prime.insert_at(2,{{3, -1}}); // 5
-    t_prime.insert_at(1,{{1, 1}}); // 6
+    t_prime.insert_at(1,{{0, 1}}); // 6
 
     t_prime.compute_weights();
 
-    int n = static_cast<int>(D.size());
-    for (int i = 0; i < n; ++i)
+    size_t n_cells = static_cast<int>(D.size());
+    for (size_t i = 0; i < n_cells; ++i)
     {
-        t.compute_tree(D[i], r);
-        std::map<int, double> scores_vec = t.get_children_id_score(t.root);
         t_prime.compute_tree(D[i], r);
         std::map<int, double> scores_vec_prime = t_prime.get_children_id_score(t_prime.root);
-        t_scores.push_back(scores_vec);
-        t_sums.push_back(MathOp::log_sum(scores_vec));
         t_prime_scores.push_back(scores_vec_prime);
         t_prime_sums.push_back(MathOp::log_sum(scores_vec_prime));
     }
+    double sum_root_score = 0.0;
+    for (size_t i = 0; i < n_cells; ++i)
+    {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
+        sum_root_score += root_score;
+    }
 
-    int m = D.size();
-    double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
-    t.posterior_score = mcmc.log_tree_posterior(t_sum, m, t);
+    size_t m = D.size();
+    double event_prior = t_prime.event_prior();
+    double event_prior_tp_gt = -30.395;
+    assert(abs(event_prior - event_prior_tp_gt) <= epsilon);
+
 
     double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
     t_prime.posterior_score = mcmc.log_tree_posterior(t_prime_sum, m, t_prime);
-    // check the scores
-    assert(abs(t.posterior_score - 21.26 + 1*c_penalise) <= epsilon);
-    assert(abs(t_prime.posterior_score - 10.792 + 1*c_penalise) <= epsilon);
+
+    double total_score_tp = sum_root_score + t_prime.posterior_score;
+    double total_score_tp_gt = -1507.806;
+    assert(abs(total_score_tp - total_score_tp_gt) <= epsilon);
 
     double lambda_s = 0.5;
 
-    vector<double> chi = t.chi_condense_split(weighted);
-    double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-    if (weighted)
-        assert(abs(sum_chi -1.667) <= epsilon);
-    else
-        assert(abs(sum_chi - 8) <= epsilon);
+    double sum_chi = t.chi_condense_split_reweighted(false); // weighted = false;
+    double sum_chi_gt = 0.0595;
+    assert(abs(sum_chi - sum_chi_gt) <= epsilon);
 
-    vector<double> omega = t.omega_condense_split(lambda_s, weighted);
+    vector<double> omega = t.omega_condense_split(lambda_s, false);
     double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-    if (weighted)
-        assert(abs(sum_omega - 0.0878) <= epsilon);
-    else
-        assert(abs(sum_omega - 0.296) <= epsilon);
+    double sum_omega_gt = 0.296;
+    assert(abs(sum_omega - sum_omega_gt) <= epsilon);
 
-    vector<double> chi_prime = t_prime.chi_condense_split(weighted);
-    double sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
-    if (weighted)
-        assert(abs(sum_chi_prime - 0.571) <= epsilon);
-    else
-        assert(abs(sum_chi_prime - 4) <= epsilon);
+    double sum_chi_prime = t_prime.chi_condense_split_reweighted(false);
+    double sum_chi_tp_gt = 0.0198;
+    assert(abs(sum_chi_prime - sum_chi_tp_gt) <= epsilon);
 
-    vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, weighted);
+    vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, false);
     double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
-    if (weighted)
-        assert(abs(sum_omega_prime - 0.1956) <= epsilon);
-    else
-        assert(abs(sum_omega_prime - 0.488) <= epsilon);
+    double sum_omega_prime_gt = 0.488;
+    assert(abs(sum_omega_prime - sum_omega_prime_gt) <= epsilon);
 
+    // weighted versions
+    double sum_xi = t.chi_condense_split_reweighted(true);
+    double sum_xi_gt = 0.0124;
+    assert(abs(sum_xi - sum_xi_gt) <= epsilon);
 
-    double score_diff = t_prime.posterior_score - t.posterior_score;
-    assert(abs(score_diff + 10.467) <= epsilon);
+    vector<double> upsilon = t.omega_condense_split(lambda_s, true);
+    double sum_upsilon = accumulate(upsilon.begin(), upsilon.end(), 0.0);
+    double sum_upsilon_gt = 0.0878;
+    assert(abs(sum_upsilon - sum_upsilon_gt) <= epsilon);
 
+    double sum_xi_tp = t_prime.chi_condense_split_reweighted(true);
+    double sum_xi_tp_gt = 0.002825;
+    assert(abs(sum_xi_tp - sum_xi_tp_gt) <= epsilon);
 
-    cout<<"Condense and split node weights validation test passed! "<< "with weighted: " << (weighted?"True": "False") << endl;
+    vector<double> upsilon_tp = t_prime.omega_condense_split(lambda_s, true);
+    double sum_upsilon_tp = accumulate(upsilon_tp.begin(), upsilon_tp.end(), 0.0);
+    double sum_upsilon_tp_gt = 0.1956;
+    assert(abs(sum_upsilon_tp - sum_upsilon_tp_gt) <= epsilon);
 
+    std::cout<<"Condense and split node weights validation test passed! " << std::endl;
 
 }
 
