@@ -354,7 +354,7 @@ double MathOp::breakpoint_log_prior(int k, int m, double mu) {
 
 }
 
-double MathOp::log_n_choose_k(int n, int k) {
+double MathOp::log_n_choose_k(unsigned long n, unsigned long k) {
     /*
      * Returns the log of n choose k using lgamma function
      * */
@@ -363,7 +363,7 @@ double MathOp::log_n_choose_k(int n, int k) {
 
 }
 
-double MathOp::compute_omega_insert_delete(Node *node, double lambda_r, double lambda_c, double K) {
+double MathOp::compute_omega_insert_delete(Node *node, double lambda_r, double lambda_c, unsigned long K) {
     /*
      * Computes the omega value used in assessing the delete node probabilities.
      * Note: omega is named w on the original publication.

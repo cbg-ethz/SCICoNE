@@ -44,7 +44,7 @@ public:
     static vector<vector<double>> likelihood_ratio(vector<vector<double>> &mat, int window_size);
     static double breakpoint_log_prior(int k, int m, double mu);
     static double compute_linear_regression_slope(const vector<double>& x, const vector<double>& y);
-    static double log_n_choose_k(int n, int k);
+    static double log_n_choose_k(unsigned long n, unsigned long k);
     static int random_uniform(int min, int max);
     template <class T>
     static double vec_avg(const vector<T> &v);
@@ -54,7 +54,7 @@ public:
     static double median(vector<T> v);
     template <class T>
     static double st_deviation(vector<T>& v);
-    static double compute_omega_insert_delete(Node *node, double lambda_r, double lambda_c, double K);
+    static double compute_omega_insert_delete(Node *node, double lambda_r, double lambda_c, unsigned long K);
     static double compute_omega_condense_split(Node *node, double lambda_s, unsigned int n_regions);
     static double frobenius_avg(vector<vector<int>>& mat, vector<vector<int>>& ground_truth);
     static vector<long double> dirichlet_sample(size_t len, double alpha = 1.0);
