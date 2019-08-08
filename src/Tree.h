@@ -1627,8 +1627,6 @@ double Tree::event_prior() {
     for (auto it = this->all_nodes_vec.begin()+1; it != this->all_nodes_vec.end(); ++it) // without the root
     {
         Node* node = *it;
-        map<u_int,int>& c_change = node->c_change;
-
         double pv_i = node->compute_event_prior(this->n_regions);
         p_v.push_back(pv_i);
 
