@@ -1660,7 +1660,7 @@ void Tree::genotype_preserving_prune_reattach() {
     all_possible_scores.push_back(0.0); //exp(0) is 1.
     prune_attach_indices.emplace_back(std::make_pair(std::nan(""),std::nan("")));
 
-    for (int i = 1; i < this->all_nodes_vec.size(); ++i) // i=1, excluding the root
+    for (u_int i = 1; i < this->all_nodes_vec.size(); ++i) // i=1, excluding the root
     {
         // i: prune position index
         int prune_pos_idx = this->all_nodes_vec[i]->id;
