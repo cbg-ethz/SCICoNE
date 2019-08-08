@@ -687,6 +687,11 @@ void Tree::load_from_file(string file) {
         string delim_cp = "]";
         string token = c.substr(0, c.find(del3));
         string token_r = c.substr(c.find(del3)+1, c.length());
+        // TODO: if token_r does not start and end with [ and ] then throw
+
+        if (token_r.front() != '[' || token_r.back() != ']')
+            throw std::runtime_error(" Incorrect tree format to parse! \nThe rows should be space separated.");
+
         int parent_id = stoi(token.substr(5,token.size()));
         string s = token_r.substr(1, token_r.find(delim_cp)-1);
         // cout <<" node id: " << node_id << " parent id: " << parent_id <<"s=" <<s<<  endl;
