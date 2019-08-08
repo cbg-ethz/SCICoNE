@@ -153,7 +153,7 @@ void Inference::initialize_worked_example() {
     t.insert_at(1,{{1, 1}, {2, 1}});
     t.insert_at(2,{{0, -1}});
     t.insert_at(2,{{3, -1}});
-    t.insert_at(1,{{1, 1}});
+    t.insert_at(1,{{0, 1}});
 
     // Tree score: -2605.9655
 //    t.insert_at(0,{{0,1},{1,1}}); // 1
@@ -277,7 +277,9 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     double acceptance_prob = exp(gamma*score_diff); // later gets modified
     if (acceptance_prob == 0.0)
         return &t;
-    if (std::isinf(acceptance_prob))
+    if (std::isinf(t_prime.posterior_score)) // if t_prime has inf score
+        return &t;
+    if (std::isinf(acceptance_prob)) // if t_prime is much better than t, but not inf
         return &t_prime;
 
     // compute nbd correction
