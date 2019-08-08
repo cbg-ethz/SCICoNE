@@ -944,7 +944,11 @@ bool Tree::is_valid_subtree(Node *node) const{
     if (zero_ploidy_changes(node)) // does it for the subtree
         return false;
 
-    vector<Node*> descendents = node->parent->get_descendents(true); // use parent to detect siblings
+    std::vector<Node*> descendents;
+    if (node->id == 0)
+        descendents = node->get_descendents(true); // root cannot have siblings, no need to check parent
+    else
+        descendents = node->parent->get_descendents(true); // use parent to detect siblings
     for (auto const &elem : descendents)
         if (elem->children_repeat_genotype()) // does it for a node
             return false;
@@ -1062,6 +1066,9 @@ bool Tree::zero_ploidy_changes(Node *n) const{
     vector<Node*> descendents = n->get_descendents(true);
 
     for (auto const &node : descendents)
+    {
+        if (node->id == 0 || node->parent->id == 0)
+            continue; // root cannot have events
         for (auto const &it : node->parent->c)
             if(it.second <= (-1 * ploidy))
             {
@@ -1069,6 +1076,8 @@ bool Tree::zero_ploidy_changes(Node *n) const{
                 if (does_change)
                     return true;
             }
+    }
+
     return false;
 
 }
