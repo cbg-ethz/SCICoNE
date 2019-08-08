@@ -603,10 +603,34 @@ void test_tree_validation()
     u_int n_regions = 0;
     Tree* t = new Tree(ploidy, n_regions);
 
-    t->load_from_file("/trees_to_validate/valid_tree_1.txt");
+    t->load_from_file("../tests/trees_to_validate/valid_tree_1.txt");
     assert(t->is_valid_subtree(t->root));
-    assert(!t->is_redundant());
+    assert(not t->is_redundant());
+    delete t;
 
+    t = new Tree(ploidy, n_regions);
+    t->load_from_file("../tests/trees_to_validate/invalid_tree_1.txt");
+    assert(not t->is_valid_subtree(t->root)); // NOT VALID, first order children (siblings) repeat genotype
+    assert(not t->is_redundant());
+    delete t;
+
+    t = new Tree(ploidy, n_regions);
+    t->load_from_file("../tests/trees_to_validate/invalid_tree_2.txt");
+    assert(t->is_valid_subtree(t->root));
+    assert(t->is_redundant()); // IS REDUNDANT, two nodes carry the same genotype
+    delete t;
+
+    t = new Tree(ploidy, n_regions);
+    t->load_from_file("../tests/trees_to_validate/invalid_tree_3.txt");
+    assert(t->zero_ploidy_changes(t->root)); // NOT VALID, zero ploidy changes back!
+    assert(not t->is_redundant());
+    delete t;
+
+    t = new Tree(ploidy, n_regions);
+    t->load_from_file("../tests/trees_to_validate/invalid_tree_4.txt");
+    assert(t->subtree_out_of_bound(t->root)); // NOT VALID, tree is out of bounds!
+    assert(t->zero_ploidy_changes(t->root)); // NOT VALID, zero ploidy changes back!
+    assert(not t->is_redundant());
     delete t;
 
     std::cout<<"Is valid tree? validation test passed!"<<std::endl;
