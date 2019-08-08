@@ -42,11 +42,14 @@ int main()
     test_ploidy_attachment_score();
     test_weighted_sample();
     test_weighted_prune_reattach();
-//    test_add_remove_event(); Jack is going to provide worked example
+//    test_add_remove_event();
+//  Just checking the event prior is fine
+// Jack is going to provide worked example
     test_insert_delete_weights();
     test_condense_split_weights();
 //    test_reproducibility();
     test_children_repeat_genotype();
+    test_tree_validation();
 
     return EXIT_SUCCESS;
 }
