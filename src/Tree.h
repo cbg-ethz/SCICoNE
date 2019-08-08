@@ -1513,7 +1513,7 @@ vector<double> Tree::omega_insert_delete(double lambda_r, double lambda_c, bool 
      * */
 
     vector<double> omega; // delete weights
-    int K = this->n_regions;
+    double K = static_cast<double>(this->n_regions);
 
     vector<Node*> all_nodes = root->get_descendents(false); // without root
     for (auto const &node : all_nodes) { // computes the omega vector
