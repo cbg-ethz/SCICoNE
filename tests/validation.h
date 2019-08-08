@@ -622,5 +622,22 @@ void test_children_repeat_genotype()
     cout<<"Children repeat genotype validation test passed!"<<endl;
 }
 
+void test_tree_validation()
+{
+    /*
+     * Makes sure the valid trees are considered valid while invalid trees are detected
+     * */
+
+    u_int n_regions = 0;
+    Tree* t = new Tree(ploidy, n_regions);
+
+    t->load_from_file("/trees_to_validate/valid_tree_1.txt");
+    assert(t->is_valid_subtree(t->root));
+    assert(!t->is_redundant());
+
+    delete t;
+
+    std::cout<<"Is valid tree? validation test passed!"<<std::endl;
+}
 
 #endif //SC_DNA_VALIDATION_H
