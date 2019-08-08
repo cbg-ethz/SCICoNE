@@ -58,7 +58,6 @@ void test_ploidy_attachment_score()
     assert(scores_vec[0]==scores_vec_prime[0]);
     cout<<"Cell attachment with different ploidies validation test passed!"<<endl;
 
-
 }
 
 void test_mathop()
@@ -110,11 +109,6 @@ void test_reproducibility()
      * Tests the reproducibility of the markov chain
      * */
 
-
-    unsigned ploidy = 2;
-    int verbosity = 0;
-
-
     // if seed is not set, set it to 42
     SingletonRandomGenerator::get_instance(42);
 
@@ -144,8 +138,6 @@ void test_swap_label()
      * Tests the swap label move
      * */
 
-    unsigned ploidy = 2;
-    int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
@@ -193,9 +185,6 @@ void test_weighted_sample()
      *
      * */
 
-
-    unsigned ploidy = 2;
-    int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
 
@@ -223,7 +212,6 @@ void test_weighted_sample()
 
     cout<<"Weighted sample validation test passed!"<<endl;
 
-
 }
 
 void test_condense_split_weights()
@@ -232,9 +220,6 @@ void test_condense_split_weights()
      * Tests the condense split weights
      * */
 
-
-    unsigned ploidy = 2;
-    int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     std::vector<std::map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
@@ -275,7 +260,6 @@ void test_condense_split_weights()
         sum_root_score += root_score;
     }
 
-    size_t m = D.size();
     double event_prior = t_prime.event_prior();
     double event_prior_tp_gt = -30.395;
     assert(abs(event_prior - event_prior_tp_gt) <= epsilon);
@@ -288,6 +272,7 @@ void test_condense_split_weights()
     double total_score_tp_gt = -1507.806;
     assert(abs(total_score_tp - total_score_tp_gt) <= epsilon);
 
+    // intentional override
     double lambda_s = 0.5;
 
     double sum_chi = t.chi_condense_split_reweighted(false); // weighted = false;
@@ -337,8 +322,6 @@ void test_insert_delete_weights()
      * Validation test for the weights of the insert_delete node move.
      * */
 
-    unsigned ploidy = 2;
-    int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
@@ -381,8 +364,7 @@ void test_insert_delete_weights()
     double total_score_gt = -1524.053;
     assert(abs(total_score - total_score_gt) <= epsilon);
 
-
-    int K = t.n_regions;
+    // intentional overriding of parameters
     double lambda_r = 2.0;
     double lambda_c = 1.0;
 
@@ -422,8 +404,6 @@ void test_tree_prior()
      * Validation test for the tree prior computation
      * */
 
-    unsigned ploidy = 2;
-    int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     u_int n = mcmc.t.get_n_nodes();
@@ -434,6 +414,7 @@ void test_tree_prior()
     assert(abs(tree_prior - tree_prior_gt) <= epsilon);
 
     std::cout<<"Tree prior validation test passed!"<<std::endl;
+
 }
 
 void test_event_prior()
@@ -442,8 +423,6 @@ void test_event_prior()
      * Validation test for the event prior computation
      * */
 
-    unsigned ploidy = 2;
-    int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
@@ -453,6 +432,7 @@ void test_event_prior()
     assert(abs(event_prior - event_prior_gt)  <= epsilon);
 
     std::cout<<"Event prior computation test passed!"<<std::endl;
+
 }
 
 void test_tree_attachment()
@@ -461,8 +441,6 @@ void test_tree_attachment()
      * Tests the correctness of tree score computation methods on worked example
      * */
 
-    unsigned ploidy = 2;
-    int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
@@ -494,8 +472,6 @@ void test_prune_reattach()
      * Tests the prune and reattach move
      * */
 
-    unsigned ploidy = 2;
-    int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
@@ -547,8 +523,6 @@ void test_weighted_prune_reattach()
      * Tests the weighted prune reattach move
      * */
 
-    unsigned ploidy = 2;
-    int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
@@ -576,8 +550,6 @@ void test_add_remove_event()
      * Tests the add remove event move
      * */
 
-    unsigned ploidy = 2;
-    int verbosity = 0;
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r); // assignment operator changes the order

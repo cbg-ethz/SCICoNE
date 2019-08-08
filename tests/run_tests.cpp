@@ -16,6 +16,7 @@ double lambda_r;
 double lambda_c;
 double c_penalise;
 unsigned is_overdispersed;
+int verbosity;
 // endof globals
 
 
@@ -28,6 +29,7 @@ int main()
     lambda_c = 0.2;
     c_penalise = 10.0;
     is_overdispersed = 0;
+    verbosity = 2;
 
     std::cout<<"UNIT TESTS" <<std::endl;
 //     set a seed number for reproducibility
