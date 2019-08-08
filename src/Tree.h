@@ -1722,7 +1722,7 @@ void Tree::genotype_preserving_prune_reattach() {
     }
 
     double max_tree_score = *std::max_element(all_possible_scores.begin(), all_possible_scores.end());
-    for (int j = 0; j < all_possible_scores.size(); ++j)
+    for (u_int j = 0; j < all_possible_scores.size(); ++j)
         all_possible_scores[j] = std::exp(all_possible_scores[j] - max_tree_score);
 
     // sample from the tree scores
