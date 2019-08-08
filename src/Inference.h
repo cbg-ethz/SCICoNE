@@ -905,8 +905,7 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
 
     int deleted_index = deleted_node_idx(); // if -1 then not deleted, otherwise the index of the deleted
 
-    int i = 0;
-    for (auto const &d: D) {
+    for (unsigned i = 0; i < D.size(); ++i) {
         vector<double> old_vals;
         old_vals.reserve(t_scores[i].size()); // the max possible size
         vector<double> new_vals;
@@ -943,7 +942,6 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
         assert(!std::isnan(res));
 
         t_prime_sums.push_back(res);
-        i++;
     }
 }
 
