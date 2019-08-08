@@ -657,8 +657,14 @@ Tree &Tree::operator=(const Tree &other) {
 void Tree::load_from_file(string file) {
     /*
      * Loads the tree from file
-     * TODO: first destroy the tree if it is not empty (or 1 node only)
      * */
+
+    // first destroy the tree if it is not empty (or 1 node only)
+    if (this->root->first_child != nullptr)
+    {
+        throw std::logic_error("Tree to read into must be empty!");
+    }
+
 
     //string file = "10nodes_0regions_100reads_size_limit_test_tree_inferred_segmented.txt";
     std::ifstream infile(file);
