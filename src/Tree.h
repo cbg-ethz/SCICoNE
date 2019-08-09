@@ -1736,7 +1736,16 @@ void Tree::genotype_preserving_prune_reattach() {
                 // compute event prior
                 double event_prior = copy_pruned.compute_event_prior(this->n_regions);
 
-                if (!is_valid_subtree(&copy_pruned))
+                // check if invalid tree occurs
+
+                // 1. insert the modified node for a while
+                this->insert_child(attach_pos, &copy_pruned);
+                // 2. check for first order children repeat genotype
+                bool repeat_genotype = attach_pos->first_order_children_repeat_genotype();
+                // 3. prune the copy_pruned back
+                this->prune(&copy_pruned);
+                // 4. decide
+                if (repeat_genotype)
                     continue;
                 else
                 {
@@ -1766,15 +1775,8 @@ void Tree::genotype_preserving_prune_reattach() {
         Node* attach_pos = this->find_node(prune_attach_pos.second);
         this->insert_child(attach_pos, pruned_node);
 
-
-
-        // check for children repeat genotype
-
         to_prune = pruned_node = attach_pos = nullptr;
 
-        // check for is_redundant
-        if (is_redundant())
-            throw std::logic_error("The tree is redundant, i.e. at least two of the nodes are the same!");
     }
     else
     {
