@@ -964,15 +964,8 @@ bool Tree::is_valid_subtree(Node *node) const{
     if (zero_ploidy_changes(node)) // does it for the subtree
         return false;
 
-    std::vector<Node*> descendents;
-    if (node->id == 0)
-        descendents = node->get_descendents(true); // root cannot have siblings, no need to check parent
-    else
-        descendents = node->parent->get_descendents(true); // use parent to detect siblings
-    for (auto const &elem : descendents)
-        if (elem->first_order_children_repeat_genotype()) // does it for a node
-            return false;
-
+    if (node->any_siblings_repeat_genotype())
+        return false;
 
     return true;
 
