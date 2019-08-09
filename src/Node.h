@@ -54,7 +54,7 @@ struct Node{
     inline int get_n_children() const;
     inline bool is_leaf() const;
     inline vector<Node*> get_descendents(bool with_n=true) const;
-    inline bool children_repeat_genotype() const;
+    inline bool first_order_children_repeat_genotype() const;
     inline double compute_event_prior(u_int n_regions) const;
 
     // copy constructor
@@ -148,7 +148,7 @@ inline vector<Node *> Node::get_descendents(bool with_n) const {
     return descendents;
 }
 
-bool Node::children_repeat_genotype() const {
+bool Node::first_order_children_repeat_genotype() const {
     /*
      * Returns true if any first order children of a node repeat the same change sign on the same region.
      * */

@@ -970,7 +970,7 @@ bool Tree::is_valid_subtree(Node *node) const{
     else
         descendents = node->parent->get_descendents(true); // use parent to detect siblings
     for (auto const &elem : descendents)
-        if (elem->children_repeat_genotype()) // does it for a node
+        if (elem->first_order_children_repeat_genotype()) // does it for a node
             return false;
 
 
