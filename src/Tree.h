@@ -523,6 +523,9 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
      *
      * */
 
+    if (!is_valid_subtree(this->root))
+        std::cout<<"debug the invalid tree";
+
     if (all_nodes_vec.size() <= 2)
         throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
 
@@ -855,6 +858,12 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
      * Requires more than 2 nodes to work
      * */
 
+    if (!is_valid_subtree(this->root))
+        std::cout<<"debug the invalid tree";
+    if (subtree_out_of_bound(this->root))
+        std::cout <<"something is wrong!";
+
+
     if (all_nodes_vec.size() <= 2)
         throw std::logic_error("swapping labels does not make sense when they is only one node besides the root");
 
@@ -976,6 +985,12 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
      * Throws logical error if the "n_regions_to_sample" value, (drawn from a poisson) is bigger than total number of regions available.
      * Returns the pointer to the affacted node.
      * */
+
+    if (!is_valid_subtree(this->root))
+        std::cout<<"debug the invalid tree";
+    if (subtree_out_of_bound(this->root))
+        std::cout <<"something is wrong!";
+
 
     if (all_nodes_vec.size() <= 1)
         throw std::logic_error("Adding or removing events does not make sense when there is 1 node or less. Root has to be neutral.");
@@ -1161,6 +1176,12 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, unsigned int si
      *
      * */
 
+    if (!is_valid_subtree(this->root))
+        is_valid_subtree(this->root);
+    if (subtree_out_of_bound(this->root))
+        std::cout <<"something is wrong!";
+
+
     Node* return_node = nullptr;
 
     vector<double> chi = chi_insert_delete(weighted); // add weights
@@ -1257,6 +1278,12 @@ Node *Tree::condense_split_node(double lambda_s, unsigned int size_limit, bool w
     /*
      * Condenses two nodes into one or splits a node into two.
      * */
+
+    if (!is_valid_subtree(this->root))
+        std::cout<<"debug the invalid tree";
+    if (subtree_out_of_bound(this->root))
+        std::cout <<"something is wrong!";
+
 
     if (all_nodes_vec.size() <= 1)
         throw std::logic_error("condense or split does not make sense when there is 1 node or less. ");
@@ -1649,6 +1676,12 @@ void Tree::genotype_preserving_prune_reattach() {
      * Requires more than two nodes to perform.
      * */
 
+    if (!is_valid_subtree(this->root))
+        std::cout<<"debug the invalid tree";
+    if (subtree_out_of_bound(this->root))
+        std::cout <<"something is wrong!";
+
+
     if (this->all_nodes_vec.size() <= 2)
         throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
 
@@ -1740,7 +1773,15 @@ void Tree::genotype_preserving_prune_reattach() {
         Node* attach_pos = this->find_node(prune_attach_pos.second);
         this->insert_child(attach_pos, pruned_node);
 
+
+
+        // check for children repeat genotype
+
         to_prune = pruned_node = attach_pos = nullptr;
+
+        // check for is_redundant
+        if (is_redundant())
+            throw std::logic_error("The tree is redundant, i.e. at least two of the nodes are the same!");
     }
     else
     {
