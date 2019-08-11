@@ -653,10 +653,11 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
-                        cout << "Genotype preserving prune/reattach is rejected before comparison"<<endl;
+                        cout << "Genotype preserving prune/reattach is rejected"<<endl;
                 }
                 else
                 {
+                    t_prime = t; // update t_prime
                     // update t score
                     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
                     t.posterior_score = log_tree_posterior(t_sum, m, t);
