@@ -1310,8 +1310,7 @@ Node *Tree::condense_split_node(double lambda_s, unsigned int size_limit, bool w
     double rand_val = prob_dist(generator); // to be btw. 0 and 1
 
     vector<Node*> descendents_of_root = this->root->get_descendents(false); // without the root
-   // if (rand_val < p_chi)
-   if (rand_val < 0.5)
+    if (rand_val < p_chi)
     {
         // split is chosen
 
