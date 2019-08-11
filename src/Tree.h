@@ -524,7 +524,11 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
      * */
 
     if (!is_valid_subtree(this->root))
+    {
         std::cout<<"debug the invalid tree";
+        !is_valid_subtree(this->root);
+    }
+    assert(is_valid_subtree(this->root));
 
     if (all_nodes_vec.size() <= 2)
         throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
@@ -858,6 +862,7 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
      * Requires more than 2 nodes to work
      * */
 
+    assert(is_valid_subtree(this->root));
     if (!is_valid_subtree(this->root))
         std::cout<<"debug the invalid tree";
     if (subtree_out_of_bound(this->root))
@@ -979,6 +984,7 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
      * Returns the pointer to the affacted node.
      * */
 
+    assert(is_valid_subtree(this->root));
     if (!is_valid_subtree(this->root))
         std::cout<<"debug the invalid tree";
     if (subtree_out_of_bound(this->root))
@@ -1171,6 +1177,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, unsigned int si
 
     if (!is_valid_subtree(this->root))
         is_valid_subtree(this->root);
+    assert(is_valid_subtree(this->root));
     if (subtree_out_of_bound(this->root))
         std::cout <<"something is wrong!";
 
@@ -1272,6 +1279,7 @@ Node *Tree::condense_split_node(double lambda_s, unsigned int size_limit, bool w
      * Condenses two nodes into one or splits a node into two.
      * */
 
+    assert(is_valid_subtree(this->root));
     if (!is_valid_subtree(this->root))
         std::cout<<"debug the invalid tree";
     if (subtree_out_of_bound(this->root))
@@ -1669,6 +1677,7 @@ void Tree::genotype_preserving_prune_reattach() {
      * Requires more than two nodes to perform.
      * */
 
+    assert(is_valid_subtree(this->root));
     if (!is_valid_subtree(this->root))
         std::cout<<"debug the invalid tree";
     if (subtree_out_of_bound(this->root))
@@ -1773,7 +1782,17 @@ void Tree::genotype_preserving_prune_reattach() {
         Node* pruned_node = this->prune(to_prune);
 
         Node* attach_pos = this->find_node(prune_attach_pos.second);
+
+        // update c_change
+        pruned_node->c_change = Utils::map_diff(pruned_node->c, attach_pos->c);
+
+        if (pruned_node->c_change.empty()) //reject the attachment if c_change becomes empty
+            throw std::logic_error("Empty c_label node created. Move will be rejected.");
+
         this->insert_child(attach_pos, pruned_node);
+
+        assert(is_valid_subtree(attach_pos));
+        assert(is_valid_subtree(this->root));
 
         to_prune = pruned_node = attach_pos = nullptr;
 
