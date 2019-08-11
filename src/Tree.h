@@ -1204,8 +1204,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, unsigned int si
     boost::random::uniform_real_distribution<double> prob_dist(0.0,1.0);
     double rand_val = prob_dist(generator); // to be btw. 0 and 1
 
-   // if (rand_val < p_chi)
-   if(rand_val < 0.5)
+    if (rand_val < p_chi)
     {
         // add is chosen
         if (all_nodes_vec.size() >= size_limit)
