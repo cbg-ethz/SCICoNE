@@ -120,8 +120,8 @@ void test_reproducibility()
     mcmc.update_t_prime(); // set t_prime to t
 
     // move probabilities
-    vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f};
-    //---------------------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno--
+    vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+    //---------------------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od--
 
     unsigned size_limit = std::numeric_limits<unsigned>::max();
 
@@ -130,7 +130,7 @@ void test_reproducibility()
 
     cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << std::endl;
     std::cout<<"Epsilon: " << epsilon << std::endl;
-    assert(abs(mcmc.best_tree.posterior_score - 15.656) <= epsilon);
+    assert(abs(mcmc.best_tree.posterior_score - 19.847) <= epsilon);
     std::cout<<"Reproducibility test is passed!"<<std::endl;
 
 }
