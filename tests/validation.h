@@ -636,4 +636,24 @@ void test_tree_validation()
     std::cout<<"Is valid tree? validation test passed!"<<std::endl;
 }
 
+void test_n_descendents_computation()
+{
+    /*
+     * Verifies the n_descendents variable is computed correctly for all nodes
+     * */
+
+    Inference mcmc(r.size(), ploidy, verbosity);
+    mcmc.initialize_worked_example();
+
+    assert(mcmc.t.all_nodes_vec[0]->n_descendents == 6);
+    assert(mcmc.t.all_nodes_vec[1]->n_descendents == 5);
+    assert(mcmc.t.all_nodes_vec[2]->n_descendents == 3);
+    assert(mcmc.t.all_nodes_vec[3]->n_descendents == 1);
+    assert(mcmc.t.all_nodes_vec[4]->n_descendents == 1);
+    assert(mcmc.t.all_nodes_vec[5]->n_descendents == 1);
+
+    std::cout<<"Number of descendents computation test passed!"<<std::endl;
+
+}
+
 #endif //SC_DNA_VALIDATION_H

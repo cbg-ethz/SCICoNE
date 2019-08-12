@@ -38,6 +38,7 @@ int main()
     test_xxhash();
     test_tree_prior();
     test_event_prior();
+    test_n_descendents_computation();
     test_tree_attachment();
     test_prune_reattach();
     test_swap_label();
