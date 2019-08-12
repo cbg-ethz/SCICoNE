@@ -172,19 +172,20 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
         {
             int cf = (node->c.count(x.first)?node->c[x.first]:0); // use count to check without initializing the not found element
             int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
-            z += r[x.first] * (cf - cp_f);
 
-            if (z == 0.0) // to prevent log(0) exception
-                z += eta;
+            // to prevent log(0)
+            double node_cn = (cf+ploidy)==0?(eta):(cf+ploidy);
+            double parent_cn = (cp_f+ploidy)==0?(eta):(cp_f+ploidy);
+
+            z += r[x.first] * (node_cn - parent_cn);
         }
 
         for (auto const &x : node->c_change)
         {
 
             // if log zero then use eta value, not to have -infinity
-            int cf = (node->c.count(x.first)?node->c[x.first]:0); // use count to check without initializing the not found element
-            // the above part can also be done by using map::at and exception handling
-            int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
+            int cf = (node->c.count(x.first)?node->c[x.first]:0);
+            int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0);
 
             // to prevent log(0)
             double node_cn = (cf+ploidy)==0?(eta):(cf+ploidy);
