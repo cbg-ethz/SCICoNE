@@ -750,8 +750,12 @@ bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, con
         if (log_t_prime_nu > 10.0)
             return false; // reject the move
 
+        if (verbosity > 0)
         std::cout<<"Old nu value: " << t_prime.nu << ",\t";
+
         t_prime.nu = std::exp(log_t_prime_nu); // real space
+
+        if (verbosity > 0)
         std::cout<<"new nu value: " << t_prime.nu << std::endl;
 
 
