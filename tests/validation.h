@@ -112,7 +112,8 @@ void test_reproducibility()
     // if seed is not set, set it to 42
     SingletonRandomGenerator::get_instance(42);
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    int local_verbosity = 0;
+    Inference mcmc(r.size(), ploidy, local_verbosity);
 
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r);
@@ -123,12 +124,14 @@ void test_reproducibility()
     //---------------------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno--
 
     unsigned size_limit = std::numeric_limits<unsigned>::max();
-    mcmc.infer_mcmc(D, r, move_probs, 2500, size_limit);
 
-    cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << endl;
-    cout<<"Epsilon: " << epsilon << endl;
-    assert(abs(mcmc.best_tree.posterior_score - 30.653) <= epsilon);
-    cout<<"Reproducibility test is passed!"<<endl;
+    std::cout << "Running reproducibility test..." << std::endl;
+    mcmc.infer_mcmc(D, r, move_probs, 5000, size_limit);
+
+    cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << std::endl;
+    std::cout<<"Epsilon: " << epsilon << std::endl;
+    assert(abs(mcmc.best_tree.posterior_score - 15.656) <= epsilon);
+    std::cout<<"Reproducibility test is passed!"<<std::endl;
 
 }
 

@@ -50,9 +50,9 @@ int main()
 // Jack is going to provide worked example
     test_insert_delete_weights();
     test_condense_split_weights();
-    test_reproducibility();
     test_children_repeat_genotype();
     test_tree_validation();
+    test_reproducibility();
 
     return EXIT_SUCCESS;
 }
