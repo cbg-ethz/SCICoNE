@@ -58,7 +58,7 @@ public:
     double log_tree_posterior(double tree_sum, int m, Tree &tree);
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                               bool validation_test_mode);
-    bool apply_genotype_preserving_pr();
+    bool apply_genotype_preserving_pr(double gamma);
     bool apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<double>> &D,
                                  const vector<int> &r,
                                  bool weighted = false,
@@ -648,7 +648,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // genotype_preserving prune & reattach
                 if (verbosity > 0)
                     cout<<"Genotype preserving prune and reattach"<<endl;
-                bool genotype_prune_reattach_success = apply_genotype_preserving_pr();
+                bool genotype_prune_reattach_success = apply_genotype_preserving_pr(gamma);
                 if (not genotype_prune_reattach_success)
                 {
                     rejected_before_comparison = true;
@@ -1189,14 +1189,14 @@ void Inference::update_t_prime() {
     this->t_prime = this->t;
 }
 
-bool Inference::apply_genotype_preserving_pr() {
+bool Inference::apply_genotype_preserving_pr(double gamma) {
     /*
      * Applies the genotype preserving prune and reattach move in a gibbs sample setting.
      * */
 
     try
     {
-        this->t.genotype_preserving_prune_reattach();
+        this->t.genotype_preserving_prune_reattach(gamma);
     }
     catch (const std::exception& e) { // caught by reference to base
         if (verbosity > 0)

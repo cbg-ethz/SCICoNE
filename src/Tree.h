@@ -55,7 +55,7 @@ public:
     virtual ~Tree();
     // moves
     Node *prune_reattach(bool weighted, bool validation_test_mode);
-    void genotype_preserving_prune_reattach();
+    void genotype_preserving_prune_reattach(double gamma);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
     Node *insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted);
@@ -1668,7 +1668,7 @@ double Tree::event_prior() {
     return PV;
 }
 
-void Tree::genotype_preserving_prune_reattach() {
+void Tree::genotype_preserving_prune_reattach(double gamma) {
     /*
      * Prunes a node and reattaches it to another node which is not among the descendents of the pruned node.
      * Preserves the genotypes of all nodes.
@@ -1758,7 +1758,8 @@ void Tree::genotype_preserving_prune_reattach() {
                 else
                 {
                     prune_attach_indices.emplace_back(std::make_pair(prune_pos_idx,attach_pos_idx));
-                    all_possible_scores.push_back(event_prior - original_node_event_prior);
+                    double score_diff = (event_prior - original_node_event_prior) * gamma;
+                    all_possible_scores.push_back(score_diff);
                 }
             }
         }
