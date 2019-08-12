@@ -1790,6 +1790,9 @@ void Tree::genotype_preserving_prune_reattach() {
 
         this->insert_child(attach_pos, pruned_node);
 
+        // recompute the weights after the tree structure is changed
+        this->compute_weights();
+
         assert(is_valid_subtree(attach_pos));
         assert(is_valid_subtree(this->root));
 
