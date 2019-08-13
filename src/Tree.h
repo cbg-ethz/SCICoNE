@@ -14,7 +14,6 @@
 #include <limits>
 #include "Node.h"
 #include "MathOp.h"
-#include <tuple>
 #include <random>
 #include "SingletonRandomGenerator.h"
 #include <set>
@@ -25,6 +24,7 @@
 #include <fstream>
 #include <algorithm> // std::remove
 #include "globals.cpp"
+#include "Lgamma.h"
 
 #include <boost/random/discrete_distribution.hpp>
 #include <boost/random/poisson_distribution.hpp>
@@ -54,13 +54,15 @@ public:
     // destructor
     virtual ~Tree();
     // moves
-    Node *prune_reattach(bool genotype_preserving, bool weighted, bool validation_test_mode);
+    Node *prune_reattach(bool weighted, bool validation_test_mode);
+    void genotype_preserving_prune_reattach(double gamma);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
     Node *insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted);
     Node *condense_split_node(double lambda_s, unsigned int size_limit, bool weighted);
     Node* delete_node(u_int64_t idx_tobe_deleted);
     Node* delete_node(Node* node);
+    Node* find_node(int id);
     Node* uniform_sample(bool with_root=true) const;
     Node* weighted_sample() const;
     void random_insert(std::map<u_int, int>&&);
@@ -91,14 +93,14 @@ public:
 
     void load_from_file(string file);
     double get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) const;
-
+    double event_prior();
 private:
     void update_label(std::map<u_int,int>& c_parent, Node* node);
     void update_desc_labels(Node* node);
     bool region_changes(Node *n, u_int region_id) const;
     void copy_tree(const Tree& source_tree);
     void copy_tree_nodes(Node *destination, Node *source);
-    void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta);
+    void compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, double eta);
     void compute_root_score(const vector<int> &r);
     Node* prune(Node *pos); // does not deallocate,
     Node* insert_child(Node *pos, Node *source);
@@ -140,15 +142,15 @@ void Tree::compute_root_score(const vector<int> &r) {
     for (auto const &x : r)
         z += x * this->ploidy;
 
-    root->log_score = 0;
+    root->attachment_score = 0;
     root->z = z;
 }
 
 void
-Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, float eta) {
+Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, double eta) {
 
     /*
-     * Computes the score of a node.
+     * Computes the attachment score of a node per cell.
      * */
 
     if (node->parent == nullptr)
@@ -158,39 +160,50 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
     else
     {
 
-        double log_likelihood = node->parent->log_score;
-        int z = node->parent->z;
-        int z_parent = node->parent->z;
+        double log_likelihood = node->parent->attachment_score;
+        double z = node->parent->z;
+        double z_parent = node->parent->z;
+
+        // for debug purposes
+        double z_orig = z;
 
         // update z first
         for (auto const &x : node->c_change)
         {
             int cf = (node->c.count(x.first)?node->c[x.first]:0); // use count to check without initializing the not found element
             int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
-            z += r[x.first] * (cf - cp_f);
+
+            // to prevent log(0)
+            double node_cn = (cf+ploidy)==0?(eta):(cf+ploidy);
+            double parent_cn = (cp_f+ploidy)==0?(eta):(cp_f+ploidy);
+
+            z += r[x.first] * (node_cn - parent_cn);
         }
 
         for (auto const &x : node->c_change)
         {
 
             // if log zero then use eta value, not to have -infinity
-            int cf = (node->c.count(x.first)?node->c[x.first]:0); // use count to check without initializing the not found element
-            // the above part can also be done by using map::at and exception handling
-            int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
+            int cf = (node->c.count(x.first)?node->c[x.first]:0);
+            int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0);
+
+            // to prevent log(0)
+            double node_cn = (cf+ploidy)==0?(eta):(cf+ploidy);
+            double parent_cn = (cp_f+ploidy)==0?(eta):(cp_f+ploidy);
 
             // option for the overdispersed version
             if (is_overdispersed)
             {
-                log_likelihood += lgamma(D[x.first] + nu*(cf+ploidy)*r[x.first]);
-                log_likelihood -= lgamma(D[x.first] + nu*(cp_f+ploidy)*r[x.first]);
+                log_likelihood += lgamma(D[x.first] + nu*(node_cn)*r[x.first]);
+                log_likelihood -= lgamma(D[x.first] + nu*(parent_cn)*r[x.first]);
 
-                log_likelihood -= lgamma(nu*(cf+ploidy)*r[x.first]);
-                log_likelihood += lgamma(nu*(cp_f+ploidy)*r[x.first]);
+                log_likelihood -= lgamma(nu*(node_cn)*r[x.first]);
+                log_likelihood += lgamma(nu*(parent_cn)*r[x.first]);
 
             }
             else
             {
-                log_likelihood += D[x.first] * (log((cf+ploidy)==0?(eta):(cf+ploidy)) - log((cp_f+ploidy)==0?(eta):(cp_f+ploidy)));
+                log_likelihood += D[x.first] * (log(node_cn) - log(parent_cn));
             }
 
         }
@@ -212,11 +225,10 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
             log_likelihood += sum_D*log(node->parent->z);
         }
 
-
-
-
         assert(!std::isnan(log_likelihood));
-        node->log_score = log_likelihood;
+        assert(!std::isinf(log_likelihood));
+
+        node->attachment_score = log_likelihood;
         node->z = z;
     }
 
@@ -394,7 +406,7 @@ void Tree::destroy() {
      * */
     for (auto elem: all_nodes_vec)
     {
-        //std::cout<<"deleting " << elem->log_score <<std::endl;
+        //std::cout<<"deleting " << elem->attachment_score <<std::endl;
         elem->first_child = elem->next = nullptr;
         elem->c.clear();
         delete elem;
@@ -509,13 +521,20 @@ void Tree::copy_tree_nodes(Node *destination, Node *source) {
     }
 }
 
-Node * Tree::prune_reattach(bool genotype_preserving, bool weighted, bool validation_test_mode) {
+Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     /*
      * Prunes a node and reattaches it to another node which is not among the descendents of the pruned node.
      * Returns the pruned node (which also happens to be the attached node)
      * Requires more than two nodes to perform.
      *
      * */
+
+    if (!is_valid_subtree(this->root))
+    {
+        std::cout<<"debug the invalid tree";
+        !is_valid_subtree(this->root);
+    }
+    assert(is_valid_subtree(this->root));
 
     if (all_nodes_vec.size() <= 2)
         throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
@@ -571,18 +590,7 @@ Node * Tree::prune_reattach(bool genotype_preserving, bool weighted, bool valida
 
         std::map<u_int,int> pruned_c;
 
-        if(genotype_preserving)
-        {
-            pruned_c = pruned_node->c; // copy
-        }
-
         auto attached_node = insert_child(attach_pos, pruned_node);
-
-        if (genotype_preserving)
-        {
-            std::map<u_int,int> parent_c = attached_node->parent->c;
-            attached_node->c_change = Utils::map_diff(pruned_c, parent_c);
-        }
 
         //update the c vectors of the attached node and its descendents
         update_desc_labels(attached_node);
@@ -662,8 +670,14 @@ Tree &Tree::operator=(const Tree &other) {
 void Tree::load_from_file(string file) {
     /*
      * Loads the tree from file
-     * TODO: first destroy the tree if it is not empty (or 1 node only)
      * */
+
+    // first destroy the tree if it is not empty (or 1 node only)
+    if (this->root->first_child != nullptr)
+    {
+        throw std::logic_error("Tree to read into must be empty!");
+    }
+
 
     //string file = "10nodes_0regions_100reads_size_limit_test_tree_inferred_segmented.txt";
     std::ifstream infile(file);
@@ -686,6 +700,11 @@ void Tree::load_from_file(string file) {
         string delim_cp = "]";
         string token = c.substr(0, c.find(del3));
         string token_r = c.substr(c.find(del3)+1, c.length());
+        // TODO: if token_r does not start and end with [ and ] then throw
+
+        if (token_r.front() != '[' || token_r.back() != ']')
+            throw std::runtime_error(" Incorrect tree format to parse! \nThe rows should be space separated.");
+
         int parent_id = stoi(token.substr(5,token.size()));
         string s = token_r.substr(1, token_r.find(delim_cp)-1);
         // cout <<" node id: " << node_id << " parent id: " << parent_id <<"s=" <<s<<  endl;
@@ -750,7 +769,7 @@ map<int, double> Tree::get_children_id_score(Node *node) { // TODO: make it a me
         }
         // make sure the id is not in the map before
         assert(id_score_pairs.find(top->id) == id_score_pairs.end());
-        id_score_pairs[top->id] = top->log_score;
+        id_score_pairs[top->id] = top->attachment_score;
     }
     return id_score_pairs;
 }
@@ -849,6 +868,13 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
      * Requires more than 2 nodes to work
      * */
 
+    assert(is_valid_subtree(this->root));
+    if (!is_valid_subtree(this->root))
+        std::cout<<"debug the invalid tree";
+    if (subtree_out_of_bound(this->root))
+        std::cout <<"something is wrong!";
+
+
     if (all_nodes_vec.size() <= 2)
         throw std::logic_error("swapping labels does not make sense when they is only one node besides the root");
 
@@ -867,7 +893,7 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
     {
         if (validation_test_mode)
         {
-            node1 = all_nodes_vec[2]; //without the root
+            node1 = all_nodes_vec[3]; //without the root
             node2 = all_nodes_vec[5];
         }
         else
@@ -949,11 +975,8 @@ bool Tree::is_valid_subtree(Node *node) const{
     if (zero_ploidy_changes(node)) // does it for the subtree
         return false;
 
-    vector<Node*> descendents = node->get_descendents(true);
-    for (auto const &elem : descendents)
-        if (elem->children_repeat_genotype()) // does it for a node
-            return false;
-
+    if (node->any_siblings_repeat_genotype())
+        return false;
 
     return true;
 
@@ -967,6 +990,13 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
      * Returns the pointer to the affacted node.
      * */
 
+    assert(is_valid_subtree(this->root));
+    if (!is_valid_subtree(this->root))
+        std::cout<<"debug the invalid tree";
+    if (subtree_out_of_bound(this->root))
+        std::cout <<"something is wrong!";
+
+
     if (all_nodes_vec.size() <= 1)
         throw std::logic_error("Adding or removing events does not make sense when there is 1 node or less. Root has to be neutral.");
 
@@ -975,6 +1005,7 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
     if (validation_test_mode)
     {
         node = all_nodes_vec[3];
+        node->c_change = {{3,-2}};
     }
     else
     {
@@ -982,53 +1013,47 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
             node = weighted_sample();
         else
             node = uniform_sample(false); //without the root
-    }
-    std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
+        std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
-    // n_regions from Poisson(lambda_R)+1
-    boost::random::poisson_distribution<int> poisson_dist(lambda_r); // the param is to be specified later
-    int n_regions_to_sample = poisson_dist(generator);
-    if (n_regions_to_sample == 0)
-        n_regions_to_sample += 1; // to have a region to sample
-    // sample n_regions_to_sample distinct regions uniformly
-    int n_regions = this->n_regions;
-    int regions_sampled = 0;
-    std::set<u_int> distinct_regions;
+        // n_regions from Poisson(lambda_R)+1
+        boost::random::poisson_distribution<int> poisson_dist(lambda_r); // the param is to be specified later
+        int n_regions_to_sample = poisson_dist(generator);
+        if (n_regions_to_sample == 0)
+            n_regions_to_sample += 1; // to have a region to sample
+        // sample n_regions_to_sample distinct regions uniformly
+        int n_regions = this->n_regions;
+        int regions_sampled = 0;
+        std::set<u_int> distinct_regions;
 
-    // otherwise we cannot sample distinct uniform regions
-    if (n_regions_to_sample > n_regions)
-        throw std::logic_error("the number of distinct regions to sample cannot be bigger than the total number of distinct regions available");
+        // otherwise we cannot sample distinct uniform regions
+        if (n_regions_to_sample > n_regions)
+            throw std::logic_error("the number of distinct regions to sample cannot be bigger than the total number of distinct regions available");
 
-
-    while (regions_sampled < n_regions_to_sample)
-    {
-        u_int uniform_val = static_cast<u_int> (MathOp::random_uniform(0, n_regions-1));
-        if (validation_test_mode)
-            uniform_val =3;
-        if (distinct_regions.find(uniform_val) == distinct_regions.end())
+        while (regions_sampled < n_regions_to_sample)
         {
-            distinct_regions.insert(uniform_val);
-            regions_sampled++;
+            u_int uniform_val = static_cast<u_int> (MathOp::random_uniform(0, n_regions-1));
+            if (distinct_regions.find(uniform_val) == distinct_regions.end())
+            {
+                distinct_regions.insert(uniform_val);
+                regions_sampled++;
+            }
         }
-    }
 
-    // n_copies from Poisson(lambda_c)+1
-    boost::random::poisson_distribution<int> copy_dist(lambda_c); // the param is to be specified later
-    // sign
-    boost::random::bernoulli_distribution<double> bernoulli(0.5);
-    for (auto const& elem : distinct_regions)
-    {
-        int n_copies = copy_dist(generator) + 1;
-        bool sign = bernoulli(generator);
-        if (validation_test_mode)
-            sign = true;
+        // n_copies from Poisson(lambda_c)+1
+        boost::random::poisson_distribution<int> copy_dist(lambda_c); // the param is to be specified later
+        // sign
+        boost::random::bernoulli_distribution<double> bernoulli(0.5);
+        for (auto const& elem : distinct_regions)
+        {
+            int n_copies = copy_dist(generator) + 1;
+            bool sign = bernoulli(generator);
 
-    node->c_change[elem] += (sign? n_copies : -n_copies);
+            node->c_change[elem] += (sign? n_copies : -n_copies);
 
-        if (node->c_change.at(elem) == 0)
-            node->c_change.erase(elem); //erase the zero instead of storing it
-
+            if (node->c_change.at(elem) == 0)
+                node->c_change.erase(elem); //erase the zero instead of storing it
+        }
     }
 
     if (Utils::is_empty_map(node->c_change))
@@ -1068,20 +1093,22 @@ bool Tree::zero_ploidy_changes(Node *n) const{
  * */
 
     vector<Node*> descendents = n->get_descendents(true);
-    vector<int> checked_regions;
 
     for (auto const &node : descendents)
-        for (auto const &it : node->c)
-            // if the ploidy becomes 0, i.e. hashmap value = -2 for humans, then it cannot change due to biological constraints.
-            if(it.second == (-1 * ploidy) && (find(checked_regions.begin(), checked_regions.end(), it.first) == checked_regions.end()))
+    {
+        if (node->id == 0 || node->parent->id == 0)
+            continue; // root cannot have events
+        for (auto const &it : node->parent->c)
+            if(it.second <= (-1 * ploidy))
             {
                 bool does_change = region_changes(node, it.first);
                 if (does_change)
                     return true;
-                else
-                    checked_regions.push_back(it.first);
             }
+    }
+
     return false;
+
 }
 
 bool Tree::region_changes(Node *n, u_int region_id) const{
@@ -1152,6 +1179,13 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, unsigned int si
      *
      * */
 
+    if (!is_valid_subtree(this->root))
+        is_valid_subtree(this->root);
+    assert(is_valid_subtree(this->root));
+    if (subtree_out_of_bound(this->root))
+        std::cout <<"something is wrong!";
+
+
     Node* return_node = nullptr;
 
     vector<double> chi = chi_insert_delete(weighted); // add weights
@@ -1174,8 +1208,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, unsigned int si
     boost::random::uniform_real_distribution<double> prob_dist(0.0,1.0);
     double rand_val = prob_dist(generator); // to be btw. 0 and 1
 
-   // if (rand_val < p_chi)
-   if(rand_val < 0.5)
+    if (rand_val < p_chi)
     {
         // add is chosen
         if (all_nodes_vec.size() >= size_limit)
@@ -1249,6 +1282,13 @@ Node *Tree::condense_split_node(double lambda_s, unsigned int size_limit, bool w
      * Condenses two nodes into one or splits a node into two.
      * */
 
+    assert(is_valid_subtree(this->root));
+    if (!is_valid_subtree(this->root))
+        std::cout<<"debug the invalid tree";
+    if (subtree_out_of_bound(this->root))
+        std::cout <<"something is wrong!";
+
+
     if (all_nodes_vec.size() <= 1)
         throw std::logic_error("condense or split does not make sense when there is 1 node or less. ");
 
@@ -1274,8 +1314,7 @@ Node *Tree::condense_split_node(double lambda_s, unsigned int size_limit, bool w
     double rand_val = prob_dist(generator); // to be btw. 0 and 1
 
     vector<Node*> descendents_of_root = this->root->get_descendents(false); // without the root
-   // if (rand_val < p_chi)
-   if (rand_val < 0.5)
+    if (rand_val < p_chi)
     {
         // split is chosen
 
@@ -1504,7 +1543,7 @@ vector<double> Tree::omega_insert_delete(double lambda_r, double lambda_c, bool 
      * */
 
     vector<double> omega; // delete weights
-    int K = this->n_regions;
+    u_int K = this->n_regions;
 
     vector<Node*> all_nodes = root->get_descendents(false); // without root
     for (auto const &node : all_nodes) { // computes the omega vector
@@ -1605,6 +1644,189 @@ double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector
     }
     return od_root_score;
 
+}
+
+double Tree::event_prior() {
+    /*
+     * Computes and returns the tree event prior
+     * */
+
+    int n = this->get_n_nodes(); //n_nodes
+
+    vector<double> p_v;
+    for (auto it = this->all_nodes_vec.begin()+1; it != this->all_nodes_vec.end(); ++it) // without the root
+    {
+        Node* node = *it;
+        double pv_i = node->compute_event_prior(this->n_regions);
+        p_v.push_back(pv_i);
+
+    }
+
+    assert(n==static_cast<int>(p_v.size()));
+    double PV = 0.0;
+    PV += std::accumulate(p_v.begin(), p_v.end(), 0.0);
+    PV -= Lgamma::get_val(n+1);
+
+
+    return PV;
+}
+
+void Tree::genotype_preserving_prune_reattach(double gamma) {
+    /*
+     * Prunes a node and reattaches it to another node which is not among the descendents of the pruned node.
+     * Preserves the genotypes of all nodes.
+     * Performs gibbs sampling and returns the tree.
+     * Requires more than two nodes to perform.
+     * */
+
+    assert(is_valid_subtree(this->root));
+    if (!is_valid_subtree(this->root))
+        std::cout<<"debug the invalid tree";
+    if (subtree_out_of_bound(this->root))
+        std::cout <<"something is wrong!";
+
+
+    if (this->all_nodes_vec.size() <= 2)
+        throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
+
+
+    std::vector<double> all_possible_scores; // event priors of all valid attachments
+    std::vector<std::pair<int,int>> prune_attach_indices;
+
+    // the score for the original tree
+    all_possible_scores.push_back(0.0); //exp(0) is 1.
+    prune_attach_indices.emplace_back(std::make_pair(std::nan(""),std::nan("")));
+
+    for (u_int i = 1; i < this->all_nodes_vec.size(); ++i) // i=1, excluding the root
+    {
+        // i: prune position index
+        int prune_pos_idx = this->all_nodes_vec[i]->id;
+        Node* prune_pos = this->all_nodes_vec[i];
+        double original_node_event_prior = prune_pos->compute_event_prior(this->n_regions);
+
+        // copy all nodes
+        std::vector<Node*> destination_nodes = this->all_nodes_vec;
+
+        // remove all the descendents of the prune_pos
+        std::stack<Node*> stk;
+        stk.push(prune_pos);
+
+        while (!stk.empty()) {
+            Node* top = static_cast<Node*> (stk.top());
+            stk.pop();
+            for (Node *temp = top->first_child; temp != nullptr; temp = temp->next) {
+                stk.push(temp);
+            }
+            destination_nodes.erase(std::remove(destination_nodes.begin(), destination_nodes.end(), top), destination_nodes.end());
+        }
+
+        for (Node* attach_pos : destination_nodes)
+        {
+
+            int attach_pos_idx = attach_pos->id;
+            //do not recompute if you attach at the same pos
+            if (prune_pos->parent->id != attach_pos_idx)
+            {
+
+                // Think as if a node is pruned and reattached somewhere without having to create the entire tree
+                // copy the nodes
+                Node copy_pruned(*prune_pos);
+                Node copy_attach_pos(*attach_pos);
+
+                // create parent-child relationship
+                copy_attach_pos.first_child = &copy_pruned;
+                copy_pruned.parent = &copy_attach_pos;
+
+                // update c_change
+                copy_pruned.c_change = Utils::map_diff(copy_pruned.c, copy_attach_pos.c);
+
+                if (copy_pruned.c_change.empty()) //reject the attachment if c_change becomes empty
+                    continue;
+
+
+                // compute event prior
+                double event_prior = copy_pruned.compute_event_prior(this->n_regions);
+
+                // check if invalid tree occurs
+
+                // 1. insert the modified node for a while
+                this->insert_child(attach_pos, &copy_pruned);
+                // 2. check for first order children repeat genotype
+                bool repeat_genotype = attach_pos->first_order_children_repeat_genotype();
+                // 3. prune the copy_pruned back
+                this->prune(&copy_pruned);
+                // 4. decide
+                if (repeat_genotype)
+                    continue;
+                else
+                {
+                    prune_attach_indices.emplace_back(std::make_pair(prune_pos_idx,attach_pos_idx));
+                    double score_diff = (event_prior - original_node_event_prior) * gamma;
+                    all_possible_scores.push_back(score_diff);
+                }
+            }
+        }
+    }
+
+    double max_tree_score = *std::max_element(all_possible_scores.begin(), all_possible_scores.end());
+    for (u_int j = 0; j < all_possible_scores.size(); ++j)
+        all_possible_scores[j] = std::exp(all_possible_scores[j] - max_tree_score);
+
+    // sample from the tree scores
+    std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
+    boost::random::discrete_distribution<> d(all_possible_scores.begin(), all_possible_scores.end());
+    unsigned sampled_tree_index = d(gen);
+
+    // perform prune & reattach if needed
+    if (sampled_tree_index != 0)
+    {
+        std::pair<int,int> prune_attach_pos = prune_attach_indices[sampled_tree_index];
+        Node* to_prune = this->find_node(prune_attach_pos.first);
+        if (to_prune == nullptr)
+            throw std::logic_error("Node to prune could not be found in the tree. Move will be rejected.");
+
+        Node* pruned_node = this->prune(to_prune);
+
+        Node* attach_pos = this->find_node(prune_attach_pos.second);
+        if (attach_pos == nullptr)
+            throw std::logic_error("Node to attach could not be found in the tree. Move will be rejected.");
+
+        // update c_change
+        pruned_node->c_change = Utils::map_diff(pruned_node->c, attach_pos->c);
+
+        if (pruned_node->c_change.empty()) //reject the attachment if c_change becomes empty
+            throw std::logic_error("Empty c_label node created. Move will be rejected.");
+
+        this->insert_child(attach_pos, pruned_node);
+
+        // recompute the weights after the tree structure is changed
+        this->compute_weights();
+
+        assert(is_valid_subtree(attach_pos));
+        assert(is_valid_subtree(this->root));
+
+        to_prune = pruned_node = attach_pos = nullptr;
+
+    }
+    else
+    {
+        throw std::logic_error("The node is reattached to the same position.");
+    }
+}
+
+Node *Tree::find_node(int id) {
+    /*
+     * Finds and returns the pointer to the node with the given id.
+     * Returns nullptr if the node is not found.
+     * id: The node id to look for
+     * */
+    vector<Node*> nodes = this->root->get_descendents(true);
+
+    for (Node* const x : nodes)
+        if (x->id == id)
+            return x;
+
+    return nullptr; // not found
 }
 
 

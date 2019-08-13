@@ -53,10 +53,12 @@ public:
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);
     void update_t_prime();
+
     double log_tree_prior(int m, int n);
-    double log_posterior(double tree_sum, int m, Tree &tree);
-    bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
-                                  bool weighted, bool validation_test_mode);
+    double log_tree_posterior(double tree_sum, int m, Tree &tree);
+    bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
+                              bool validation_test_mode);
+    bool apply_genotype_preserving_pr(double gamma);
     bool apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<double>> &D,
                                  const vector<int> &r,
                                  bool weighted = false,
@@ -151,7 +153,7 @@ void Inference::initialize_worked_example() {
     t.insert_at(1,{{1, 1}, {2, 1}});
     t.insert_at(2,{{0, -1}});
     t.insert_at(2,{{3, -1}});
-    t.insert_at(1,{{1, 1}});
+    t.insert_at(1,{{0, 1}});
 
     // Tree score: -2605.9655
 //    t.insert_at(0,{{0,1},{1,1}}); // 1
@@ -178,8 +180,8 @@ Inference::~Inference() {
     destroy();
 }
 
-bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool genotype_preserving,
-                                     bool weighted, bool validation_test_mode) {
+bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
+                                     bool validation_test_mode) {
     /*
      * Applies prune and reattach to t_prime
      * Updates the sums and scores tables partially
@@ -187,7 +189,7 @@ bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vect
 
     Node* attached_node;
     try {
-        attached_node = t_prime.prune_reattach(genotype_preserving, weighted, validation_test_mode);
+        attached_node = t_prime.prune_reattach(weighted, validation_test_mode);
     }catch (const std::logic_error& e)
     {
         if (verbosity > 0)
@@ -228,7 +230,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
     int n = t.get_n_nodes();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
     t.prior_score = log_tree_prior(m, n);
-    t.posterior_score = log_posterior(t_sum, m, t);
+    t.posterior_score = log_tree_posterior(t_sum, m, t);
 
 }
 
@@ -249,7 +251,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     u_int t_prime_n_nodes = t_prime.get_n_nodes();
 
     // compare the posteriors
-    t_prime.posterior_score = log_posterior(t_prime_sum, m, t_prime);
+    t_prime.posterior_score = log_tree_posterior(t_prime_sum, m, t_prime);
     // update the tree prior as well
     t_prime.prior_score = log_tree_prior(m, t_prime_n_nodes);
 
@@ -273,9 +275,15 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         score_diff = t_prime.posterior_score - t.posterior_score;
 
     double acceptance_prob = exp(gamma*score_diff); // later gets modified
+    bool acceptence_is_zero = false;
     if (acceptance_prob == 0.0)
+        // acceptence_is_zero = true;
         return &t;
-    if (std::isinf(acceptance_prob))
+    assert(!std::isinf(t_prime.posterior_score));
+    if (std::isinf(t_prime.posterior_score)) // if t_prime has inf score
+        return &t;
+    assert(!std::isinf(acceptance_prob));
+    if (std::isinf(acceptance_prob)) // if t_prime is much better than t, but not inf
         return &t_prime;
 
     // compute nbd correction
@@ -285,6 +293,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     if (move_id == 1) // weighted prune-reattach
     {
         nbd_corr = t.cost() / t_prime.cost();
+        assert(!std::isinf(nbd_corr));
         if (std::isinf(nbd_corr))
             return &t; // reject
 
@@ -429,6 +438,8 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
     if (acceptance_prob > 1)
     {
+        if (acceptence_is_zero)
+            std::cout<<"debugging...";
         if (verbosity > 0)
             std::cout << "Move is accepted." << std::endl;
         return &t_prime;
@@ -445,6 +456,8 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
         if (acceptance_prob > rand_val)
         {
+            if (acceptence_is_zero)
+                std::cout<<"debugging...";
             if (verbosity > 0)
                 std::cout << "Move is accepted." << std::endl;
             return &t_prime;
@@ -507,7 +520,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // prune & reattach
                 if (verbosity > 0)
                     cout << "Prune and reattach" << endl;
-                bool prune_reattach_success = apply_prune_reattach(D, r, false, false, false);
+                bool prune_reattach_success = apply_prune_reattach(D, r, false, false);
                 if (not prune_reattach_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -520,7 +533,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted prune & reattach
                 if (verbosity > 0)
                     cout<<"Weighted prune and reattach"<<endl;
-                bool weighted_prune_reattach_success = apply_prune_reattach(D, r, false, true, false); // weighted=true
+                bool weighted_prune_reattach_success = apply_prune_reattach(D, r, true, false); // weighted=true
                 if (not weighted_prune_reattach_success)
                 {
                     rejected_before_comparison = true;
@@ -644,12 +657,19 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // genotype_preserving prune & reattach
                 if (verbosity > 0)
                     cout<<"Genotype preserving prune and reattach"<<endl;
-                bool genotype_prune_reattach_success = apply_prune_reattach(D, r, true, false, false); // weighted=false
+                bool genotype_prune_reattach_success = apply_genotype_preserving_pr(gamma);
                 if (not genotype_prune_reattach_success)
                 {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
-                        cout << "Genotype preserving prune/reattach is rejected before comparison"<<endl;
+                        cout << "Genotype preserving prune/reattach is rejected"<<endl;
+                }
+                else
+                {
+                    // update t score
+                    double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
+                    t.posterior_score = log_tree_posterior(t_sum, m, t); // the prior score will change
+                    t_prime = t; // update t_prime
                 }
                 break;
             }
@@ -669,50 +689,54 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             }
             default:
                 throw std::logic_error("undefined move index");
-        }
-
-        // compare the trees
+        } // end of switch
 
         Tree* accepted;
-        if (rejected_before_comparison)
-            accepted = &t;
-        else
-            try
-            {
-                accepted = comparison(m, gamma, move_id);
-            } catch (const std::out_of_range& e)
-            {
-                if (verbosity > 0)
-                {
-                    std::cout << " an out of range error was caught during the comparison function, with message '"
-                              << e.what() << '\'' << std::endl;
-                    accepted = &t;
-                }
-            }
 
+        if (move_id == 10) //genotype preserving prune reattach, gibbs sampling
+            accepted = &t;
+        else // metropolis hasting sampling
+        {
+            // compare the trees
+            if (rejected_before_comparison)
+                accepted = &t;
+            else
+                try
+                {
+                    accepted = comparison(m, gamma, move_id);
+                } catch (const std::out_of_range& e)
+                {
+                    if (verbosity > 0)
+                    {
+                        std::cout << " an out of range error was caught during the comparison function, with message '"
+                                  << e.what() << '\'' << std::endl;
+                        accepted = &t;
+                    }
+                }
+
+            // update trees and the matrices
+            if (accepted == &t_prime)
+            {
+                n_accepted++;
+                t_sums = t_prime_sums;
+                update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
+                t = t_prime;
+                if ((t_prime.posterior_score + t_prime.od_score)  > (best_tree.posterior_score + best_tree.od_score))
+                    best_tree = t_prime;
+            }
+            else
+            {
+                n_rejected++;
+                t_prime = t;
+            }
+            t_prime_sums.clear();
+            t_prime_scores.clear();
+        }
 
         static double first_score = accepted->posterior_score + accepted->od_score; // the first value will be kept in whole program
         // print accepted log_posterior
         mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score << ',';
         rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score << ',';
-
-        // update trees and the matrices
-        if (accepted == &t_prime)
-        {
-            n_accepted++;
-            t_sums = t_prime_sums;
-            update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
-            t = t_prime;
-            if ((t_prime.posterior_score + t_prime.od_score)  > (best_tree.posterior_score + best_tree.od_score))
-                best_tree = t_prime;
-        }
-        else
-        {
-            n_rejected++;
-            t_prime = t;
-        }
-        t_prime_sums.clear();
-        t_prime_scores.clear();
 
     }
 
@@ -735,8 +759,12 @@ bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, con
         if (log_t_prime_nu > 10.0)
             return false; // reject the move
 
+        if (verbosity > 0)
         std::cout<<"Old nu value: " << t_prime.nu << ",\t";
+
         t_prime.nu = std::exp(log_t_prime_nu); // real space
+
+        if (verbosity > 0)
         std::cout<<"new nu value: " << t_prime.nu << std::endl;
 
 
@@ -766,95 +794,19 @@ double Inference::log_tree_prior(int m, int n) {
     return log_prior;
 }
 
-double Inference::log_posterior(double tree_sum, int m, Tree &tree) {
-    // TODO: move to the mathop
-    // m: n_cells, n: n_nodes
+double Inference::log_tree_posterior(double tree_sum, int m, Tree &tree) {
+    /*
+     * Computes and returns the posterior log score of the tree
+     * m: n_cells
+     * */
 
+    // n: n_nodes
     int n = tree.get_n_nodes();
     double log_posterior = 0.0;
     log_posterior = tree_sum + this->log_tree_prior(m, n); // initialise posterior with prior then add posterior
 
-    int repetition_count = 0; // the repetition count to be used in the penalisation
-    double c_penalisation = c_penalise; // the penalisation coefficient, global var
-
-    /*
-     * compute penalization term
-     * K: max region index
-     *
-     * */
-
-    vector<double> p_v;
-    for (auto it = tree.all_nodes_vec.begin()+1; it != tree.all_nodes_vec.end(); ++it) // without the root
-    {
-        Node* node = *it;
-        map<u_int,int>& c_change = node->c_change;
-        int v = 0;
-        int v_prev = 0; // the first region is zero
-        int i_prev = -1; // the initial index is -1, it'll be updated later
-
-        auto last_elem_id = c_change.rbegin()->first;
-
-        for (auto const &event_it : c_change)
-        {
-
-            // penalisation for repetition
-            int parent_state = 0;
-
-            try
-            {
-                parent_state = node->parent->c.at(event_it.first);
-                int c_change_val = event_it.second;
-
-                if (signbit(c_change_val) != signbit(parent_state))
-                    repetition_count++;
-            }
-            catch (const std::out_of_range& e)
-            {
-                // pass
-            }
-
-            int diff;
-            if (static_cast<int>(event_it.first) - 1 != i_prev) // if the region is adjacent to its previous
-            {
-                int diff_right = 0 - v_prev; // the right hand side change at the end of the last consecutive region
-                if (diff_right > 0)
-                    v += diff_right;
-                v_prev = 0;
-            }
-            diff = event_it.second - v_prev;
-            if (diff > 0)
-                v += diff;
-            v_prev = event_it.second;
-            i_prev = event_it.first;
-
-            if (event_it.first == last_elem_id)
-            {
-                int diff_last = 0 - v_prev;
-
-                if (diff_last > 0)
-                {
-                    v += diff_last;
-                    assert(v>0);
-                }
-            }
-        }
-
-        double pv_i = 0.0;
-
-        int K = this->n_regions;
-        pv_i -= v*log(2*K); // the event prior
-        p_v.push_back(pv_i);
-
-    }
-
-    assert(n==static_cast<int>(p_v.size()));
-    double PV = 0.0;
-    PV += std::accumulate(p_v.begin(), p_v.end(), 0.0);
-    PV -= Lgamma::get_val(n+1);
-
+    double PV = tree.event_prior();
     log_posterior += PV;
-
-    log_posterior -= c_penalisation*repetition_count; // penalise the repetitions
 
     return log_posterior;
 }
@@ -900,7 +852,7 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
         double sum_d = accumulate( d.begin(), d.end(), 0.0);
 
         if (attached_node != t_prime.root)
-            attached_node->parent->log_score = t_scores[j][attached_node->parent->id]; // the indices must match
+            attached_node->parent->attachment_score = t_scores[j][attached_node->parent->id]; // the indices must match
         // attached node->parent->id must match the all_nodes_vec index
         t_prime.compute_stack(attached_node, d, sum_d,r);
 
@@ -967,8 +919,7 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
 
     int deleted_index = deleted_node_idx(); // if -1 then not deleted, otherwise the index of the deleted
 
-    int i = 0;
-    for (auto const &d: D) {
+    for (unsigned i = 0; i < D.size(); ++i) {
         vector<double> old_vals;
         old_vals.reserve(t_scores[i].size()); // the max possible size
         vector<double> new_vals;
@@ -1005,7 +956,6 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
         assert(!std::isnan(res));
 
         t_prime_sums.push_back(res);
-        i++;
     }
 }
 
@@ -1252,5 +1202,23 @@ void Inference::update_t_prime() {
     this->t_prime = this->t;
 }
 
+bool Inference::apply_genotype_preserving_pr(double gamma) {
+    /*
+     * Applies the genotype preserving prune and reattach move in a gibbs sample setting.
+     * */
+
+    try
+    {
+        this->t.genotype_preserving_prune_reattach(gamma);
+    }
+    catch (const std::exception& e) { // caught by reference to base
+        if (verbosity > 0)
+            std::cout << " a standard exception was caught during the genotype preserving prune and reattach move,"
+                         " with message '" << e.what() << '\'' << std::endl;
+        return false;
+    }
+
+    return true;
+}
 
 #endif //SC_DNA_INFERENCE_H

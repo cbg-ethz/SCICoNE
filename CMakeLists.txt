@@ -14,6 +14,9 @@ set(CMAKE_CXX_FLAGS_DEBUG  "-g") # icc needs -O3 after -g
 #set(CMAKE_CXX_FLAGS_DEBUG "-Wextra")
 
 
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -gdwarf-3")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -gdwarf-3")
+
 
 # ----------------------------------------------------------------------------
 # Dependencies

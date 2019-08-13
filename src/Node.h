@@ -10,6 +10,8 @@
 #include <stack>
 #include <set>
 #include <cmath>
+#include <cassert>
+#include "globals.cpp"
 
 using namespace std;
 
@@ -18,7 +20,7 @@ struct Node{
     std::map<u_int,int> c = {};
     uint64_t  c_hash = 0;
     std::map<u_int,int> c_change= {};
-    double log_score = 0.0;
+    double attachment_score = 0.0;
     int z = 0;
     unsigned n_descendents = 1; // including itself
     Node* first_child = nullptr;
@@ -52,14 +54,16 @@ struct Node{
     inline int get_n_children() const;
     inline bool is_leaf() const;
     inline vector<Node*> get_descendents(bool with_n=true) const;
-    inline bool children_repeat_genotype() const;
+    inline bool first_order_children_repeat_genotype() const;
+    inline bool any_siblings_repeat_genotype() const;
+    inline double compute_event_prior(u_int n_regions) const;
 
     // copy constructor
     Node(Node& source_node): c(source_node.c), c_hash(source_node.c_hash), c_change(source_node.c_change)
     {
         id = source_node.id;
         // log scores are not copied since they rely on cells
-        log_score = 0.0;
+        attachment_score = 0.0;
         z = source_node.z;
         n_descendents = source_node.n_descendents;
         first_child = next = parent = nullptr;
@@ -145,7 +149,7 @@ inline vector<Node *> Node::get_descendents(bool with_n) const {
     return descendents;
 }
 
-bool Node::children_repeat_genotype() const {
+bool Node::first_order_children_repeat_genotype() const {
     /*
      * Returns true if any first order children of a node repeat the same change sign on the same region.
      * */
@@ -170,6 +174,90 @@ bool Node::children_repeat_genotype() const {
             }
         }
     }
+
+    return false;
+}
+
+double Node::compute_event_prior(u_int n_regions) const {
+    /*
+     * Computes and returns the event prior of the node.
+     * */
+
+    int repetition_count = 0; // the repetition count to be used in the penalisation
+    double c_penalisation = c_penalise; // the penalisation coefficient, global var
+
+    const map<u_int,int>& c_change = this->c_change;
+    int v = 0;
+    int v_prev = 0; // the first region is zero
+    int i_prev = -1; // the initial index is -1, it'll be updated later
+
+    auto last_elem_id = c_change.rbegin()->first;
+
+    for (auto const &event_it : c_change)
+    {
+        // penalisation for repetition
+        int parent_state = 0;
+        try
+        {
+            parent_state = this->parent->c.at(event_it.first);
+            int c_change_val = event_it.second;
+
+            if (signbit(c_change_val) != signbit(parent_state))
+                repetition_count++;
+        }
+        catch (const std::out_of_range& e)
+        {
+            // pass
+        }
+        int diff;
+        if (static_cast<int>(event_it.first) - 1 != i_prev) // if the region is adjacent to its previous
+        {
+            int diff_right = 0 - v_prev; // the right hand side change at the end of the last consecutive region
+            if (diff_right > 0)
+                v += diff_right;
+            v_prev = 0;
+        }
+        diff = event_it.second - v_prev;
+        if (diff > 0)
+            v += diff;
+        v_prev = event_it.second;
+        i_prev = event_it.first;
+
+        if (event_it.first == last_elem_id)
+        {
+            int diff_last = 0 - v_prev;
+
+            if (diff_last > 0)
+            {
+                v += diff_last;
+                assert(v>0);
+            }
+        }
+    }
+
+    double pv_i = 0.0;
+
+    /* K: max region index  */
+    int K = n_regions;
+    pv_i -= v*log(2*K); // the event prior
+    pv_i -= c_penalisation*repetition_count; // penalise the repetitions
+
+    return pv_i;
+}
+
+bool Node::any_siblings_repeat_genotype() const {
+    /*
+     * Returns true if any of the siblings in the subtree repeat the same change sign on the same region.
+     * */
+
+    std::vector<Node*> descendents;
+    if (this->id == 0)
+        descendents = this->get_descendents(true); // root cannot have siblings, no need to check parent
+    else
+        descendents = this->parent->get_descendents(true); // use parent to detect siblings
+    for (auto const &elem : descendents)
+        if (elem->first_order_children_repeat_genotype()) // does it for a node
+            return true;
 
     return false;
 }
