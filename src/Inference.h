@@ -275,10 +275,14 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         score_diff = t_prime.posterior_score - t.posterior_score;
 
     double acceptance_prob = exp(gamma*score_diff); // later gets modified
+    bool acceptence_is_zero = false;
     if (acceptance_prob == 0.0)
+        // acceptence_is_zero = true;
         return &t;
+    assert(!std::isinf(t_prime.posterior_score));
     if (std::isinf(t_prime.posterior_score)) // if t_prime has inf score
         return &t;
+    assert(!std::isinf(acceptance_prob));
     if (std::isinf(acceptance_prob)) // if t_prime is much better than t, but not inf
         return &t_prime;
 
@@ -289,6 +293,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     if (move_id == 1) // weighted prune-reattach
     {
         nbd_corr = t.cost() / t_prime.cost();
+        assert(!std::isinf(nbd_corr));
         if (std::isinf(nbd_corr))
             return &t; // reject
 
@@ -433,6 +438,8 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
     if (acceptance_prob > 1)
     {
+        if (acceptence_is_zero)
+            std::cout<<"debugging...";
         if (verbosity > 0)
             std::cout << "Move is accepted." << std::endl;
         return &t_prime;
@@ -449,6 +456,8 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
         if (acceptance_prob > rand_val)
         {
+            if (acceptence_is_zero)
+                std::cout<<"debugging...";
             if (verbosity > 0)
                 std::cout << "Move is accepted." << std::endl;
             return &t_prime;
@@ -657,10 +666,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 else
                 {
-                    t_prime = t; // update t_prime
                     // update t score
                     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
-                    t.posterior_score = log_tree_posterior(t_sum, m, t);
+                    t.posterior_score = log_tree_posterior(t_sum, m, t); // the prior score will change
+                    t_prime = t; // update t_prime
                 }
                 break;
             }
