@@ -317,7 +317,12 @@ Node* Tree::uniform_sample(bool with_root) const{
     if (all_nodes_vec.empty())
         throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
     else if (all_nodes_vec.size() ==1)
-        rand_val = 1;
+    {
+        if (with_root)
+            rand_val = 1;
+        else
+            throw std::logic_error("root is the only node and cannot be sampled");
+    }
     else
     {
         // 1 is root, 2 is 1st.
