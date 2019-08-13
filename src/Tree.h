@@ -1777,9 +1777,14 @@ void Tree::genotype_preserving_prune_reattach(double gamma) {
     {
         std::pair<int,int> prune_attach_pos = prune_attach_indices[sampled_tree_index];
         Node* to_prune = this->find_node(prune_attach_pos.first);
+        if (to_prune == nullptr)
+            throw std::logic_error("Node to prune could not be found in the tree. Move will be rejected.");
+
         Node* pruned_node = this->prune(to_prune);
 
         Node* attach_pos = this->find_node(prune_attach_pos.second);
+        if (attach_pos == nullptr)
+            throw std::logic_error("Node to attach could not be found in the tree. Move will be rejected.");
 
         // update c_change
         pruned_node->c_change = Utils::map_diff(pruned_node->c, attach_pos->c);
@@ -1807,6 +1812,7 @@ void Tree::genotype_preserving_prune_reattach(double gamma) {
 Node *Tree::find_node(int id) {
     /*
      * Finds and returns the pointer to the node with the given id.
+     * Returns nullptr if the node is not found.
      * id: The node id to look for
      * */
     vector<Node*> nodes = this->root->get_descendents(true);
