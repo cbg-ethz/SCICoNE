@@ -563,18 +563,44 @@ void test_add_remove_event()
 
     mcmc.apply_add_remove_events(lambda_r, lambda_c, D, r, false, true);
 
-    assert(abs(mcmc.t_prime_sums[0] - 1.383)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[1] - 4.168)  <= epsilon);
+    double event_prior = mcmc.t_prime.event_prior();
+    double event_prior_tp_gt = -28.603;
+    assert(abs(event_prior - event_prior_tp_gt) <= epsilon);
+
+    assert(abs(mcmc.t_prime_scores[0][5] - (-427.753)) <= epsilon);
+    assert(abs(mcmc.t_prime_scores[1][5] - (-411.611)) <= epsilon);
+    assert(abs(mcmc.t_prime_scores[2][5] - (-251.846)) <= epsilon);
+    assert(abs(mcmc.t_prime_scores[3][5] - (-387.5)) <= epsilon);
+    assert(abs(mcmc.t_prime_scores[4][5] - (-313.559)) <= epsilon);
+
+    assert(abs(mcmc.t_prime_sums[0] - 4.364)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[1] - 3.668)  <= epsilon);
     assert(abs(mcmc.t_prime_sums[2] - 29.222)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[3] - 7.191)  <= epsilon);
-    assert(abs(mcmc.t_prime_sums[4] - 9.233)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[3] - 7.017)  <= epsilon);
+    assert(abs(mcmc.t_prime_sums[4] - 7.069)  <= epsilon);
+
+    // compute the root score
+    size_t n_cells = D.size();
+    double sum_root_score = 0.0;
+    for (u_int i = 0; i < n_cells; ++i) {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
+        sum_root_score += root_score;
+    }
+
+    double sum_root_score_gt = -1510.724;
+    assert(abs(sum_root_score - sum_root_score_gt) <= epsilon);
 
     double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
     double log_post_t_prime = mcmc.log_tree_posterior(t_prime_sum, m, mcmc.t_prime);
     mcmc.t_prime.posterior_score = log_post_t_prime;
-    assert(abs(mcmc.t_prime.posterior_score - 16.47 + 1*c_penalise) <= epsilon);
 
-    cout<<"Add / remove event validation test passed!"<<endl;
+    // total score
+    double total_score_gt = -1504.112;
+    double total_score = mcmc.t_prime.posterior_score + sum_root_score;
+    assert(abs(total_score - total_score_gt) <= epsilon);
+
+    std::cout<<"Add / remove event validation test passed!"<<std::endl;
 }
 
 void test_children_repeat_genotype()

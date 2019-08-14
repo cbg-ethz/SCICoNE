@@ -265,7 +265,7 @@ void Tree::compute_stack(Node *node, const vector<double> &D, double &sum_D, con
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
         }
-        compute_score(top, D, sum_D, r, 1e-5);
+        compute_score(top, D, sum_D, r, 1e-4);
         // TODO: reuse this part of the code (the recursive iteration of nodes)
     }
 
@@ -987,7 +987,7 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
     /*
      * Adds and removes events to a node.
      * Throws logical error if the "n_regions_to_sample" value, (drawn from a poisson) is bigger than total number of regions available.
-     * Returns the pointer to the affacted node.
+     * Returns the pointer to the node being affected.
      * */
 
     assert(is_valid_subtree(this->root));
@@ -1004,7 +1004,7 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
 
     if (validation_test_mode)
     {
-        node = all_nodes_vec[3];
+        node = all_nodes_vec[5];
         node->c_change = {{3,-2}};
     }
     else
