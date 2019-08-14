@@ -265,7 +265,7 @@ void Tree::compute_stack(Node *node, const vector<double> &D, double &sum_D, con
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
         }
-        compute_score(top, D, sum_D, r, 1e-4);
+        compute_score(top, D, sum_D, r, eta);
         // TODO: reuse this part of the code (the recursive iteration of nodes)
     }
 

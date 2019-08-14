@@ -18,4 +18,5 @@ extern double c_penalise; // the penalisation term for cancelling events
 extern unsigned is_overdispersed; // param to specify if tree scoring will use the overdispersed model
 extern int verbosity; // the verbosity of the output
 extern string f_name_postfix; // postfix for the output files created
+extern double eta; // a small value to replace 0 when needed, for log(0) case for example
 #endif //SC_DNA_GLOBALS_H
