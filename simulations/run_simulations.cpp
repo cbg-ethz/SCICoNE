@@ -17,6 +17,7 @@ double lambda_c;
 double lambda_s;
 double c_penalise;
 unsigned is_overdispersed;
+double eta;
 // endof globals
 
 using namespace std;
@@ -39,6 +40,7 @@ int main(int argc, char* argv[]) {
     int seed = -1;
     copy_number_limit = 15;
     is_overdispersed = 0;
+    eta = 1e-4;
 
     // minimum region size should be bigger than window_size
     unsigned min_region_size = 10;
