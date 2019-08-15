@@ -10,6 +10,7 @@
 #include <vector>
 #include <numeric>
 #include "xxhash.h"
+#include "CustomExceptions.h"
 
 using namespace std;
 
@@ -728,6 +729,28 @@ void test_overdispersed_score()
     std::cout<<"Overdispersion score test passed!"<<std::endl;
 
 
+}
+
+void test_genotype_preserving_move_scores()
+{
+    /*
+     * Tests the gibbs sampling scores distribution found after genotype preserving prune reattach move
+     * */
+
+    Inference mcmc(r.size(), ploidy, verbosity);
+    mcmc.initialize_worked_example();
+    mcmc.compute_t_table(D,r);
+
+    std::vector<double> all_possible_scores; // event priors of all valid attachments
+    std::vector<std::pair<int,int>> prune_attach_indices;
+
+    double gamma = 1.0;
+
+    std::tie(all_possible_scores, prune_attach_indices) = mcmc.t.gibbs_genotype_preserving_scores(gamma);
+
+    throw NotImplementedException("The function is not implemented completely!");
+
+//    std::cout << "Genotype preserving move gibbs sampling scores distribution test passed!" << std::endl;
 }
 
 
