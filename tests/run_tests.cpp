@@ -17,6 +17,7 @@ double lambda_c;
 double c_penalise;
 unsigned is_overdispersed;
 int verbosity;
+double eta;
 // endof globals
 
 
@@ -30,6 +31,7 @@ int main()
     c_penalise = 10.0;
     is_overdispersed = 0;
     verbosity = 2;
+    eta = 1e-4;
 
     std::cout<<"UNIT TESTS" <<std::endl;
 //     set a seed number for reproducibility
@@ -45,9 +47,7 @@ int main()
     test_ploidy_attachment_score();
     test_weighted_sample();
     test_weighted_prune_reattach();
-//    test_add_remove_event();
-//  Just checking the event prior is fine
-// Jack is going to provide worked example
+    test_add_remove_event();
     test_insert_delete_weights();
     test_condense_split_weights();
     test_children_repeat_genotype();

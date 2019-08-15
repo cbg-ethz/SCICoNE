@@ -18,7 +18,7 @@ double lambda_c;
 double c_penalise;
 int copy_number_limit;
 unsigned is_overdispersed;
-
+double eta;
 // endof globals
 
 using namespace std;
@@ -46,6 +46,7 @@ int main( int argc, char* argv[]) {
     string d_matrix_file = "";
     string f_name_postfix = ""; //posfix
     double nu = 1.0;
+    eta = 1e-4;
 
     cxxopts::Options options("Score tree", "Scores the tree written in a file");
     options.add_options()

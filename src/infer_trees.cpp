@@ -23,6 +23,7 @@ double lambda_r;
 double lambda_c;
 double c_penalise;
 unsigned is_overdispersed;
+double eta;
 
 // endof globals
 
@@ -53,6 +54,7 @@ int main( int argc, char* argv[]) {
     lambda_c = 0.2;
     c_penalise = 1.0;
     is_overdispersed = 1;
+    eta = 1e-4;
 
     int n_reads = -1; // -1 means not specified
 

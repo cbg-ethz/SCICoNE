@@ -20,6 +20,7 @@ double lambda_r;
 double lambda_c;
 double c_penalise;
 unsigned is_overdispersed;
+double eta;
 // endof globals
 
 struct double_iota
@@ -83,6 +84,7 @@ int main(int argc, char* argv[])
     int n_cells;
     int n_bins;
     is_overdispersed = 1;
+    eta = 1e-4;
 
     cxxopts::Options options("Statistical tests", "for testing the statistical properties of the programme");
     options.add_options()
