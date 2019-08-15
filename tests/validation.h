@@ -685,4 +685,50 @@ void test_n_descendents_computation()
 
 }
 
+void test_overdispersed_score()
+{
+    /*
+     * Tests the overdispersed score computations
+     * */
+
+    is_overdispersed = 1; // enable overdispersion
+    double local_nu = 2.0;
+
+    Inference mcmc(r.size(), ploidy, verbosity);
+    mcmc.initialize_worked_example();
+    mcmc.t.nu = mcmc.t_prime.nu = local_nu;
+    mcmc.compute_t_table(D,r);
+
+
+    // compute the root score
+    size_t n_cells = D.size();
+    vector<double> root_scores(n_cells);
+    for (u_int i = 0; i < n_cells; ++i)
+    {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        double root_score = mcmc.t_prime.get_od_root_score(r, sum_d, D[i]);
+        root_scores[i] = root_score;
+    }
+    assert(abs(root_scores[0] - (-323.687)) <= epsilon);
+    assert(abs(root_scores[1] - (-233.387)) <= epsilon);
+    assert(abs(root_scores[2] - (-391.958)) <= epsilon);
+    assert(abs(root_scores[3] - (-307.943)) <= epsilon);
+    assert(abs(root_scores[4] - (-219.915)) <= epsilon);
+
+    double sum_root_score = std::accumulate(root_scores.begin(), root_scores.end(),0.0);
+    assert(abs(sum_root_score - (-1476.89)) <= epsilon);
+
+    double t_sum = std::accumulate(mcmc.t_sums.begin(), mcmc.t_sums.end(), 0.0);
+    double log_post_t = mcmc.log_tree_posterior(t_sum, m, mcmc.t);
+    double total_score = log_post_t + sum_root_score;
+    assert(abs(total_score - (-1502.211)) <= epsilon);
+
+
+    is_overdispersed = 0; // disable it back
+    std::cout<<"Overdispersion score test passed!"<<std::endl;
+
+
+}
+
+
 #endif //SC_DNA_VALIDATION_H

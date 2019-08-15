@@ -52,7 +52,9 @@ int main()
     test_condense_split_weights();
     test_children_repeat_genotype();
     test_tree_validation();
+    test_overdispersed_score();
     test_reproducibility();
 
     return EXIT_SUCCESS;
+
 }
