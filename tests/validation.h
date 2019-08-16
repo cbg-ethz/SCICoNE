@@ -748,9 +748,22 @@ void test_genotype_preserving_move_scores()
 
     std::tie(all_possible_scores, prune_attach_indices) = mcmc.t.gibbs_genotype_preserving_scores(gamma);
 
-    throw NotImplementedException("The function is not implemented completely!");
+    // create a map of <pair, score> and check based on that
+    std::map< std::pair<int,int>, double > score_map;
+    std::transform( prune_attach_indices.begin(), prune_attach_indices.end(), all_possible_scores.begin(),
+           std::inserter(score_map, score_map.end() ), std::make_pair<std::pair<int,int> const&,double const&> );
 
-//    std::cout << "Genotype preserving move gibbs sampling scores distribution test passed!" << std::endl;
+
+    assert(abs(score_map[std::make_pair(2,5)] - (-12.303)) <= epsilon);
+    assert(abs(score_map[std::make_pair(3,4)] - (-12.303)) <= epsilon);
+    assert(abs(score_map[std::make_pair(3,5)] - (-4.605)) <= epsilon);
+    assert(abs(score_map[std::make_pair(4,5)] - (-14.605)) <= epsilon);
+    assert(abs(score_map[std::make_pair(4,3)] - (-2.302)) <= epsilon);
+    assert(abs(score_map[std::make_pair(5,2)] - (-22.303)) <= epsilon);
+    assert(abs(score_map[std::make_pair(5,3)] - (-24.605)) <= epsilon);
+    assert(abs(score_map[std::make_pair(5,4)] - (-34.605)) <= epsilon);
+
+    std::cout << "Genotype preserving move gibbs sampling scores distribution test passed!" << std::endl;
 }
 
 
