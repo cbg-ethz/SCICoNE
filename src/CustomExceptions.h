@@ -1,6 +1,5 @@
 //
 // Created by Tuncel  Mustafa Anil on 2019-08-15.
-// Based on user 992460's answer on stackoverflow.com/questions/8152720/
 //
 
 #ifndef SC_DNA_CUSTOMEXCEPTIONS_H
@@ -12,6 +11,8 @@
 
 class NotImplementedException: public std::exception
 {
+    // Based on user 992460's answer on stackoverflow.com/questions/8152720/
+
 public:
     /** Constructor (C strings).
      *  @param message C-style string error message.
