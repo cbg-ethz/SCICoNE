@@ -639,6 +639,12 @@ void test_tree_validation()
     delete t;
 
     t = new Tree(ploidy, n_regions);
+    t->load_from_file("../tests/trees_to_validate/valid_tree_2.txt");
+    assert(t->is_valid_subtree(t->root));
+    assert(not t->is_redundant());
+    delete t;
+
+    t = new Tree(ploidy, n_regions);
     t->load_from_file("../tests/trees_to_validate/invalid_tree_1.txt");
     assert(not t->is_valid_subtree(t->root)); // NOT VALID, first order children (siblings) repeat genotype
     assert(not t->is_redundant());
