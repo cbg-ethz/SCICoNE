@@ -60,6 +60,8 @@ public:
     Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
     Node *insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted);
     Node *condense_split_node(double lambda_s, unsigned int size_limit, bool weighted);
+    std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
+
     Node* delete_node(u_int64_t idx_tobe_deleted);
     Node* delete_node(Node* node);
     Node* find_node(int id);
@@ -1693,6 +1695,80 @@ void Tree::genotype_preserving_prune_reattach(double gamma) {
     std::vector<double> all_possible_scores; // event priors of all valid attachments
     std::vector<std::pair<int,int>> prune_attach_indices;
 
+    std::tie(all_possible_scores, prune_attach_indices) = gibbs_genotype_preserving_scores(gamma);
+
+
+    double max_tree_score = *std::max_element(all_possible_scores.begin(), all_possible_scores.end());
+    for (u_int j = 0; j < all_possible_scores.size(); ++j)
+        all_possible_scores[j] = std::exp(all_possible_scores[j] - max_tree_score);
+
+    // sample from the tree scores
+    std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
+    boost::random::discrete_distribution<> d(all_possible_scores.begin(), all_possible_scores.end());
+    unsigned sampled_tree_index = d(gen);
+
+    // perform prune & reattach if needed
+    if (sampled_tree_index != 0)
+    {
+        std::pair<int,int> prune_attach_pos = prune_attach_indices[sampled_tree_index];
+        Node* to_prune = this->find_node(prune_attach_pos.first);
+        if (to_prune == nullptr)
+            throw std::logic_error("Node to prune could not be found in the tree. Move will be rejected.");
+
+        Node* pruned_node = this->prune(to_prune);
+
+        Node* attach_pos = this->find_node(prune_attach_pos.second);
+        if (attach_pos == nullptr)
+            throw std::logic_error("Node to attach could not be found in the tree. Move will be rejected.");
+
+        // update c_change
+        pruned_node->c_change = Utils::map_diff(pruned_node->c, attach_pos->c);
+
+        if (pruned_node->c_change.empty()) //reject the attachment if c_change becomes empty
+            throw std::logic_error("Empty c_label node created. Move will be rejected.");
+
+        this->insert_child(attach_pos, pruned_node);
+
+        // recompute the weights after the tree structure is changed
+        this->compute_weights();
+
+        assert(is_valid_subtree(attach_pos));
+        assert(is_valid_subtree(this->root));
+
+        to_prune = pruned_node = attach_pos = nullptr;
+
+    }
+    else
+    {
+        throw std::logic_error("The node is reattached to the same position.");
+    }
+}
+
+Node *Tree::find_node(int id) {
+    /*
+     * Finds and returns the pointer to the node with the given id.
+     * Returns nullptr if the node is not found.
+     * id: The node id to look for
+     * */
+    vector<Node*> nodes = this->root->get_descendents(true);
+
+    for (Node* const x : nodes)
+        if (x->id == id)
+            return x;
+
+    return nullptr; // not found
+}
+
+std::pair<std::vector<double>, std::vector<std::pair<int, int>>> Tree::gibbs_genotype_preserving_scores(double gamma)
+{
+    /*
+     * Computes the event priors for all possible attachments for every node.
+     * Returns the pair of all scores and their corresponding prune and attach indices
+     * */
+
+    std::vector<double> all_possible_scores; // event priors of all valid attachments
+    std::vector<std::pair<int,int>> prune_attach_indices;
+
     // the score for the original tree
     all_possible_scores.push_back(0.0); //exp(0) is 1.
     prune_attach_indices.emplace_back(std::make_pair(std::nan(""),std::nan("")));
@@ -1768,65 +1844,7 @@ void Tree::genotype_preserving_prune_reattach(double gamma) {
         }
     }
 
-    double max_tree_score = *std::max_element(all_possible_scores.begin(), all_possible_scores.end());
-    for (u_int j = 0; j < all_possible_scores.size(); ++j)
-        all_possible_scores[j] = std::exp(all_possible_scores[j] - max_tree_score);
-
-    // sample from the tree scores
-    std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
-    boost::random::discrete_distribution<> d(all_possible_scores.begin(), all_possible_scores.end());
-    unsigned sampled_tree_index = d(gen);
-
-    // perform prune & reattach if needed
-    if (sampled_tree_index != 0)
-    {
-        std::pair<int,int> prune_attach_pos = prune_attach_indices[sampled_tree_index];
-        Node* to_prune = this->find_node(prune_attach_pos.first);
-        if (to_prune == nullptr)
-            throw std::logic_error("Node to prune could not be found in the tree. Move will be rejected.");
-
-        Node* pruned_node = this->prune(to_prune);
-
-        Node* attach_pos = this->find_node(prune_attach_pos.second);
-        if (attach_pos == nullptr)
-            throw std::logic_error("Node to attach could not be found in the tree. Move will be rejected.");
-
-        // update c_change
-        pruned_node->c_change = Utils::map_diff(pruned_node->c, attach_pos->c);
-
-        if (pruned_node->c_change.empty()) //reject the attachment if c_change becomes empty
-            throw std::logic_error("Empty c_label node created. Move will be rejected.");
-
-        this->insert_child(attach_pos, pruned_node);
-
-        // recompute the weights after the tree structure is changed
-        this->compute_weights();
-
-        assert(is_valid_subtree(attach_pos));
-        assert(is_valid_subtree(this->root));
-
-        to_prune = pruned_node = attach_pos = nullptr;
-
-    }
-    else
-    {
-        throw std::logic_error("The node is reattached to the same position.");
-    }
-}
-
-Node *Tree::find_node(int id) {
-    /*
-     * Finds and returns the pointer to the node with the given id.
-     * Returns nullptr if the node is not found.
-     * id: The node id to look for
-     * */
-    vector<Node*> nodes = this->root->get_descendents(true);
-
-    for (Node* const x : nodes)
-        if (x->id == id)
-            return x;
-
-    return nullptr; // not found
+    return std::make_pair(all_possible_scores, prune_attach_indices);
 }
 
 
