@@ -384,13 +384,13 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
             Node* added = nullptr;
             for (auto const &t_prime_node : t_prime.root->get_descendents(false)) // without root
-            {
                 if (!t_scores.count(t_prime_node->id))
                 {
                     added = t_prime_node;
                     break;
                 }
-            }
+            if (added == nullptr)
+                throw std::logic_error("The inserted node could not be found in t_prime!");
 
             unsigned d_i_T_prime = added->n_descendents;
             unsigned d_i_T = 0;
