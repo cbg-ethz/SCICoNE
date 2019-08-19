@@ -277,8 +277,10 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     double acceptance_prob = exp(gamma*score_diff); // later gets modified
     bool acceptence_is_zero = false;
     if (acceptance_prob == 0.0)
-        // acceptence_is_zero = true;
-        return &t;
+    {
+        acceptence_is_zero = true;
+//        return &t;
+    }
     assert(!std::isinf(t_prime.posterior_score));
     assert(!std::isinf(acceptance_prob));
 
@@ -404,7 +406,6 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
                 }
             if (d_i_T == 0)
                 throw std::logic_error("The inserted node's parent could not be found in t!");
-
 
             double p_add_corr_num = 2 * d_i_T_prime;
             double p_add_corr_denom = d_i_T + 1;
@@ -691,6 +692,15 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     if (verbosity > 0)
                     {
                         std::cout << " an out of range error was caught during the comparison function, with message '"
+                                  << e.what() << '\'' << std::endl;
+                        accepted = &t;
+                    }
+                }
+                catch (const std::exception &e)
+                {
+                    if (verbosity > 0)
+                    {
+                        std::cout << " an exception was caught during the comparison function, with message '"
                                   << e.what() << '\'' << std::endl;
                         accepted = &t;
                     }
