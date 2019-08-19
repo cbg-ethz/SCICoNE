@@ -281,6 +281,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
 
     // compute nbd correction
+    double total_nbd_corr = 1.0;
     double nbd_corr= 1.0;
     double sum_chi=0.0, sum_chi_prime=0.0, sum_omega=0.0, sum_omega_prime=0.0;
 
@@ -292,7 +293,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
             return &t; // reject
 
         // ro variable
-        acceptance_prob *= nbd_corr;
+        total_nbd_corr *= nbd_corr;
     }
     else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
     {
@@ -327,16 +328,16 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         if (t_n_nodes < t_prime_n_nodes) // insert, split
         {
             double weight = std::pow(n,2) * std::pow((n+2)/n, n);
-            acceptance_prob *= weight;
+            total_nbd_corr *= weight;
         }
         else // delete, condense
         {
             double weight = std::pow(n,-2) * std::pow(n/(n+2), n);
-            acceptance_prob *= weight;
+            total_nbd_corr *= weight;
         }
 
         double correction = (sum_omega + sum_chi) / (sum_omega_prime + sum_chi_prime);
-        acceptance_prob *= correction;
+        total_nbd_corr *= correction;
     }
 
     if (move_id == 7 || move_id == 9) // weighted insert-delete or weighted condense-split
@@ -372,7 +373,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
             double p_add_corr_num = d_i_T_prime + 1;
             double p_add_corr_denom = 2 * d_i_T;
             double ratio = p_add_corr_num / p_add_corr_denom;
-            acceptance_prob *= ratio;
+            total_nbd_corr *= ratio;
         }
         else // insert
         {
@@ -405,9 +406,11 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
             double p_add_corr_num = 2 * d_i_T_prime;
             double p_add_corr_denom = d_i_T + 1;
             double ratio = p_add_corr_num / p_add_corr_denom;
-            acceptance_prob *= ratio;
+            total_nbd_corr *= ratio;
         }
     }
+
+    acceptance_prob *= total_nbd_corr;
 
     assert(!std::isnan(acceptance_prob));
 
