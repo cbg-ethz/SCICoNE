@@ -4,12 +4,12 @@ project(sc_dna)
 set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-#set(CMAKE_CXX_FLAGS "-fsanitize=undefined")
-#set(CMAKE_CXX_FLAGS "-fsanitize=address")
+# set(CMAKE_CXX_FLAGS "-fsanitize=undefined")
+# set(CMAKE_CXX_FLAGS "-fsanitize=address")
 
-#set(CMAKE_CXX_FLAGS "--coverage")
+# set(CMAKE_CXX_FLAGS "--coverage")
 # set(CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage")
-set(CMAKE_CXX_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
+# set(CMAKE_CXX_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
 # set(CMAKE_CXX_FLAGS_DEBUG  "-g") # icc needs -O3 after -g
 set(CMAKE_CXX_FLAGS_DEBUG "-Wuninitialized")
 set(CMAKE_CXX_FLAGS_DEBUG "-Wpedantic")
