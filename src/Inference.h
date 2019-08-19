@@ -397,13 +397,14 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
             // find it's parent in t
             int parent_id = added->parent->id;
             for (auto const &t_node : t.root->get_descendents(true))
-            {
                 if (parent_id == t_node->id)
                 {
                     d_i_T = t_node->n_descendents;
                     break;
                 }
-            }
+            if (d_i_T == 0)
+                throw std::logic_error("The inserted node's parent could not be found in t!");
+
 
             double p_add_corr_num = 2 * d_i_T_prime;
             double p_add_corr_denom = d_i_T + 1;
