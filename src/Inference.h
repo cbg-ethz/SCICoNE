@@ -326,15 +326,14 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
     if (move_id == 6 || move_id == 7 || move_id == 8 || move_id == 9) // moves that require nbd correction
     {
+        double n = static_cast<double>(t_n_nodes);
         if (t_n_nodes < t_prime_n_nodes) // insert, split
         {
-            double n = static_cast<double>(t_n_nodes);
             double weight = std::pow(n,2) * std::pow((n+2)/n, n);
             acceptance_prob *= weight;
         }
         else // delete, condense
         {
-            double n = static_cast<double>(t_n_nodes);
             double weight = std::pow(n,-2) * std::pow(n/(n+2), n);
             acceptance_prob *= weight;
         }
