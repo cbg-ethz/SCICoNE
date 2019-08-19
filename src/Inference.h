@@ -280,11 +280,8 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         // acceptence_is_zero = true;
         return &t;
     assert(!std::isinf(t_prime.posterior_score));
-    if (std::isinf(t_prime.posterior_score)) // if t_prime has inf score
-        return &t;
     assert(!std::isinf(acceptance_prob));
-    if (std::isinf(acceptance_prob)) // if t_prime is much better than t, but not inf
-        return &t_prime;
+
 
     // compute nbd correction
     double nbd_corr= 1.0;
@@ -329,32 +326,17 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
     if (move_id == 6 || move_id == 7 || move_id == 8 || move_id == 9) // moves that require nbd correction
     {
-        // TODO: simplify it back to the old formula!
-        // use the same for both insert and delete
-//        double v_prime = 0.0;
-//        double v = 0.0;
-//        v = sum_chi / (sum_chi + sum_omega);
-//        v_prime = sum_chi_prime / (sum_chi_prime + sum_omega_prime);
-
         if (t_n_nodes < t_prime_n_nodes) // insert, split
         {
             double n = static_cast<double>(t_n_nodes);
             double weight = std::pow(n,2) * std::pow((n+2)/n, n);
             acceptance_prob *= weight;
-
-//            // add v' X' v W terms
-//            double correction = (1.0 - v_prime)*sum_chi/(v*sum_omega_prime);
-//            acceptance_prob *= correction;
         }
         else // delete, condense
         {
             double n = static_cast<double>(t_n_nodes);
             double weight = std::pow(n,-2) * std::pow(n/(n+2), n);
             acceptance_prob *= weight;
-
-//            // add v' X' v W terms
-//            double correction = v_prime*sum_omega/((1.0-v)*sum_chi_prime);
-//            acceptance_prob *= correction;
         }
 
         double correction = (sum_omega + sum_chi) / (sum_omega_prime + sum_chi_prime);
