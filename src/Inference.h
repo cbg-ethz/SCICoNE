@@ -274,11 +274,11 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     else
         score_diff = t_prime.posterior_score - t.posterior_score;
 
-    double acceptance_prob = exp(gamma*score_diff); // later gets modified
+    double log_acceptance_prob = 0.0; // later gets modified
+    log_acceptance_prob += gamma * score_diff;
 
     assert(!std::isinf(t_prime.posterior_score));
-    assert(!std::isinf(acceptance_prob));
-
+    assert(!std::isinf(log_acceptance_prob));
 
     // compute nbd correction
     double total_nbd_corr = 1.0;
@@ -410,14 +410,14 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         }
     }
 
-    acceptance_prob *= total_nbd_corr;
+    log_acceptance_prob += std::log(total_nbd_corr);
 
-    assert(!std::isnan(acceptance_prob));
+    assert(!std::isnan(log_acceptance_prob));
 
     if (verbosity > 0)
-        cout<<"acceptance prob: "<<acceptance_prob<<endl;
+        cout << "acceptance prob: " << log_acceptance_prob << endl;
 
-    if (acceptance_prob > 1)
+    if (log_acceptance_prob > 0)
     {
         if (verbosity > 0)
             std::cout << "Move is accepted." << std::endl;
@@ -429,11 +429,12 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
         boost::random::uniform_real_distribution<double> distribution(0.0,1.0);
         double rand_val = distribution(gen);
+        rand_val = std::log(rand_val); // take the log
 
         if (verbosity > 0)
             cout<<"rand_val: "<<rand_val<<endl;
 
-        if (acceptance_prob > rand_val)
+        if (log_acceptance_prob > rand_val)
         {
             if (verbosity > 0)
                 std::cout << "Move is accepted." << std::endl;
