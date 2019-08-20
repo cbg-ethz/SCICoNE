@@ -348,26 +348,27 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
             map<int,double> t_prime_scores = t_prime.get_children_id_score(t_prime.root);
             Node* deleted = nullptr;
             for (auto const &t_node : t.root->get_descendents(false)) // root won't be contained!
-            {
                 if (!t_prime_scores.count(t_node->id))
                 {
                     deleted = t_node;
                     break;
                 }
-            }
+            if (deleted == nullptr)
+                throw std::logic_error("The deleted node could not be found in t!");
+
             unsigned d_i_T = deleted->n_descendents;
             unsigned d_i_T_prime = 0;
 
             // find it's parent in t_prime
             int parent_id = deleted->parent->id;
             for (auto const &t_prime_node : t_prime.root->get_descendents(true))
-            {
                 if (parent_id == t_prime_node->id)
                 {
                     d_i_T_prime = t_prime_node->n_descendents;
                     break;
                 }
-            }
+            if (d_i_T == 0)
+                throw std::logic_error("The deleted node's parent could not be found in t_prime!");
 
             double p_add_corr_num = d_i_T_prime + 1;
             double p_add_corr_denom = 2 * d_i_T;
