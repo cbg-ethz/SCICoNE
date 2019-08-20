@@ -275,11 +275,6 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         score_diff = t_prime.posterior_score - t.posterior_score;
 
     double log_acceptance_prob = 0.0; // later gets modified
-    log_acceptance_prob += gamma * score_diff;
-
-    if (std::exp(log_acceptance_prob) == 0.0)
-        // acceptence_is_zero = true;
-        return &t;
 
     assert(!std::isinf(t_prime.posterior_score));
     assert(!std::isinf(log_acceptance_prob));
@@ -414,7 +409,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         }
     }
 
-    log_acceptance_prob += std::log(total_nbd_corr);
+    log_acceptance_prob = std::log(total_nbd_corr) + gamma * score_diff;
 
     assert(!std::isnan(log_acceptance_prob));
     assert(!std::isinf(log_acceptance_prob));
