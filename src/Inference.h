@@ -274,19 +274,11 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     else
         score_diff = t_prime.posterior_score - t.posterior_score;
 
-    double acceptance_prob = exp(gamma*score_diff); // later gets modified
-    bool acceptence_is_zero = false;
-    if (acceptance_prob == 0.0)
-        // acceptence_is_zero = true;
-        return &t;
-    assert(!std::isinf(t_prime.posterior_score));
-    if (std::isinf(t_prime.posterior_score)) // if t_prime has inf score
-        return &t;
-    assert(!std::isinf(acceptance_prob));
-    if (std::isinf(acceptance_prob)) // if t_prime is much better than t, but not inf
-        return &t_prime;
+    double log_acceptance_prob = 0.0; // later gets modified
+
 
     // compute nbd correction
+    double total_nbd_corr = 1.0;
     double nbd_corr= 1.0;
     double sum_chi=0.0, sum_chi_prime=0.0, sum_omega=0.0, sum_omega_prime=0.0;
 
@@ -298,7 +290,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
             return &t; // reject
 
         // ro variable
-        acceptance_prob *= nbd_corr;
+        total_nbd_corr *= nbd_corr;
     }
     else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
     {
@@ -329,36 +321,20 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
     if (move_id == 6 || move_id == 7 || move_id == 8 || move_id == 9) // moves that require nbd correction
     {
-        // TODO: simplify it back to the old formula!
-        // use the same for both insert and delete
-//        double v_prime = 0.0;
-//        double v = 0.0;
-//        v = sum_chi / (sum_chi + sum_omega);
-//        v_prime = sum_chi_prime / (sum_chi_prime + sum_omega_prime);
-
+        double n = static_cast<double>(t_n_nodes);
         if (t_n_nodes < t_prime_n_nodes) // insert, split
         {
-            double n = static_cast<double>(t_n_nodes);
             double weight = std::pow(n,2) * std::pow((n+2)/n, n);
-            acceptance_prob *= weight;
-
-//            // add v' X' v W terms
-//            double correction = (1.0 - v_prime)*sum_chi/(v*sum_omega_prime);
-//            acceptance_prob *= correction;
+            total_nbd_corr *= weight;
         }
         else // delete, condense
         {
-            double n = static_cast<double>(t_n_nodes);
             double weight = std::pow(n,-2) * std::pow(n/(n+2), n);
-            acceptance_prob *= weight;
-
-//            // add v' X' v W terms
-//            double correction = v_prime*sum_omega/((1.0-v)*sum_chi_prime);
-//            acceptance_prob *= correction;
+            total_nbd_corr *= weight;
         }
 
         double correction = (sum_omega + sum_chi) / (sum_omega_prime + sum_chi_prime);
-        acceptance_prob *= correction;
+        total_nbd_corr *= correction;
     }
 
     if (move_id == 7 || move_id == 9) // weighted insert-delete or weighted condense-split
@@ -370,31 +346,32 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
             map<int,double> t_prime_scores = t_prime.get_children_id_score(t_prime.root);
             Node* deleted = nullptr;
             for (auto const &t_node : t.root->get_descendents(false)) // root won't be contained!
-            {
                 if (!t_prime_scores.count(t_node->id))
                 {
                     deleted = t_node;
                     break;
                 }
-            }
+            if (deleted == nullptr)
+                throw std::logic_error("The deleted node could not be found in t!");
+
             unsigned d_i_T = deleted->n_descendents;
             unsigned d_i_T_prime = 0;
 
             // find it's parent in t_prime
             int parent_id = deleted->parent->id;
             for (auto const &t_prime_node : t_prime.root->get_descendents(true))
-            {
                 if (parent_id == t_prime_node->id)
                 {
                     d_i_T_prime = t_prime_node->n_descendents;
                     break;
                 }
-            }
+            if (d_i_T == 0)
+                throw std::logic_error("The deleted node's parent could not be found in t_prime!");
 
             double p_add_corr_num = d_i_T_prime + 1;
             double p_add_corr_denom = 2 * d_i_T;
             double ratio = p_add_corr_num / p_add_corr_denom;
-            acceptance_prob *= ratio;
+            total_nbd_corr *= ratio;
         }
         else // insert
         {
@@ -403,43 +380,44 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
             Node* added = nullptr;
             for (auto const &t_prime_node : t_prime.root->get_descendents(false)) // without root
-            {
                 if (!t_scores.count(t_prime_node->id))
                 {
                     added = t_prime_node;
                     break;
                 }
-            }
+            if (added == nullptr)
+                throw std::logic_error("The inserted node could not be found in t_prime!");
 
             unsigned d_i_T_prime = added->n_descendents;
             unsigned d_i_T = 0;
             // find it's parent in t
             int parent_id = added->parent->id;
             for (auto const &t_node : t.root->get_descendents(true))
-            {
                 if (parent_id == t_node->id)
                 {
                     d_i_T = t_node->n_descendents;
                     break;
                 }
-            }
+            if (d_i_T == 0)
+                throw std::logic_error("The inserted node's parent could not be found in t!");
 
             double p_add_corr_num = 2 * d_i_T_prime;
             double p_add_corr_denom = d_i_T + 1;
             double ratio = p_add_corr_num / p_add_corr_denom;
-            acceptance_prob *= ratio;
+            total_nbd_corr *= ratio;
         }
     }
 
-    assert(!std::isnan(acceptance_prob));
+    log_acceptance_prob = std::log(total_nbd_corr) + gamma * score_diff;
+
+    assert(!std::isnan(log_acceptance_prob));
+    assert(!std::isinf(log_acceptance_prob));
 
     if (verbosity > 0)
-        cout<<"acceptance prob: "<<acceptance_prob<<endl;
+        cout << "acceptance prob: " << log_acceptance_prob << endl;
 
-    if (acceptance_prob > 1)
+    if (log_acceptance_prob > 0)
     {
-        if (acceptence_is_zero)
-            std::cout<<"debugging...";
         if (verbosity > 0)
             std::cout << "Move is accepted." << std::endl;
         return &t_prime;
@@ -450,14 +428,13 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
         boost::random::uniform_real_distribution<double> distribution(0.0,1.0);
         double rand_val = distribution(gen);
+        rand_val = std::log(rand_val); // take the log
 
         if (verbosity > 0)
             cout<<"rand_val: "<<rand_val<<endl;
 
-        if (acceptance_prob > rand_val)
+        if (log_acceptance_prob > rand_val)
         {
-            if (acceptence_is_zero)
-                std::cout<<"debugging...";
             if (verbosity > 0)
                 std::cout << "Move is accepted." << std::endl;
             return &t_prime;
@@ -709,6 +686,15 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     if (verbosity > 0)
                     {
                         std::cout << " an out of range error was caught during the comparison function, with message '"
+                                  << e.what() << '\'' << std::endl;
+                        accepted = &t;
+                    }
+                }
+                catch (const std::exception &e)
+                {
+                    if (verbosity > 0)
+                    {
+                        std::cout << " an exception was caught during the comparison function, with message '"
                                   << e.what() << '\'' << std::endl;
                         accepted = &t;
                     }
