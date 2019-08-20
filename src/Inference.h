@@ -276,8 +276,6 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
     double log_acceptance_prob = 0.0; // later gets modified
 
-    assert(!std::isinf(t_prime.posterior_score));
-    assert(!std::isinf(log_acceptance_prob));
 
     // compute nbd correction
     double total_nbd_corr = 1.0;
