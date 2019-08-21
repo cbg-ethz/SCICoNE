@@ -562,7 +562,7 @@ void test_add_remove_event()
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
 
-    mcmc.apply_add_remove_events(lambda_r, lambda_c, D, r, false, true);
+    mcmc.apply_add_remove_events(D, r, false, true);
 
     double event_prior = mcmc.t_prime.event_prior();
     double event_prior_tp_gt = -28.603;
