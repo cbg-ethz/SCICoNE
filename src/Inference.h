@@ -59,12 +59,10 @@ public:
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                               bool validation_test_mode);
     bool apply_genotype_preserving_pr(double gamma);
-    bool apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<double>> &D,
-                                 const vector<int> &r,
-                                 bool weighted = false,
-                                 bool validation_test_mode = false);
-    bool apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<double>> &D,
-                                      const vector<int> &r, unsigned int size_limit, bool weighted);
+    bool apply_add_remove_events(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
+                                 bool validation_test_mode);
+    bool apply_insert_delete_node(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
+                                  bool weighted);
     bool apply_condense_split(double lambda_s, const vector<vector<double>> &D, const vector<int> &r,
                                   unsigned int size_limit, bool weighted);
     bool apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted = false,
@@ -553,7 +551,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (verbosity > 0)
                     cout << "add or remove event" << endl;
                 // pass 0.0 to the poisson distributions to have 1 event added/removed
-                bool add_remove_success = apply_add_remove_events(lambda_r, lambda_c, D, r, false); // weighted=false
+                bool add_remove_success = apply_add_remove_events(D, r, false, false); // weighted=false
                 if (not add_remove_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -567,7 +565,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (verbosity > 0)
                     cout << "weighted add or remove event" << endl;
                 // pass 0.0 to the poisson distributions to have 1 event added/removed
-                bool add_remove_success = apply_add_remove_events(lambda_r, lambda_c, D, r, true); // weighted=true
+                bool add_remove_success = apply_add_remove_events(D, r, true, false); // weighted=true
                 if (not add_remove_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -580,7 +578,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // insert delete node
                 if (verbosity > 0)
                     cout << "insert/delete node" << endl;
-                bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, size_limit, false); // weighted=false
+                bool insert_delete_success = apply_insert_delete_node(D, r, size_limit, false); // weighted=false
                 if (not insert_delete_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -593,7 +591,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted insert delete node
                 if (verbosity > 0)
                     cout << "weighted insert/delete node" << endl;
-                bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, size_limit, true); // weighted=true
+                bool insert_delete_success = apply_insert_delete_node(D, r, size_limit, true); // weighted=true
                 if (not insert_delete_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -945,8 +943,7 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
     }
 }
 
-bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<double>> &D,
-                                        const vector<int> &r, bool weighted,
+bool Inference::apply_add_remove_events(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                                         bool validation_test_mode)
 {
     /*
@@ -958,7 +955,7 @@ bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const 
     Node* attached_node;
 
     try {
-        attached_node = t_prime.add_remove_events(lambda_r,lambda_c,weighted, validation_test_mode);
+        attached_node = t_prime.add_remove_events(weighted, validation_test_mode);
     }catch (const std::logic_error& e)
     {
         if (verbosity > 0)
@@ -984,8 +981,8 @@ bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const 
         return false;
 }
 
-bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<double>> &D,
-                                         const vector<int> &r, unsigned int size_limit, bool weighted) {
+bool Inference::apply_insert_delete_node(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
+                                         bool weighted) {
     /*
      * Applies the insert/delete move on t_prime
      * Updates the sums and scores tables partially
@@ -993,7 +990,7 @@ bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const
 
     Node* tobe_computed;
     try {
-        tobe_computed = t_prime.insert_delete_node(lambda_r, lambda_c, size_limit, weighted);
+        tobe_computed = t_prime.insert_delete_node(size_limit, weighted);
     }catch (const std::out_of_range& e)
     {
         if (verbosity > 0)

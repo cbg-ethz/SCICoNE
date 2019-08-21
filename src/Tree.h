@@ -57,8 +57,8 @@ public:
     Node *prune_reattach(bool weighted, bool validation_test_mode);
     void genotype_preserving_prune_reattach(double gamma);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
-    Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
-    Node *insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted);
+    Node *add_remove_events(bool weighted, bool validation_test_mode);
+    Node *insert_delete_node(unsigned int size_limit, bool weighted);
     Node *condense_split_node(double lambda_s, unsigned int size_limit, bool weighted);
     std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
 
@@ -984,7 +984,7 @@ bool Tree::is_valid_subtree(Node *node) const{
 
 }
 
-Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode) {
+Node *Tree::add_remove_events(bool weighted, bool validation_test_mode) {
 
     /*
      * Adds and removes events to a node.
@@ -1174,7 +1174,7 @@ Node * Tree::delete_node(u_int64_t idx_tobe_deleted) {
     return delete_node(tobe_deleted);
 }
 
-Node *Tree::insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted) {
+Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
     /*
      * Adds or deletes nodes move, that takes the mcmc transition probabilities into account.
      * Returns the node to perform partial score computation on.
