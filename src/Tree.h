@@ -54,10 +54,10 @@ public:
     // destructor
     virtual ~Tree();
     // moves
-    Node *prune_reattach(bool weighted, bool validation_test_mode);
+    Node *prune_reattach(bool weighted, bool validation_test_mode=false);
     void genotype_preserving_prune_reattach(double gamma);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
-    Node *add_remove_events(bool weighted, bool validation_test_mode);
+    Node *add_remove_events(bool weighted, bool validation_test_mode=false);
     Node *insert_delete_node(unsigned int size_limit, bool weighted);
     Node *condense_split_node(double lambda_s, unsigned int size_limit, bool weighted);
     std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
