@@ -59,7 +59,7 @@ public:
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node *add_remove_events(bool weighted, bool validation_test_mode=false);
     Node *insert_delete_node(unsigned int size_limit, bool weighted);
-    Node *condense_split_node(double lambda_s, unsigned int size_limit, bool weighted);
+    Node *condense_split_node(unsigned int size_limit, bool weighted);
     std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
 
     Node* delete_node(u_int64_t idx_tobe_deleted);
@@ -1279,7 +1279,7 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
     return return_node;
 }
 
-Node *Tree::condense_split_node(double lambda_s, unsigned int size_limit, bool weighted) {
+Node *Tree::condense_split_node(unsigned int size_limit, bool weighted) {
     /*
      * Condenses two nodes into one or splits a node into two.
      * */

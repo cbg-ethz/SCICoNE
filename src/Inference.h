@@ -63,8 +63,8 @@ public:
                                  bool validation_test_mode);
     bool apply_insert_delete_node(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
                                   bool weighted);
-    bool apply_condense_split(double lambda_s, const vector<vector<double>> &D, const vector<int> &r,
-                                  unsigned int size_limit, bool weighted);
+    bool apply_condense_split(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
+                              bool weighted);
     bool apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted = false,
                     bool test_mode = false);
     bool apply_overdispersion_change(const vector<vector<double>> &D, const vector<int> &r);
@@ -604,7 +604,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // condense split move
                 if (verbosity > 0)
                     cout << "condense split move " <<endl;
-                bool condense_split_success = apply_condense_split(lambda_s, D, r, size_limit, false);
+                bool condense_split_success = apply_condense_split(D, r, size_limit, false);
                 if (not condense_split_success)
                 {
                     rejected_before_comparison = true;
@@ -618,7 +618,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted condense split move
                 if (verbosity > 0)
                     cout << "weighted condense split move " <<endl;
-                bool condense_split_success = apply_condense_split(lambda_s, D, r, size_limit, true); //weighted=true
+                bool condense_split_success = apply_condense_split(D, r, size_limit, true); //weighted=true
                 if (not condense_split_success)
                 {
                     rejected_before_comparison = true;
@@ -1035,8 +1035,8 @@ int Inference::deleted_node_idx() {
     return deleted_index;
 }
 
-bool Inference::apply_condense_split(double lambda_s, const vector<vector<double>> &D, const vector<int> &r,
-                                     unsigned int size_limit, bool weighted) {
+bool Inference::apply_condense_split(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
+                                     bool weighted) {
     /*
      * Applies the condense/delete move on t_prime
      * Updates the sums and scores tables partially
@@ -1045,7 +1045,7 @@ bool Inference::apply_condense_split(double lambda_s, const vector<vector<double
     Node* tobe_computed;
     try
     {
-        tobe_computed = t_prime.condense_split_node(lambda_s, size_limit, weighted);
+        tobe_computed = t_prime.condense_split_node(size_limit, weighted);
     }catch (const std::exception& e) {
         if (verbosity > 0)
             std::cout << " a standard exception was caught during the split/condense node move, with message '"
