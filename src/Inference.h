@@ -1266,6 +1266,8 @@ bool Inference::apply_multiple_times(unsigned n, AnyFunction func, Ts &...args) 
         }
             if (is_successful)
                 return true;
+            else // reset the changes on t_prime
+                t_prime = t;
     }
     return false;
 }
