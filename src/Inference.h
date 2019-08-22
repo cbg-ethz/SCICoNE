@@ -57,11 +57,8 @@ public:
 
     double log_tree_prior(int m, int n);
     double log_tree_posterior(double tree_sum, int m, Tree &tree);
-
-
     template<class ...Ts, class AnyFunction>
     bool apply_multiple_times(unsigned n, AnyFunction func, Ts &...args);
-
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                               bool validation_test_mode);
     bool apply_genotype_preserving_pr(double gamma);
