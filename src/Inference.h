@@ -476,7 +476,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     best_tree = t; //start with the t
 
     using namespace std::placeholders;
-    unsigned n_apply_move = 1; // number of times move is applied
+    unsigned n_apply_move = 50; // number of times move is applied
     for (int i = 0; i < n_iters; ++i) {
 
         if (verbosity > 0)
@@ -668,10 +668,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // genotype_preserving prune & reattach
                 if (verbosity > 0)
                     cout<<"Genotype preserving prune and reattach"<<endl;
-
-                auto func = std::bind(&Inference::apply_genotype_preserving_pr, this, _1);
-                bool genotype_prune_reattach_success = apply_multiple_times(n_apply_move, func, gamma);
-
+                bool genotype_prune_reattach_success = apply_genotype_preserving_pr(gamma);
                 if (not genotype_prune_reattach_success)
                 {
                     rejected_before_comparison = true;
