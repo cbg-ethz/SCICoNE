@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <math.h>
 #include <array>
+#include <functional>
 #include "globals.cpp"
 #include "Lgamma.h"
 
@@ -56,6 +57,11 @@ public:
 
     double log_tree_prior(int m, int n);
     double log_tree_posterior(double tree_sum, int m, Tree &tree);
+
+
+    template<class ...Ts, class AnyFunction>
+    bool apply_multiple_times(unsigned n, AnyFunction func, Ts &...args);
+
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                               bool validation_test_mode);
     bool apply_genotype_preserving_pr(double gamma);
@@ -65,8 +71,8 @@ public:
                                   bool weighted);
     bool apply_condense_split(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
                               bool weighted);
-    bool apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted = false,
-                    bool test_mode = false);
+    bool apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
+                    bool test_mode);
     bool apply_overdispersion_change(const vector<vector<double>> &D, const vector<int> &r);
     Tree *comparison(int m, double gamma, unsigned move_id);
     void infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters,
@@ -469,6 +475,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
     best_tree = t; //start with the t
 
+    using namespace std::placeholders;
+    unsigned n_apply_move = 1; // number of times move is applied
     for (int i = 0; i < n_iters; ++i) {
 
         if (verbosity > 0)
@@ -495,7 +503,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // prune & reattach
                 if (verbosity > 0)
                     cout << "Prune and reattach" << endl;
-                bool prune_reattach_success = apply_prune_reattach(D, r, false, false);
+
+                auto func = std::bind(&Inference::apply_prune_reattach, this, _1, _2, false, false);
+                bool prune_reattach_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not prune_reattach_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -508,7 +519,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted prune & reattach
                 if (verbosity > 0)
                     cout<<"Weighted prune and reattach"<<endl;
-                bool weighted_prune_reattach_success = apply_prune_reattach(D, r, true, false); // weighted=true
+
+                auto func = std::bind(&Inference::apply_prune_reattach, this, _1, _2, true, false);
+                bool weighted_prune_reattach_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not weighted_prune_reattach_success)
                 {
                     rejected_before_comparison = true;
@@ -522,7 +536,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // swap labels
                 if (verbosity > 0)
                     cout << "swap labels" << endl;
-                bool swap_success = apply_swap(D, r, false); // weighted=false
+
+                auto func = std::bind(&Inference::apply_swap, this, _1, _2, false, false);
+                bool swap_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not swap_success)
                 {
                     rejected_before_comparison = true;
@@ -532,11 +549,14 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 break;
             }
             case 3:
-                {
+            {
                 // weighted swap labels
                 if (verbosity > 0)
                     cout << "weighted swap labels" << endl;
-                bool weighted_swap_success = apply_swap(D, r, true); // weighted=true
+
+                auto func = std::bind(&Inference::apply_swap, this, _1, _2, true, false); // weighted: true
+                bool weighted_swap_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not weighted_swap_success)
                 {
                     rejected_before_comparison = true;
@@ -550,8 +570,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // add or remove event
                 if (verbosity > 0)
                     cout << "add or remove event" << endl;
-                // pass 0.0 to the poisson distributions to have 1 event added/removed
-                bool add_remove_success = apply_add_remove_events(D, r, false, false); // weighted=false
+
+                auto func = std::bind(&Inference::apply_add_remove_events, this, _1, _2, false, false);
+                bool add_remove_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not add_remove_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -564,8 +586,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted add or remove event
                 if (verbosity > 0)
                     cout << "weighted add or remove event" << endl;
-                // pass 0.0 to the poisson distributions to have 1 event added/removed
-                bool add_remove_success = apply_add_remove_events(D, r, true, false); // weighted=true
+
+                auto func = std::bind(&Inference::apply_add_remove_events, this, _1, _2, true, false); // weighted=true
+                bool add_remove_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not add_remove_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -578,7 +602,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // insert delete node
                 if (verbosity > 0)
                     cout << "insert/delete node" << endl;
-                bool insert_delete_success = apply_insert_delete_node(D, r, size_limit, false); // weighted=false
+
+                auto func = std::bind(&Inference::apply_insert_delete_node, this, _1, _2, _3, false); // weighted=false
+                bool insert_delete_success = apply_multiple_times(n_apply_move, func, D, r, size_limit);
+
                 if (not insert_delete_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -591,7 +618,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted insert delete node
                 if (verbosity > 0)
                     cout << "weighted insert/delete node" << endl;
-                bool insert_delete_success = apply_insert_delete_node(D, r, size_limit, true); // weighted=true
+
+                auto func = std::bind(&Inference::apply_insert_delete_node, this, _1, _2, _3, true); // weighted=true
+                bool insert_delete_success = apply_multiple_times(n_apply_move, func, D, r, size_limit);
+
                 if (not insert_delete_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -604,7 +634,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // condense split move
                 if (verbosity > 0)
                     cout << "condense split move " <<endl;
-                bool condense_split_success = apply_condense_split(D, r, size_limit, false);
+
+                auto func = std::bind(&Inference::apply_condense_split, this, _1, _2, _3, false); // weighted=false
+                bool condense_split_success = apply_multiple_times(n_apply_move, func, D, r, size_limit);
+
                 if (not condense_split_success)
                 {
                     rejected_before_comparison = true;
@@ -618,7 +651,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted condense split move
                 if (verbosity > 0)
                     cout << "weighted condense split move " <<endl;
-                bool condense_split_success = apply_condense_split(D, r, size_limit, true); //weighted=true
+
+                auto func = std::bind(&Inference::apply_condense_split, this, _1, _2, _3, true); // weighted=true
+                bool condense_split_success = apply_multiple_times(n_apply_move, func, D, r, size_limit);
+
                 if (not condense_split_success)
                 {
                     rejected_before_comparison = true;
@@ -632,7 +668,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // genotype_preserving prune & reattach
                 if (verbosity > 0)
                     cout<<"Genotype preserving prune and reattach"<<endl;
-                bool genotype_prune_reattach_success = apply_genotype_preserving_pr(gamma);
+
+                auto func = std::bind(&Inference::apply_genotype_preserving_pr, this, _1);
+                bool genotype_prune_reattach_success = apply_multiple_times(n_apply_move, func, gamma);
+
                 if (not genotype_prune_reattach_success)
                 {
                     rejected_before_comparison = true;
@@ -653,7 +692,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // changing overdispersion move
                 if (verbosity > 0)
                     cout<<"Overdispersion changing move"<<endl;
-                bool od_change_success = apply_overdispersion_change(D, r);
+
+                auto func = std::bind(&Inference::apply_overdispersion_change, this, _1, _2);
+                bool od_change_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not od_change_success)
                 {
                     rejected_before_comparison = true;
@@ -1202,6 +1244,33 @@ bool Inference::apply_genotype_preserving_pr(double gamma) {
     }
 
     return true;
+}
+
+template<class... Ts, class AnyFunction>
+bool Inference::apply_multiple_times(unsigned n, AnyFunction func, Ts &...args) {
+    /*
+     * Applies the boolean function func multiple times with the variable arguments
+     * n: the number of tries
+     * func: function to be called
+     * args: the variable size of arguments
+     * */
+
+    for (unsigned i = 0; i < n; ++i) {
+
+        bool is_successful = false;
+        try {
+            is_successful = func(args...);
+        }
+        catch (const std::exception& e)
+        {
+            if (verbosity > 0)
+                std::cout << " a standard exception was caught during apply_multiple_times, with message '"
+                          << e.what() << "'\n";
+        }
+            if (is_successful)
+                return true;
+    }
+    return false;
 }
 
 #endif //SC_DNA_INFERENCE_H
