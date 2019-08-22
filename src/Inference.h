@@ -418,7 +418,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     assert(!std::isinf(log_acceptance_prob));
 
     if (verbosity > 0)
-        cout << "acceptance prob: " << log_acceptance_prob << endl;
+        cout << "log acceptance prob: " << log_acceptance_prob << endl;
 
     if (log_acceptance_prob > 0)
     {
@@ -435,7 +435,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         rand_val = std::log(rand_val); // take the log
 
         if (verbosity > 0)
-            cout<<"rand_val: "<<rand_val<<endl;
+            cout<<"log rand_val: "<<rand_val<<endl;
 
         if (log_acceptance_prob > rand_val)
         {
