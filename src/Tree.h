@@ -25,6 +25,7 @@
 #include <algorithm> // std::remove
 #include "globals.cpp"
 #include "Lgamma.h"
+#include "CustomExceptions.h"
 
 #include <boost/random/discrete_distribution.hpp>
 #include <boost/random/poisson_distribution.hpp>
@@ -54,12 +55,12 @@ public:
     // destructor
     virtual ~Tree();
     // moves
-    Node *prune_reattach(bool weighted, bool validation_test_mode);
+    Node *prune_reattach(bool weighted, bool validation_test_mode=false);
     void genotype_preserving_prune_reattach(double gamma);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
-    Node* add_remove_events(double lambda_r, double lambda_c, bool weighted = false, bool validation_test_mode = false);
-    Node *insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted);
-    Node *condense_split_node(double lambda_s, unsigned int size_limit, bool weighted);
+    Node *add_remove_events(bool weighted, bool validation_test_mode=false);
+    Node *insert_delete_node(unsigned int size_limit, bool weighted);
+    Node *condense_split_node(unsigned int size_limit, bool weighted);
     std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
 
     Node* delete_node(u_int64_t idx_tobe_deleted);
@@ -539,7 +540,7 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     assert(is_valid_subtree(this->root));
 
     if (all_nodes_vec.size() <= 2)
-        throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
+        throw InvalidMove("prune and reattach move does not make sense when there is only one node besides the root");
 
     Node* prune_pos = nullptr;
 
@@ -878,7 +879,7 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
 
 
     if (all_nodes_vec.size() <= 2)
-        throw std::logic_error("swapping labels does not make sense when they is only one node besides the root");
+        throw InvalidMove("swapping labels does not make sense when they is only one node besides the root");
 
     Node *node1, *node2;
     node1 = node2 = nullptr;
@@ -984,7 +985,7 @@ bool Tree::is_valid_subtree(Node *node) const{
 
 }
 
-Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, bool validation_test_mode) {
+Node *Tree::add_remove_events(bool weighted, bool validation_test_mode) {
 
     /*
      * Adds and removes events to a node.
@@ -1000,7 +1001,7 @@ Node *Tree::add_remove_events(double lambda_r, double lambda_c, bool weighted, b
 
 
     if (all_nodes_vec.size() <= 1)
-        throw std::logic_error("Adding or removing events does not make sense when there is 1 node or less. Root has to be neutral.");
+        throw InvalidMove("Adding or removing events does not make sense when there is 1 node or less. Root has to be neutral.");
 
     Node* node;
 
@@ -1174,7 +1175,7 @@ Node * Tree::delete_node(u_int64_t idx_tobe_deleted) {
     return delete_node(tobe_deleted);
 }
 
-Node *Tree::insert_delete_node(double lambda_r, double lambda_c, unsigned int size_limit, bool weighted) {
+Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
     /*
      * Adds or deletes nodes move, that takes the mcmc transition probabilities into account.
      * Returns the node to perform partial score computation on.
@@ -1279,7 +1280,7 @@ Node *Tree::insert_delete_node(double lambda_r, double lambda_c, unsigned int si
     return return_node;
 }
 
-Node *Tree::condense_split_node(double lambda_s, unsigned int size_limit, bool weighted) {
+Node *Tree::condense_split_node(unsigned int size_limit, bool weighted) {
     /*
      * Condenses two nodes into one or splits a node into two.
      * */
@@ -1292,7 +1293,7 @@ Node *Tree::condense_split_node(double lambda_s, unsigned int size_limit, bool w
 
 
     if (all_nodes_vec.size() <= 1)
-        throw std::logic_error("condense or split does not make sense when there is 1 node or less. ");
+        throw InvalidMove("condense or split does not make sense when there is 1 node or less. ");
 
 
     Node* return_node = nullptr;
@@ -1689,7 +1690,7 @@ void Tree::genotype_preserving_prune_reattach(double gamma) {
 
 
     if (this->all_nodes_vec.size() <= 2)
-        throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
+        throw InvalidMove("prune and reattach move does not make sense when there is only one node besides the root");
 
 
     std::vector<double> all_possible_scores; // event priors of all valid attachments

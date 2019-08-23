@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <math.h>
 #include <array>
+#include <functional>
 #include "globals.cpp"
 #include "Lgamma.h"
 
@@ -56,19 +57,19 @@ public:
 
     double log_tree_prior(int m, int n);
     double log_tree_posterior(double tree_sum, int m, Tree &tree);
+    template<class ...Ts, class AnyFunction>
+    bool apply_multiple_times(unsigned n, AnyFunction func, Ts &...args);
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                               bool validation_test_mode);
     bool apply_genotype_preserving_pr(double gamma);
-    bool apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<double>> &D,
-                                 const vector<int> &r,
-                                 bool weighted = false,
-                                 bool validation_test_mode = false);
-    bool apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<double>> &D,
-                                      const vector<int> &r, unsigned int size_limit, bool weighted);
-    bool apply_condense_split(double lambda_s, const vector<vector<double>> &D, const vector<int> &r,
-                                  unsigned int size_limit, bool weighted);
-    bool apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted = false,
-                    bool test_mode = false);
+    bool apply_add_remove_events(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
+                                 bool validation_test_mode);
+    bool apply_insert_delete_node(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
+                                  bool weighted);
+    bool apply_condense_split(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
+                              bool weighted);
+    bool apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
+                    bool test_mode);
     bool apply_overdispersion_change(const vector<vector<double>> &D, const vector<int> &r);
     Tree *comparison(int m, double gamma, unsigned move_id);
     void infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters,
@@ -414,7 +415,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     assert(!std::isinf(log_acceptance_prob));
 
     if (verbosity > 0)
-        cout << "acceptance prob: " << log_acceptance_prob << endl;
+        cout << "log acceptance prob: " << log_acceptance_prob << endl;
 
     if (log_acceptance_prob > 0)
     {
@@ -431,7 +432,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         rand_val = std::log(rand_val); // take the log
 
         if (verbosity > 0)
-            cout<<"rand_val: "<<rand_val<<endl;
+            cout<<"log rand_val: "<<rand_val<<endl;
 
         if (log_acceptance_prob > rand_val)
         {
@@ -471,6 +472,8 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
     best_tree = t; //start with the t
 
+    using namespace std::placeholders;
+    unsigned n_apply_move = 50; // number of times move is applied
     for (int i = 0; i < n_iters; ++i) {
 
         if (verbosity > 0)
@@ -497,7 +500,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // prune & reattach
                 if (verbosity > 0)
                     cout << "Prune and reattach" << endl;
-                bool prune_reattach_success = apply_prune_reattach(D, r, false, false);
+
+                auto func = std::bind(&Inference::apply_prune_reattach, this, _1, _2, false, false);
+                bool prune_reattach_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not prune_reattach_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -510,7 +516,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted prune & reattach
                 if (verbosity > 0)
                     cout<<"Weighted prune and reattach"<<endl;
-                bool weighted_prune_reattach_success = apply_prune_reattach(D, r, true, false); // weighted=true
+
+                auto func = std::bind(&Inference::apply_prune_reattach, this, _1, _2, true, false);
+                bool weighted_prune_reattach_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not weighted_prune_reattach_success)
                 {
                     rejected_before_comparison = true;
@@ -524,7 +533,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // swap labels
                 if (verbosity > 0)
                     cout << "swap labels" << endl;
-                bool swap_success = apply_swap(D, r, false); // weighted=false
+
+                auto func = std::bind(&Inference::apply_swap, this, _1, _2, false, false);
+                bool swap_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not swap_success)
                 {
                     rejected_before_comparison = true;
@@ -534,11 +546,14 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 break;
             }
             case 3:
-                {
+            {
                 // weighted swap labels
                 if (verbosity > 0)
                     cout << "weighted swap labels" << endl;
-                bool weighted_swap_success = apply_swap(D, r, true); // weighted=true
+
+                auto func = std::bind(&Inference::apply_swap, this, _1, _2, true, false); // weighted: true
+                bool weighted_swap_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not weighted_swap_success)
                 {
                     rejected_before_comparison = true;
@@ -552,8 +567,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // add or remove event
                 if (verbosity > 0)
                     cout << "add or remove event" << endl;
-                // pass 0.0 to the poisson distributions to have 1 event added/removed
-                bool add_remove_success = apply_add_remove_events(lambda_r, lambda_c, D, r, false); // weighted=false
+
+                auto func = std::bind(&Inference::apply_add_remove_events, this, _1, _2, false, false);
+                bool add_remove_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not add_remove_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -566,8 +583,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted add or remove event
                 if (verbosity > 0)
                     cout << "weighted add or remove event" << endl;
-                // pass 0.0 to the poisson distributions to have 1 event added/removed
-                bool add_remove_success = apply_add_remove_events(lambda_r, lambda_c, D, r, true); // weighted=true
+
+                auto func = std::bind(&Inference::apply_add_remove_events, this, _1, _2, true, false); // weighted=true
+                bool add_remove_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not add_remove_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -580,7 +599,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // insert delete node
                 if (verbosity > 0)
                     cout << "insert/delete node" << endl;
-                bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, size_limit, false); // weighted=false
+
+                auto func = std::bind(&Inference::apply_insert_delete_node, this, _1, _2, _3, false); // weighted=false
+                bool insert_delete_success = apply_multiple_times(n_apply_move, func, D, r, size_limit);
+
                 if (not insert_delete_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -593,7 +615,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted insert delete node
                 if (verbosity > 0)
                     cout << "weighted insert/delete node" << endl;
-                bool insert_delete_success = apply_insert_delete_node(lambda_r, lambda_c, D, r, size_limit, true); // weighted=true
+
+                auto func = std::bind(&Inference::apply_insert_delete_node, this, _1, _2, _3, true); // weighted=true
+                bool insert_delete_success = apply_multiple_times(n_apply_move, func, D, r, size_limit);
+
                 if (not insert_delete_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 0)
@@ -606,7 +631,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // condense split move
                 if (verbosity > 0)
                     cout << "condense split move " <<endl;
-                bool condense_split_success = apply_condense_split(lambda_s, D, r, size_limit, false);
+
+                auto func = std::bind(&Inference::apply_condense_split, this, _1, _2, _3, false); // weighted=false
+                bool condense_split_success = apply_multiple_times(n_apply_move, func, D, r, size_limit);
+
                 if (not condense_split_success)
                 {
                     rejected_before_comparison = true;
@@ -620,7 +648,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // weighted condense split move
                 if (verbosity > 0)
                     cout << "weighted condense split move " <<endl;
-                bool condense_split_success = apply_condense_split(lambda_s, D, r, size_limit, true); //weighted=true
+
+                auto func = std::bind(&Inference::apply_condense_split, this, _1, _2, _3, true); // weighted=true
+                bool condense_split_success = apply_multiple_times(n_apply_move, func, D, r, size_limit);
+
                 if (not condense_split_success)
                 {
                     rejected_before_comparison = true;
@@ -655,7 +686,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // changing overdispersion move
                 if (verbosity > 0)
                     cout<<"Overdispersion changing move"<<endl;
-                bool od_change_success = apply_overdispersion_change(D, r);
+
+                auto func = std::bind(&Inference::apply_overdispersion_change, this, _1, _2);
+                bool od_change_success = apply_multiple_times(n_apply_move, func, D, r);
+
                 if (not od_change_success)
                 {
                     rejected_before_comparison = true;
@@ -945,8 +979,7 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
     }
 }
 
-bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const vector<vector<double>> &D,
-                                        const vector<int> &r, bool weighted,
+bool Inference::apply_add_remove_events(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                                         bool validation_test_mode)
 {
     /*
@@ -958,7 +991,7 @@ bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const 
     Node* attached_node;
 
     try {
-        attached_node = t_prime.add_remove_events(lambda_r,lambda_c,weighted, validation_test_mode);
+        attached_node = t_prime.add_remove_events(weighted, validation_test_mode);
     }catch (const std::logic_error& e)
     {
         if (verbosity > 0)
@@ -984,8 +1017,8 @@ bool Inference::apply_add_remove_events(double lambda_r, double lambda_c, const 
         return false;
 }
 
-bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const vector<vector<double>> &D,
-                                         const vector<int> &r, unsigned int size_limit, bool weighted) {
+bool Inference::apply_insert_delete_node(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
+                                         bool weighted) {
     /*
      * Applies the insert/delete move on t_prime
      * Updates the sums and scores tables partially
@@ -993,7 +1026,7 @@ bool Inference::apply_insert_delete_node(double lambda_r, double lambda_c, const
 
     Node* tobe_computed;
     try {
-        tobe_computed = t_prime.insert_delete_node(lambda_r, lambda_c, size_limit, weighted);
+        tobe_computed = t_prime.insert_delete_node(size_limit, weighted);
     }catch (const std::out_of_range& e)
     {
         if (verbosity > 0)
@@ -1038,8 +1071,8 @@ int Inference::deleted_node_idx() {
     return deleted_index;
 }
 
-bool Inference::apply_condense_split(double lambda_s, const vector<vector<double>> &D, const vector<int> &r,
-                                     unsigned int size_limit, bool weighted) {
+bool Inference::apply_condense_split(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
+                                     bool weighted) {
     /*
      * Applies the condense/delete move on t_prime
      * Updates the sums and scores tables partially
@@ -1048,7 +1081,7 @@ bool Inference::apply_condense_split(double lambda_s, const vector<vector<double
     Node* tobe_computed;
     try
     {
-        tobe_computed = t_prime.condense_split_node(lambda_s, size_limit, weighted);
+        tobe_computed = t_prime.condense_split_node(size_limit, weighted);
     }catch (const std::exception& e) {
         if (verbosity > 0)
             std::cout << " a standard exception was caught during the split/condense node move, with message '"
@@ -1205,6 +1238,42 @@ bool Inference::apply_genotype_preserving_pr(double gamma) {
     }
 
     return true;
+}
+
+template<class... Ts, class AnyFunction>
+bool Inference::apply_multiple_times(unsigned n, AnyFunction func, Ts &...args) {
+    /*
+     * Applies the boolean function func multiple times with the variable arguments
+     * n: the number of tries
+     * func: function to be called
+     * args: the variable size of arguments
+     * */
+
+    for (unsigned i = 0; i < n; ++i) {
+
+        bool is_successful = false;
+        try {
+            is_successful = func(args...);
+        }
+        catch (const InvalidMove& e) // don't try again if the move is invalid
+        {
+            if (verbosity > 0)
+                std::cout << " an invalid move has occurred, with message '"
+                          << e.what() << "'\n";
+            break;
+        }
+        catch (const std::exception& e)
+        {
+            if (verbosity > 0)
+                std::cout << " a standard exception was caught during apply_multiple_times, with message '"
+                          << e.what() << "'\n";
+        }
+            if (is_successful)
+                return true;
+            else // reset the changes on t_prime
+                t_prime = t;
+    }
+    return false;
 }
 
 #endif //SC_DNA_INFERENCE_H

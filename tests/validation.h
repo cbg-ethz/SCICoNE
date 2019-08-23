@@ -10,7 +10,6 @@
 #include <vector>
 #include <numeric>
 #include "xxhash.h"
-#include "CustomExceptions.h"
 
 using namespace std;
 
@@ -562,7 +561,7 @@ void test_add_remove_event()
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
     std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
 
-    mcmc.apply_add_remove_events(lambda_r, lambda_c, D, r, false, true);
+    mcmc.apply_add_remove_events(D, r, false, true);
 
     double event_prior = mcmc.t_prime.event_prior();
     double event_prior_tp_gt = -28.603;
@@ -770,6 +769,42 @@ void test_genotype_preserving_move_scores()
     assert(abs(score_map[std::make_pair(5,4)] - (-34.605)) <= epsilon);
 
     std::cout << "Genotype preserving move gibbs sampling scores distribution test passed!" << std::endl;
+}
+
+unsigned global_counter = 0;
+
+bool increase_counter()
+{
+    /*
+     * increases the global_counter parameter
+     * */
+
+    global_counter++;
+
+    if (global_counter == 53)
+        throw std::logic_error("this logic error should not affect the flow.");
+    if (global_counter == 55)
+        throw InvalidMove("the limit is reached.");
+
+    return false;
+
+}
+
+
+void test_apply_multiple_times()
+{
+    /*
+     * Tests the apply multiple times method
+     * */
+    Inference mcmc(r.size(), ploidy, verbosity);
+
+    unsigned n_times = 50;
+    mcmc.apply_multiple_times(n_times, increase_counter);
+    assert(global_counter == 50);
+    mcmc.apply_multiple_times(n_times, increase_counter);
+    assert(global_counter == 55);
+
+    std::cout << "Apply multiple times test passed!" << std::endl;
 }
 
 

@@ -55,6 +55,7 @@ int main()
     test_tree_validation();
     test_overdispersed_score();
     test_genotype_preserving_move_scores();
+    test_apply_multiple_times();
 //    test_reproducibility();
 
     return EXIT_SUCCESS;

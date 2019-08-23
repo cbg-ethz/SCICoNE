@@ -9,6 +9,27 @@
 
 #endif //SC_DNA_CUSTOMEXCEPTIONS_H
 
+class InvalidMove: public std::exception
+{
+    /*
+     * Gets thrown when the move is invalid given the state of the input tree
+     * */
+public:
+    explicit InvalidMove(const char* message):
+            msg_(message) {}
+
+    explicit InvalidMove(std::string message):
+            msg_(std::move(message)) {}
+
+    ~InvalidMove() noexcept override=default;
+
+    const char* what() const noexcept override{
+        return msg_.c_str();
+    }
+protected:
+    std::string msg_;
+};
+
 class NotImplementedException: public std::exception
 {
     // Based on user 992460's answer on stackoverflow.com/questions/8152720/
@@ -28,21 +49,21 @@ public:
     /** Constructor (C++ STL strings).
      *  @param message The error message.
      */
-    explicit NotImplementedException(const std::string& message):
-            msg_(message)
+    explicit NotImplementedException(std::string  message):
+            msg_(std::move(message))
     {}
 
     /** Destructor.
      * Virtual to allow for subclassing.
      */
-    virtual ~NotImplementedException() throw (){}
+    ~NotImplementedException() noexcept override= default;
 
     /** Returns a pointer to the (constant) error description.
      *  @return A pointer to a const char*. The underlying memory
      *          is in posession of the Exception object. Callers must
      *          not attempt to free the memory.
      */
-    virtual const char* what() const throw (){
+    const char* what() const noexcept override{
         return msg_.c_str();
     }
 
@@ -51,3 +72,4 @@ protected:
      */
     std::string msg_;
 };
+
