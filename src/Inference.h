@@ -1268,10 +1268,10 @@ bool Inference::apply_multiple_times(unsigned n, AnyFunction func, Ts &...args) 
                 std::cout << " a standard exception was caught during apply_multiple_times, with message '"
                           << e.what() << "'\n";
         }
-            if (is_successful)
-                return true;
-            else // reset the changes on t_prime
-                t_prime = t;
+        if (is_successful)
+            return true;
+        else // reset the changes on t_prime
+            t_prime = t;
     }
     return false;
 }
