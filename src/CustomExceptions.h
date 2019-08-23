@@ -6,7 +6,6 @@
 #define SC_DNA_CUSTOMEXCEPTIONS_H
 
 #include <stdexcept>
-#include <utility>
 
 #endif //SC_DNA_CUSTOMEXCEPTIONS_H
 
