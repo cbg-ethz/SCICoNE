@@ -772,5 +772,31 @@ void test_genotype_preserving_move_scores()
     std::cout << "Genotype preserving move gibbs sampling scores distribution test passed!" << std::endl;
 }
 
+unsigned global_counter = 0;
+
+bool increase_counter()
+{
+    /*
+     * increases the global_counter parameter
+     * */
+
+    global_counter++;
+    return false;
+
+}
+
+
+void test_apply_multiple_times()
+{
+    /*
+     * Tests the apply multiple times method
+     * */
+    Inference mcmc(r.size(), ploidy, verbosity);
+
+    unsigned n_times = 50;
+    mcmc.apply_multiple_times(n_times, increase_counter);
+    assert(global_counter == 50);
+}
+
 
 #endif //SC_DNA_VALIDATION_H
