@@ -1255,6 +1255,13 @@ bool Inference::apply_multiple_times(unsigned n, AnyFunction func, Ts &...args) 
         try {
             is_successful = func(args...);
         }
+        catch (const InvalidMove& e) // don't try again if the move is invalid
+        {
+            if (verbosity > 0)
+                std::cout << " an invalid move has occurred, with message '"
+                          << e.what() << "'\n";
+            break;
+        }
         catch (const std::exception& e)
         {
             if (verbosity > 0)

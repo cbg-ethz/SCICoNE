@@ -25,6 +25,7 @@
 #include <algorithm> // std::remove
 #include "globals.cpp"
 #include "Lgamma.h"
+#include "CustomExceptions.h"
 
 #include <boost/random/discrete_distribution.hpp>
 #include <boost/random/poisson_distribution.hpp>
@@ -539,7 +540,7 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     assert(is_valid_subtree(this->root));
 
     if (all_nodes_vec.size() <= 2)
-        throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
+        throw InvalidMove("prune and reattach move does not make sense when there is only one node besides the root");
 
     Node* prune_pos = nullptr;
 
@@ -878,7 +879,7 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
 
 
     if (all_nodes_vec.size() <= 2)
-        throw std::logic_error("swapping labels does not make sense when they is only one node besides the root");
+        throw InvalidMove("swapping labels does not make sense when they is only one node besides the root");
 
     Node *node1, *node2;
     node1 = node2 = nullptr;
@@ -1000,7 +1001,7 @@ Node *Tree::add_remove_events(bool weighted, bool validation_test_mode) {
 
 
     if (all_nodes_vec.size() <= 1)
-        throw std::logic_error("Adding or removing events does not make sense when there is 1 node or less. Root has to be neutral.");
+        throw InvalidMove("Adding or removing events does not make sense when there is 1 node or less. Root has to be neutral.");
 
     Node* node;
 
@@ -1292,7 +1293,7 @@ Node *Tree::condense_split_node(unsigned int size_limit, bool weighted) {
 
 
     if (all_nodes_vec.size() <= 1)
-        throw std::logic_error("condense or split does not make sense when there is 1 node or less. ");
+        throw InvalidMove("condense or split does not make sense when there is 1 node or less. ");
 
 
     Node* return_node = nullptr;
@@ -1689,7 +1690,7 @@ void Tree::genotype_preserving_prune_reattach(double gamma) {
 
 
     if (this->all_nodes_vec.size() <= 2)
-        throw std::logic_error("prune and reattach move does not make sense when there is only one node besides the root");
+        throw InvalidMove("prune and reattach move does not make sense when there is only one node besides the root");
 
 
     std::vector<double> all_possible_scores; // event priors of all valid attachments

@@ -10,7 +10,6 @@
 #include <vector>
 #include <numeric>
 #include "xxhash.h"
-#include "CustomExceptions.h"
 
 using namespace std;
 
@@ -781,6 +780,12 @@ bool increase_counter()
      * */
 
     global_counter++;
+
+    if (global_counter == 53)
+        throw std::logic_error("this logic error should not affect the flow.");
+    if (global_counter == 55)
+        throw InvalidMove("the limit is reached.");
+
     return false;
 
 }
@@ -796,6 +801,10 @@ void test_apply_multiple_times()
     unsigned n_times = 50;
     mcmc.apply_multiple_times(n_times, increase_counter);
     assert(global_counter == 50);
+    mcmc.apply_multiple_times(n_times, increase_counter);
+    assert(global_counter == 55);
+
+    std::cout << "Apply multiple times test passed!" << std::endl;
 }
 
 

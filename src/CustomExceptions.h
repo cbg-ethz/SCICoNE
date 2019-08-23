@@ -51,3 +51,24 @@ protected:
      */
     std::string msg_;
 };
+
+class InvalidMove: public std::exception
+{
+    /*
+     * Gets thrown when the move is invalid given the state of the input tree
+     * */
+public:
+    explicit InvalidMove(const char* message):
+            msg_(message) {}
+
+    explicit InvalidMove(std::string message):
+            msg_(std::move(message)) {}
+
+    ~InvalidMove() noexcept override=default;
+
+    const char* what() const noexcept override{
+        return msg_.c_str();
+    }
+protected:
+    std::string msg_;
+};
