@@ -13,7 +13,7 @@
 #include <fstream>
 #include <string>
 #include <iomanip>
-#include <math.h>
+#include <cmath>
 #include <array>
 #include <functional>
 #include "globals.cpp"
