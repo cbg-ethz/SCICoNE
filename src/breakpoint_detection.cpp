@@ -61,9 +61,12 @@ int main( int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    // read the input d_matrix
+    std::cout<<"Reading the input matrix..."<<std::endl;
+
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
     Utils::read_counts(d_bins, d_matrix_file);
+
+    std::cout<<"Input matrix is read."<<std::endl;
 
     // create the region_sizes
     vector<int> region_sizes;
@@ -72,7 +75,9 @@ int main( int argc, char* argv[]) {
     // perform segmentation and peak detection, then define the region sizes
     SignalProcessing dsp;
 
+    std::cout<<"Computing the probability of a region being a breakpoint..."<<std::endl;
     vector<double> s_p = breakpoint_detection(d_bins, window_size);
+    std::cout<<"Computed probabilities for all regions."<<std::endl;
 
     vector<double> sp_cropped = dsp.crop(s_p, window_size);
 
@@ -83,7 +88,7 @@ int main( int argc, char* argv[]) {
      * Otherwise log(0) creates -INF that messes up mean, std, even median
      * Replacing zeros with a minimum value is not a good idea, because a breakpoint can be introduced by this imputation.
      */
-
+    std::cout<<"Replacing zeroes by the previous value, lest them to be effective in the breakpoint detection."<<std::endl;
     for (int l = 0; l < sp_cropped.size(); ++l)
         if(sp_cropped[l] == 0.0)
         {
@@ -92,6 +97,7 @@ int main( int argc, char* argv[]) {
             else // if zero is the first element
                 sp_cropped[l] = 1e-8; // a small positive number
         }
+    std::cout<<"Zeroes are replaced by the previous value."<<std::endl;
 
     vector<double> sp_cropped_copy(sp_cropped); // the copy sp vector that'll contain the NaN values
 
@@ -178,6 +184,7 @@ int main( int argc, char* argv[]) {
 
 
                 all_max_ids.push_back(max_idx);
+                std::cout << "Index of the maximum " << max_idx << " is added to all_max_ids." << std::endl;
 
             }
             else // max_idx = -1, empty the q_map
@@ -187,16 +194,20 @@ int main( int argc, char* argv[]) {
 
         }
     }
-
+    std::cout<<"Sorting the all_max_ids..." <<std::endl;
     std::sort(all_max_ids.begin(), all_max_ids.end());
+    std::cout<<"All max ids are sorted" <<std::endl;
 
+    std::cout<<"Writing segmented regions to file..."<<std::endl;
     std::ofstream tree_file("./"+ f_name_postfix+"_segmented_regions.txt");
 
     for (int k = 0; k < all_max_ids.size(); ++k) {
         // write it to file
         tree_file << all_max_ids[k] + window_size << endl;
     }
+    std::cout<<"Segmented regions are written."<<std::endl;
 
+    std::cout<<"Writing segmented region sizes to file..."<<std::endl;
     std::ofstream reg_sizes_file("./"+ f_name_postfix+"_segmented_region_sizes.txt");
     int cum_sum = 0;
 
@@ -209,6 +220,7 @@ int main( int argc, char* argv[]) {
     }
     reg_sizes_file << ub+window_size - all_max_ids[all_max_ids.size()-1] << endl; // add the last one
 
+    std::cout<<"Segmented region sizes are written to file"<<std::endl;
     return EXIT_SUCCESS;
 }
 
