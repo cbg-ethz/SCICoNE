@@ -201,7 +201,7 @@ int main( int argc, char* argv[]) {
     std::cout<<"Writing segmented regions to file..."<<std::endl;
     std::ofstream tree_file("./"+ f_name_postfix+"_segmented_regions.txt");
 
-    for (int k = 0; k < all_max_ids.size(); ++k) {
+    for (size_t k = 0; k < all_max_ids.size(); ++k) {
         // write it to file
         tree_file << all_max_ids[k] + window_size << endl;
     }
@@ -211,7 +211,7 @@ int main( int argc, char* argv[]) {
     std::ofstream reg_sizes_file("./"+ f_name_postfix+"_segmented_region_sizes.txt");
     int cum_sum = 0;
 
-    for (int k = 0; k < all_max_ids.size(); ++k) {
+    for (size_t k = 0; k < all_max_ids.size(); ++k) {
         // write it to file
         if (k == 0)
             reg_sizes_file << all_max_ids[k] + window_size << endl;
@@ -251,16 +251,16 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
 
     vector<double> log_priors;
     log_priors.reserve(n_cells);
-for (int j = 0; j < n_cells; ++j)
+    for (size_t j = 0; j < n_cells; ++j)
         log_priors.push_back(MathOp::breakpoint_log_prior(j, n_cells,0.5));
-    
+
 
 
     vector<vector<long double>> log_posterior;
 
-    for (int k = 0; k < n_breakpoints; ++k) {
+    for (size_t k = 0; k < n_breakpoints; ++k) {
         log_posterior.push_back(vector<long double>());
-        for (int j = 0; j < n_cells; ++j) {
+        for (size_t j = 0; j < n_cells; ++j) {
             long double val = log_priors[j] + sigma[k][j];
             log_posterior[k].push_back(val);
         }
@@ -271,7 +271,7 @@ for (int j = 0; j < n_cells; ++j)
 
     vector<double> s_p;
 
-    for (int l = 0; l < n_breakpoints; ++l)
+    for (size_t l = 0; l < n_breakpoints; ++l)
     {
         posterior.push_back(vector<long double>());
 
