@@ -250,9 +250,10 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
     }
 
     vector<double> log_priors;
-    for (int j = 0; j < n_cells; ++j) {
+    log_priors.reserve(n_cells);
+for (int j = 0; j < n_cells; ++j)
         log_priors.push_back(MathOp::breakpoint_log_prior(j, n_cells,0.5));
-    }
+    
 
 
     vector<vector<long double>> log_posterior;
