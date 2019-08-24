@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <array>
 #include <algorithm>
 
 #include "SignalProcessing.h"
@@ -238,6 +239,7 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
 
     vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
 
+    // TODO: also allocate the sigma memory in advance
     vector<vector<double>> sigma;
 
     size_t n_breakpoints = aic_vec.size();
@@ -256,13 +258,12 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
 
 
 
-    vector<vector<long double>> log_posterior;
+    vector<vector<long double>> log_posterior(n_breakpoints,vector<long double>(n_cells));
 
     for (size_t k = 0; k < n_breakpoints; ++k) {
-        log_posterior.push_back(vector<long double>());
         for (size_t j = 0; j < n_cells; ++j) {
             long double val = log_priors[j] + sigma[k][j];
-            log_posterior[k].push_back(val);
+            log_posterior[k][j] = val;
         }
     }
 
