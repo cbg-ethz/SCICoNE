@@ -1828,12 +1828,14 @@ std::pair<std::vector<double>, std::vector<std::pair<int, int>>> Tree::gibbs_gen
 
                 // 1. insert the modified node for a while
                 this->insert_child(attach_pos, &copy_pruned);
-                // 2. check for first order children repeat genotype
+                // 2.1. check for first order children repeat genotype
                 bool repeat_genotype = attach_pos->first_order_children_repeat_genotype();
+                // 2.2. check for zero ploidy changes
+                bool zero_ploidy_changes = this->zero_ploidy_changes(attach_pos);
                 // 3. prune the copy_pruned back
                 this->prune(&copy_pruned);
                 // 4. decide
-                if (repeat_genotype)
+                if (repeat_genotype || zero_ploidy_changes)
                     continue;
                 else
                 {
