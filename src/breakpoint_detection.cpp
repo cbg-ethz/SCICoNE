@@ -263,25 +263,24 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
         }
     }
 
-    vector<vector<long double>> posterior;
+    vector<vector<long double>> posterior(n_breakpoints,vector<long double>(n_cells));
     int k_star = 4; // event happening in min number of cells
 
     vector<double> s_p;
 
     for (size_t l = 0; l < n_breakpoints; ++l)
     {
-        posterior.push_back(vector<long double>());
 
         long double max_num = *max_element(log_posterior[l].begin(), log_posterior[l].begin()+k_star-1);
         long double max_denom = *max_element(log_posterior[l].begin(), log_posterior[l].end());
 
         for (int j = 0; j < k_star - 1; ++j) {
             long double val =exp(log_posterior[l][j] - max_num);
-            posterior[l].push_back(val);
+            posterior[l][j] = val;
         }
         for (int k = k_star -1 ; k < log_posterior[l].size(); ++k) {
             long double val =exp(log_posterior[l][k] - max_denom);
-            posterior[l].push_back(val);
+            posterior[l][k] = val;
         }
 
 
