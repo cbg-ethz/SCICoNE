@@ -9,8 +9,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 # set(CMAKE_CXX_FLAGS "--coverage")
 # set(CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage")
-# set(CMAKE_CXX_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
-# set(CMAKE_CXX_FLAGS_DEBUG  "-g") # icc needs -O3 after -g
+set(CMAKE_CXX_FLAGS_DEBUG  "-g2") # icc needs -O3 after -g
 set(CMAKE_CXX_FLAGS_DEBUG "-Wuninitialized")
 set(CMAKE_CXX_FLAGS_DEBUG "-Wpedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "-Wall")
