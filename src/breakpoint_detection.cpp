@@ -239,17 +239,14 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
 
     vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
 
-    // TODO: also allocate the sigma memory in advance
-    vector<vector<double>> sigma;
-
     size_t n_breakpoints = aic_vec.size();
     cout <<"n_breakpoints: " << n_breakpoints << " n_cells: " << n_cells <<endl;
 
-    for (auto &vec: aic_vec) // compute sigma matrix
-    {
-        auto res = MathOp::combine_scores(vec);
-        sigma.push_back(res);
-    }
+    vector<vector<double>> sigma(n_breakpoints,vector<double>(n_cells+1)); // +1 because combine scores considers
+    // the breakpoint occurring in zero cells as well
+
+    for (size_t i = 0; i < n_breakpoints; ++i) // compute sigma matrix
+        sigma[i] = MathOp::combine_scores(aic_vec[i]);
 
     vector<double> log_priors;
     log_priors.reserve(n_cells);
@@ -259,16 +256,15 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
 
 
     vector<vector<long double>> log_posterior(n_breakpoints,vector<long double>(n_cells));
-
     for (size_t k = 0; k < n_breakpoints; ++k) {
         for (size_t j = 0; j < n_cells; ++j) {
-            long double val = log_priors[j] + sigma[k][j];
+            long double val = log_priors[j] + sigma[k][j+1]; // j+1 because sigma has one extra 0 at the beginning
             log_posterior[k][j] = val;
         }
     }
 
     vector<vector<long double>> posterior;
-    int k_star = 4;
+    int k_star = 4; // event happening in min number of cells
 
     vector<double> s_p;
 
