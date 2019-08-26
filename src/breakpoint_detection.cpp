@@ -4,7 +4,6 @@
 
 #include <cxxopts.hpp>
 #include <iostream>
-#include <fstream>
 #include <vector>
 #include <algorithm>
 
@@ -61,9 +60,12 @@ int main( int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    // read the input d_matrix
+    std::cout<<"Reading the input matrix..."<<std::endl;
+
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
     Utils::read_counts(d_bins, d_matrix_file);
+
+    std::cout<<"Input matrix is read."<<std::endl;
 
     // create the region_sizes
     vector<int> region_sizes;
@@ -72,7 +74,9 @@ int main( int argc, char* argv[]) {
     // perform segmentation and peak detection, then define the region sizes
     SignalProcessing dsp;
 
+    std::cout<<"Computing the probability of a region being a breakpoint..."<<std::endl;
     vector<double> s_p = breakpoint_detection(d_bins, window_size);
+    std::cout<<"Computed probabilities for all regions."<<std::endl;
 
     vector<double> sp_cropped = dsp.crop(s_p, window_size);
 
@@ -83,7 +87,7 @@ int main( int argc, char* argv[]) {
      * Otherwise log(0) creates -INF that messes up mean, std, even median
      * Replacing zeros with a minimum value is not a good idea, because a breakpoint can be introduced by this imputation.
      */
-
+    std::cout<<"Replacing zeroes by the previous value, lest them to be effective in the breakpoint detection."<<std::endl;
     for (int l = 0; l < sp_cropped.size(); ++l)
         if(sp_cropped[l] == 0.0)
         {
@@ -92,6 +96,7 @@ int main( int argc, char* argv[]) {
             else // if zero is the first element
                 sp_cropped[l] = 1e-8; // a small positive number
         }
+    std::cout<<"Zeroes are replaced by the previous value."<<std::endl;
 
     vector<double> sp_cropped_copy(sp_cropped); // the copy sp vector that'll contain the NaN values
 
@@ -178,6 +183,7 @@ int main( int argc, char* argv[]) {
 
 
                 all_max_ids.push_back(max_idx);
+                std::cout << "Index of the maximum " << max_idx << " is added to all_max_ids." << std::endl;
 
             }
             else // max_idx = -1, empty the q_map
@@ -187,20 +193,24 @@ int main( int argc, char* argv[]) {
 
         }
     }
-
+    std::cout<<"Sorting the all_max_ids..." <<std::endl;
     std::sort(all_max_ids.begin(), all_max_ids.end());
+    std::cout<<"All max ids are sorted" <<std::endl;
 
+    std::cout<<"Writing segmented regions to file..."<<std::endl;
     std::ofstream tree_file("./"+ f_name_postfix+"_segmented_regions.txt");
 
-    for (int k = 0; k < all_max_ids.size(); ++k) {
+    for (size_t k = 0; k < all_max_ids.size(); ++k) {
         // write it to file
         tree_file << all_max_ids[k] + window_size << endl;
     }
+    std::cout<<"Segmented regions are written."<<std::endl;
 
+    std::cout<<"Writing segmented region sizes to file..."<<std::endl;
     std::ofstream reg_sizes_file("./"+ f_name_postfix+"_segmented_region_sizes.txt");
     int cum_sum = 0;
 
-    for (int k = 0; k < all_max_ids.size(); ++k) {
+    for (size_t k = 0; k < all_max_ids.size(); ++k) {
         // write it to file
         if (k == 0)
             reg_sizes_file << all_max_ids[k] + window_size << endl;
@@ -209,6 +219,7 @@ int main( int argc, char* argv[]) {
     }
     reg_sizes_file << ub+window_size - all_max_ids[all_max_ids.size()-1] << endl; // add the last one
 
+    std::cout<<"Segmented region sizes are written to file"<<std::endl;
     return EXIT_SUCCESS;
 }
 
@@ -226,52 +237,48 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
 
     vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
 
-    vector<vector<double>> sigma;
-
     size_t n_breakpoints = aic_vec.size();
     cout <<"n_breakpoints: " << n_breakpoints << " n_cells: " << n_cells <<endl;
 
-    for (auto &vec: aic_vec) // compute sigma matrix
-    {
-        auto res = MathOp::combine_scores(vec);
-        sigma.push_back(res);
-    }
+    vector<vector<double>> sigma(n_breakpoints,vector<double>(n_cells+1)); // +1 because combine scores considers
+    // the breakpoint occurring in zero cells as well
+
+    for (size_t i = 0; i < n_breakpoints; ++i) // compute sigma matrix
+        sigma[i] = MathOp::combine_scores(aic_vec[i]);
 
     vector<double> log_priors;
-    for (int j = 0; j < n_cells; ++j) {
+    log_priors.reserve(n_cells);
+    for (size_t j = 0; j < n_cells; ++j)
         log_priors.push_back(MathOp::breakpoint_log_prior(j, n_cells,0.5));
-    }
 
 
-    vector<vector<long double>> log_posterior;
 
-    for (int k = 0; k < n_breakpoints; ++k) {
-        log_posterior.push_back(vector<long double>());
-        for (int j = 0; j < n_cells; ++j) {
-            long double val = log_priors[j] + sigma[k][j];
-            log_posterior[k].push_back(val);
+    vector<vector<long double>> log_posterior(n_breakpoints,vector<long double>(n_cells));
+    for (size_t k = 0; k < n_breakpoints; ++k) {
+        for (size_t j = 0; j < n_cells; ++j) {
+            long double val = log_priors[j] + sigma[k][j+1]; // j+1 because sigma has one extra 0 at the beginning
+            log_posterior[k][j] = val;
         }
     }
 
-    vector<vector<long double>> posterior;
-    int k_star = 4;
+    vector<vector<long double>> posterior(n_breakpoints,vector<long double>(n_cells));
+    int k_star = 4; // event happening in min number of cells
 
     vector<double> s_p;
 
-    for (int l = 0; l < n_breakpoints; ++l)
+    for (size_t l = 0; l < n_breakpoints; ++l)
     {
-        posterior.push_back(vector<long double>());
 
         long double max_num = *max_element(log_posterior[l].begin(), log_posterior[l].begin()+k_star-1);
         long double max_denom = *max_element(log_posterior[l].begin(), log_posterior[l].end());
 
         for (int j = 0; j < k_star - 1; ++j) {
             long double val =exp(log_posterior[l][j] - max_num);
-            posterior[l].push_back(val);
+            posterior[l][j] = val;
         }
         for (int k = k_star -1 ; k < log_posterior[l].size(); ++k) {
             long double val =exp(log_posterior[l][k] - max_denom);
-            posterior[l].push_back(val);
+            posterior[l][k] = val;
         }
 
 
