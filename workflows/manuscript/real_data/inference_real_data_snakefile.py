@@ -6,7 +6,8 @@ n_iters = config["cnv_trees"]["n_iterations"]
 ploidy = config["cnv_trees"]["ploidy"]
 # seed = config["cnv_trees"]["seed"]
 cn_limit = config["cnv_trees"]["copy_number_limit"]
-
+move_probs = config["cnv_trees"]["move_probs"]
+move_probs_str = ",".join(str(p) for p in move_probs)
 
 
 
@@ -28,7 +29,6 @@ try:
 except KeyError:
     n_inference_reps = 10
 
-v_values = [-1]
 
 '''
 rules
@@ -36,9 +36,9 @@ rules
 
 rule all:
     input:
-        inferences_with_rep = expand(INFERENCE_OUTPUT + '/' + inference_prefix +'/'+'{v}' + 'v_' + str(n_nodes) + 'nodes_'  + '0regions_'+ '-1'+'reads'+ '/'+ \
+        inferences_with_rep = expand(INFERENCE_OUTPUT + '/' + inference_prefix +'/' + str(n_nodes) + 'nodes_'  + '0regions_'+ '-1'+'reads'+ '/'+ \
                 'infrep{rep_inf}'+'_' + '{output_ext}', output_ext=trees_inf_output_exts, \
-                rep_inf=[x for x in range(0,n_inference_reps)], v=v_values)
+                rep_inf=[x for x in range(0,n_inference_reps)])
     output:
     shell:
 	    "echo STATUS:SUCCESS. All of the rules are ran through."
@@ -65,31 +65,35 @@ rule breakpoint_detection:
         mv {params.postfix}_segmented_region_sizes.txt {output.region_sizes}"
 
 rule infer_trees:
-    # --print_precision 15 --n_nodes 10 --n_bins 18175 --n_cells 260 --postfix vancouver --n_iters 50000 --verbosity 1 --ploidy 2 --d_matrix_file /Users/mtuncel/git_repos/sc-dna/data/adi_steif/read_count_tables/SA501X3F_corr_amp.txt --region_sizes_file /Users/mtuncel/git_repos/sc-dna/cmake-build-debug/vancouver_segmented_region_sizes.txt --seed 22 --copy_number_limit 3
+    # --d_matrix_file=/Users/mtuncel/git_repos/sc-dna/data/adi_steif/read_count_tables/SA501X3F_corr_amp.txt\
+    #  --region_sizes_file=/Users/mtuncel/git_repos/sc-dna/data/adi_steif/read_count_tables/region_sizes_all.txt\
+    #  --n_bins=18175 --n_cells=260 --postfix=vancouver_2 --n_iters=10000 --ploidy=2 --copy_number_limit=2\
+    #  --seed=41 --random_init=true --n_nodes=2 --verbosity=2 --move_probs=0,1,0,1,0,1,0,1,0,1,1,1 --nu=0.01515
     params:
         binary = config["cnv_trees"]["bin"],
         n_nodes = n_nodes,
         n_bins = n_bins,
         n_cells = n_cells,
         n_iters = n_iters,
+        verbosity = verbosity,
         scratch = config["cnv_trees"]["scratch"],
         mem = config["cnv_trees"]["mem"],
         time = config["cnv_trees"]["time"],
         cn_limit = config["cnv_trees"]["copy_number_limit"],
         size_limit = config["cnv_trees"]["size_limit"],
-        tree_prior_chi = config["cnv_trees"]["tree_prior_in_chi"]
+        move_probs_str = move_probs_str
     input:
         d_mat = matrix,
         region_sizes = config["dataset"]["regions"]
         # region_sizes = rules.breakpoint_detection.output.region_sizes
     output:
-        inferred_cnvs = INFERENCE_OUTPUT+ '/' + inference_prefix +'/' + '{v}' + 'v_' + str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + 'infrep{rep_inf}' + '_inferred_cnvs.txt',
-        inferred_tree = INFERENCE_OUTPUT+ '/' + inference_prefix +'/'+ '{v}' + 'v_' + str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + 'infrep{rep_inf}' + '_tree_inferred.txt'
+        inferred_cnvs = INFERENCE_OUTPUT+ '/' + inference_prefix +'/' + str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + 'infrep{rep_inf}' + '_inferred_cnvs.txt',
+        inferred_tree = INFERENCE_OUTPUT+ '/' + inference_prefix +'/' + str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + 'infrep{rep_inf}' + '_tree_inferred.txt'
     shell:
-        "{params.binary} --n_reads {wildcards.reads} --tree_prior_chi {params.tree_prior_chi} -v {wildcards.v}  --n_regions {wildcards.regions}\
+        "{params.binary} --n_reads {wildcards.reads} --n_regions {wildcards.regions}\
         --size_limit {params.size_limit}\
         --copy_number_limit {params.cn_limit}  --n_nodes {params.n_nodes} --n_bins {params.n_bins} --n_iters {params.n_iters} --n_cells {params.n_cells} \
-        --verbosity 0 --seed {wildcards.rep_inf} \
-        --ploidy 2  --postfix infrep{wildcards.rep_inf} --d_matrix_file {input.d_mat} --region_sizes_file {input.region_sizes}; \
+        --verbosity {params.verbosity} --seed {wildcards.rep_inf} \
+        --ploidy 2  --postfix infrep{wildcards.rep_inf} --d_matrix_file {input.d_mat} --region_sizes_file {input.region_sizes} --move_probs {params.move_probs_str}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_infrep{wildcards.rep_inf}_tree_inferred.txt {output.inferred_tree}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_infrep{wildcards.rep_inf}_inferred_cnvs.txt {output.inferred_cnvs}"
