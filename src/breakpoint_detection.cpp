@@ -4,9 +4,7 @@
 
 #include <cxxopts.hpp>
 #include <iostream>
-#include <fstream>
 #include <vector>
-#include <array>
 #include <algorithm>
 
 #include "SignalProcessing.h"
