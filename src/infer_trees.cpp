@@ -133,6 +133,10 @@ int main( int argc, char* argv[]) {
         //set a seed number for reproducibility
         SingletonRandomGenerator::get_instance(seed);
     }
+    if (not result.count("random_init"))
+    {
+        random_init = true; // default value
+    }
 
 
     // read the input d_matrix
