@@ -1122,7 +1122,7 @@ bool Tree::region_changes(Node *n, u_int region_id) const{
     vector<Node*> descendents = n->get_descendents(true);
 
     for (auto const &node : descendents)
-        if (node->c_change[region_id] != 0)
+        if (node->c_change.count(region_id) != 0)
             return true;
     return false;
 
