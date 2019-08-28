@@ -296,8 +296,10 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
     {
 
-        sum_chi = t.chi_insert_delete_reweighted(weighted);
-        sum_chi_prime = t_prime.chi_insert_delete_reweighted(weighted);
+        vector<double> chi = t.chi_insert_delete(weighted);
+        sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+        vector<double> chi_prime = t_prime.chi_insert_delete(weighted);
+        sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
 
         if (std::isinf(sum_chi))
             throw std::out_of_range("sum_chi is infinity, insert/delete move will be rejected");
@@ -310,9 +312,10 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     else if (move_id == 8 || move_id == 9) // condense/split move or weighted cs
     {
 
-        // new chi weighting
-        sum_chi = t.chi_condense_split_reweighted(weighted);
-        sum_chi_prime = t_prime.chi_condense_split_reweighted(weighted);
+        vector<double> chi = t.chi_condense_split(weighted);
+        sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+        vector<double> chi_prime = t_prime.chi_condense_split(weighted);
+        sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
 
         vector<double> omega = t.omega_condense_split(lambda_s, weighted);
         sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
@@ -325,17 +328,14 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         double n = static_cast<double>(t_n_nodes);
         if (t_n_nodes < t_prime_n_nodes) // insert, split
         {
-            double weight = std::pow(n,2) * std::pow((n+2)/n, n);
+            double weight = sum_chi/sum_omega_prime;
             total_nbd_corr *= weight;
         }
         else // delete, condense
         {
-            double weight = std::pow(n,-2) * std::pow(n/(n+2), n);
+            double weight = sum_omega/sum_chi_prime;
             total_nbd_corr *= weight;
         }
-
-        double correction = (sum_omega + sum_chi) / (sum_omega_prime + sum_chi_prime);
-        total_nbd_corr *= correction;
     }
 
     if (move_id == 7 || move_id == 9) // weighted insert-delete or weighted condense-split
