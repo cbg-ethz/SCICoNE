@@ -7,6 +7,7 @@ ploidy = config["cnv_trees"]["ploidy"]
 # seed = config["cnv_trees"]["seed"]
 cn_limit = config["cnv_trees"]["copy_number_limit"]
 move_probs = config["cnv_trees"]["move_probs"]
+nu = config["cnv_trees"]["nu"]
 move_probs_str = ",".join(str(p) for p in move_probs)
 
 
@@ -81,6 +82,7 @@ rule infer_trees:
         time = config["cnv_trees"]["time"],
         cn_limit = config["cnv_trees"]["copy_number_limit"],
         size_limit = config["cnv_trees"]["size_limit"],
+        nu = nu,
         move_probs_str = move_probs_str
     input:
         d_mat = matrix,
@@ -94,6 +96,6 @@ rule infer_trees:
         --size_limit {params.size_limit}\
         --copy_number_limit {params.cn_limit}  --n_nodes {params.n_nodes} --n_bins {params.n_bins} --n_iters {params.n_iters} --n_cells {params.n_cells} \
         --verbosity {params.verbosity} --seed {wildcards.rep_inf} \
-        --ploidy 2  --postfix infrep{wildcards.rep_inf} --d_matrix_file {input.d_mat} --region_sizes_file {input.region_sizes} --move_probs {params.move_probs_str}; \
+        --ploidy 2  --postfix infrep{wildcards.rep_inf} --d_matrix_file {input.d_mat} --region_sizes_file {input.region_sizes} --move_probs {params.move_probs_str} --nu {params.nu}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_infrep{wildcards.rep_inf}_tree_inferred.txt {output.inferred_tree}; \
         mv {params.n_nodes}nodes_{wildcards.regions}regions_{wildcards.reads}reads_infrep{wildcards.rep_inf}_inferred_cnvs.txt {output.inferred_cnvs}"
