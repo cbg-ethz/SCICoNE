@@ -278,37 +278,20 @@ void test_condense_split_weights()
     // intentional override
     double lambda_s = 0.5;
 
-    double sum_chi = t.chi_condense_split_reweighted(false); // weighted = false;
-    double sum_chi_gt = 0.0595;
-    assert(abs(sum_chi - sum_chi_gt) <= epsilon);
-
     vector<double> omega = t.omega_condense_split(lambda_s, false);
     double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
     double sum_omega_gt = 0.296;
     assert(abs(sum_omega - sum_omega_gt) <= epsilon);
-
-    double sum_chi_prime = t_prime.chi_condense_split_reweighted(false);
-    double sum_chi_tp_gt = 0.0198;
-    assert(abs(sum_chi_prime - sum_chi_tp_gt) <= epsilon);
 
     vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, false);
     double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
     double sum_omega_prime_gt = 0.488;
     assert(abs(sum_omega_prime - sum_omega_prime_gt) <= epsilon);
 
-    // weighted versions
-    double sum_xi = t.chi_condense_split_reweighted(true);
-    double sum_xi_gt = 0.0124;
-    assert(abs(sum_xi - sum_xi_gt) <= epsilon);
-
     vector<double> upsilon = t.omega_condense_split(lambda_s, true);
     double sum_upsilon = accumulate(upsilon.begin(), upsilon.end(), 0.0);
     double sum_upsilon_gt = 0.0878;
     assert(abs(sum_upsilon - sum_upsilon_gt) <= epsilon);
-
-    double sum_xi_tp = t_prime.chi_condense_split_reweighted(true);
-    double sum_xi_tp_gt = 0.002825;
-    assert(abs(sum_xi_tp - sum_xi_tp_gt) <= epsilon);
 
     vector<double> upsilon_tp = t_prime.omega_condense_split(lambda_s, true);
     double sum_upsilon_tp = accumulate(upsilon_tp.begin(), upsilon_tp.end(), 0.0);
@@ -379,23 +362,12 @@ void test_insert_delete_weights()
     double sum_omega_gt = 0.0217;
     assert(abs(sum_omega - sum_omega_gt) <= epsilon);
 
-
-    double sum_chi = t.chi_insert_delete_reweighted(false); // weighted = false;
-    double sum_chi_gt = 0.0742;
-    assert(abs(sum_chi - sum_chi_gt) <= epsilon);
-
     vector<double> upsilon = t.omega_insert_delete(lambda_r, lambda_c, true); // cost weighted omega
     vector<double> xi = t.chi_insert_delete(true); // cost weighted chi;
 
     double sum_upsilon = accumulate(upsilon.begin(), upsilon.end(), 0.0);
     double sum_upsilon_gt = 0.0166;
     assert(abs(sum_upsilon - sum_upsilon_gt) <= epsilon);
-
-    double sum_xi = t.chi_insert_delete_reweighted(true);
-    double sum_xi_gt = 0.0368;
-
-    assert(abs(sum_xi - sum_xi_gt) <= epsilon);
-
 
     cout<<"Insert and delete node weights validation test passed!"<<endl;
 

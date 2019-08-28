@@ -88,11 +88,9 @@ public:
 
     vector<double> omega_condense_split(double lambda_s, bool weighted);
     vector<double> chi_condense_split(bool weighted);
-    double chi_condense_split_reweighted(bool weighted);
 
     vector<double> omega_insert_delete(double lambda_r, double lambda_c, bool weighted);
     vector<double> chi_insert_delete(bool weighted);
-    double chi_insert_delete_reweighted(bool weighted);
 
     void load_from_file(string file);
     double get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) const;
@@ -1202,16 +1200,10 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
 
     int K = this->n_regions;
 
-    double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-    double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-
-    double normalization_term = sum_chi + sum_omega;
-    double p_chi = sum_chi / normalization_term;
-
     boost::random::uniform_real_distribution<double> prob_dist(0.0,1.0);
     double rand_val = prob_dist(generator); // to be btw. 0 and 1
 
-    if (rand_val < p_chi)
+    if (rand_val < 0.5)
     {
         // add is chosen
         if (all_nodes_vec.size() >= size_limit)
@@ -1300,14 +1292,6 @@ Node *Tree::condense_split_node(unsigned int size_limit, bool weighted) {
     vector<double> chi = this->chi_condense_split(weighted); // split weights
     vector<double> omega = this->omega_condense_split(lambda_s, weighted); // condense weights
 
-    double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-    double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-
-    double normalization_term = sum_chi + sum_omega;
-    double p_chi = sum_chi / normalization_term;
-
-   // std::cout << "p_chi" << p_chi << endl;
-    
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
     // n_regions from Poisson(lambda_S)+1
     boost::random::poisson_distribution<int> poisson_s(lambda_s); // the param is to be specified later
@@ -1317,7 +1301,7 @@ Node *Tree::condense_split_node(unsigned int size_limit, bool weighted) {
     double rand_val = prob_dist(generator); // to be btw. 0 and 1
 
     vector<Node*> descendents_of_root = this->root->get_descendents(false); // without the root
-    if (rand_val < p_chi)
+    if (rand_val < 0.5)
     {
         // split is chosen
 
@@ -1577,40 +1561,6 @@ double Tree::cost() {
     }
 
     return zeta;
-}
-
-double Tree::chi_insert_delete_reweighted(bool weighted) {
-    /*
-     * Returns the reweighted chi for the insert/delete move that includes a weighting corresponding to
-     * the tree prior which increases with larger trees.
-     * weighted: is move computationally weighted
-     * */
-
-    double n = static_cast<double>(this->get_n_nodes());
-
-    vector<double> chi = this->chi_insert_delete(weighted);
-    double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-    double reweighting_term = 1.0/pow(n,2) * pow(n/(n+2), n);
-    double reweighted_chi = reweighting_term * sum_chi;
-
-    return reweighted_chi;
-}
-
-double Tree::chi_condense_split_reweighted(bool weighted) {
-    /*
-     * Returns the reweighted chi for the condense/split move that includes a weighting corresponding to
-     * the tree prior which increases with larger trees.
-     * weighted: is move computationally weighted
-     * */
-
-    double n = static_cast<double>(this->get_n_nodes());
-
-    vector<double> chi = this->chi_condense_split(weighted);
-    double sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-    double reweighting_term = 1.0/pow(n,2) * pow(n/(n+2), n);
-    double reweighted_chi = reweighting_term * sum_chi;
-
-    return reweighted_chi;
 }
 
 double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) const{
