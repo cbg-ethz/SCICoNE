@@ -37,6 +37,7 @@ rules
 
 rule all:
     input:
+        region_sizes = BP_OUTPUT + '/' + postfix + "_segmented_region_sizes.txt",
         inferences_with_rep = expand(INFERENCE_OUTPUT + '/' + inference_prefix +'/' + str(n_nodes) + 'nodes_'  + '0regions_'+ '-1'+'reads'+ '/'+ \
                 'infrep{rep_inf}'+'_' + '{output_ext}', output_ext=trees_inf_output_exts, \
                 rep_inf=[x for x in range(0,n_inference_reps)])
