@@ -39,7 +39,7 @@ int main()
     SingletonRandomGenerator::get_instance(42);
     test_mathop();
     test_xxhash();
-    test_tree_prior();
+//    test_tree_prior();
     test_event_prior();
     test_n_descendents_computation();
     test_tree_attachment();

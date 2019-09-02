@@ -810,7 +810,8 @@ double Inference::log_tree_prior(int m, int n) {
      * tree_sum: sum of all scores across all cells and attachment points
      * */
 
-    double log_prior = - (n -1 + m) * log(n+1) -m * log(2); // tree prior
+//    double log_prior = - (n -1 + m) * log(n+1) -m * log(2); // tree prior
+    double log_prior = -(n-1+m*2)*log(n+1);
     return log_prior;
 }
 
