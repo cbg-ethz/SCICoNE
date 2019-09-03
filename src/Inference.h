@@ -460,14 +460,17 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     u_int n_accepted = 0;
 
     double gamma = 1.0; // gamma param to amplify the difference in log likelihoods
+    double alpha = 1.0 / sqrt(1000.0);
 
     // for writing the posteriors on file
     std::ofstream mcmc_scores_file;
     std::ofstream rel_mcmc_scores_file;
+    std::ofstream acceptance_ratio_file;
     if (verbosity > 1)
     {
         mcmc_scores_file.open(f_name + "_markov_chain.txt", std::ios_base::app);
         rel_mcmc_scores_file.open(f_name + "_rel_markov_chain.txt", std::ios_base::app);
+        acceptance_ratio_file.open(f_name + "_acceptance_ratio.txt", std::ios_base::app);
     }
 
     best_tree = t; //start with the t
@@ -668,12 +671,18 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 bool genotype_prune_reattach_success = apply_genotype_preserving_pr(gamma);
                 if (not genotype_prune_reattach_success)
                 {
+                    gamma *= exp((0.0-alpha)*alpha);
+                    n_rejected++;
+                    acceptance_ratio_file << std::setprecision(print_precision) << 0 << ',';
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "Genotype preserving prune/reattach is rejected"<<endl;
                 }
-                else
+                else // accepted
                 {
+                    gamma *= exp((1.0-alpha)*alpha);
+                    n_accepted++;
+                    acceptance_ratio_file << std::setprecision(print_precision) << 1 << ',';
                     // update t score
                     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
                     t.posterior_score = log_tree_posterior(t_sum, m, t); // the prior score will change
@@ -737,6 +746,9 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             // update trees and the matrices
             if (accepted == &t_prime)
             {
+                if (move_id != 11)
+                    gamma *= exp((1.0-alpha)*alpha);
+                acceptance_ratio_file << std::setprecision(print_precision) << 1 << ',';
                 n_accepted++;
                 t_sums = t_prime_sums;
                 update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
@@ -746,20 +758,26 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             }
             else
             {
+                // print acceptance ratio
+                if (move_id != 11)
+                    gamma *= exp((0.0-alpha)*alpha);
+                acceptance_ratio_file << std::setprecision(print_precision) << 0 << ',';
                 n_rejected++;
                 t_prime = t;
             }
+            std::cout<<"Gamma: " << gamma <<std::endl;
             t_prime_sums.clear();
             t_prime_scores.clear();
         }
 
-        static double first_score = accepted->posterior_score + accepted->od_score; // the first value will be kept in whole program
-        // print accepted log_posterior
-        mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score << ',';
-        rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score << ',';
-
+        if (verbosity > 1)
+        {
+            static double first_score = accepted->posterior_score + accepted->od_score; // the first value will be kept in whole program
+            // print accepted log_posterior
+            mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score << ',';
+            rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score << ',';
+        }
     }
-
 }
 
 bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, const vector<int> &r) {
