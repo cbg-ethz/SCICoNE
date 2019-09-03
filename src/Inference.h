@@ -765,6 +765,12 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 n_rejected++;
                 t_prime = t;
             }
+
+            if (gamma > 100.0)
+                gamma = 100.0;
+            if (gamma < 1.0/100.0)
+                gamma = 1.0/100.0;
+
             std::cout<<"Gamma: " << gamma <<std::endl;
             t_prime_sums.clear();
             t_prime_scores.clear();
