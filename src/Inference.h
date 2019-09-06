@@ -770,10 +770,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 t_prime = t;
             }
 
-            if (gamma > 10.0)
-                gamma = 10.0;
-            if (gamma < 1.0/10.0)
-                gamma = 1.0/10.0;
+            if (gamma > 100.0)
+                gamma = 100.0;
+            if (gamma < 1.0/100.0)
+                gamma = 1.0/100.0;
 
             t_prime_sums.clear();
             t_prime_scores.clear();
