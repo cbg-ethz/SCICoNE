@@ -72,7 +72,7 @@ int main( int argc, char* argv[]) {
     cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
     options.add_options()
             ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
-            ("d_matrix_file", "Path to the counts matrix file, delimiter: ' ', line separator: '\n' ", cxxopts::value(d_matrix_file))
+            ("d_matrix_file", "Path to the counts matrix file, delimiter: ',', line separator: '\n' ", cxxopts::value(d_matrix_file))
             ("n_regions", "Number of regions to be contained in the output file", cxxopts::value(n_regions))
             ("n_reads", "Number of reads to be contained in the output file", cxxopts::value(n_reads))
             ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))

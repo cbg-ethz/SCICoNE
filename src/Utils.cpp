@@ -86,7 +86,7 @@ void Utils::read_counts(vector<vector<double>> &mat, const string &path) {
         std::istringstream fline(line);
         std::string val;
         int j = 0;
-        while (std::getline(fline, val, ' '))
+        while (std::getline(fline, val, ','))
         {
             mat[i][j] = stod(val);
             j++;
