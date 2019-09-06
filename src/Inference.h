@@ -675,7 +675,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 bool genotype_prune_reattach_success = apply_genotype_preserving_pr(gamma);
                 if (not genotype_prune_reattach_success)
                 {
-                    gamma *= exp((0.0-alpha)*alpha);
                     n_rejected++;
                     acceptance_ratio_file << std::setprecision(print_precision) << -1 << ',';
                     rejected_before_comparison = true;
@@ -684,7 +683,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 else // accepted
                 {
-                    gamma *= exp((1.0-alpha)*alpha);
                     n_accepted++;
                     acceptance_ratio_file << std::setprecision(print_precision) << static_cast<int>(move_id) << ',';
                     // update t score
