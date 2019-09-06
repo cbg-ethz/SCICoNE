@@ -466,11 +466,14 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     std::ofstream mcmc_scores_file;
     std::ofstream rel_mcmc_scores_file;
     std::ofstream acceptance_ratio_file;
+    std::ofstream gamma_file;
+
     if (verbosity > 1)
     {
         mcmc_scores_file.open(f_name + "_markov_chain.txt", std::ios_base::app);
         rel_mcmc_scores_file.open(f_name + "_rel_markov_chain.txt", std::ios_base::app);
         acceptance_ratio_file.open(f_name + "_acceptance_ratio.txt", std::ios_base::app);
+        gamma_file.open(f_name + "_gamma_values.csv", std::ios_base::app);
     }
 
     best_tree = t; //start with the t
@@ -488,6 +491,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             cout << "iteration" << i <<  "tree score" << t.posterior_score + t.od_score  << endl;
             cout << "nu: " << t.nu << "od score: " << t.od_score << endl;
         }
+
 
         bool rejected_before_comparison = false;
 
@@ -673,7 +677,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 {
                     gamma *= exp((0.0-alpha)*alpha);
                     n_rejected++;
-                    acceptance_ratio_file << std::setprecision(print_precision) << 0 << ',';
+                    acceptance_ratio_file << std::setprecision(print_precision) << -1 << ',';
                     rejected_before_comparison = true;
                     if (verbosity > 0)
                         cout << "Genotype preserving prune/reattach is rejected"<<endl;
@@ -682,7 +686,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 {
                     gamma *= exp((1.0-alpha)*alpha);
                     n_accepted++;
-                    acceptance_ratio_file << std::setprecision(print_precision) << 1 << ',';
+                    acceptance_ratio_file << std::setprecision(print_precision) << static_cast<int>(move_id) << ',';
                     // update t score
                     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
                     t.posterior_score = log_tree_posterior(t_sum, m, t); // the prior score will change
@@ -748,7 +752,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             {
                 if (move_id != 11)
                     gamma *= exp((1.0-alpha)*alpha);
-                acceptance_ratio_file << std::setprecision(print_precision) << 1 << ',';
+                acceptance_ratio_file << std::setprecision(print_precision) << static_cast<int>(move_id) << ',';
                 n_accepted++;
                 t_sums = t_prime_sums;
                 update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
@@ -761,7 +765,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // print acceptance ratio
                 if (move_id != 11)
                     gamma *= exp((0.0-alpha)*alpha);
-                acceptance_ratio_file << std::setprecision(print_precision) << 0 << ',';
+                acceptance_ratio_file << std::setprecision(print_precision) << -1 << ',';
                 n_rejected++;
                 t_prime = t;
             }
@@ -771,7 +775,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             if (gamma < 1.0/10.0)
                 gamma = 1.0/10.0;
 
-            std::cout<<"Gamma: " << gamma <<std::endl;
             t_prime_sums.clear();
             t_prime_scores.clear();
         }
@@ -782,6 +785,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             // print accepted log_posterior
             mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score << ',';
             rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score << ',';
+            gamma_file << gamma << ',' <<std::endl;
         }
     }
 }
