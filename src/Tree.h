@@ -976,9 +976,6 @@ bool Tree::is_valid_subtree(Node *node) const{
     if (zero_ploidy_changes(node)) // does it for the subtree
         return false;
 
-    if (node->any_siblings_repeat_genotype())
-        return false;
-
     return true;
 
 }
@@ -1778,14 +1775,12 @@ std::pair<std::vector<double>, std::vector<std::pair<int, int>>> Tree::gibbs_gen
 
                 // 1. insert the modified node for a while
                 this->insert_child(attach_pos, &copy_pruned);
-                // 2.1. check for first order children repeat genotype
-                bool repeat_genotype = attach_pos->first_order_children_repeat_genotype();
-                // 2.2. check for zero ploidy changes
+                // 2. check for zero ploidy changes
                 bool zero_ploidy_changes = this->zero_ploidy_changes(attach_pos);
                 // 3. prune the copy_pruned back
                 this->prune(&copy_pruned);
                 // 4. decide
-                if (repeat_genotype || zero_ploidy_changes)
+                if (zero_ploidy_changes)
                     continue;
                 else
                 {
