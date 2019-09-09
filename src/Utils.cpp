@@ -83,13 +83,12 @@ void Utils::read_counts(vector<vector<double>> &mat, const string &path) {
     for (std::string line; std::getline(filein, line); )
     {
 
-        istringstream fline(line);
+        std::istringstream fline(line);
+        std::string val;
         int j = 0;
-        for(;;) {
-            double val;
-            fline >> val;
-            if (!fline) break;
-            mat[i][j] = val;
+        while (std::getline(fline, val, ','))
+        {
+            mat[i][j] = stod(val);
             j++;
         }
         // assert(j == mat[i].size()); probabilities don't always sum up to one, we can get 1 column of empty bins here
@@ -149,9 +148,11 @@ void Utils::read_vector(vector<int> &vec, const string &path) {
     for (std::string line; std::getline(filein, line); )
     {
         istringstream fline(line);
-        int val;
-        fline >> val;
-        vec.push_back(val); // push_back is fine since this file is much smaller
+        std::string val;
+        while (std::getline(fline, val))
+        {
+            vec.push_back(stod(val)); // push_back is fine since this file is much smaller
+        }
     }
 
     assert(vec.size() != 0);

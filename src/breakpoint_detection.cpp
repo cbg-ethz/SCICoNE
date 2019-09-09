@@ -33,7 +33,7 @@ int main( int argc, char* argv[]) {
 
     cxxopts::Options options("Breakpoint detection executable", "detects the breakpoints in the genome across all cells.");
     options.add_options()
-            ("d_matrix_file", "Path to the counts matrix file, delimiter: ' ', line separator: '\n' ", cxxopts::value(d_matrix_file))
+            ("d_matrix_file", "Path to the counts matrix file, delimiter: ',', line separator: '\n' ", cxxopts::value(d_matrix_file))
             ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("window_size", "the size of the window used in breakpoint detection", cxxopts::value(window_size))
