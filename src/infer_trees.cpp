@@ -23,6 +23,8 @@ double lambda_r;
 double lambda_c;
 double c_penalise;
 unsigned is_overdispersed;
+string f_name_postfix;
+int verbosity;
 double eta;
 
 // endof globals
@@ -37,9 +39,8 @@ int main( int argc, char* argv[]) {
     int n_cells;
     int n_bins = 10000;
     int ploidy = 2;
-    int verbosity = 0;
+    verbosity = 0;
     int seed = 0;
-    string f_name_postfix;
     string region_sizes_file;
     string d_matrix_file;
 
