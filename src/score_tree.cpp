@@ -86,7 +86,7 @@ int main( int argc, char* argv[]) {
     mcmc.update_t_prime(); // set t_prime to t
 
     // write the tree
-    // std::ofstream tree_file("./" +f_name_postfix+"_tree_rescored" + ".txt");
+    // std::ofstream tree_file("./" +f_name_posfix+"_tree_rescored" + ".txt");
     // tree_file << mcmc.t;
     std::cout << mcmc.t;
 

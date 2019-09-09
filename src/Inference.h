@@ -174,7 +174,7 @@ Inference::Inference(u_int n_regions, int ploidy, int verbosity) : t(ploidy, n_r
     this->verbosity = verbosity;
     std::ofstream outfile;
     long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
-    f_name = std::to_string(seed);
+    f_name = std::to_string(seed) + '_' + "run_" + f_name_posfix;
 }
 
 Inference::~Inference() {

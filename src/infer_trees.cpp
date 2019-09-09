@@ -23,7 +23,7 @@ double lambda_r;
 double lambda_c;
 double c_penalise;
 unsigned is_overdispersed;
-string f_name_postfix;
+string f_name_posfix;
 int verbosity;
 double eta;
 
@@ -82,7 +82,7 @@ int main( int argc, char* argv[]) {
             ("ploidy", "ploidy", cxxopts::value(ploidy))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
             ("seed", "seed", cxxopts::value(seed))
-            ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
+            ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_posfix))
             ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
             ("size_limit", "the limitation on the max size of the tree", cxxopts::value(size_limit))
             ("copy_number_limit", "the maximum copy number profile one bin or region can have", cxxopts::value(copy_number_limit))
@@ -219,12 +219,12 @@ int main( int argc, char* argv[]) {
     vector<vector<int>> inferred_cnvs_bins = Utils::regions_to_bins_cnvs(inferred_cnvs, region_sizes);
 
     // write the inferred(best) tree
-    std::ofstream tree_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions_initial) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_tree_inferred" + ".txt");
+    std::ofstream tree_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions_initial) + "regions_" + to_string(n_reads) + "reads_" + f_name_posfix + "_tree_inferred" + ".txt");
     tree_file << mcmc.best_tree;
 
 
     // write the inferred CNVs
-    std::ofstream inferred_cnvs_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions_initial) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_inferred_cnvs" + ".txt");
+    std::ofstream inferred_cnvs_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions_initial) + "regions_" + to_string(n_reads) + "reads_" + f_name_posfix + "_inferred_cnvs" + ".txt");
     for (auto const &v1: inferred_cnvs_bins) {
         for (auto const &v2: v1)
             inferred_cnvs_file << v2 << ' ';

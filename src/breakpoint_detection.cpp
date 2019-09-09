@@ -13,7 +13,7 @@
 
 // globals
 int verbosity;
-string f_name_postfix;
+string f_name_posfix;
 // end of globals
 
 using namespace std;
@@ -26,7 +26,7 @@ int main( int argc, char* argv[]) {
     int n_bins = 10000;
     int window_size = 10;
     double threshold_coefficient = 3.0;
-    f_name_postfix = "";
+    f_name_posfix = "";
     string region_sizes_file;
     string d_matrix_file;
     verbosity = 0;
@@ -38,7 +38,7 @@ int main( int argc, char* argv[]) {
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("window_size", "the size of the window used in breakpoint detection", cxxopts::value(window_size))
             ("threshold", "the coefficient of the breakpoint threshold", cxxopts::value(threshold_coefficient))
-            ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
+            ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_posfix))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
             ;
 
@@ -198,7 +198,7 @@ int main( int argc, char* argv[]) {
     std::cout<<"All max ids are sorted" <<std::endl;
 
     std::cout<<"Writing segmented regions to file..."<<std::endl;
-    std::ofstream tree_file("./"+ f_name_postfix+"_segmented_regions.txt");
+    std::ofstream tree_file("./" + f_name_posfix + "_segmented_regions.txt");
 
     for (size_t k = 0; k < all_max_ids.size(); ++k) {
         // write it to file
@@ -207,7 +207,7 @@ int main( int argc, char* argv[]) {
     std::cout<<"Segmented regions are written."<<std::endl;
 
     std::cout<<"Writing segmented region sizes to file..."<<std::endl;
-    std::ofstream reg_sizes_file("./"+ f_name_postfix+"_segmented_region_sizes.txt");
+    std::ofstream reg_sizes_file("./" + f_name_posfix + "_segmented_region_sizes.txt");
     int cum_sum = 0;
 
     for (size_t k = 0; k < all_max_ids.size(); ++k) {
