@@ -17,6 +17,7 @@ double lambda_r;
 double lambda_c;
 double c_penalise;
 unsigned is_overdispersed;
+string f_name_posfix;
 int verbosity;
 double eta;
 // endof globals

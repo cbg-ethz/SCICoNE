@@ -18,6 +18,7 @@ double lambda_c;
 double c_penalise;
 int copy_number_limit;
 unsigned is_overdispersed;
+string f_name_posfix;
 double eta;
 // endof globals
 
