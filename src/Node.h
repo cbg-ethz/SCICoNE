@@ -55,7 +55,6 @@ struct Node{
     inline bool is_leaf() const;
     inline vector<Node*> get_descendents(bool with_n=true) const;
     inline bool first_order_children_repeat_genotype() const;
-    inline bool any_siblings_repeat_genotype() const;
     inline double compute_event_prior(u_int n_regions) const;
 
     // copy constructor
@@ -243,23 +242,6 @@ double Node::compute_event_prior(u_int n_regions) const {
     pv_i -= c_penalisation*repetition_count; // penalise the repetitions
 
     return pv_i;
-}
-
-bool Node::any_siblings_repeat_genotype() const {
-    /*
-     * Returns true if any of the siblings in the subtree repeat the same change sign on the same region.
-     * */
-
-    std::vector<Node*> descendents;
-    if (this->id == 0)
-        descendents = this->get_descendents(true); // root cannot have siblings, no need to check parent
-    else
-        descendents = this->parent->get_descendents(true); // use parent to detect siblings
-    for (auto const &elem : descendents)
-        if (elem->first_order_children_repeat_genotype()) // does it for a node
-            return true;
-
-    return false;
 }
 
 #endif //SC_DNA_NODE_H
