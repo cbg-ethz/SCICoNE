@@ -409,7 +409,13 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
         }
     }
 
-    log_acceptance_prob = std::log(total_nbd_corr) + gamma * score_diff;
+    double log_total_nbd_corr;
+    if (total_nbd_corr == 0.0)
+        log_total_nbd_corr = 0.0;
+    else
+        log_total_nbd_corr = std::log(total_nbd_corr);
+
+    log_acceptance_prob = log_total_nbd_corr + gamma * score_diff;
 
     assert(!std::isnan(log_acceptance_prob));
     assert(!std::isinf(log_acceptance_prob));
