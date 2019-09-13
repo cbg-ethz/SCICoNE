@@ -211,10 +211,15 @@ int main( int argc, char* argv[]) {
 
 
     // write the inferred CNVs
-    std::ofstream inferred_cnvs_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_inferred_cnvs" + ".txt");
+    std::ofstream inferred_cnvs_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_inferred_cnvs" + ".csv");
     for (auto const &v1: inferred_cnvs_bins) {
-        for (auto const &v2: v1)
-            inferred_cnvs_file << v2 << ' ';
+        for (size_t i = 0; i < v1.size(); i++)
+        {
+            if (i == v1.size()-1) // the last element
+                inferred_cnvs_file << v1[i];
+            else // add comma
+                inferred_cnvs_file << v1[i] << ',';
+        }   
         inferred_cnvs_file << endl;
     }
 
