@@ -37,7 +37,6 @@ int main( int argc, char* argv[]) {
 
     int n_iters = 5000; // the default value is 5000 iterations.
     int n_cells;
-    int n_bins = 10000;
     int ploidy = 2;
     verbosity = 0;
     int seed = 0;
@@ -47,7 +46,6 @@ int main( int argc, char* argv[]) {
     unsigned size_limit = std::numeric_limits<unsigned>::max();
 
     size_t n_regions;
-    size_t n_regions_initial = 0; // used for naming the output for I/O workflow purposes
 
     // random tree parameters
     int n_nodes = 3;
@@ -74,9 +72,8 @@ int main( int argc, char* argv[]) {
     options.add_options()
             ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
             ("d_matrix_file", "Path to the counts matrix file, delimiter: ',', line separator: '\n' ", cxxopts::value(d_matrix_file))
-            ("n_regions", "Number of regions to be contained in the output file", cxxopts::value(n_regions))
             ("n_reads", "Number of reads to be contained in the output file", cxxopts::value(n_reads))
-            ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
+            ("n_regions", "Number of regions in the input matrix", cxxopts::value(n_regions))
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("ploidy", "ploidy", cxxopts::value(ploidy))
@@ -108,21 +105,20 @@ int main( int argc, char* argv[]) {
     {
         region_sizes_file = result["region_sizes_file"].as<string>();
     }
-
+    else
+    {
+        cerr << "the region sizes file is not provided."<<endl;
+        return EXIT_FAILURE;
+    }
     if (not result.count("d_matrix_file"))
     {
         cerr << "the D matrix file is not provided."<<endl;
         return EXIT_FAILURE;
     }
-    if (not result.count("n_bins"))
+    if (not result.count("n_regions"))
     {
-        cerr << "the number of bins is not provided."<<endl;
+        cerr << "the number of regions is not provided."<<endl;
         return EXIT_FAILURE;
-    }
-    if (result.count("n_regions"))
-    {
-        // used only for naming the output
-        n_regions_initial = result["n_regions"].as<size_t>();
     }
     if (not result.count("n_cells"))
     {
@@ -139,19 +135,13 @@ int main( int argc, char* argv[]) {
         random_init = true; // default value
     }
 
-
     // read the input d_matrix
-    vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
-    Utils::read_counts(d_bins, d_matrix_file);
+    vector<vector<double>> d_regions(n_cells, vector<double>(n_regions));
+    Utils::read_counts(d_regions, d_matrix_file);
 
     // read the region_sizes file
     vector<int> region_sizes;
-    vector<vector<double>> d_regions;
-
     Utils::read_vector(region_sizes, region_sizes_file);
-    // Merge the bins into regions
-    d_regions = Utils::condense_matrix(d_bins, region_sizes);
-    n_regions = region_sizes.size();
 
     // run mcmc inference
     Inference mcmc(n_regions, ploidy, verbosity);
@@ -219,12 +209,12 @@ int main( int argc, char* argv[]) {
     vector<vector<int>> inferred_cnvs_bins = Utils::regions_to_bins_cnvs(inferred_cnvs, region_sizes);
 
     // write the inferred(best) tree
-    std::ofstream tree_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions_initial) + "regions_" + to_string(n_reads) + "reads_" + f_name_posfix + "_tree_inferred" + ".txt");
+    std::ofstream tree_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_" + f_name_posfix + "_tree_inferred" + ".txt");
     tree_file << mcmc.best_tree;
 
 
     // write the inferred CNVs
-    std::ofstream inferred_cnvs_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions_initial) + "regions_" + to_string(n_reads) + "reads_" + f_name_posfix + "_inferred_cnvs" + ".txt");
+    std::ofstream inferred_cnvs_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_" + f_name_posfix + "_inferred_cnvs" + ".txt");
     for (auto const &v1: inferred_cnvs_bins) {
         for (auto const &v2: v1)
             inferred_cnvs_file << v2 << ' ';
