@@ -132,11 +132,11 @@ int main( int argc, char* argv[]) {
         random_init = true; // default value
     }
 
-    std::cout << "reading the input matrix..." << std::endl;
+    std::cout << "Reading the input matrix..." << std::endl;
     vector<vector<double>> d_regions(n_cells, vector<double>(n_regions));
     Utils::read_counts(d_regions, d_matrix_file);
 
-    std::cout << "reading the region_sizes file..." << std::endl;
+    std::cout << "Reading the region_sizes file..." << std::endl;
     vector<int> region_sizes;
     Utils::read_vector(region_sizes, region_sizes_file);
 
@@ -146,12 +146,12 @@ int main( int argc, char* argv[]) {
     if (random_init)
     {
         int max_iters = 10000;
-        std::cout<<"trying to randomly initialise a valid tree with " << max_iters << " iterations." << std::endl;
+        std::cout<<"Trying to randomly initialise a valid tree with " << max_iters << " iterations." << std::endl;
         try {
             mcmc.random_initialize(n_nodes, n_regions, max_iters); // creates a random tree
         }catch (const std::runtime_error& e)
         {
-            std::cerr << " a runtime error was caught during the random tree initialize function, with message '"
+            std::cerr << "A runtime error was caught during the random tree initialize function, with message '"
                       << e.what() << '\'' << std::endl;
             return EXIT_FAILURE; // reject the move
         }
@@ -186,7 +186,7 @@ int main( int argc, char* argv[]) {
         }
     }
 
-    std::cout << "computing the t table and overdispersion scores for the initial tree..." << std::endl;
+    std::cout << "Computing the t table and overdispersion scores for the initial tree..." << std::endl;
     mcmc.compute_t_table(d_regions,region_sizes);
     mcmc.compute_t_od_scores(d_regions, region_sizes);
 
@@ -195,7 +195,7 @@ int main( int argc, char* argv[]) {
     // Get starting timepoint
     auto start = high_resolution_clock::now();
 
-    std::cout << "inferring the tree using MCMC with " << n_iters << " iterations..." << std::endl;
+    std::cout << "Inferring the tree using MCMC with " << n_iters << " iterations..." << std::endl;
     mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters, size_limit);
 
     // Get ending timepoint
@@ -203,10 +203,10 @@ int main( int argc, char* argv[]) {
 
     auto duration = duration_cast<microseconds>(stop - start);
 
-    cout << "Time taken by infer_mcmc function: "
-         << duration.count() << " microseconds" << endl;
+    std::cout << "Time taken by infer_mcmc function: "
+         << duration.count() << " microseconds" << std::endl;
 
-    std::cout << "Writing the inferred tree and cnvs...";
+    std::cout << "Writing the inferred tree and cnvs..." <<std::endl;
 
     vector<vector<int>> inferred_cnvs = mcmc.assign_cells_to_nodes(d_regions, region_sizes); // returns the inferred CNVs
 
@@ -230,6 +230,6 @@ int main( int argc, char* argv[]) {
         inferred_cnvs_file << endl;
     }
 
-    std::cout << "Tree inference is successfully completed!";
+    std::cout << "Tree inference is successfully completed!" <<std::endl;
     return EXIT_SUCCESS;
 }
