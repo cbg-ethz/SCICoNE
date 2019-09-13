@@ -55,8 +55,6 @@ int main( int argc, char* argv[]) {
     is_overdispersed = 1;
     eta = 1e-4;
 
-    int n_reads = -1; // -1 means not specified
-
     // set the globals
     print_precision = 15;
     lambda_s = 0.5;
@@ -72,7 +70,6 @@ int main( int argc, char* argv[]) {
     options.add_options()
             ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
             ("d_matrix_file", "Path to the counts matrix file, delimiter: ',', line separator: '\n' ", cxxopts::value(d_matrix_file))
-            ("n_reads", "Number of reads to be contained in the output file", cxxopts::value(n_reads))
             ("n_regions", "Number of regions in the input matrix", cxxopts::value(n_regions))
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
@@ -209,12 +206,12 @@ int main( int argc, char* argv[]) {
     vector<vector<int>> inferred_cnvs_bins = Utils::regions_to_bins_cnvs(inferred_cnvs, region_sizes);
 
     // write the inferred(best) tree
-    std::ofstream tree_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_" + f_name_posfix + "_tree_inferred" + ".txt");
+    std::ofstream tree_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_tree_inferred" + ".txt");
     tree_file << mcmc.best_tree;
 
 
     // write the inferred CNVs
-    std::ofstream inferred_cnvs_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_" + f_name_posfix + "_inferred_cnvs" + ".txt");
+    std::ofstream inferred_cnvs_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_inferred_cnvs" + ".txt");
     for (auto const &v1: inferred_cnvs_bins) {
         for (auto const &v2: v1)
             inferred_cnvs_file << v2 << ' ';
