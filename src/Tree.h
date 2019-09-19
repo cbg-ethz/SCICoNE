@@ -63,7 +63,7 @@ public:
     Node *condense_split_node(unsigned int size_limit, bool weighted);
     std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
 
-    Node* delete_node(u_int64_t idx_tobe_deleted);
+    Node* delete_node(u_int64_t idx_tobe_deleted); // TODO: delete
     Node* delete_node(Node* node);
     Node* find_node(int id);
     Node* uniform_sample(bool with_root=true) const;
@@ -1202,6 +1202,7 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
 
     if (rand_val < 0.5)
     {
+        std::cout<<"insert is chosen"<<std::endl;
         // add is chosen
         if (all_nodes_vec.size() >= size_limit)
             throw std::logic_error("Tree size limit is reached, insert node move will be rejected!");
@@ -1245,18 +1246,20 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
 
     else // delete is chosen
     {
-
+        std::cout<<"delete is chosen"<<std::endl;
         if (all_nodes_vec.size() <= 1)
             throw std::logic_error("Root cannot be deleted, delete move will be rejected");
 
         boost::random::discrete_distribution<>* dd;
-        dd = new boost::random::discrete_distribution<>(omega.begin()+1,omega.end());
+        dd = new boost::random::discrete_distribution<>(omega.begin(),omega.end());
 
-        u_int64_t idx_tobe_deleted = (*dd)(generator) + 1; // this is the index of the all_nodes_vector,
-        // +1 here again because the discrete distribution will consider omega.begin()+1 as 0
+        u_int64_t idx_tobe_deleted = (*dd)(generator);
+        vector<Node*> descendents_of_root = this->root->get_descendents(false); // without the root
+        Node* tobe_deleted = descendents_of_root[idx_tobe_deleted];
 
+        std::cout<<"node to be deleted:" << tobe_deleted->id <<std::endl;
         delete dd;
-        return_node = delete_node(idx_tobe_deleted); // returns the parent of the deleted node
+        return_node = delete_node(tobe_deleted); // returns the parent of the deleted node
     }
 
     //update the c vectors of the parent and its new descendents
@@ -1392,8 +1395,10 @@ Node *Tree::condense_split_node(unsigned int size_limit, bool weighted) {
             if (condensed_c_change.count(x.first))
                 new_val += condensed_c_change[x.first];
             if (new_val == 0)
-                throw std::logic_error("Any of the events cannot cancel completely upon condense");
-            condensed_c_change[x.first] = new_val;
+                condensed_c_change.erase(x.first);
+//                throw std::logic_error("Any of the events cannot cancel completely upon condense");
+            else
+                condensed_c_change[x.first] = new_val;
         }
 
         if (condensed_c_change.size() == 1)
