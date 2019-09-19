@@ -62,8 +62,7 @@ public:
     Node *insert_delete_node(unsigned int size_limit, bool weighted);
     Node *condense_split_node(unsigned int size_limit, bool weighted);
     std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
-
-    Node* delete_node(u_int64_t idx_tobe_deleted); // TODO: delete
+    
     Node* delete_node(Node* node);
     Node* find_node(int id);
     Node* uniform_sample(bool with_root=true) const;
@@ -1149,25 +1148,6 @@ bool Tree::is_redundant() const {
     return false;
 
 
-}
-
-Node * Tree::delete_node(u_int64_t idx_tobe_deleted) {
-/*
- * Deletes the node at the given index.
- * Assigns the first order children of the deleted node to the parent of the deleted node.
- * Throws out_of_range exception.
- * Returns the pointer to the parent of the deleted node.
- * */
-
-    Node* tobe_deleted;
-    try {
-        tobe_deleted = all_nodes_vec[idx_tobe_deleted];
-    } catch (const std::exception& e) {
-        std::cout << " a standard exception was caught while trying to access the index of the node to be deleted from all_nodes_vec, with message '"
-                  << e.what() << "'\n";
-        throw std::out_of_range("all_nodes_vec[idx_tobe_deleted] cannot be retrieved"); // rethrow it to handle it in apply_insert_delete_move method.
-    }
-    return delete_node(tobe_deleted);
 }
 
 Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
