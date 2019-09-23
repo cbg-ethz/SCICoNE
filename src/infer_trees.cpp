@@ -21,6 +21,7 @@ int copy_number_limit;
 double lambda_s;
 double lambda_r;
 double lambda_c;
+double cf;
 double c_penalise;
 unsigned is_overdispersed;
 string f_name_posfix;
@@ -51,6 +52,7 @@ int main( int argc, char* argv[]) {
     int n_nodes = 3;
     lambda_r = 0.1;
     lambda_c = 0.2;
+    cf = 1.0;
     c_penalise = 1.0;
     is_overdispersed = 1;
     eta = 1e-4;
@@ -84,6 +86,7 @@ int main( int argc, char* argv[]) {
             ("n_nodes","the number of nodes in the random initialised tree", cxxopts::value(n_nodes))
             ("lambda_r","lambda param for the poisson that generates the number of regions", cxxopts::value(lambda_r))
             ("lambda_c","lambda param for the poisson that generates the copy number state of a region", cxxopts::value(lambda_c))
+            ("cf", "cluster fraction variable between 0 and 1 to affect the tree prior coefficient", cxxopts::value(cf))
             ("c_penalise","term that penalises trees containing cancelling events to be added to tree event prior",cxxopts::value(c_penalise))
             // ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
             ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))

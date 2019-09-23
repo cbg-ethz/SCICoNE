@@ -832,7 +832,7 @@ double Inference::log_tree_prior(int m, int n) {
      * */
 
 //    double log_prior = - (n -1 + m) * log(n+1) -m * n * log(2); // tree prior
-    double log_prior = -(n-1+m)*log(n+1)-m*n*log(2);
+    double log_prior = -(n-1+m)*log(n+1) -cf*m*n*log(2);
     return log_prior;
 }
 
