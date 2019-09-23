@@ -189,21 +189,7 @@ bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vect
      * */
 
     Node* attached_node;
-    try {
-        attached_node = t_prime.prune_reattach(weighted, validation_test_mode);
-    }catch (const std::logic_error& e)
-    {
-        if (verbosity > 0)
-            std::cout << " a logic error was caught during the prune and reattach move, with message '"
-                      << e.what() << "'\n";
-        return false; // reject the move
-    }
-    catch (const std::exception& e) { // caught by reference to base
-        if (verbosity > 0)
-            std::cout << " a standard exception was caught during the prune and reattach move, with message '"
-                      << e.what() << "'\n";
-        return false;
-    }
+    attached_node = t_prime.prune_reattach(weighted, validation_test_mode);
 
     if (attached_node != nullptr)
     {
@@ -931,22 +917,7 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
 bool Inference::apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted, bool test_mode) {
 
     vector<Node*> swapped_nodes;
-    try {
-        swapped_nodes = t_prime.swap_labels(weighted, test_mode);
-    }catch (const std::logic_error& e)
-    {
-        if (verbosity > 0)
-            std::cout << " a logic error was caught during the swap labels move, with message '"
-                      << e.what() << "'\n";
-        return false; // reject the move
-    }
-    catch (const std::exception& e) { // caught by reference to base
-        if (verbosity > 0)
-            std::cout << " a standard exception was caught during the swap labels move, with message '"
-                      << e.what() << "'\n";
-        return false;
-    }
-
+    swapped_nodes = t_prime.swap_labels(weighted, test_mode);
 
     if (swapped_nodes.empty()) // it can be empty if an exception is thrown or the move is rejected
         return false;
@@ -1026,21 +997,7 @@ bool Inference::apply_add_remove_events(const vector<vector<double>> &D, const v
     // weighted = false
     Node* attached_node;
 
-    try {
-        attached_node = t_prime.add_remove_events(weighted, validation_test_mode);
-    }catch (const std::logic_error& e)
-    {
-        if (verbosity > 0)
-            std::cout << " a logic error was caught during the add remove events move, with message '"
-                      << e.what() << "'\n";
-        return false; // reject the move
-    }
-    catch (const std::exception& e) { // caught by reference to base
-        if (verbosity > 0)
-            std::cout << " a standard exception was caught during the add remove events move, with message '"
-                      << e.what() << "'\n";
-        return false;
-    }
+    attached_node = t_prime.add_remove_events(weighted, validation_test_mode);
 
     if (attached_node != nullptr)
     {
@@ -1061,20 +1018,9 @@ bool Inference::apply_insert_delete_node(const vector<vector<double>> &D, const 
      * */
 
     Node* tobe_computed;
-    try {
-        tobe_computed = t_prime.insert_delete_node(size_limit, weighted);
-    }catch (const std::out_of_range& e)
-    {
-        if (verbosity > 0)
-            std::cout << " an out of range error was caught during the insert/delete node move, with message '"
-                      << e.what() << "'\n";
-        return false; // reject the move
-    }catch (const std::exception& e) {
-        if (verbosity > 0)
-            std::cout << " a standard exception was caught during the insert/delete node move, with message '"
-                      << e.what() << "'\n";
-        return false;
-    }
+
+    tobe_computed = t_prime.insert_delete_node(size_limit, weighted);
+
 
     if (tobe_computed != nullptr)
     {
@@ -1116,15 +1062,7 @@ bool Inference::apply_condense_split(const vector<vector<double>> &D, const vect
      * */
 
     Node* tobe_computed;
-    try
-    {
-        tobe_computed = t_prime.condense_split_node(size_limit, weighted);
-    }catch (const std::exception& e) {
-        if (verbosity > 0)
-            std::cout << " a standard exception was caught during the split/condense node move, with message '"
-                      << e.what() << "'\n";
-        return false;
-    }
+    tobe_computed = t_prime.condense_split_node(size_limit, weighted);
 
     if (tobe_computed != nullptr)
     {
@@ -1304,6 +1242,7 @@ bool Inference::apply_multiple_times(unsigned n, AnyFunction func, Ts &...args) 
             if (verbosity > 0)
                 std::cout << " a standard exception was caught during apply_multiple_times, with message '"
                           << e.what() << "'\n";
+            continue; // try again
         }
         if (is_successful)
             return true;
