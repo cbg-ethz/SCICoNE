@@ -54,7 +54,7 @@ int main()
     test_add_remove_event();
     test_insert_delete_weights();
     test_condense_split_weights();
-//    test_tree_validation();
+    test_tree_validation();
     test_overdispersed_score();
     test_genotype_preserving_move_scores();
     test_apply_multiple_times();
