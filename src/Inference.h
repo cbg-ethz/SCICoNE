@@ -230,6 +230,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
     int m = D.size();
     int n = t.get_n_nodes();
     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
+    t.total_attachment_score = t_sum;
     t.prior_score = log_tree_prior(m, n);
     t.posterior_score = log_tree_posterior(t_sum, m, t);
 
@@ -255,6 +256,8 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
     t_prime.posterior_score = log_tree_posterior(t_prime_sum, m, t_prime);
     // update the tree prior as well
     t_prime.prior_score = log_tree_prior(m, t_prime_n_nodes);
+    // update the total attachment score
+    t_prime.total_attachment_score = t_prime_sum;
 
     // check if move is weighted
     bool weighted;
@@ -1077,6 +1080,7 @@ bool Inference::apply_insert_delete_node(const vector<vector<double>> &D, const 
     {
         compute_t_prime_scores(tobe_computed, D, r);
         compute_t_prime_sums(D);
+
         return true;
     }
     else
