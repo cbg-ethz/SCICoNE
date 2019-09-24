@@ -19,6 +19,7 @@ double c_penalise;
 int copy_number_limit;
 unsigned is_overdispersed;
 string f_name_posfix;
+int verbosity;
 double eta;
 // endof globals
 
@@ -40,7 +41,7 @@ int main( int argc, char* argv[]) {
     int n_cells;
     int n_regions;
     int ploidy=2;
-    int verbosity=0;
+    verbosity=0;
     string file;
     string region_sizes_file = "";
     string d_matrix_file = "";

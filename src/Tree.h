@@ -1182,7 +1182,8 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
 
     if (rand_val < 0.5)
     {
-        std::cout<<"insert is chosen"<<std::endl;
+        if (verbosity > 0)
+            std::cout<<"insert is chosen"<<std::endl;
         // add is chosen
         if (all_nodes_vec.size() >= size_limit)
             throw std::logic_error("Tree size limit is reached, insert node move will be rejected!");
@@ -1226,7 +1227,8 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
 
     else // delete is chosen
     {
-        std::cout<<"delete is chosen"<<std::endl;
+        if (verbosity > 0)
+            std::cout<<"delete is chosen"<<std::endl;
         if (all_nodes_vec.size() <= 1)
             throw std::logic_error("Root cannot be deleted, delete move will be rejected");
 
@@ -1237,7 +1239,8 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
         vector<Node*> descendents_of_root = this->root->get_descendents(false); // without the root
         Node* tobe_deleted = descendents_of_root[idx_tobe_deleted];
 
-        std::cout<<"node to be deleted:" << tobe_deleted->id <<std::endl;
+        if (verbosity > 0)
+            std::cout<<"node to be deleted:" << tobe_deleted->id <<std::endl;
         delete dd;
         return_node = delete_node(tobe_deleted); // returns the parent of the deleted node
     }

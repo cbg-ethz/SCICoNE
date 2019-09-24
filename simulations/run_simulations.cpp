@@ -18,6 +18,7 @@ double lambda_s;
 double c_penalise;
 unsigned is_overdispersed;
 string f_name_posfix;
+int verbosity;
 double eta;
 // endof globals
 
@@ -37,7 +38,7 @@ int main(int argc, char* argv[]) {
     int n_iters = 5000;
     int max_region_size = 25;
     int ploidy = 2;
-    int verbosity = 0;
+    verbosity = 0;
     int seed = -1;
     copy_number_limit = 15;
     is_overdispersed = 0;

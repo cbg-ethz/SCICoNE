@@ -21,6 +21,7 @@ double lambda_c;
 double c_penalise;
 unsigned is_overdispersed;
 string f_name_posfix;
+int verbosity;
 double eta;
 // endof globals
 
@@ -84,6 +85,7 @@ int main(int argc, char* argv[])
     int ploidy = 2;
     int n_cells;
     int n_bins;
+    verbosity = 0;
     is_overdispersed = 1;
     eta = 1e-4;
 
