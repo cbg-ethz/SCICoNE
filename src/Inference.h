@@ -919,9 +919,6 @@ bool Inference::apply_swap(const vector<vector<double>> &D, const vector<int> &r
     vector<Node*> swapped_nodes;
     swapped_nodes = t_prime.swap_labels(weighted, test_mode);
 
-    if (swapped_nodes.empty()) // it can be empty if an exception is thrown or the move is rejected
-        return false;
-
     for (auto const &node : swapped_nodes)
     {
         compute_t_prime_scores(node, D, r);
