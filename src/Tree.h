@@ -937,11 +937,11 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
         this->update_desc_labels(node);
 
         if (!is_valid_subtree(node))
-            return {}; // empty vector with list initialization
+            throw InvalidTree("Swap labels move created an invalid tree.");
 
     }
     if (is_redundant())
-        return {};
+        throw InvalidTree("Swap labels move created a redundant tree");
 
 
     return return_nodes;
