@@ -62,6 +62,7 @@ public:
     bool apply_prune_reattach(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                               bool validation_test_mode);
     bool apply_genotype_preserving_pr(double gamma);
+    bool apply_delete_leaf(const vector<vector<double>> &D, const vector<int> &r);
     bool apply_add_remove_events(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                                  bool validation_test_mode);
     bool apply_insert_delete_node(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
@@ -704,6 +705,22 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
+            case 12:
+            {
+                // delete leaf move
+                if (verbosity > 0)
+                    cout << "Delete leaf move" << endl;
+
+                auto func = std::bind(&Inference::apply_delete_leaf, this, _1, _2);
+                bool delete_leaf_success = apply_multiple_times(n_apply_move, func, D, r);
+
+                if (not delete_leaf_success) {
+                    rejected_before_comparison = true;
+                    if (verbosity > 0)
+                        cout << "Delete leaf move is rejected before comparison" << endl;
+                }
+                break;
+            }
             default:
                 throw std::logic_error("undefined move index");
         } // end of switch
@@ -1247,6 +1264,22 @@ bool Inference::apply_multiple_times(unsigned n, AnyFunction func, Ts &...args) 
             t_prime = t;
     }
     return false;
+}
+
+bool Inference::apply_delete_leaf(const vector<vector<double>> &D, const vector<int> &r) {
+    /*
+     * Applies the delete leaf move on t_prime.
+     * */
+
+    Node* tobe_computed;
+
+    tobe_computed = t_prime.delete_leaf();
+
+    compute_t_prime_scores(tobe_computed, D, r);
+    compute_t_prime_sums(D);
+
+    return true;
+
 }
 
 #endif //SC_DNA_INFERENCE_H
