@@ -1256,6 +1256,7 @@ bool Inference::apply_multiple_times(unsigned n, AnyFunction func, Ts &...args) 
             if (verbosity > 0)
                 std::cout << " a standard exception was caught during apply_multiple_times, with message '"
                           << e.what() << "'\n";
+            t_prime = t; // undo the changes made on t_prime
             continue; // try again
         }
         if (is_successful)
