@@ -18,9 +18,11 @@ int copy_number_limit;
 double lambda_s;
 double lambda_r;
 double lambda_c;
+double cf;
 double c_penalise;
 unsigned is_overdispersed;
 string f_name_posfix;
+int verbosity;
 double eta;
 // endof globals
 
@@ -84,8 +86,10 @@ int main(int argc, char* argv[])
     int ploidy = 2;
     int n_cells;
     int n_bins;
+    verbosity = 0;
     is_overdispersed = 1;
     eta = 1e-4;
+    cf = 1.0;
 
     cxxopts::Options options("Statistical tests", "for testing the statistical properties of the programme");
     options.add_options()

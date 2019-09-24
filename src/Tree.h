@@ -44,6 +44,7 @@ public:
     double posterior_score; // log posterior score of the tree
     double prior_score; // log prior score of the tree
     double od_score; // overdispersed score of the tree
+    double total_attachment_score;
 
     // overdispersed params
     double nu;
@@ -63,7 +64,6 @@ public:
     Node *condense_split_node(unsigned int size_limit, bool weighted);
     std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
 
-    Node* delete_node(u_int64_t idx_tobe_deleted);
     Node* delete_node(Node* node);
     Node* find_node(int id);
     Node* uniform_sample(bool with_root=true) const;
@@ -119,7 +119,9 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
     vector<Node*> nodes = t.root->get_descendents(true);
 
     os << "Tree posterior: " << setprecision(print_precision) << t.posterior_score << std::endl;
-    os << "Tree prior: " << setprecision(print_precision) << t.prior_score << std::endl;
+    os << "Tree prior: " << setprecision(print_precision) << t.prior_score
+       << ", Event prior: " << t.event_prior()
+       << ", Log likelihood: " << t.total_attachment_score << std::endl;
     os << "Root score: " << setprecision(print_precision) << t.od_score << std::endl;
     os << "Tree score: " << setprecision(print_precision) << t.posterior_score + t.od_score << std::endl;
     os << "Nu: " << setprecision(print_precision) << t.nu<< std::endl;
@@ -293,6 +295,7 @@ Tree::Tree(u_int ploidy, u_int n_regions)
     this->n_regions = n_regions;
     n_nodes = 0;
     prior_score = 0.0;
+    total_attachment_score = 0.0;
     posterior_score = 0.0;
     od_score = 0.0;
     // creates a copy of the root ptr and stores it in the vector
@@ -486,6 +489,7 @@ void Tree::copy_tree(const Tree& source_tree) {
     */
 
     this->ploidy = source_tree.ploidy;
+    this->total_attachment_score = source_tree.total_attachment_score;
     this->counter = source_tree.counter;
     this->prior_score = source_tree.prior_score;
     this->posterior_score = source_tree.posterior_score;
@@ -911,6 +915,10 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
     if(node1->c_change == node2->c_change)
         throw std::logic_error("swapping 2 nodes with the same labels does not make sense, the move will be rejected");
 
+    // if two sibling leaves are swapped, then reject
+    if(node1->parent == node2->parent && node1->first_child == nullptr && node2->first_child == nullptr)
+        throw std::logic_error("swapping the sibling leaves will have no impact, move will be rejected.");
+
     // perform std swap on maps
     node1->c_change.swap(node2->c_change);
 
@@ -933,11 +941,11 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
         this->update_desc_labels(node);
 
         if (!is_valid_subtree(node))
-            return {}; // empty vector with list initialization
+            throw InvalidTree("Swap labels move created an invalid tree.");
 
     }
     if (is_redundant())
-        return {};
+        throw InvalidTree("Swap labels move created a redundant tree");
 
 
     return return_nodes;
@@ -1151,25 +1159,6 @@ bool Tree::is_redundant() const {
 
 }
 
-Node * Tree::delete_node(u_int64_t idx_tobe_deleted) {
-/*
- * Deletes the node at the given index.
- * Assigns the first order children of the deleted node to the parent of the deleted node.
- * Throws out_of_range exception.
- * Returns the pointer to the parent of the deleted node.
- * */
-
-    Node* tobe_deleted;
-    try {
-        tobe_deleted = all_nodes_vec[idx_tobe_deleted];
-    } catch (const std::exception& e) {
-        std::cout << " a standard exception was caught while trying to access the index of the node to be deleted from all_nodes_vec, with message '"
-                  << e.what() << "'\n";
-        throw std::out_of_range("all_nodes_vec[idx_tobe_deleted] cannot be retrieved"); // rethrow it to handle it in apply_insert_delete_move method.
-    }
-    return delete_node(tobe_deleted);
-}
-
 Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
     /*
      * Adds or deletes nodes move, that takes the mcmc transition probabilities into account.
@@ -1202,6 +1191,8 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
 
     if (rand_val < 0.5)
     {
+        if (verbosity > 0)
+            std::cout<<"insert is chosen"<<std::endl;
         // add is chosen
         if (all_nodes_vec.size() >= size_limit)
             throw std::logic_error("Tree size limit is reached, insert node move will be rejected!");
@@ -1245,18 +1236,22 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
 
     else // delete is chosen
     {
-
+        if (verbosity > 0)
+            std::cout<<"delete is chosen"<<std::endl;
         if (all_nodes_vec.size() <= 1)
             throw std::logic_error("Root cannot be deleted, delete move will be rejected");
 
         boost::random::discrete_distribution<>* dd;
-        dd = new boost::random::discrete_distribution<>(omega.begin()+1,omega.end());
+        dd = new boost::random::discrete_distribution<>(omega.begin(),omega.end());
 
-        u_int64_t idx_tobe_deleted = (*dd)(generator) + 1; // this is the index of the all_nodes_vector,
-        // +1 here again because the discrete distribution will consider omega.begin()+1 as 0
+        u_int64_t idx_tobe_deleted = (*dd)(generator);
+        vector<Node*> descendents_of_root = this->root->get_descendents(false); // without the root
+        Node* tobe_deleted = descendents_of_root[idx_tobe_deleted];
 
+        if (verbosity > 0)
+            std::cout<<"node to be deleted:" << tobe_deleted->id <<std::endl;
         delete dd;
-        return_node = delete_node(idx_tobe_deleted); // returns the parent of the deleted node
+        return_node = delete_node(tobe_deleted); // returns the parent of the deleted node
     }
 
     //update the c vectors of the parent and its new descendents
@@ -1392,8 +1387,10 @@ Node *Tree::condense_split_node(unsigned int size_limit, bool weighted) {
             if (condensed_c_change.count(x.first))
                 new_val += condensed_c_change[x.first];
             if (new_val == 0)
-                throw std::logic_error("Any of the events cannot cancel completely upon condense");
-            condensed_c_change[x.first] = new_val;
+                condensed_c_change.erase(x.first);
+//                throw std::logic_error("Any of the events cannot cancel completely upon condense");
+            else
+                condensed_c_change[x.first] = new_val;
         }
 
         if (condensed_c_change.size() == 1)

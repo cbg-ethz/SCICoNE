@@ -15,10 +15,12 @@ int print_precision;
 double lambda_s;
 double lambda_r;
 double lambda_c;
+double cf;
 double c_penalise;
 int copy_number_limit;
 unsigned is_overdispersed;
 string f_name_posfix;
+int verbosity;
 double eta;
 // endof globals
 
@@ -34,14 +36,14 @@ int main( int argc, char* argv[]) {
     lambda_s = 0.5;
     lambda_r = 2.0;
     lambda_c = 1.0;
+    cf = 1.0;
     c_penalise = 1.0;
     copy_number_limit = 5;
     is_overdispersed = 1;
     int n_cells;
-    int n_bins = 10000;
-    size_t n_regions;
+    int n_regions;
     int ploidy=2;
-    int verbosity=0;
+    verbosity=0;
     string file;
     string region_sizes_file = "";
     string d_matrix_file = "";
@@ -53,7 +55,7 @@ int main( int argc, char* argv[]) {
     options.add_options()
             ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
             ("d_matrix_file", "Path to the counts matrix file, delimiter: ',', line separator: '\n' ", cxxopts::value(d_matrix_file))
-            ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
+            ("n_regions", "Number of regions in the input matrix", cxxopts::value(n_regions))
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
@@ -61,21 +63,18 @@ int main( int argc, char* argv[]) {
             ("file", "file", cxxopts::value(file))
             ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
             ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))
+            ("cf", "cluster fraction variable between 0 and 1 to affect the tree prior coefficient", cxxopts::value(cf))
             ;
     auto result = options.parse(argc, argv);
 
+    std::cout << "Reading the input matrix..." << std::endl;
+    vector<vector<double>> d_regions(n_cells, vector<double>(n_regions));
+    Utils::read_counts(d_regions, d_matrix_file);
 
-    // read the input d_matrix
-    vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
-    Utils::read_counts(d_bins, d_matrix_file);
-
-    // read the region_sizes file
+    std::cout << "Reading the region_sizes file..." << std::endl;
     vector<int> region_sizes;
-    vector<vector<double>> d_regions;
-
     Utils::read_vector(region_sizes, region_sizes_file);
-    // Merge the bins into regions
-    d_regions = Utils::condense_matrix(d_bins, region_sizes);
+
     n_regions = region_sizes.size();
 
     Inference mcmc(n_regions, ploidy, verbosity);

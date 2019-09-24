@@ -30,6 +30,27 @@ protected:
     std::string msg_;
 };
 
+class InvalidTree: public std::exception
+{
+    /*
+     * Gets thrown when an invalid tree is produced
+     * */
+public:
+    explicit InvalidTree(const char* message):
+            msg_(message) {}
+
+    explicit InvalidTree(std::string message):
+            msg_(std::move(message)) {}
+
+    ~InvalidTree() noexcept override=default;
+
+    const char* what() const noexcept override{
+        return msg_.c_str();
+    }
+protected:
+    std::string msg_;
+};
+
 class NotImplementedException: public std::exception
 {
     // Based on user 992460's answer on stackoverflow.com/questions/8152720/
