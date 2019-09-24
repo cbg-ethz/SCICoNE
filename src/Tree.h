@@ -323,18 +323,16 @@ Node* Tree::uniform_sample(bool with_root) const{
         throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
     else if (all_nodes_vec.size() ==1)
     {
-        if (with_root)
-            rand_val = 1;
-        else
+        if (not with_root)
             throw std::logic_error("root is the only node and cannot be sampled");
     }
     else
     {
-        // 1 is root, 2 is 1st.
-        rand_val = MathOp::random_uniform(with_root?1:2,all_nodes_vec.size());
+        int min_val = with_root ? 0 : 1;
+        rand_val = MathOp::random_uniform(min_val, all_nodes_vec.size());
     }
 
-    return all_nodes_vec[rand_val-1];
+    return all_nodes_vec[rand_val];
 }
 
 Node * Tree::insert_child(Node *pos, Node *source) {
