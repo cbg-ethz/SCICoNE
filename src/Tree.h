@@ -58,6 +58,7 @@ public:
     // moves
     Node *prune_reattach(bool weighted, bool validation_test_mode=false);
     void genotype_preserving_prune_reattach(double gamma);
+    Node* delete_leaf();
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node *add_remove_events(bool weighted, bool validation_test_mode=false);
     Node *insert_delete_node(unsigned int size_limit, bool weighted);
@@ -1790,6 +1791,35 @@ std::pair<std::vector<double>, std::vector<std::pair<int, int>>> Tree::gibbs_gen
     }
 
     return std::make_pair(all_possible_scores, prune_attach_indices);
+}
+
+Node *Tree::delete_leaf() {
+    /*
+     * Uniformly samples a leaf node and deletes it.
+     * Throws InvalidMove exception if there is only one node besides the root.
+     * This move is intended to delete leaves that no cells attach.
+     * Returns the parent of the deleted node
+     * */
+
+    if (all_nodes_vec.size() <= 2)
+        throw InvalidMove("delete leaf move does not make sense when there is only one node besides the root");
+
+    vector<Node*> all_leaves;
+    // get all the leaves
+    for (Node* node : all_nodes_vec) {
+        if (node->first_child == nullptr)
+            all_leaves.push_back(node);
+    }
+
+    // sample uniformly
+    int rand_val = MathOp::random_uniform(0, all_leaves.size());
+
+    Node* to_delete = all_leaves[rand_val];
+
+    // perform delete
+    Node* parent_of_deleted = this->delete_node(to_delete);
+
+    return parent_of_deleted;
 }
 
 
