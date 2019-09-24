@@ -1805,7 +1805,7 @@ Node *Tree::delete_leaf() {
     vector<Node*> all_leaves;
     // get all the leaves
     for (Node* node : all_nodes_vec) {
-        if (node->first_child->is_leaf())
+        if (node->is_leaf())
             all_leaves.push_back(node);
     }
 
