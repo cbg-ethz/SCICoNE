@@ -44,6 +44,7 @@ public:
     double posterior_score; // log posterior score of the tree
     double prior_score; // log prior score of the tree
     double od_score; // overdispersed score of the tree
+    double total_attachment_score;
 
     // overdispersed params
     double nu;
@@ -62,7 +63,7 @@ public:
     Node *insert_delete_node(unsigned int size_limit, bool weighted);
     Node *condense_split_node(unsigned int size_limit, bool weighted);
     std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
-    
+
     Node* delete_node(Node* node);
     Node* find_node(int id);
     Node* uniform_sample(bool with_root=true) const;
@@ -118,7 +119,9 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
     vector<Node*> nodes = t.root->get_descendents(true);
 
     os << "Tree posterior: " << setprecision(print_precision) << t.posterior_score << std::endl;
-    os << "Tree prior: " << setprecision(print_precision) << t.prior_score << std::endl;
+    os << "Tree prior: " << setprecision(print_precision) << t.prior_score
+       << ", Event prior: " << t.event_prior()
+       << ", Log likelihood: " << t.total_attachment_score << std::endl;
     os << "Root score: " << setprecision(print_precision) << t.od_score << std::endl;
     os << "Tree score: " << setprecision(print_precision) << t.posterior_score + t.od_score << std::endl;
     os << "Nu: " << setprecision(print_precision) << t.nu<< std::endl;
@@ -292,6 +295,7 @@ Tree::Tree(u_int ploidy, u_int n_regions)
     this->n_regions = n_regions;
     n_nodes = 0;
     prior_score = 0.0;
+    total_attachment_score = 0.0;
     posterior_score = 0.0;
     od_score = 0.0;
     // creates a copy of the root ptr and stores it in the vector
@@ -485,6 +489,7 @@ void Tree::copy_tree(const Tree& source_tree) {
     */
 
     this->ploidy = source_tree.ploidy;
+    this->total_attachment_score = source_tree.total_attachment_score;
     this->counter = source_tree.counter;
     this->prior_score = source_tree.prior_score;
     this->posterior_score = source_tree.posterior_score;
@@ -910,6 +915,10 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
     if(node1->c_change == node2->c_change)
         throw std::logic_error("swapping 2 nodes with the same labels does not make sense, the move will be rejected");
 
+    // if two sibling leaves are swapped, then reject
+    if(node1->parent == node2->parent && node1->first_child == nullptr && node2->first_child == nullptr)
+        throw std::logic_error("swapping the sibling leaves will have no impact, move will be rejected.");
+
     // perform std swap on maps
     node1->c_change.swap(node2->c_change);
 
@@ -932,11 +941,11 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
         this->update_desc_labels(node);
 
         if (!is_valid_subtree(node))
-            return {}; // empty vector with list initialization
+            throw InvalidTree("Swap labels move created an invalid tree.");
 
     }
     if (is_redundant())
-        return {};
+        throw InvalidTree("Swap labels move created a redundant tree");
 
 
     return return_nodes;

@@ -15,6 +15,7 @@ int print_precision;
 double lambda_s;
 double lambda_r;
 double lambda_c;
+double cf;
 double c_penalise;
 int copy_number_limit;
 unsigned is_overdispersed;
@@ -35,6 +36,7 @@ int main( int argc, char* argv[]) {
     lambda_s = 0.5;
     lambda_r = 2.0;
     lambda_c = 1.0;
+    cf = 1.0;
     c_penalise = 1.0;
     copy_number_limit = 5;
     is_overdispersed = 1;
@@ -61,6 +63,7 @@ int main( int argc, char* argv[]) {
             ("file", "file", cxxopts::value(file))
             ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
             ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))
+            ("cf", "cluster fraction variable between 0 and 1 to affect the tree prior coefficient", cxxopts::value(cf))
             ;
     auto result = options.parse(argc, argv);
 

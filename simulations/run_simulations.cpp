@@ -15,6 +15,7 @@ int copy_number_limit;
 double lambda_r;
 double lambda_c;
 double lambda_s;
+double cf;
 double c_penalise;
 unsigned is_overdispersed;
 string f_name_posfix;
@@ -31,6 +32,7 @@ int main(int argc, char* argv[]) {
     int n_nodes = 50;
     lambda_r = 0.1;
     lambda_c = 0.4;
+    cf = 0.0;
     c_penalise = 1.0;
     int n_cells = 500;
     int n_bins = 10000;
