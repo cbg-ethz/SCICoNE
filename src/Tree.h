@@ -329,7 +329,7 @@ Node* Tree::uniform_sample(bool with_root) const{
     else
     {
         int min_val = with_root ? 0 : 1;
-        rand_val = MathOp::random_uniform(min_val, all_nodes_vec.size());
+        rand_val = MathOp::random_uniform(min_val, all_nodes_vec.size() - 1);
     }
 
     return all_nodes_vec[rand_val];
@@ -1810,7 +1810,7 @@ Node *Tree::delete_leaf() {
     }
 
     // sample uniformly
-    int rand_val = MathOp::random_uniform(0, all_leaves.size());
+    int rand_val = MathOp::random_uniform(0, all_leaves.size() - 1);
 
     Node* to_delete = all_leaves[rand_val];
 
