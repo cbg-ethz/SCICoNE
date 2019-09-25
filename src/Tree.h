@@ -36,7 +36,7 @@ class Tree {
 private:
     u_int n_nodes; //the number of nodes without the root
     int ploidy; // to be added to values of the unordered map for each node
-    int counter = 0;
+    int counter = 0; // counter for the node ids to be given
 public:
     Node* root;
     std::vector<Node*> all_nodes_vec; // for random selection, destructor, insertion by position, iterating without order (e.g. for each node)
