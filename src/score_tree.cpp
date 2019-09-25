@@ -60,7 +60,7 @@ int main( int argc, char* argv[]) {
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))
             ("ploidy", "ploidy", cxxopts::value(ploidy))
-            ("file", "file", cxxopts::value(file))
+            ("tree_file", "the tree file to load", cxxopts::value(file))
             ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
             ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))
             ("cf", "cluster fraction variable between 0 and 1 to affect the tree prior coefficient", cxxopts::value(cf))
