@@ -596,19 +596,40 @@ void test_tree_validation()
     delete t;
 
     t = new Tree(ploidy, n_regions);
-    t->load_from_file("../tests/trees_to_validate/invalid_tree_2.txt");
+    try
+    {
+        t->load_from_file("../tests/trees_to_validate/invalid_tree_2.txt");
+    }
+    catch (InvalidTree& e)
+    {
+        std::cout << "an invalid tree exception is caught with message '" << e.what() << "'" <<std::endl;
+    }
     assert(t->is_valid_subtree(t->root));
     assert(t->is_redundant()); // IS REDUNDANT, two nodes carry the same genotype
     delete t;
 
     t = new Tree(ploidy, n_regions);
-    t->load_from_file("../tests/trees_to_validate/invalid_tree_3.txt");
+    try
+    {
+        t->load_from_file("../tests/trees_to_validate/invalid_tree_3.txt");
+    }
+    catch (InvalidTree& e)
+    {
+        std::cout << "an invalid tree exception is caught with message '" << e.what() << "'" <<std::endl;
+    }
     assert(t->zero_ploidy_changes(t->root)); // NOT VALID, zero ploidy changes back!
     assert(not t->is_redundant());
     delete t;
 
     t = new Tree(ploidy, n_regions);
-    t->load_from_file("../tests/trees_to_validate/invalid_tree_4.txt");
+    try
+    {
+        t->load_from_file("../tests/trees_to_validate/invalid_tree_4.txt");
+    }
+    catch (InvalidTree& e)
+    {
+        std::cout << "an invalid tree exception is caught with message '" << e.what() << "'" <<std::endl;
+    }
     assert(t->subtree_out_of_bound(t->root)); // NOT VALID, tree is out of bounds!
     assert(t->zero_ploidy_changes(t->root)); // NOT VALID, zero ploidy changes back!
     assert(not t->is_redundant());

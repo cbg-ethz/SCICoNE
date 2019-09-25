@@ -36,7 +36,7 @@ class Tree {
 private:
     u_int n_nodes; //the number of nodes without the root
     int ploidy; // to be added to values of the unordered map for each node
-    int counter = 0;
+    int counter = 0; // counter for the node ids to be given
 public:
     Node* root;
     std::vector<Node*> all_nodes_vec; // for random selection, destructor, insertion by position, iterating without order (e.g. for each node)
@@ -674,6 +674,7 @@ Tree &Tree::operator=(const Tree &other) {
 void Tree::load_from_file(string file) {
     /*
      * Loads the tree from file
+     * Throws std::logic_error
      * */
 
     // first destroy the tree if it is not empty (or 1 node only)
@@ -700,6 +701,8 @@ void Tree::load_from_file(string file) {
         if (!(iss >> a >> b >> c)) { break; } // error
         b.pop_back();
         int node_id = stoi(b);
+        if (node_id > this->counter)
+            this->counter = node_id + 1;
         string del3 = ",[";
         string delim_cp = "]";
         string token = c.substr(0, c.find(del3));
@@ -750,6 +753,10 @@ void Tree::load_from_file(string file) {
         }
         insert_child(parent, child);
     }
+
+    if (!is_valid_subtree(this->root) || is_redundant())
+        throw InvalidTree("The loaded tree is invalid!");
+
     compute_weights();
 
 }
