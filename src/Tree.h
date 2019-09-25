@@ -700,6 +700,8 @@ void Tree::load_from_file(string file) {
         if (!(iss >> a >> b >> c)) { break; } // error
         b.pop_back();
         int node_id = stoi(b);
+        if (node_id > this->counter)
+            this->counter = node_id + 1;
         string del3 = ",[";
         string delim_cp = "]";
         string token = c.substr(0, c.find(del3));
