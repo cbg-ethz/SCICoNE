@@ -43,6 +43,7 @@ int main( int argc, char* argv[]) {
     int seed = 0;
     string region_sizes_file;
     string d_matrix_file;
+    string tree_file;
 
     unsigned size_limit = std::numeric_limits<unsigned>::max();
 
@@ -72,6 +73,7 @@ int main( int argc, char* argv[]) {
     options.add_options()
             ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
             ("d_matrix_file", "Path to the counts matrix file, delimiter: ',', line separator: '\n' ", cxxopts::value(d_matrix_file))
+            ("tree_file", "the tree file to load", cxxopts::value(tree_file))
             ("n_regions", "Number of regions in the input matrix", cxxopts::value(n_regions))
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
@@ -134,6 +136,8 @@ int main( int argc, char* argv[]) {
     {
         random_init = true; // default value
     }
+    if (result.count("tree_file")) // undo random_init
+        random_init = false;
 
     std::cout << "Reading the input matrix..." << std::endl;
     vector<vector<double>> d_regions(n_cells, vector<double>(n_regions));
@@ -159,6 +163,8 @@ int main( int argc, char* argv[]) {
             return EXIT_FAILURE; // reject the move
         }
     }
+    if (result.count("tree_file")) // starting tree is specified
+        mcmc.initialize_from_file(tree_file);
 
     bool learn_nu = static_cast<bool>(move_probs[11]); // if move 11 is probable
 
@@ -216,8 +222,8 @@ int main( int argc, char* argv[]) {
     vector<vector<int>> inferred_cnvs_bins = Utils::regions_to_bins_cnvs(inferred_cnvs, region_sizes);
 
     // write the inferred(best) tree
-    std::ofstream tree_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_tree_inferred" + ".txt");
-    tree_file << mcmc.best_tree;
+    std::ofstream tree_output_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_tree_inferred" + ".txt");
+    tree_output_file << mcmc.best_tree;
 
 
     // write the inferred CNVs
