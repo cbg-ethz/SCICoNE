@@ -674,6 +674,7 @@ Tree &Tree::operator=(const Tree &other) {
 void Tree::load_from_file(string file) {
     /*
      * Loads the tree from file
+     * Throws std::logic_error
      * */
 
     // first destroy the tree if it is not empty (or 1 node only)
@@ -752,6 +753,10 @@ void Tree::load_from_file(string file) {
         }
         insert_child(parent, child);
     }
+
+    if (!is_valid_subtree(this->root) || is_redundant())
+        throw InvalidTree("The loaded tree is invalid!");
+
     compute_weights();
 
 }
