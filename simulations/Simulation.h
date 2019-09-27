@@ -211,19 +211,29 @@ public:
         for (const auto &e : this->region_sizes) region_sizes_file << e << "\n";
 
         // write the ground truth
-        std::ofstream ground_truth_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_ground_truth.txt");
+        std::ofstream ground_truth_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_ground_truth.csv");
         for (auto const &v1: this->ground_truth) {
-            for (auto const &v2: v1)
-                ground_truth_file << v2 << ' ';
-            ground_truth_file << '\n';
+            for (size_t i = 0; i < v1.size(); i++)
+            {
+                if (i == v1.size()-1) // the last element
+                    ground_truth_file << v1[i];
+                else // add comma
+                    ground_truth_file << v1[i] << ',';
+            }
+            ground_truth_file << std::endl;
         }
 
         // write the D matrix
-        std::ofstream D_mat_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_d_mat.txt");
+        std::ofstream D_mat_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_d_mat.csv");
         for (auto const &v1: this->D) {
-            for (auto const &v2: v1)
-                D_mat_file << v2 << ' ';
-            D_mat_file << '\n';
+            for (size_t i = 0; i < v1.size(); i++)
+            {
+                if (i == v1.size()-1) // the last element
+                    D_mat_file << v1[i];
+                else // add comma
+                    D_mat_file << v1[i] << ',';
+            }
+            D_mat_file << std::endl;
         }
 
         // write the tree that generated the data
