@@ -7,8 +7,10 @@
 
 
 #include "Inference.h"
+#include "SignalProcessing.h"
 #include <vector>
 #include <numeric>
+#include <algorithm>
 #include "xxhash.h"
 
 using namespace std;
@@ -32,6 +34,34 @@ const double epsilon = 0.001;
 const double epsilon_sens = 1e-06;
 
 unsigned ploidy = 2;
+
+void test_breakpoint_detection()
+{
+    /*
+     * Makes sure the breakpoint detection is producing the correct sp sum
+     * */
+
+    std::cout<<"Reading the input matrix..."<<std::endl;
+    int n_cells = 50;
+    int n_bins = 1000;
+    int window_size = 10;
+    int evidence_min_cells = 2;
+    std::string d_matrix_file = "../tests/bp_detection/10nodes_40regions_100000reads_sim_tiny_1000bins_d_mat.csv";
+    vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
+    Utils::read_counts(d_bins, d_matrix_file);
+
+    std::cout<<"Input matrix is read."<<std::endl;
+
+    SignalProcessing dsp;
+    vector<double> s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells);
+
+    double sum_sp = std::accumulate(s_p.begin(), s_p.end(), 0.0);
+    assert(abs(sum_sp - 42.165)  <= epsilon);
+
+    std::cout<<"Breakpoint detection validation test passed!"<<std::endl;
+
+
+}
 
 void test_ploidy_attachment_score()
 {

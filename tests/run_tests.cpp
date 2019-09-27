@@ -42,6 +42,7 @@ int main()
     SingletonRandomGenerator::get_instance(42);
     test_mathop();
     test_xxhash();
+    test_breakpoint_detection();
     test_tree_prior();
     test_event_prior();
     test_n_descendents_computation();
@@ -58,7 +59,7 @@ int main()
     test_overdispersed_score();
     test_genotype_preserving_move_scores();
     test_apply_multiple_times();
-//    test_reproducibility();
+    test_reproducibility();
 
     return EXIT_SUCCESS;
 
