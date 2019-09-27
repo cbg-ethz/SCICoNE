@@ -56,6 +56,7 @@ void test_breakpoint_detection()
     vector<double> s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells);
 
     double sum_sp = std::accumulate(s_p.begin(), s_p.end(), 0.0);
+    std::cout<<"sp sum: " << sum_sp <<std::endl;
     assert(abs(sum_sp - 42.165)  <= epsilon);
 
     std::cout<<"Breakpoint detection validation test passed!"<<std::endl;
