@@ -282,12 +282,12 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
 
     for (size_t l = 0; l < n_breakpoints; ++l)
     {
-
-        long double max_num = *max_element(log_posterior[l].begin(), log_posterior[l].begin()+k_star-1);
+        // subtract multiple max values for better precision
+        long double max_num_lb = *max_element(log_posterior[l].begin(), log_posterior[l].begin() + k_star - 1);
         long double max_denom = *max_element(log_posterior[l].begin(), log_posterior[l].end());
 
         for (int j = 0; j < k_star - 1; ++j) {
-            long double val =exp(log_posterior[l][j] - max_num);
+            long double val =exp(log_posterior[l][j] - max_num_lb);
             posterior[l][j] = val;
         }
         for (int k = k_star -1 ; k < log_posterior[l].size(); ++k) {
@@ -297,7 +297,7 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
 
 
         long double sp_num = std::accumulate(posterior[l].begin(), posterior[l].begin()+k_star-1, 0.0);
-        sp_num  = log(sp_num) + max_num;
+        sp_num  = log(sp_num) + max_num_lb;
         long double sp_denom = std::accumulate(posterior[l].begin(), posterior[l].end(), 0.0);
         sp_denom = log(sp_denom) + max_denom;
 
