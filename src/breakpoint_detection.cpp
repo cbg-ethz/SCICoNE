@@ -18,7 +18,7 @@ string f_name_posfix;
 
 using namespace std;
 
-vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size = 5);
+vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star);
 
 int main( int argc, char* argv[]) {
 
@@ -30,10 +30,14 @@ int main( int argc, char* argv[]) {
     string region_sizes_file;
     string d_matrix_file;
     verbosity = 0;
+    int evidence_min_cells = 0;
+    int evidence_max_cells = 0;
 
     cxxopts::Options options("Breakpoint detection executable", "detects the breakpoints in the genome across all cells.");
     options.add_options()
             ("d_matrix_file", "Path to the counts matrix file, delimiter: ',', line separator: '\n' ", cxxopts::value(d_matrix_file))
+            ("min_cells", "Minimum number of cells to consider for a bin being a breakpoint", cxxopts::value(evidence_min_cells))
+            ("max_cells", "Maximum number of cells to consider for a bin being a breakpoint", cxxopts::value(evidence_max_cells))
             ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("window_size", "the size of the window used in breakpoint detection", cxxopts::value(window_size))
@@ -59,6 +63,16 @@ int main( int argc, char* argv[]) {
         cerr << "the number of cells is not provided."<<endl;
         return EXIT_FAILURE;
     }
+    if (not result.count("min_cells"))
+    {
+        std::cerr << "the minimum number of cells to consider needs to be specified." <<std::endl;
+        return EXIT_FAILURE;
+    }
+    if (not result.count("max_cells"))
+    {
+        std::cerr << "the maximum number of cells to consider needs to be specified." <<std::endl;
+        return EXIT_FAILURE;
+    }
 
     std::cout<<"Reading the input matrix..."<<std::endl;
 
@@ -75,7 +89,7 @@ int main( int argc, char* argv[]) {
     SignalProcessing dsp;
 
     std::cout<<"Computing the probability of a region being a breakpoint..."<<std::endl;
-    vector<double> s_p = breakpoint_detection(d_bins, window_size);
+    vector<double> s_p = breakpoint_detection(d_bins, window_size, evidence_min_cells);
     std::cout<<"Computed probabilities for all regions."<<std::endl;
 
     vector<double> sp_cropped = dsp.crop(s_p, window_size);
@@ -223,10 +237,11 @@ int main( int argc, char* argv[]) {
     return EXIT_SUCCESS;
 }
 
-vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size)
+vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star)
 {
     /*
      * Performs the breakpoint detection
+     * k_star: minimum number of cells to consider
      * */
 
     // TODO: get rid of unnecessary push_backs
@@ -262,7 +277,6 @@ vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size
     }
 
     vector<vector<long double>> posterior(n_breakpoints,vector<long double>(n_cells));
-    int k_star = 4; // event happening in min number of cells
 
     vector<double> s_p;
 
