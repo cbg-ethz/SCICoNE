@@ -200,7 +200,6 @@ vector<double> MathOp::combine_scores(vector<double> aic_vec)
             row2.push_back(value);
 
         }
-        //cout << " row1 size: " << row1.size() << " row2 size: " << row2.size() << " max j: " << aic_vec.size()-j<<endl;
         row1.clear();
         row1 = row2;
         double last = row2.back();
