@@ -305,29 +305,29 @@ vector<double> SignalProcessing::breakpoint_detection(vector<vector<double>> &ma
         }
     }
 
-    vector<vector<long double>> posterior(n_breakpoints,vector<long double>(n_cells));
+    vector<vector<double>> posterior(n_breakpoints,vector<double>(n_cells));
 
     vector<double> s_p;
 
     for (size_t l = 0; l < n_breakpoints; ++l)
     {
         // subtract multiple max values for better precision
-        long double max_num_lb = *max_element(log_posterior[l].begin(), log_posterior[l].begin() + k_star - 1);
-        long double max_denom = *max_element(log_posterior[l].begin(), log_posterior[l].end());
+        double max_num_lb = *max_element(log_posterior[l].begin(), log_posterior[l].begin() + k_star - 1);
+        double max_denom = *max_element(log_posterior[l].begin(), log_posterior[l].end());
 
         for (int j = 0; j < k_star - 1; ++j) {
-            long double val =exp(log_posterior[l][j] - max_num_lb);
+            double val =exp(log_posterior[l][j] - max_num_lb);
             posterior[l][j] = val;
         }
         for (int k = k_star -1 ; k < log_posterior[l].size(); ++k) {
-            long double val =exp(log_posterior[l][k] - max_denom);
+            double val =exp(log_posterior[l][k] - max_denom);
             posterior[l][k] = val;
         }
 
 
-        long double sp_num = std::accumulate(posterior[l].begin(), posterior[l].begin()+k_star-1, 0.0);
+        double sp_num = std::accumulate(posterior[l].begin(), posterior[l].begin()+k_star-1, 0.0);
         sp_num  = log(sp_num) + max_num_lb;
-        long double sp_denom = std::accumulate(posterior[l].begin(), posterior[l].end(), 0.0);
+        double sp_denom = std::accumulate(posterior[l].begin(), posterior[l].end(), 0.0);
         sp_denom = log(sp_denom) + max_denom;
 
         double sp_val = sp_denom-sp_num;
