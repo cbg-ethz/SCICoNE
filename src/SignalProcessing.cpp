@@ -266,11 +266,13 @@ int SignalProcessing::find_highest_peak(vector<T> &signal, int lb, int ub) {
     return max_idx + lb;
 }
 
-vector<double> SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star) {
+vector<double>
+SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star, int ul) {
     /*
      * Performs the breakpoint detection
      * window_size: there cannot be multiple breakpoints within a window_size
      * k_star: min number of cells to consider for a bin being breakpoint
+     * ul: max number of cells to consider for a bin being breakpoint
      * returns the evidence of each bin being a breakpoint
      * */
     // TODO: get rid of unnecessary push_backs
@@ -312,25 +314,36 @@ vector<double> SignalProcessing::breakpoint_detection(vector<vector<double>> &ma
     for (size_t l = 0; l < n_breakpoints; ++l)
     {
         // subtract multiple max values for better precision
-        double max_num_lb = *max_element(log_posterior[l].begin(), log_posterior[l].begin() + k_star - 1);
-        double max_denom = *max_element(log_posterior[l].begin(), log_posterior[l].end());
+//        double max_num_lb = *max_element(log_posterior[l].begin(), log_posterior[l].begin() + k_star - 1);
+        double max_all = *max_element(log_posterior[l].begin(), log_posterior[l].end());
+//        double max_in_between = *max_element(log_posterior[l].begin() + k_star-1, log_posterior[l].end());
 
-        for (int j = 0; j < k_star - 1; ++j) {
-            double val =exp(log_posterior[l][j] - max_num_lb);
+
+        for (int j = 0; j < log_posterior[l].size(); ++j) {
+            double val =exp(log_posterior[l][j] - max_all);
             posterior[l][j] = val;
         }
-        for (int k = k_star -1 ; k < log_posterior[l].size(); ++k) {
-            double val =exp(log_posterior[l][k] - max_denom);
-            posterior[l][k] = val;
-        }
+//        for (int k = k_star -1 ; k < log_posterior[l].size(); ++k) {
+//            double val =exp(log_posterior[l][k] - max_all);
+//            posterior[l][k] = val;
+//        }
 
 
-        double sp_num = std::accumulate(posterior[l].begin(), posterior[l].begin()+k_star-1, 0.0);
-        sp_num  = log(sp_num) + max_num_lb;
+        double sp_num_lb = std::accumulate(posterior[l].begin(), posterior[l].begin() + k_star - 1, 0.0);
+        if (sp_num_lb != 0.0)
+            sp_num_lb  = log(sp_num_lb);
+
+        double sp_num_ub =  std::accumulate(posterior[l].begin() + ul, posterior[l].end(), 0.0);
+        if (sp_num_ub != 0.0)
+            sp_num_ub = log(sp_num_lb);
+
+        double sp_num_total = sp_num_lb + sp_num_ub + max_all;
+
         double sp_denom = std::accumulate(posterior[l].begin(), posterior[l].end(), 0.0);
-        sp_denom = log(sp_denom) + max_denom;
+        if (sp_denom != 0.0)
+            sp_denom = log(sp_denom) + max_all;
 
-        double sp_val = sp_denom-sp_num;
+        double sp_val = sp_denom - sp_num_total;
 
         s_p.push_back(sp_val);
 

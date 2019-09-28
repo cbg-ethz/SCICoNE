@@ -89,7 +89,7 @@ int main( int argc, char* argv[]) {
     SignalProcessing dsp;
 
     std::cout<<"Computing the probability of a region being a breakpoint..."<<std::endl;
-    vector<double> s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells);
+    vector<double> s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells, evidence_max_cells);
     std::cout<<"Computed probabilities for all regions."<<std::endl;
 
     vector<double> sp_cropped = dsp.crop(s_p, window_size);
