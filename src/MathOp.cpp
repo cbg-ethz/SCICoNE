@@ -177,22 +177,22 @@ vector<double> MathOp::combine_scores(vector<double> aic_vec)
      * Uses dynamic programming.
      *
      * */
-    uint64_t m = aic_vec.size();
+    u_int m = aic_vec.size();
     vector<double> row1(m, 0.0);
     vector<double> row2;
     vector<double> res(1,0.0);
 
     // iterate over n_cells
-    for (unsigned j = 0; j < m; ++j) { // j : cells
+    for (u_int j = 0; j < m; ++j) { // j : cells
         row2.clear();
         // inner computation of row2
-        for (unsigned k = 0; k < m-j; ++k) {
+        for (u_int k = 0; k < m-j; ++k) {
             double value=0.0;
 
             if (k==0)
                 value = row1[k] + aic_vec[k+j];
             else
-                value = log_add(row2[k-1] , row1[k] + aic_vec[k+j]);
+                value = static_cast<double>(log_add(row2[k-1] , row1[k] + aic_vec[k+j]));
 
             if (std::isinf(value))
                 cerr << "inf value detected";
