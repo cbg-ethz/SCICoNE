@@ -293,41 +293,32 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
         sigma[i] = MathOp::combine_scores(aic_vec[i]);
 
     vector<double> log_priors;
-    log_priors.reserve(n_cells);
-    for (size_t j = 0; j < n_cells; ++j)
+    log_priors.reserve(n_cells+1);
+    for (size_t j = 0; j < n_cells+1; ++j)
         log_priors.push_back(MathOp::breakpoint_log_prior(j, n_cells,0.5));
 
 
 
-    vector<vector<long double>> log_posterior(n_breakpoints,vector<long double>(n_cells));
+    vector<vector<double>> log_posterior(n_breakpoints,vector<double>(n_cells+1));
     for (size_t k = 0; k < n_breakpoints; ++k) {
-        for (size_t j = 0; j < n_cells; ++j) {
-            long double val = log_priors[j] + sigma[k][j+1]; // j+1 because sigma has one extra 0 at the beginning
+        for (size_t j = 0; j < n_cells+1; ++j) {
+            double val = log_priors[j] + sigma[k][j];
             log_posterior[k][j] = val;
         }
     }
 
-    vector<vector<double>> posterior(n_breakpoints,vector<double>(n_cells));
+    vector<vector<double>> posterior(n_breakpoints,vector<double>(n_cells+1));
 
     vector<double> s_p;
 
     for (size_t l = 0; l < n_breakpoints; ++l)
     {
-        // subtract multiple max values for better precision
-//        double max_num_lb = *max_element(log_posterior[l].begin(), log_posterior[l].begin() + k_star - 1);
         double max_all = *max_element(log_posterior[l].begin(), log_posterior[l].end());
-//        double max_in_between = *max_element(log_posterior[l].begin() + k_star-1, log_posterior[l].end());
-
 
         for (int j = 0; j < log_posterior[l].size(); ++j) {
             double val =exp(log_posterior[l][j] - max_all);
             posterior[l][j] = val;
         }
-//        for (int k = k_star -1 ; k < log_posterior[l].size(); ++k) {
-//            double val =exp(log_posterior[l][k] - max_all);
-//            posterior[l][k] = val;
-//        }
-
 
         double sp_num_lb = std::accumulate(posterior[l].begin(), posterior[l].begin() + k_star - 1, 0.0);
         if (sp_num_lb != 0.0)
@@ -335,7 +326,7 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
 
         double sp_num_ub =  std::accumulate(posterior[l].begin() + ul, posterior[l].end(), 0.0);
         if (sp_num_ub != 0.0)
-            sp_num_ub = log(sp_num_lb);
+            sp_num_ub = log(sp_num_ub);
 
         double sp_num_total = sp_num_lb + sp_num_ub + max_all;
 
