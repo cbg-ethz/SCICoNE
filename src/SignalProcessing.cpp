@@ -316,23 +316,28 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
         double max_all = *max_element(log_posterior[l].begin(), log_posterior[l].end());
 
         for (int j = 0; j < log_posterior[l].size(); ++j) {
-            double val =exp(log_posterior[l][j] - max_all);
-            posterior[l][j] = val;
+            log_posterior[l][j] -= max_all;
+            posterior[l][j] = exp(log_posterior[l][j]);
         }
-
-        double sp_num_lb = std::accumulate(posterior[l].begin(), posterior[l].begin() + k_star - 1, 0.0);
-        if (sp_num_lb != 0.0)
-            sp_num_lb  = log(sp_num_lb);
-
-        double sp_num_ub =  std::accumulate(posterior[l].begin() + ul, posterior[l].end(), 0.0);
-        if (sp_num_ub != 0.0)
-            sp_num_ub = log(sp_num_ub);
-
-        double sp_num_total = sp_num_lb + sp_num_ub + max_all;
 
         double sp_denom = std::accumulate(posterior[l].begin(), posterior[l].end(), 0.0);
         if (sp_denom != 0.0)
-            sp_denom = log(sp_denom) + max_all;
+            sp_denom = log(sp_denom);
+
+        double max_local_lb = *max_element(log_posterior[l].begin(), log_posterior[l].begin() + k_star - 1);
+        double max_local_ub = *max_element(log_posterior[l].begin() + ul, log_posterior[l].end());
+
+        double max_local = std::max(max_local_lb, max_local_ub);
+        for (int j = 0; j < log_posterior[l].size(); ++j) {
+            posterior[l][j] = exp(log_posterior[l][j] - max_local);
+        }
+
+        double sp_num_lb = std::accumulate(posterior[l].begin(), posterior[l].begin() + k_star - 1, 0.0);
+        double sp_num_ub =  std::accumulate(posterior[l].begin() + ul, posterior[l].end(), 0.0);
+
+        double sp_num_total = sp_num_lb + sp_num_ub;
+        if (sp_num_total != 0.0)
+            sp_num_total = log(sp_num_total) + max_local;
 
         double sp_val = sp_denom - sp_num_total;
 
