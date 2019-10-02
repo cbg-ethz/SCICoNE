@@ -312,8 +312,6 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
     for (size_t j = 0; j < n_cells+1; ++j)
         log_priors.push_back(MathOp::breakpoint_log_prior(j, n_cells,0.001));
 
-
-
     vector<vector<double>> log_posterior(n_breakpoints,vector<double>(n_cells+1));
     for (size_t k = 0; k < n_breakpoints; ++k) {
         for (size_t j = 0; j < n_cells+1; ++j) {
@@ -372,8 +370,20 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
 
     if (verbosity > 2)
     {
+        std::ofstream log_posterior_file("./" + f_name_posfix + "_log_posterior_vec.csv");
         std::ofstream expected_k_vec_file("./" + f_name_posfix + "_expected_k_vec.csv");
         std::ofstream sp_file("./" + f_name_posfix + "_sp_vec.csv");
+
+        for (auto const &v1: log_posterior) {
+            for (size_t i = 0; i < v1.size(); i++)
+            {
+                if (i == v1.size()-1) // the last element
+                    log_posterior_file << v1[i];
+                else // add comma
+                    log_posterior_file << v1[i] << ',';
+            }
+            log_posterior_file << endl;
+        }
 
         for (int i = 0; i < expected_k_vector.size(); ++i) {
             if (i == expected_k_vector.size()-1) // the last element
