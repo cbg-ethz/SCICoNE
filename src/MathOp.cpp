@@ -129,9 +129,6 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
 
             aic_p = min(aic_segment, aic_slope) - aic_break;
 
-            if (aic_p < -4.0)
-                cout <<"debug";
-
             aic_vec[i][j] = aic_p;
         }
     }
