@@ -283,6 +283,21 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
 
     vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
 
+    if (verbosity > 2)
+    {
+        std::ofstream aic_vec_file("./" + f_name_posfix + "_aic_vec" + ".csv");
+        for (auto const &v1: aic_vec) {
+            for (size_t i = 0; i < v1.size(); i++)
+            {
+                if (i == v1.size()-1) // the last element
+                    aic_vec_file << v1[i];
+                else // add comma
+                    aic_vec_file << v1[i] << ',';
+            }
+            aic_vec_file << endl;
+        }
+    }
+
     size_t n_breakpoints = aic_vec.size();
     cout <<"n_breakpoints: " << n_breakpoints << " n_cells: " << n_cells <<endl;
 
@@ -308,8 +323,10 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
     }
 
     vector<vector<double>> posterior(n_breakpoints,vector<double>(n_cells+1));
+    vector<vector<double>> posterior_k(n_breakpoints,vector<double>(n_cells+1));
 
     vector<double> s_p;
+    vector<double> expected_k_vector;
 
     for (size_t l = 0; l < n_breakpoints; ++l)
     {
@@ -318,11 +335,19 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
         for (int j = 0; j < log_posterior[l].size(); ++j) {
             log_posterior[l][j] -= max_all;
             posterior[l][j] = exp(log_posterior[l][j]);
+            posterior_k[l][j] = j * posterior[l][j];
         }
+
+        double expected_nom = std::accumulate(posterior_k[l].begin(), posterior_k[l].end(), 0.0);
+        if (expected_nom != 0.0)
+            expected_nom = log(expected_nom);
 
         double sp_denom = std::accumulate(posterior[l].begin(), posterior[l].end(), 0.0);
         if (sp_denom != 0.0)
             sp_denom = log(sp_denom);
+
+        double log_expected_cells = expected_nom - sp_denom;
+        expected_k_vector.push_back(log_expected_cells);
 
         double max_local_lb = *max_element(log_posterior[l].begin(), log_posterior[l].begin() + k_star - 1);
         double max_local_ub = *max_element(log_posterior[l].begin() + ul, log_posterior[l].end());
@@ -342,6 +367,29 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
         double sp_val = sp_denom - sp_num_total;
 
         s_p.push_back(sp_val);
+
+    }
+
+    if (verbosity > 2)
+    {
+        std::ofstream expected_k_vec_file("./" + f_name_posfix + "_expected_k_vec.csv");
+        std::ofstream sp_file("./" + f_name_posfix + "_sp_vec.csv");
+
+        for (int i = 0; i < expected_k_vector.size(); ++i) {
+            if (i == expected_k_vector.size()-1) // the last element
+                expected_k_vec_file << expected_k_vector[i];
+            else // add comma
+                expected_k_vec_file << expected_k_vector[i] << ',';
+        }
+        expected_k_vec_file << std::endl;
+
+        for (int i = 0; i < s_p.size(); ++i) {
+            if (i == s_p.size()-1) // the last element
+                sp_file << s_p[i];
+            else // add comma
+                sp_file << s_p[i] << ',';
+        }
+        sp_file << std::endl;
 
     }
 

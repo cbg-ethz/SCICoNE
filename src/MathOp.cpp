@@ -129,6 +129,9 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
 
             aic_p = min(aic_segment, aic_slope) - aic_break;
 
+            if (aic_p < -4.0)
+                cout <<"debug";
+
             aic_vec[i][j] = aic_p;
         }
     }
@@ -342,7 +345,7 @@ double MathOp::breakpoint_log_prior(int k, int m, double mu) {
         res += log(mu);
         res += 2*log_n_choose_k(m,k);
         res -= log(2*k-1);
-        res -= log_n_choose_k(2*m,2*k);
+        res -= log_n_choose_k(2*2*m,k);
         assert(!std::isnan(res));
         return res;
     }
