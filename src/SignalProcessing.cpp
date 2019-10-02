@@ -310,7 +310,7 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
     vector<double> log_priors;
     log_priors.reserve(n_cells+1);
     for (size_t j = 0; j < n_cells+1; ++j)
-        log_priors.push_back(MathOp::breakpoint_log_prior(j, n_cells,0.5));
+        log_priors.push_back(MathOp::breakpoint_log_prior(j, n_cells,0.001));
 
 
 
