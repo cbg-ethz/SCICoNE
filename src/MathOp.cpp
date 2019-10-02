@@ -126,7 +126,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
 
             ll_difference = ll_break - std::max(ll_slope, ll_segment);
 
-            aic_vec[i][j] = ll_difference;
+            aic_vec[i][j] = 2 * ll_difference;
         }
     }
     return aic_vec;
@@ -339,7 +339,7 @@ double MathOp::breakpoint_log_prior(int k, int m, double mu) {
         res += log(mu);
         res += 2*log_n_choose_k(m,k);
         res -= log(2*k-1);
-        res -= log_n_choose_k(2*2*m,k);
+        res -= log_n_choose_k(2*m,2*k);
         assert(!std::isnan(res));
         return res;
     }
