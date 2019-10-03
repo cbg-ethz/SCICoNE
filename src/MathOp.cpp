@@ -112,8 +112,8 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             double ll_break = breakpoint_log_likelihood(lbins, lambda_l, 1.0) +
                               breakpoint_log_likelihood(rbins, lambda_r, 1.0);
             double k_break = 1.0;
-//            if (ll_break < ll_segment - k_break)
-//                ll_break = ll_segment - k_break;
+            if (ll_break < ll_segment - k_break)
+                ll_break = ll_segment - k_break;
 
             double k_slope = 1.0;
             double ll_slope = 0.0;
