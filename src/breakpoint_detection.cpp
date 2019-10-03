@@ -30,7 +30,7 @@ int main( int argc, char* argv[]) {
     string region_sizes_file;
     string d_matrix_file;
     verbosity = 0;
-    int evidence_min_cells = 0;
+    int evidence_min_cells = 4;
 
     cxxopts::Options options("Breakpoint detection executable", "detects the breakpoints in the genome across all cells.");
     options.add_options()
@@ -63,8 +63,7 @@ int main( int argc, char* argv[]) {
     }
     if (not result.count("min_cells"))
     {
-        std::cerr << "the minimum number of cells to consider needs to be specified." <<std::endl;
-        return EXIT_FAILURE;
+        std::cout << "min_cells is not specified, " << evidence_min_cells << " cells are going to be considered" <<std::endl;
     }
 
     std::cout<<"Reading the input matrix..."<<std::endl;
