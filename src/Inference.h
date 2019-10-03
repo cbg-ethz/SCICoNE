@@ -466,10 +466,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
     if (verbosity > 1)
     {
-        mcmc_scores_file.open(f_name + "_markov_chain.txt", std::ios_base::app);
-        rel_mcmc_scores_file.open(f_name + "_rel_markov_chain.txt", std::ios_base::app);
-        acceptance_ratio_file.open(f_name + "_acceptance_ratio.txt", std::ios_base::app);
-        gamma_file.open(f_name + "_gamma_values.csv", std::ios_base::app);
+        mcmc_scores_file.open(f_name + "_markov_chain.txt", std::ios_base::out);
+        rel_mcmc_scores_file.open(f_name + "_rel_markov_chain.txt", std::ios_base::out);
+        acceptance_ratio_file.open(f_name + "_acceptance_ratio.txt", std::ios_base::out);
+        gamma_file.open(f_name + "_gamma_values.csv", std::ios_base::out);
     }
 
     best_tree = t; //start with the t
