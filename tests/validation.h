@@ -54,7 +54,7 @@ void test_breakpoint_detection()
     std::cout<<"Input matrix is read."<<std::endl;
 
     SignalProcessing dsp;
-    vector<double> s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells, evidence_max_cells);
+    vector<double> s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells);
 
     double sum_sp = std::accumulate(s_p.begin(), s_p.end(), 0.0);
     std::cout<<"sp sum: " << sum_sp <<std::endl;

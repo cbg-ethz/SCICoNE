@@ -197,7 +197,7 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
 
     if (verbosity >= 3.0)
     {
-        std::ofstream bp_vals_file("./" + f_name_posfix + "_all_bps_comparison.csv", std::ios_base::app);
+        std::ofstream bp_vals_file("./" + f_name_posfix + "_all_bps_comparison.csv", std::ios_base::);
         bp_vals_file << max_idx + window_size << ',' << max_val << ',' << stdev << std::endl; // 10 for window size
     }
 
@@ -267,7 +267,7 @@ int SignalProcessing::find_highest_peak(vector<T> &signal, int lb, int ub) {
 }
 
 vector<double>
-SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star, int ul) {
+SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star) {
     /*
      * Performs the breakpoint detection
      * window_size: there cannot be multiple breakpoints within a window_size
@@ -347,18 +347,17 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
         double log_expected_cells = expected_nom - sp_denom;
         expected_k_vector.push_back(log_expected_cells);
 
-        double max_local_lb = *max_element(log_posterior[l].begin(), log_posterior[l].begin() + k_star - 1);
-        double max_local_ub = *max_element(log_posterior[l].begin() + ul, log_posterior[l].end());
+        double max_local = *max_element(log_posterior[l].begin(), log_posterior[l].begin() + k_star - 1);
+//        double max_local_ub = *max_element(log_posterior[l].begin() + ul, log_posterior[l].end());
 
-        double max_local = std::max(max_local_lb, max_local_ub);
+//        double max_local = std::max(max_local, max_local_ub);
         for (int j = 0; j < log_posterior[l].size(); ++j) {
             posterior[l][j] = exp(log_posterior[l][j] - max_local);
         }
 
-        double sp_num_lb = std::accumulate(posterior[l].begin(), posterior[l].begin() + k_star - 1, 0.0);
-        double sp_num_ub =  std::accumulate(posterior[l].begin() + ul, posterior[l].end(), 0.0);
+        double sp_num_total = std::accumulate(posterior[l].begin(), posterior[l].begin() + k_star - 1, 0.0);
+//        double sp_num_ub =  std::accumulate(posterior[l].begin() + ul, posterior[l].end(), 0.0);
 
-        double sp_num_total = sp_num_lb + sp_num_ub;
         if (sp_num_total != 0.0)
             sp_num_total = log(sp_num_total) + max_local;
 
