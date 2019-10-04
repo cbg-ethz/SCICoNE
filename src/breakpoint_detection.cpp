@@ -31,6 +31,7 @@ int main( int argc, char* argv[]) {
     string d_matrix_file;
     verbosity = 0;
     int evidence_min_cells = 4;
+    unsigned breakpoints_limit = 300;
 
     cxxopts::Options options("Breakpoint detection executable", "detects the breakpoints in the genome across all cells.");
     options.add_options()
@@ -42,6 +43,7 @@ int main( int argc, char* argv[]) {
             ("threshold", "the coefficient of the breakpoint threshold", cxxopts::value(threshold_coefficient))
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_posfix))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
+            ("bp_limit","the maximum number of breakpoints to be returned. The breakpoints get sorted and the top ones are returned",cxxopts::value(breakpoints_limit))
             ;
 
     auto result = options.parse(argc, argv);
@@ -206,6 +208,13 @@ int main( int argc, char* argv[]) {
     std::cout<<"Sorting the all_max_ids..." <<std::endl;
     std::sort(all_max_ids.begin(), all_max_ids.end());
     std::cout<<"All max ids are sorted" <<std::endl;
+
+    if (all_max_ids.size() > breakpoints_limit)
+    {
+        std::cout<<"More than " << breakpoints_limit << " breakpoints are detected."
+        << " Keeping only the top " << breakpoints_limit << " ones." << std::endl;
+        all_max_ids.resize(breakpoints_limit);
+    }
 
     std::cout<<"Writing segmented regions to file..."<<std::endl;
     std::ofstream tree_file("./" + f_name_posfix + "_segmented_regions.txt");
