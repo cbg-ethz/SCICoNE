@@ -106,30 +106,27 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             if (lambda_l == 0)
                 lambda_l = 0.0001;
 
-            double aic_p = 0.0;
-            // k is the degrees of freedom of the segment model
-            u_int k_segment = 1;
+            double ll_difference = 0.0;
             double ll_segment = breakpoint_log_likelihood(all_bins, lambda_all, 1.0);
-            double aic_segment = 2 * k_segment - 2 * ll_segment;
 
-            // degrees of freedom is 2, lambda_r and lambda_l
-            u_int k_break = 2;
             double ll_break = breakpoint_log_likelihood(lbins, lambda_l, 1.0) +
                               breakpoint_log_likelihood(rbins, lambda_r, 1.0);
-            double aic_break = 2 * k_break - 2 * ll_break;
+            double k_break = 1.0;
+            if (ll_break < ll_segment - k_break)
+                ll_break = ll_segment - k_break;
 
-            u_int k_slope = 2;
+            double k_slope = 1.0;
             double ll_slope = 0.0;
 
             for (size_t m = 0; m < n_bins; ++m) {
                 ll_slope += breakpoint_log_likelihood(vector<double>(all_bins.begin()+m, all_bins.begin()+m+1), lambdas_regression[m], 1.0);
             }
-            double aic_slope = 2 * k_slope - 2* ll_slope;
+            ll_slope -= k_slope;
 
 
-            aic_p = min(aic_segment, aic_slope) - aic_break;
+            ll_difference = ll_break - std::max(ll_slope, ll_segment);
 
-            aic_vec[i][j] = aic_p;
+            aic_vec[i][j] = 2 * ll_difference;
         }
     }
     return aic_vec;
@@ -177,22 +174,22 @@ vector<double> MathOp::combine_scores(vector<double> aic_vec)
      * Uses dynamic programming.
      *
      * */
-    uint64_t m = aic_vec.size();
+    u_int m = aic_vec.size();
     vector<double> row1(m, 0.0);
     vector<double> row2;
     vector<double> res(1,0.0);
 
     // iterate over n_cells
-    for (unsigned j = 0; j < m; ++j) { // j : cells
+    for (u_int j = 0; j < m; ++j) { // j : cells
         row2.clear();
         // inner computation of row2
-        for (unsigned k = 0; k < m-j; ++k) {
+        for (u_int k = 0; k < m-j; ++k) {
             double value=0.0;
 
             if (k==0)
                 value = row1[k] + aic_vec[k+j];
             else
-                value = log_add(row2[k-1] , row1[k] + aic_vec[k+j]);
+                value = static_cast<double>(log_add(row2[k-1] , row1[k] + aic_vec[k+j]));
 
             if (std::isinf(value))
                 cerr << "inf value detected";
@@ -200,7 +197,6 @@ vector<double> MathOp::combine_scores(vector<double> aic_vec)
             row2.push_back(value);
 
         }
-        //cout << " row1 size: " << row1.size() << " row2 size: " << row2.size() << " max j: " << aic_vec.size()-j<<endl;
         row1.clear();
         row1 = row2;
         double last = row2.back();

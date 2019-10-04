@@ -18,7 +18,7 @@ string f_name_posfix;
 
 using namespace std;
 
-vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size = 5);
+vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star);
 
 int main( int argc, char* argv[]) {
 
@@ -30,16 +30,20 @@ int main( int argc, char* argv[]) {
     string region_sizes_file;
     string d_matrix_file;
     verbosity = 0;
+    int evidence_min_cells = 4;
+    unsigned breakpoints_limit = 300;
 
     cxxopts::Options options("Breakpoint detection executable", "detects the breakpoints in the genome across all cells.");
     options.add_options()
             ("d_matrix_file", "Path to the counts matrix file, delimiter: ',', line separator: '\n' ", cxxopts::value(d_matrix_file))
+            ("min_cells", "Minimum number of cells to consider for a bin being a breakpoint", cxxopts::value(evidence_min_cells))
             ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("window_size", "the size of the window used in breakpoint detection", cxxopts::value(window_size))
             ("threshold", "the coefficient of the breakpoint threshold", cxxopts::value(threshold_coefficient))
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_posfix))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
+            ("bp_limit","the maximum number of breakpoints to be returned. The breakpoints get sorted and the top ones are returned",cxxopts::value(breakpoints_limit))
             ;
 
     auto result = options.parse(argc, argv);
@@ -59,6 +63,10 @@ int main( int argc, char* argv[]) {
         cerr << "the number of cells is not provided."<<endl;
         return EXIT_FAILURE;
     }
+    if (not result.count("min_cells"))
+    {
+        std::cout << "min_cells is not specified, " << evidence_min_cells << " cells are going to be considered" <<std::endl;
+    }
 
     std::cout<<"Reading the input matrix..."<<std::endl;
 
@@ -75,7 +83,7 @@ int main( int argc, char* argv[]) {
     SignalProcessing dsp;
 
     std::cout<<"Computing the probability of a region being a breakpoint..."<<std::endl;
-    vector<double> s_p = breakpoint_detection(d_bins, window_size);
+    vector<double> s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells);
     std::cout<<"Computed probabilities for all regions."<<std::endl;
 
     vector<double> sp_cropped = dsp.crop(s_p, window_size);
@@ -193,9 +201,20 @@ int main( int argc, char* argv[]) {
 
         }
     }
+
+    if (all_max_ids.empty())
+        throw std::logic_error("No breakpoints are detected. Perhaps change the configurations and try again.");
+
     std::cout<<"Sorting the all_max_ids..." <<std::endl;
     std::sort(all_max_ids.begin(), all_max_ids.end());
     std::cout<<"All max ids are sorted" <<std::endl;
+
+    if (all_max_ids.size() > breakpoints_limit)
+    {
+        std::cout<<"More than " << breakpoints_limit << " breakpoints are detected."
+        << " Keeping only the top " << breakpoints_limit << " ones." << std::endl;
+        all_max_ids.resize(breakpoints_limit);
+    }
 
     std::cout<<"Writing segmented regions to file..."<<std::endl;
     std::ofstream tree_file("./" + f_name_posfix + "_segmented_regions.txt");
@@ -221,78 +240,4 @@ int main( int argc, char* argv[]) {
 
     std::cout<<"Segmented region sizes are written to file"<<std::endl;
     return EXIT_SUCCESS;
-}
-
-vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size)
-{
-    /*
-     * Performs the breakpoint detection
-     * */
-
-    // TODO: get rid of unnecessary push_backs
-
-    size_t n_cells = mat.size();
-
-    // compute the AIC scores
-
-    vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
-
-    size_t n_breakpoints = aic_vec.size();
-    cout <<"n_breakpoints: " << n_breakpoints << " n_cells: " << n_cells <<endl;
-
-    vector<vector<double>> sigma(n_breakpoints,vector<double>(n_cells+1)); // +1 because combine scores considers
-    // the breakpoint occurring in zero cells as well
-
-    for (size_t i = 0; i < n_breakpoints; ++i) // compute sigma matrix
-        sigma[i] = MathOp::combine_scores(aic_vec[i]);
-
-    vector<double> log_priors;
-    log_priors.reserve(n_cells);
-    for (size_t j = 0; j < n_cells; ++j)
-        log_priors.push_back(MathOp::breakpoint_log_prior(j, n_cells,0.5));
-
-
-
-    vector<vector<long double>> log_posterior(n_breakpoints,vector<long double>(n_cells));
-    for (size_t k = 0; k < n_breakpoints; ++k) {
-        for (size_t j = 0; j < n_cells; ++j) {
-            long double val = log_priors[j] + sigma[k][j+1]; // j+1 because sigma has one extra 0 at the beginning
-            log_posterior[k][j] = val;
-        }
-    }
-
-    vector<vector<long double>> posterior(n_breakpoints,vector<long double>(n_cells));
-    int k_star = 4; // event happening in min number of cells
-
-    vector<double> s_p;
-
-    for (size_t l = 0; l < n_breakpoints; ++l)
-    {
-
-        long double max_num = *max_element(log_posterior[l].begin(), log_posterior[l].begin()+k_star-1);
-        long double max_denom = *max_element(log_posterior[l].begin(), log_posterior[l].end());
-
-        for (int j = 0; j < k_star - 1; ++j) {
-            long double val =exp(log_posterior[l][j] - max_num);
-            posterior[l][j] = val;
-        }
-        for (int k = k_star -1 ; k < log_posterior[l].size(); ++k) {
-            long double val =exp(log_posterior[l][k] - max_denom);
-            posterior[l][k] = val;
-        }
-
-
-        long double sp_num = std::accumulate(posterior[l].begin(), posterior[l].begin()+k_star-1, 0.0);
-        sp_num  = log(sp_num) + max_num;
-        long double sp_denom = std::accumulate(posterior[l].begin(), posterior[l].end(), 0.0);
-        sp_denom = log(sp_denom) + max_denom;
-
-        double sp_val = sp_denom-sp_num;
-
-        s_p.push_back(sp_val);
-
-    }
-
-    return s_p;
-
 }

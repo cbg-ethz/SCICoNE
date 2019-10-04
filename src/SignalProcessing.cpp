@@ -266,6 +266,146 @@ int SignalProcessing::find_highest_peak(vector<T> &signal, int lb, int ub) {
     return max_idx + lb;
 }
 
+vector<double>
+SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star) {
+    /*
+     * Performs the breakpoint detection
+     * window_size: there cannot be multiple breakpoints within a window_size
+     * k_star: min number of cells to consider for a bin being breakpoint
+     * ul: max number of cells to consider for a bin being breakpoint
+     * returns the evidence of each bin being a breakpoint
+     * */
+    // TODO: get rid of unnecessary push_backs
+
+    size_t n_cells = mat.size();
+
+    // compute the AIC scores
+
+    vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
+
+    if (verbosity > 2)
+    {
+        std::ofstream aic_vec_file("./" + f_name_posfix + "_aic_vec" + ".csv");
+        for (auto const &v1: aic_vec) {
+            for (size_t i = 0; i < v1.size(); i++)
+            {
+                if (i == v1.size()-1) // the last element
+                    aic_vec_file << v1[i];
+                else // add comma
+                    aic_vec_file << v1[i] << ',';
+            }
+            aic_vec_file << endl;
+        }
+    }
+
+    size_t n_breakpoints = aic_vec.size();
+    cout <<"n_breakpoints: " << n_breakpoints << " n_cells: " << n_cells <<endl;
+
+    vector<vector<double>> sigma(n_breakpoints,vector<double>(n_cells+1)); // +1 because combine scores considers
+    // the breakpoint occurring in zero cells as well
+
+    for (size_t i = 0; i < n_breakpoints; ++i) // compute sigma matrix
+        sigma[i] = MathOp::combine_scores(aic_vec[i]);
+
+    vector<double> log_priors;
+    log_priors.reserve(n_cells+1);
+    for (size_t j = 0; j < n_cells+1; ++j)
+        log_priors.push_back(MathOp::breakpoint_log_prior(j, n_cells,0.001));
+
+    vector<vector<double>> log_posterior(n_breakpoints,vector<double>(n_cells+1));
+    for (size_t k = 0; k < n_breakpoints; ++k) {
+        for (size_t j = 0; j < n_cells+1; ++j) {
+            double val = log_priors[j] + sigma[k][j];
+            log_posterior[k][j] = val;
+        }
+    }
+
+    vector<vector<double>> posterior(n_breakpoints,vector<double>(n_cells+1));
+    vector<vector<double>> posterior_k(n_breakpoints,vector<double>(n_cells+1));
+
+    vector<double> s_p;
+    vector<double> expected_k_vector;
+
+    for (size_t l = 0; l < n_breakpoints; ++l)
+    {
+        double max_all = *max_element(log_posterior[l].begin(), log_posterior[l].end());
+
+        for (int j = 0; j < log_posterior[l].size(); ++j) {
+            log_posterior[l][j] -= max_all;
+            posterior[l][j] = exp(log_posterior[l][j]);
+            posterior_k[l][j] = j * posterior[l][j];
+        }
+
+        double expected_nom = std::accumulate(posterior_k[l].begin(), posterior_k[l].end(), 0.0);
+        if (expected_nom != 0.0)
+            expected_nom = log(expected_nom);
+
+        double sp_denom = std::accumulate(posterior[l].begin(), posterior[l].end(), 0.0);
+        if (sp_denom != 0.0)
+            sp_denom = log(sp_denom);
+
+        double log_expected_cells = expected_nom - sp_denom;
+        expected_k_vector.push_back(log_expected_cells);
+
+        double max_local = *max_element(log_posterior[l].begin(), log_posterior[l].begin() + k_star - 1);
+//        double max_local_ub = *max_element(log_posterior[l].begin() + ul, log_posterior[l].end());
+
+//        double max_local = std::max(max_local, max_local_ub);
+        for (int j = 0; j < log_posterior[l].size(); ++j) {
+            posterior[l][j] = exp(log_posterior[l][j] - max_local);
+        }
+
+        double sp_num_total = std::accumulate(posterior[l].begin(), posterior[l].begin() + k_star - 1, 0.0);
+//        double sp_num_ub =  std::accumulate(posterior[l].begin() + ul, posterior[l].end(), 0.0);
+
+        if (sp_num_total != 0.0)
+            sp_num_total = log(sp_num_total) + max_local;
+
+        double sp_val = sp_denom - sp_num_total;
+
+        s_p.push_back(sp_val);
+
+    }
+
+    if (verbosity > 2)
+    {
+        std::ofstream log_posterior_file("./" + f_name_posfix + "_log_posterior_vec.csv");
+        std::ofstream expected_k_vec_file("./" + f_name_posfix + "_expected_k_vec.csv");
+        std::ofstream sp_file("./" + f_name_posfix + "_sp_vec.csv");
+
+        for (auto const &v1: log_posterior) {
+            for (size_t i = 0; i < v1.size(); i++)
+            {
+                if (i == v1.size()-1) // the last element
+                    log_posterior_file << v1[i];
+                else // add comma
+                    log_posterior_file << v1[i] << ',';
+            }
+            log_posterior_file << endl;
+        }
+
+        for (int i = 0; i < expected_k_vector.size(); ++i) {
+            if (i == expected_k_vector.size()-1) // the last element
+                expected_k_vec_file << expected_k_vector[i];
+            else // add comma
+                expected_k_vec_file << expected_k_vector[i] << ',';
+        }
+        expected_k_vec_file << std::endl;
+
+        for (int i = 0; i < s_p.size(); ++i) {
+            if (i == s_p.size()-1) // the last element
+                sp_file << s_p[i];
+            else // add comma
+                sp_file << s_p[i] << ',';
+        }
+        sp_file << std::endl;
+
+    }
+
+    return s_p;
+
+}
+
 template int SignalProcessing::find_highest_peak(vector<double> &signal, int lb, int ub);
 template vector<double> SignalProcessing::crop<double>(vector<double>& signal, int offset);
 template vector<long double> SignalProcessing::crop<long double>(vector<long double>& signal, int offset);
