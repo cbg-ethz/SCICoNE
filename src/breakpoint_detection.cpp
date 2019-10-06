@@ -221,7 +221,11 @@ int main( int argc, char* argv[]) {
     }
     std::cout<<"Segmented regions are written."<<std::endl;
 
-    std::cout<<"Writing segmented region sizes to file..."<<std::endl;
+    std::cout<<"Sorting the all_max_ids..." <<std::endl;
+    std::sort(all_max_ids.begin(), all_max_ids.end());
+    std::cout<<"All max ids are sorted" <<std::endl;
+
+    std::cout<<"Writing ordered segmented region sizes to file..."<<std::endl;
     std::ofstream reg_sizes_file("./" + f_name_posfix + "_segmented_region_sizes.txt");
     int cum_sum = 0;
 
