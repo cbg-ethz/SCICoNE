@@ -193,6 +193,14 @@ int main( int argc, char* argv[]) {
                 all_max_ids.push_back(max_idx);
                 std::cout << "Index of the maximum " << max_idx << " is added to all_max_ids." << std::endl;
 
+                if (all_max_ids.size() >= breakpoints_limit)
+                {
+                    std::cout<<"More than " << breakpoints_limit << " breakpoints are detected."
+                             << " Keeping only the top " << breakpoints_limit << " ones." << std::endl;
+                    break;
+                }
+
+
             }
             else // max_idx = -1, empty the q_map
             {
@@ -204,13 +212,6 @@ int main( int argc, char* argv[]) {
 
     if (all_max_ids.empty())
         throw std::logic_error("No breakpoints are detected. Perhaps change the configurations and try again.");
-
-    if (all_max_ids.size() > breakpoints_limit)
-    {
-        std::cout<<"More than " << breakpoints_limit << " breakpoints are detected."
-        << " Keeping only the top " << breakpoints_limit << " ones." << std::endl;
-        all_max_ids.resize(breakpoints_limit);
-    }
 
     std::cout<<"Sorting the all_max_ids..." <<std::endl;
     std::sort(all_max_ids.begin(), all_max_ids.end());
