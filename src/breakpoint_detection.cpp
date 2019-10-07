@@ -212,6 +212,10 @@ int main( int argc, char* argv[]) {
         all_max_ids.resize(breakpoints_limit);
     }
 
+    std::cout<<"Sorting the all_max_ids..." <<std::endl;
+    std::sort(all_max_ids.begin(), all_max_ids.end());
+    std::cout<<"All max ids are sorted" <<std::endl;
+
     std::cout<<"Writing segmented regions to file..."<<std::endl;
     std::ofstream tree_file("./" + f_name_posfix + "_segmented_regions.txt");
 
@@ -220,10 +224,6 @@ int main( int argc, char* argv[]) {
         tree_file << all_max_ids[k] + window_size << endl;
     }
     std::cout<<"Segmented regions are written."<<std::endl;
-
-    std::cout<<"Sorting the all_max_ids..." <<std::endl;
-    std::sort(all_max_ids.begin(), all_max_ids.end());
-    std::cout<<"All max ids are sorted" <<std::endl;
 
     std::cout<<"Writing ordered segmented region sizes to file..."<<std::endl;
     std::ofstream reg_sizes_file("./" + f_name_posfix + "_segmented_region_sizes.txt");
