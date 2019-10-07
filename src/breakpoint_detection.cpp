@@ -205,16 +205,16 @@ int main( int argc, char* argv[]) {
     if (all_max_ids.empty())
         throw std::logic_error("No breakpoints are detected. Perhaps change the configurations and try again.");
 
-    std::cout<<"Sorting the all_max_ids..." <<std::endl;
-    std::sort(all_max_ids.begin(), all_max_ids.end());
-    std::cout<<"All max ids are sorted" <<std::endl;
-
     if (all_max_ids.size() > breakpoints_limit)
     {
         std::cout<<"More than " << breakpoints_limit << " breakpoints are detected."
         << " Keeping only the top " << breakpoints_limit << " ones." << std::endl;
         all_max_ids.resize(breakpoints_limit);
     }
+
+    std::cout<<"Sorting the all_max_ids..." <<std::endl;
+    std::sort(all_max_ids.begin(), all_max_ids.end());
+    std::cout<<"All max ids are sorted" <<std::endl;
 
     std::cout<<"Writing segmented regions to file..."<<std::endl;
     std::ofstream tree_file("./" + f_name_posfix + "_segmented_regions.txt");
@@ -225,7 +225,7 @@ int main( int argc, char* argv[]) {
     }
     std::cout<<"Segmented regions are written."<<std::endl;
 
-    std::cout<<"Writing segmented region sizes to file..."<<std::endl;
+    std::cout<<"Writing ordered segmented region sizes to file..."<<std::endl;
     std::ofstream reg_sizes_file("./" + f_name_posfix + "_segmented_region_sizes.txt");
     int cum_sum = 0;
 
