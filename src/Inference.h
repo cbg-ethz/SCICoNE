@@ -757,10 +757,11 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     }
                 }
 
+            double score_diff = t_prime.posterior_score - t.posterior_score;
             // update trees and the matrices
             if (accepted == &t_prime)
             {
-                if (move_id != 11)
+                if (move_id != 11 && std::abs(score_diff) > 0.1)
                     gamma *= exp((1.0-alpha)*alpha);
                 acceptance_ratio_file << std::setprecision(print_precision) << static_cast<int>(move_id) << ',';
                 n_accepted++;
@@ -773,7 +774,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             else
             {
                 // print acceptance ratio
-                if (move_id != 11)
+                if (move_id != 11 && std::abs(score_diff) > 0.1)
                     gamma *= exp((0.0-alpha)*alpha);
                 acceptance_ratio_file << std::setprecision(print_precision) << -1 << ',';
                 n_rejected++;
