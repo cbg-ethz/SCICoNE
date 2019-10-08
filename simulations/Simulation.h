@@ -80,51 +80,51 @@ public:
             }
         }
 
-            // create the p_read_region_cell values, not normalized yet.
-            for (int i = 0; i < p_read_region_cell.size(); ++i) {
-                for (int j = 0; j < p_read_region_cell[i].size(); ++j) {
-                    if (not is_neutral)
-                        p_read_region_cell[i][j] = ground_truth[i][j] * region_sizes[j];
-                    else
-                        p_read_region_cell[i][j] = ploidy * region_sizes[j];
-                }
+        // create the p_read_region_cell values, not normalized yet.
+        for (int i = 0; i < p_read_region_cell.size(); ++i) {
+            for (int j = 0; j < p_read_region_cell[i].size(); ++j) {
+                if (not is_neutral)
+                    p_read_region_cell[i][j] = ground_truth[i][j] * region_sizes[j];
+                else
+                    p_read_region_cell[i][j] = ploidy * region_sizes[j];
             }
+        }
 
-            // normalize the p_read_region cell per cell to get probabilities. e.g. prob of a read belonging to a region in a cell
-            for (int k = 0; k < p_read_region_cell.size(); ++k) {
-                // find the sum value
-                double sum_per_cell = accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0);
+        // normalize the p_read_region cell per cell to get probabilities. e.g. prob of a read belonging to a region in a cell
+        for (int k = 0; k < p_read_region_cell.size(); ++k) {
+            // find the sum value
+            double sum_per_cell = accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0);
 
-                for (int i = 0; i < p_read_region_cell[k].size(); ++i) {
-                    if (p_read_region_cell[k][i] != 0.0)
-                        p_read_region_cell[k][i] /= sum_per_cell; // divide all the values by the sum
-                }
-                assert(abs(1.0 - accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0)) <= 0.01); // make sure probs sum up to 1
+            for (int i = 0; i < p_read_region_cell[k].size(); ++i) {
+                if (p_read_region_cell[k][i] != 0.0)
+                    p_read_region_cell[k][i] /= sum_per_cell; // divide all the values by the sum
             }
-            for (int i = 0; i < D.size(); ++i) // for each cell
+            assert(abs(1.0 - accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0)) <= 0.01); // make sure probs sum up to 1
+        }
+        for (int i = 0; i < D.size(); ++i) // for each cell
+        {
+            // assign the read to region by sampling from the dist
+            boost::random::discrete_distribution<> d(p_read_region_cell[i].begin(), p_read_region_cell[i].end()); // distribution will be different for each cell
+
+            for (int j = 0; j < n_reads; ++j) // distribute the reads to regions
             {
-                // assign the read to region by sampling from the dist
-                boost::random::discrete_distribution<> d(p_read_region_cell[i].begin(), p_read_region_cell[i].end()); // distribution will be different for each cell
-
-                for (int j = 0; j < n_reads; ++j) // distribute the reads to regions
-                {
-                    unsigned sample = d(generator);
-                    D[i][sample]++;
-                }
+                unsigned sample = d(generator);
+                D[i][sample]++;
             }
+        }
 
-            if (not is_neutral) // do not compute the tree for the null model
-            {
-                // compute the tree and store it in this->tree
-                mcmc.compute_t_table(D,region_sizes);
-                double t_sum = accumulate( mcmc.t_sums.begin(), mcmc.t_sums.end(), 0.0);
-                int m = D.size(); //n_cells
-                double log_post_t = mcmc.log_tree_posterior(t_sum, m, mcmc.t);
-                // assign the tree score
-                mcmc.t.posterior_score = log_post_t;
-            }
+        if (not is_neutral) // do not compute the tree for the null model
+        {
+            // compute the tree and store it in this->tree
+            mcmc.compute_t_table(D,region_sizes);
+            double t_sum = accumulate( mcmc.t_sums.begin(), mcmc.t_sums.end(), 0.0);
+            int m = D.size(); //n_cells
+            double log_post_t = mcmc.log_tree_posterior(t_sum, m, mcmc.t);
+            // assign the tree score
+            mcmc.t.posterior_score = log_post_t;
+        }
 
-            this->tree = mcmc.t;
+        this->tree = mcmc.t;
 
     }
 
