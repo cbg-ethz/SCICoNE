@@ -78,7 +78,7 @@ int main( int argc, char* argv[]) {
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("ploidy", "ploidy", cxxopts::value(ploidy))
-            ("verbosity", "verbosity", cxxopts::value(verbosity))
+            ("verbosity", "verbosity of the program", cxxopts::value(verbosity))
             ("seed", "seed", cxxopts::value(seed))
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_posfix))
             ("print_precision", "the precision of the score printing", cxxopts::value(print_precision))

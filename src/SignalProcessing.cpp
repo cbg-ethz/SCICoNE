@@ -195,7 +195,7 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
     if (threshold == 0) // reject the breakpoint if stdev is zero
         return -1;
 
-    if (verbosity >= 3.0)
+    if (verbosity > 0)
     {
         std::ofstream bp_vals_file("./" + f_name_posfix + "_all_bps_comparison.csv", std::ios_base::app);
         bp_vals_file << max_idx + window_size << ',' << max_val << ',' << stdev << std::endl; // 10 for window size
@@ -283,7 +283,7 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
 
     vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
 
-    if (verbosity > 2)
+    if (verbosity > 0)
     {
         std::ofstream aic_vec_file("./" + f_name_posfix + "_aic_vec" + ".csv");
         for (auto const &v1: aic_vec) {
@@ -367,7 +367,7 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
 
     }
 
-    if (verbosity > 2)
+    if (verbosity > 0)
     {
         std::ofstream log_posterior_file("./" + f_name_posfix + "_log_posterior_vec.csv");
         std::ofstream expected_k_vec_file("./" + f_name_posfix + "_expected_k_vec.csv");

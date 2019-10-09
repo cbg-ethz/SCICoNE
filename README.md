@@ -47,7 +47,7 @@ Simulates the count matrix. Outputs the count matrix, region sizes, ground truth
 | **n_iters** | Number of iterations | 10000 |
 | **n_reads** | Number of reads per cell | 10000 |
 | **ploidy** | The ploidy information | 2 (diploid, human) |
-| **verbosity** | Verbosity of the programme, 1 provides standard output, 2 also writes several files | 0 |
+| **verbosity** | Verbosity of the programme, 0 is non-verbose setting, 1 creates the debug files, 2 writes the inference logs as well, 3 writes the tree logs on top | 0 |
 | **seed** | Seed | - |
 | **postfix** | Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system | "" |
 | **print_precision** | The precision points of the score values to be printed | 16 |
@@ -71,7 +71,7 @@ Finds the maximum likelihood tree given cellsxregions matrix or the simulated ma
 | **n_cells** | Number of cells in the input matrix | - |
 | **n_reads** | The number of reads per cell. This has no functionality besides being appended to the output files | -1 |
 | **ploidy** | The ploidy information | 2 (diploid, human) |
-| **verbosity** | Verbosity of the programme, 1 provides standard output, 2 also writes several files | 0 |
+| **verbosity** | Verbosity of the programme, 0 is non-verbose setting, 1 creates the debug files, 2 writes the inference logs as well, 3 writes the tree logs on top | 0 |
 | **seed** | Seed | - |
 | **postfix** | Postfix to be added to the output files, this is useful when you are running multiple simulations through a workflow management system | "" |
 | **print_precision** | The precision points of the score values to be printed | 16 |
