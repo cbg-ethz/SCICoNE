@@ -89,8 +89,9 @@ int main(int argc, char* argv[]) {
     else
     {
         std::cout<<"Simulating without overdispersion" << std::endl;
-    }
         is_overdispersed = 0;
+    }
+
 
     Simulation sim(n_regions, n_bins, n_nodes, n_cells, n_reads, max_region_size, ploidy, verbosity);
 
