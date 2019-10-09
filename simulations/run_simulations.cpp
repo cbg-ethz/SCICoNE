@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
             ("n_reads", "Number of reads per cell", cxxopts::value(n_reads))
             ("ploidy", "The ploidy information", cxxopts::value(ploidy))
-            ("verbosity", "Verbosity of the programme, 1 provides standard output, 2 also writes several files", cxxopts::value(verbosity))
+            ("verbosity", "verbosity of the program", cxxopts::value(verbosity))
             ("seed", "Seed", cxxopts::value(seed))
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
             ("print_precision", "The precision points of the score values to be printed", cxxopts::value(print_precision))
@@ -93,10 +93,12 @@ int main(int argc, char* argv[]) {
     }
 
 
-    Simulation sim(n_regions, n_bins, n_nodes, n_cells, n_reads, max_region_size, ploidy, verbosity);
+    Simulation sim(n_regions, n_bins, n_nodes, n_cells, n_reads, max_region_size, ploidy);
 
     sim.sample_region_sizes(n_bins, min_region_size);
-    sim.simulate_count_matrix(false, verbosity, nu);
+
+    sim.simulate_count_matrix(false, nu);
+
     sim.split_regions_to_bins();
 
     sim.write_output(f_name_postfix);
