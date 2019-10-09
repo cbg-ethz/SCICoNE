@@ -456,6 +456,32 @@ vector<long double> MathOp::dirichlet_sample(size_t len, double alpha) {
     return x_vals;
 }
 
+vector<double> MathOp::dirichlet_sample(vector<double> alphas) {
+    /*
+     * Samples a vector of length len that sum up to 1 using dirichlet with various alpha parameters
+     * */
+
+    mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
+    vector<double> y_vals(alphas.size());
+    vector<double> x_vals(alphas.size());
+    // sample from gamma
+    double sum_gamma = 0.0;
+
+    for (int i = 0; i < alphas.size(); ++i) {
+        gamma_distribution<double> distribution(alphas[i],1.0);
+
+        y_vals[i] = distribution(gen);
+        sum_gamma += y_vals[i];
+    }
+
+    // normalize them, that's it
+    for (unsigned j = 0; j < alphas.size(); ++j) {
+        x_vals[j] = y_vals[j]/sum_gamma;
+    }
+
+    return x_vals;
+}
+
 template<class T>
 T MathOp::percentile_val(vector<T> vec, double percentile_val) {
     /*
@@ -593,6 +619,8 @@ double MathOp::compute_linear_regression_slope(const vector<double> &x, const ve
 
     return numerator / denominator;
 }
+
+
 
 
 template double MathOp::st_deviation(vector<double> &v);

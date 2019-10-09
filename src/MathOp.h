@@ -58,6 +58,7 @@ public:
     static double compute_omega_condense_split(Node *node, double lambda_s, unsigned int n_regions);
     static double frobenius_avg(vector<vector<int>>& mat, vector<vector<int>>& ground_truth);
     static vector<long double> dirichlet_sample(size_t len, double alpha = 1.0);
+    static vector<double> dirichlet_sample(vector<double> alphas);
 
 };
 

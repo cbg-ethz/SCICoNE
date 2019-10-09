@@ -82,14 +82,20 @@ int main(int argc, char* argv[]) {
         SingletonRandomGenerator::get_instance(seed);
     }
     if(result.count("nu"))
+    {
+        std::cout<<"Simulating with overdispersion, coefficient: " << nu << std::endl;
         is_overdispersed = 1;
+    }
     else
+    {
+        std::cout<<"Simulating without overdispersion" << std::endl;
+    }
         is_overdispersed = 0;
 
     Simulation sim(n_regions, n_bins, n_nodes, n_cells, n_reads, max_region_size, ploidy, verbosity);
 
     sim.sample_region_sizes(n_bins, min_region_size);
-    sim.simulate_count_matrix(false, verbosity);
+    sim.simulate_count_matrix(false, verbosity, nu);
     sim.split_regions_to_bins();
 
     sim.write_output(f_name_postfix);

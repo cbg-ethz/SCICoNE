@@ -47,11 +47,12 @@ public:
 
     }
 
-    void simulate_count_matrix(bool is_neutral, int verbosity)
+    void simulate_count_matrix(bool is_neutral, int verbosity, double nu)
     {
         /*
          * Simulates the count matrix and the ground_truth.
          * If is_neutral, then there are no mutations.
+         * nu is the overdispersion parameter.
          * All values of the ground truth will be equal to ploidy and the count matrix reads distributions will only be based on region sizes.
          * Else, a mutation tree will be inferred and that tree will simulate the data.
          * */
@@ -90,17 +91,36 @@ public:
             }
         }
 
-        // normalize the p_read_region cell per cell to get probabilities. e.g. prob of a read belonging to a region in a cell
-        for (int k = 0; k < p_read_region_cell.size(); ++k) {
-            // find the sum value
-            double sum_per_cell = accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0);
+        if (not is_overdispersed)
+        {
+            // normalize the p_read_region cell per cell to get probabilities. e.g. prob of a read belonging to a region in a cell
+            for (int k = 0; k < p_read_region_cell.size(); ++k) {
+                // find the sum value
+                double sum_per_cell = accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0);
 
-            for (int i = 0; i < p_read_region_cell[k].size(); ++i) {
-                if (p_read_region_cell[k][i] != 0.0)
-                    p_read_region_cell[k][i] /= sum_per_cell; // divide all the values by the sum
+                for (int i = 0; i < p_read_region_cell[k].size(); ++i) {
+                    if (p_read_region_cell[k][i] != 0.0)
+                        p_read_region_cell[k][i] /= sum_per_cell; // divide all the values by the sum
+                }
+                assert(abs(1.0 - accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0)) <= 0.01); // make sure probs sum up to 1
             }
-            assert(abs(1.0 - accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0)) <= 0.01); // make sure probs sum up to 1
         }
+        else
+        {
+            // set alphas
+            vector<vector<double>> alphas(n_cells, vector<double>(n_regions));
+            for (int i = 0; i < alphas.size(); ++i) {
+                for (int j = 0; j < alphas[i].size(); ++j) {
+                    alphas[i][j] = nu * p_read_region_cell[i][j];
+                }
+            }
+
+            for (int i = 0; i < p_read_region_cell.size(); ++i) {
+                p_read_region_cell[i] = MathOp::dirichlet_sample(alphas[i]);
+            }
+        }
+
+
         for (int i = 0; i < D.size(); ++i) // for each cell
         {
             // assign the read to region by sampling from the dist
