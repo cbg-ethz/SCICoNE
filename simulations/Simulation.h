@@ -35,8 +35,7 @@ public:
 
 public:
     // constructor
-    Simulation(int n_regions, int n_bins, int n_nodes, int n_cells, int n_reads, int max_region_size, int ploidy,
-               int verbosity)
+    Simulation(int n_regions, int n_bins, int n_nodes, int n_cells, int n_reads, int max_region_size, int ploidy)
             : n_regions(n_regions),
               n_bins(n_bins),
               n_nodes(n_nodes),
@@ -47,7 +46,7 @@ public:
 
     }
 
-    void simulate_count_matrix(bool is_neutral, int verbosity)
+    void simulate_count_matrix(bool is_neutral)
     {
         /*
          * Simulates the count matrix and the ground_truth.
