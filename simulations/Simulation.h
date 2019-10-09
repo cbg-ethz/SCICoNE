@@ -82,8 +82,8 @@ public:
         }
 
         // create the p_read_region_cell values, not normalized yet.
-        for (int i = 0; i < p_read_region_cell.size(); ++i) {
-            for (int j = 0; j < p_read_region_cell[i].size(); ++j) {
+        for (std::size_t i = 0; i < p_read_region_cell.size(); ++i) {
+            for (std::size_t j = 0; j < p_read_region_cell[i].size(); ++j) {
                 if (not is_neutral)
                     p_read_region_cell[i][j] = ground_truth[i][j] * region_sizes[j];
                 else
@@ -94,11 +94,11 @@ public:
         if (not is_overdispersed)
         {
             // normalize the p_read_region cell per cell to get probabilities. e.g. prob of a read belonging to a region in a cell
-            for (int k = 0; k < p_read_region_cell.size(); ++k) {
+            for (std::size_t k = 0; k < p_read_region_cell.size(); ++k) {
                 // find the sum value
                 double sum_per_cell = accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0);
 
-                for (int i = 0; i < p_read_region_cell[k].size(); ++i) {
+                for (std::size_t i = 0; i < p_read_region_cell[k].size(); ++i) {
                     if (p_read_region_cell[k][i] != 0.0)
                         p_read_region_cell[k][i] /= sum_per_cell; // divide all the values by the sum
                 }
@@ -109,19 +109,19 @@ public:
         {
             // set alphas
             vector<vector<double>> alphas(n_cells, vector<double>(n_regions));
-            for (int i = 0; i < alphas.size(); ++i) {
-                for (int j = 0; j < alphas[i].size(); ++j) {
+            for (std::size_t i = 0; i < alphas.size(); ++i) {
+                for (std::size_t j = 0; j < alphas[i].size(); ++j) {
                     alphas[i][j] = nu * p_read_region_cell[i][j];
                 }
             }
 
-            for (int i = 0; i < p_read_region_cell.size(); ++i) {
+            for (std::size_t i = 0; i < p_read_region_cell.size(); ++i) {
                 p_read_region_cell[i] = MathOp::dirichlet_sample(alphas[i]);
             }
         }
 
 
-        for (int i = 0; i < D.size(); ++i) // for each cell
+        for (std::size_t i = 0; i < D.size(); ++i) // for each cell
         {
             // assign the read to region by sampling from the dist
             boost::random::discrete_distribution<> d(p_read_region_cell[i].begin(), p_read_region_cell[i].end()); // distribution will be different for each cell
@@ -160,10 +160,10 @@ public:
         vector<vector<double>> D_bins(n_cells, vector<double>(n_bins));
         vector<vector<int>> ground_truth_bins(n_cells, vector<int>(n_bins));
 
-        for (int i = 0; i < D.size(); ++i) // for each cell
+        for (std::size_t i = 0; i < D.size(); ++i) // for each cell
         {
             int region_offset = 0;
-            for (int j = 0; j < D[0].size(); ++j) // for each region
+            for (std::size_t j = 0; j < D[0].size(); ++j) // for each region
             {
 
                 for (int k = 0; k < D[i][j]; ++k) // for the count value
