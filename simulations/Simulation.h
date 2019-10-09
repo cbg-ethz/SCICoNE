@@ -46,11 +46,13 @@ public:
 
     }
 
-    void simulate_count_matrix(bool is_neutral)
+
+    void simulate_count_matrix(bool is_neutral, double nu)
     {
         /*
          * Simulates the count matrix and the ground_truth.
          * If is_neutral, then there are no mutations.
+         * nu is the overdispersion parameter.
          * All values of the ground truth will be equal to ploidy and the count matrix reads distributions will only be based on region sizes.
          * Else, a mutation tree will be inferred and that tree will simulate the data.
          * */
@@ -79,51 +81,70 @@ public:
             }
         }
 
-            // create the p_read_region_cell values, not normalized yet.
-            for (int i = 0; i < p_read_region_cell.size(); ++i) {
-                for (int j = 0; j < p_read_region_cell[i].size(); ++j) {
-                    if (not is_neutral)
-                        p_read_region_cell[i][j] = ground_truth[i][j] * region_sizes[j];
-                    else
-                        p_read_region_cell[i][j] = ploidy * region_sizes[j];
-                }
+        // create the p_read_region_cell values, not normalized yet.
+        for (std::size_t i = 0; i < p_read_region_cell.size(); ++i) {
+            for (std::size_t j = 0; j < p_read_region_cell[i].size(); ++j) {
+                if (not is_neutral)
+                    p_read_region_cell[i][j] = ground_truth[i][j] * region_sizes[j];
+                else
+                    p_read_region_cell[i][j] = ploidy * region_sizes[j];
             }
+        }
 
+        if (not is_overdispersed)
+        {
             // normalize the p_read_region cell per cell to get probabilities. e.g. prob of a read belonging to a region in a cell
-            for (int k = 0; k < p_read_region_cell.size(); ++k) {
+            for (std::size_t k = 0; k < p_read_region_cell.size(); ++k) {
                 // find the sum value
                 double sum_per_cell = accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0);
 
-                for (int i = 0; i < p_read_region_cell[k].size(); ++i) {
+                for (std::size_t i = 0; i < p_read_region_cell[k].size(); ++i) {
                     if (p_read_region_cell[k][i] != 0.0)
                         p_read_region_cell[k][i] /= sum_per_cell; // divide all the values by the sum
                 }
                 assert(abs(1.0 - accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0)) <= 0.01); // make sure probs sum up to 1
             }
-            for (int i = 0; i < D.size(); ++i) // for each cell
-            {
-                // assign the read to region by sampling from the dist
-                boost::random::discrete_distribution<> d(p_read_region_cell[i].begin(), p_read_region_cell[i].end()); // distribution will be different for each cell
-
-                for (int j = 0; j < n_reads; ++j) // distribute the reads to regions
-                {
-                    unsigned sample = d(generator);
-                    D[i][sample]++;
+        }
+        else
+        {
+            // set alphas
+            vector<vector<double>> alphas(n_cells, vector<double>(n_regions));
+            for (std::size_t i = 0; i < alphas.size(); ++i) {
+                for (std::size_t j = 0; j < alphas[i].size(); ++j) {
+                    alphas[i][j] = nu * p_read_region_cell[i][j];
                 }
             }
 
-            if (not is_neutral) // do not compute the tree for the null model
-            {
-                // compute the tree and store it in this->tree
-                mcmc.compute_t_table(D,region_sizes);
-                double t_sum = accumulate( mcmc.t_sums.begin(), mcmc.t_sums.end(), 0.0);
-                int m = D.size(); //n_cells
-                double log_post_t = mcmc.log_tree_posterior(t_sum, m, mcmc.t);
-                // assign the tree score
-                mcmc.t.posterior_score = log_post_t;
+            for (std::size_t i = 0; i < p_read_region_cell.size(); ++i) {
+                p_read_region_cell[i] = MathOp::dirichlet_sample(alphas[i]);
             }
+        }
 
-            this->tree = mcmc.t;
+
+        for (std::size_t i = 0; i < D.size(); ++i) // for each cell
+        {
+            // assign the read to region by sampling from the dist
+            boost::random::discrete_distribution<> d(p_read_region_cell[i].begin(), p_read_region_cell[i].end()); // distribution will be different for each cell
+
+            for (int j = 0; j < n_reads; ++j) // distribute the reads to regions
+            {
+                unsigned sample = d(generator);
+                D[i][sample]++;
+            }
+        }
+
+        if (not is_neutral) // do not compute the tree for the null model
+        {
+            // compute the tree and store it in this->tree
+            mcmc.compute_t_table(D,region_sizes);
+            double t_sum = accumulate( mcmc.t_sums.begin(), mcmc.t_sums.end(), 0.0);
+            int m = D.size(); //n_cells
+            double log_post_t = mcmc.log_tree_posterior(t_sum, m, mcmc.t);
+            // assign the tree score
+            mcmc.t.posterior_score = log_post_t;
+        }
+
+        this->tree = mcmc.t;
 
     }
 
@@ -139,10 +160,10 @@ public:
         vector<vector<double>> D_bins(n_cells, vector<double>(n_bins));
         vector<vector<int>> ground_truth_bins(n_cells, vector<int>(n_bins));
 
-        for (int i = 0; i < D.size(); ++i) // for each cell
+        for (std::size_t i = 0; i < D.size(); ++i) // for each cell
         {
             int region_offset = 0;
-            for (int j = 0; j < D[0].size(); ++j) // for each region
+            for (std::size_t j = 0; j < D[0].size(); ++j) // for each region
             {
 
                 for (int k = 0; k < D[i][j]; ++k) // for the count value
