@@ -75,7 +75,7 @@ public:
     Tree *comparison(int m, double gamma, unsigned move_id);
     void infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs, int n_iters,
                     unsigned int size_limit);
-    void write_best_tree();
+
     void update_t_scores();
     void random_initialize(u_int n_nodes, u_int n_regions, int max_iters); // randomly initializes a tree and copies it into the other
     void initialize_worked_example(); // initializes the trees based on the test example
@@ -890,14 +890,6 @@ void Inference::update_t_scores() {
 
 }
 
-
-void Inference::write_best_tree() {
-    std::ofstream outfile;
-    outfile.open(f_name+"_tree.txt", std::ios_base::app);
-    outfile << "The resulting tree is: "<<std::endl;
-    outfile << std::setprecision(print_precision) << best_tree;
-    std::cout << std::setprecision(print_precision) << best_tree;
-}
 
 void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r) {
 
