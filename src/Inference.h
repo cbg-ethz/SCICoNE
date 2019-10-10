@@ -39,7 +39,6 @@ public:
     std::vector<double> t_sums;
     std::vector<std::map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
-    std::string f_name;
     int verbosity;
 
 public:
@@ -173,9 +172,6 @@ Inference::Inference(u_int n_regions, int ploidy, int verbosity) : t(ploidy, n_r
     this->n_regions = n_regions;
     this->ploidy = ploidy;
     this->verbosity = verbosity;
-    std::ofstream outfile;
-    long long int seed = std::chrono::system_clock::now().time_since_epoch().count(); // get a seed from time
-    f_name = std::to_string(seed) + '_' + "run_" + f_name_posfix;
 }
 
 Inference::~Inference() {
@@ -467,10 +463,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
     if (verbosity > 0)
     {
-        mcmc_scores_file.open(f_name + "_markov_chain.txt", std::ios_base::app);
-        rel_mcmc_scores_file.open(f_name + "_rel_markov_chain.txt", std::ios_base::app);
-        acceptance_ratio_file.open(f_name + "_acceptance_ratio.txt", std::ios_base::app);
-        gamma_file.open(f_name + "_gamma_values.csv", std::ios_base::app);
+        mcmc_scores_file.open(f_name_posfix + "_markov_chain.txt", std::ios_base::app);
+        rel_mcmc_scores_file.open(f_name_posfix + "_rel_markov_chain.txt", std::ios_base::app);
+        acceptance_ratio_file.open(f_name_posfix + "_acceptance_ratio.txt", std::ios_base::app);
+        gamma_file.open(f_name_posfix + "_gamma_values.csv", std::ios_base::app);
     }
 
     best_tree = t; //start with the t
@@ -1102,9 +1098,9 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
 
     if (verbosity > 0)
     {
-        cell_node_ids_file.open(f_name + "_cell_node_ids.txt");
-        cell_node_cnvs_file.open(f_name + "_cell_node_cnvs.txt");
-        region_sizes_file.open(f_name + "_region_sizes.txt");
+        cell_node_ids_file.open(f_name_posfix + "_cell_node_ids.txt");
+        cell_node_cnvs_file.open(f_name_posfix + "_cell_node_cnvs.txt");
+        region_sizes_file.open(f_name_posfix + "_region_sizes.txt");
 
         for (const auto &r_it : r) region_sizes_file << r_it << "\n";
     }
