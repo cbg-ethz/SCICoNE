@@ -1094,17 +1094,11 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
 
     std::ofstream cell_node_ids_file;
     std::ofstream cell_node_cnvs_file;
-    std::ofstream region_sizes_file;
-
     if (verbosity > 0)
     {
         cell_node_ids_file.open(f_name_posfix + "_cell_node_ids.txt");
         cell_node_cnvs_file.open(f_name_posfix + "_cell_node_cnvs.txt");
-        region_sizes_file.open(f_name_posfix + "_region_sizes.txt");
-
-        for (const auto &r_it : r) region_sizes_file << r_it << "\n";
     }
-
     // create a hashmap of nodes for constant access by id
     unordered_map<uint64_t , Node*> hash_map;
     for (unsigned i=0; i < t.all_nodes_vec.size(); i++)
