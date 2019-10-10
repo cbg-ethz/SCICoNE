@@ -463,10 +463,10 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
     if (verbosity > 0)
     {
-        mcmc_scores_file.open(f_name_posfix + "_markov_chain.txt", std::ios_base::app);
-        rel_mcmc_scores_file.open(f_name_posfix + "_rel_markov_chain.txt", std::ios_base::app);
-        acceptance_ratio_file.open(f_name_posfix + "_acceptance_ratio.txt", std::ios_base::app);
-        gamma_file.open(f_name_posfix + "_gamma_values.csv", std::ios_base::app);
+        mcmc_scores_file.open(f_name_posfix + "_markov_chain.csv", std::ios_base::out);
+        rel_mcmc_scores_file.open(f_name_posfix + "_rel_markov_chain.csv", std::ios_base::out);
+        acceptance_ratio_file.open(f_name_posfix + "_acceptance_ratio.csv", std::ios_base::out);
+        gamma_file.open(f_name_posfix + "_gamma_values.csv", std::ios_base::out);
     }
 
     best_tree = t; //start with the t
@@ -669,7 +669,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (not genotype_prune_reattach_success)
                 {
                     n_rejected++;
-                    acceptance_ratio_file << std::setprecision(print_precision) << -1 << ',';
+                    acceptance_ratio_file << std::setprecision(print_precision) << -1 << ((i==n_iters-1) ? "" : ",");
                     rejected_before_comparison = true;
                     if (verbosity > 1)
                         cout << "Genotype preserving prune/reattach is rejected"<<endl;
@@ -677,7 +677,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 else // accepted
                 {
                     n_accepted++;
-                    acceptance_ratio_file << std::setprecision(print_precision) << static_cast<int>(move_id) << ',';
+                    acceptance_ratio_file << std::setprecision(print_precision) << static_cast<int>(move_id) << ((i==n_iters-1) ? "" : ",");
                     // update t score
                     double t_sum = accumulate( t_sums.begin(), t_sums.end(), 0.0);
                     t.posterior_score = log_tree_posterior(t_sum, m, t); // the prior score will change
@@ -760,7 +760,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             {
                 if (move_id != 11 && std::abs(score_diff) > 0.1)
                     gamma *= exp((1.0-alpha)*alpha);
-                acceptance_ratio_file << std::setprecision(print_precision) << static_cast<int>(move_id) << ',';
+                acceptance_ratio_file << std::setprecision(print_precision) << static_cast<int>(move_id) << ((i==n_iters-1) ? "" : ",");
                 n_accepted++;
                 t_sums = t_prime_sums;
                 update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
@@ -773,7 +773,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 // print acceptance ratio
                 if (move_id != 11 && std::abs(score_diff) > 0.1)
                     gamma *= exp((0.0-alpha)*alpha);
-                acceptance_ratio_file << std::setprecision(print_precision) << -1 << ',';
+                acceptance_ratio_file << std::setprecision(print_precision) << -1 << ((i==n_iters-1) ? "" : ",");
                 n_rejected++;
                 t_prime = t;
             }
@@ -791,9 +791,21 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         {
             static double first_score = accepted->posterior_score + accepted->od_score; // the first value will be kept in whole program
             // print accepted log_posterior
-            mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score << ',';
-            rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score << ',';
-            gamma_file << gamma << ',' <<std::endl;
+
+            if (i == n_iters - 1)
+            {
+                mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score;
+                rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score;
+                gamma_file << gamma;
+            }
+            else
+            {
+                mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score << ',';
+                rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score << ',';
+                gamma_file << gamma << ',';
+            }
+
+
         }
     }
 }
@@ -1093,11 +1105,11 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
     this->compute_t_table(D,r);
 
     std::ofstream cell_node_ids_file;
-    std::ofstream cell_node_cnvs_file;
+    std::ofstream cell_region_cnvs_file;
     if (verbosity > 0)
     {
-        cell_node_ids_file.open(f_name_posfix + "_cell_node_ids.txt");
-        cell_node_cnvs_file.open(f_name_posfix + "_cell_node_cnvs.txt");
+        cell_node_ids_file.open(f_name_posfix + "_cell_node_ids.tsv");
+        cell_region_cnvs_file.open(f_name_posfix + "_cell_region_cnvs.csv");
     }
     // create a hashmap of nodes for constant access by id
     unordered_map<uint64_t , Node*> hash_map;
@@ -1127,15 +1139,18 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
         }
 
     }
-    for (size_t k = 0; k < n_cells; ++k) {
-        for (u_int i = 0; i < n_regions; ++i) {
-            if (verbosity > 0)
-                cell_node_cnvs_file << cell_regions[k][i] << '\t';
+    if (verbosity > 0)
+    {
+        for (size_t k = 0; k < n_cells; ++k) {
+            for (u_int i = 0; i < n_regions; ++i) {
+                if (i == n_regions-1) // the last element
+                    cell_region_cnvs_file << cell_regions[k][i];
+                else // add comma
+                    cell_region_cnvs_file << cell_regions[k][i] << ',';
+            }
+            cell_region_cnvs_file << '\n';
         }
-        if (verbosity > 0)
-            cell_node_cnvs_file << '\n';
     }
-
 
     return cell_regions;
 }
