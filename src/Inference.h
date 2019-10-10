@@ -407,8 +407,9 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 
     log_acceptance_prob = log_total_nbd_corr + gamma * score_diff;
 
-    assert(!std::isnan(log_acceptance_prob));
-    assert(!std::isinf(log_acceptance_prob));
+    // reject the move if nan or inf occurs
+    if (std::isnan(log_acceptance_prob) || std::isinf(log_acceptance_prob))
+        return &t;
 
     if (verbosity > 1)
         cout << "log acceptance prob: " << log_acceptance_prob << endl;
