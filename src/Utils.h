@@ -33,8 +33,13 @@ public:
     static void random_initialize_labels_map(std::map<u_int, int> &distinct_regions, int n_regions);
     static void read_counts(vector<vector<double>> &mat, const string &path);
     static void read_vector(vector<int> &vec, const string &path);
-    static vector<vector<double>> condense_matrix(vector<vector<double>>& D, vector<int>& region_sizes);
+
+    template <class T>
+    static vector<vector<T>> condense_matrix(vector<vector<T>>& D, vector<int>& region_sizes);
     static vector<vector<int>> regions_to_bins_cnvs(vector<vector<int>>& cnvs, vector<int>& region_sizes);
+
+
+
 
 };
 

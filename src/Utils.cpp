@@ -100,8 +100,8 @@ void Utils::read_counts(vector<vector<double>> &mat, const string &path) {
 
 
 }
-
-vector<vector<double>> Utils::condense_matrix(vector<vector<double>>& D, vector<int>& region_sizes) {
+template <class T>
+vector<vector<T>> Utils::condense_matrix(vector<vector<T>>& D, vector<int>& region_sizes) {
 
     /*
      * Groups the matrix by the given region_sizes.
@@ -114,14 +114,14 @@ vector<vector<double>> Utils::condense_matrix(vector<vector<double>>& D, vector<
 
     int sum_region_sizes = accumulate( region_sizes.begin(), region_sizes.end(), 0);
 
-    vector<vector<double>> condensed_mat(n_rows, vector<double>(n_regions));
+    vector<vector<T>> condensed_mat(n_rows, vector<T>(n_regions));
 
     for (unsigned i = 0; i < n_rows; ++i)
     {
         int region_id = 0;
         int region_count = 0;
         for (int j = 0; j < sum_region_sizes; ++j) {
-            double to_add = D[i][j];
+            T to_add = D[i][j];
             condensed_mat[i][region_id] += to_add;
             region_count++;
             if(region_count == region_sizes[region_id])
@@ -209,3 +209,5 @@ map<u_int, int> Utils::map_diff(map<u_int, int> a, map<u_int, int> b) {
     return difference;
 }
 
+template vector<vector<int>> Utils::condense_matrix(vector<vector<int>>& D, vector<int>& region_sizes);
+template vector<vector<double>> Utils::condense_matrix(vector<vector<double>>& D, vector<int>& region_sizes);

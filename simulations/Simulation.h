@@ -29,9 +29,9 @@ public:
     int max_region_size;
 
     vector<vector<double>> D;
+    vector<vector<double>> d_bins;
     vector<int> region_sizes;
     vector<vector<int>> ground_truth; // default init value: ploidy
-    vector<vector<int>> inferred_cnvs;
 
 public:
     // constructor
@@ -41,7 +41,9 @@ public:
               n_nodes(n_nodes),
               ploidy(ploidy),
               n_cells(n_cells),
-              n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions), ground_truth(n_cells, vector<int>(n_regions, ploidy)), inferred_cnvs(n_cells, vector<int>(n_regions, ploidy)), D(n_cells, vector<double>(n_regions)), region_sizes(n_regions)
+              n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions),
+              ground_truth(n_cells, vector<int>(n_regions, ploidy)),
+              D(n_cells, vector<double>(n_regions)), d_bins(n_cells, vector<double>(n_bins)), region_sizes(n_regions)
     {
 
     }
@@ -60,7 +62,7 @@ public:
 
 
         Inference mcmc(n_regions, ploidy, verbosity);
-        vector<vector<double>> p_read_region_cell(n_cells, vector<double>(n_regions)); // initialize with the default value
+        vector<vector<double>> p_read_bin_cell(n_cells, vector<double>(n_bins)); // initialize with the default value
 
         std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
@@ -81,114 +83,73 @@ public:
             }
         }
 
-        // create the p_read_region_cell values, not normalized yet.
-        for (std::size_t i = 0; i < p_read_region_cell.size(); ++i) {
-            for (std::size_t j = 0; j < p_read_region_cell[i].size(); ++j) {
+        //  ground truth: convert regions->bins
+        vector<vector<int>> ground_truth_bins = Utils::regions_to_bins_cnvs(this->ground_truth, this->region_sizes);
+        this->ground_truth = ground_truth_bins;
+
+        // create the p_read_bin_cell values, not normalized yet.
+        for (std::size_t i = 0; i < p_read_bin_cell.size(); ++i) {
+            for (std::size_t j = 0; j < p_read_bin_cell[i].size(); ++j) {
                 if (not is_neutral)
-                    p_read_region_cell[i][j] = ground_truth[i][j] * region_sizes[j];
+                    p_read_bin_cell[i][j] = ground_truth[i][j];
                 else
-                    p_read_region_cell[i][j] = ploidy * region_sizes[j];
+                    p_read_bin_cell[i][j] = ploidy;
             }
         }
 
         if (not is_overdispersed)
         {
             // normalize the p_read_region cell per cell to get probabilities. e.g. prob of a read belonging to a region in a cell
-            for (std::size_t k = 0; k < p_read_region_cell.size(); ++k) {
+            for (std::size_t k = 0; k < p_read_bin_cell.size(); ++k) {
                 // find the sum value
-                double sum_per_cell = accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0);
+                double sum_per_cell = accumulate(p_read_bin_cell[k].begin(), p_read_bin_cell[k].end(), 0.0);
 
-                for (std::size_t i = 0; i < p_read_region_cell[k].size(); ++i) {
-                    if (p_read_region_cell[k][i] != 0.0)
-                        p_read_region_cell[k][i] /= sum_per_cell; // divide all the values by the sum
+                for (std::size_t i = 0; i < p_read_bin_cell[k].size(); ++i) {
+                    if (p_read_bin_cell[k][i] != 0.0)
+                        p_read_bin_cell[k][i] /= sum_per_cell; // divide all the values by the sum
                 }
-                assert(abs(1.0 - accumulate(p_read_region_cell[k].begin(), p_read_region_cell[k].end(), 0.0)) <= 0.01); // make sure probs sum up to 1
+                assert(abs(1.0 - accumulate(p_read_bin_cell[k].begin(), p_read_bin_cell[k].end(), 0.0)) <= 0.01); // make sure probs sum up to 1
             }
         }
         else
         {
             // set alphas
-            vector<vector<double>> alphas(n_cells, vector<double>(n_regions));
+            vector<vector<double>> alphas(n_cells, vector<double>(n_bins));
             for (std::size_t i = 0; i < alphas.size(); ++i) {
                 for (std::size_t j = 0; j < alphas[i].size(); ++j) {
-                    alphas[i][j] = nu * p_read_region_cell[i][j];
+                    alphas[i][j] = nu * p_read_bin_cell[i][j];
                 }
             }
 
-            for (std::size_t i = 0; i < p_read_region_cell.size(); ++i) {
-                p_read_region_cell[i] = MathOp::dirichlet_sample(alphas[i]);
+            for (std::size_t i = 0; i < p_read_bin_cell.size(); ++i) {
+                p_read_bin_cell[i] = MathOp::dirichlet_sample(alphas[i]);
             }
         }
 
 
-        for (std::size_t i = 0; i < D.size(); ++i) // for each cell
+        for (std::size_t i = 0; i < d_bins.size(); ++i) // for each cell
         {
             // assign the read to region by sampling from the dist
-            boost::random::discrete_distribution<> d(p_read_region_cell[i].begin(), p_read_region_cell[i].end()); // distribution will be different for each cell
+            boost::random::discrete_distribution<> d(p_read_bin_cell[i].begin(), p_read_bin_cell[i].end()); // distribution will be different for each cell
 
             for (int j = 0; j < n_reads; ++j) // distribute the reads to regions
             {
                 unsigned sample = d(generator);
-                D[i][sample]++;
+                d_bins[i][sample]++;
             }
         }
+
+        D = Utils::condense_matrix(d_bins, region_sizes);
 
         if (not is_neutral) // do not compute the tree for the null model
         {
             // compute the tree and store it in this->tree
             mcmc.compute_t_table(D,region_sizes);
-            double t_sum = accumulate( mcmc.t_sums.begin(), mcmc.t_sums.end(), 0.0);
-            int m = D.size(); //n_cells
-            double log_post_t = mcmc.log_tree_posterior(t_sum, m, mcmc.t);
-            // assign the tree score
-            mcmc.t.posterior_score = log_post_t;
+            mcmc.compute_t_od_scores(D, region_sizes);
         }
 
         this->tree = mcmc.t;
 
-    }
-
-
-    void split_regions_to_bins()
-    {
-        /*
-         * Compute the total n_bins by grouping the regions
-         * */
-
-        double n_bins = accumulate( region_sizes.begin(), region_sizes.end(), 0.0);
-
-        vector<vector<double>> D_bins(n_cells, vector<double>(n_bins));
-        vector<vector<int>> ground_truth_bins(n_cells, vector<int>(n_bins));
-
-        for (std::size_t i = 0; i < D.size(); ++i) // for each cell
-        {
-            int region_offset = 0;
-            for (std::size_t j = 0; j < D[0].size(); ++j) // for each region
-            {
-
-                for (int k = 0; k < D[i][j]; ++k) // for the count value
-                {
-                    int val =  MathOp::random_uniform(0, region_sizes[j]-1);
-                    D_bins[i][val + region_offset]++;
-                }
-
-                for (int l = 0; l < region_sizes[j]; ++l) {
-                    ground_truth_bins[i][l + region_offset] = ground_truth[i][j];
-                }
-
-                region_offset += region_sizes[j];
-            }
-        }
-
-        // Unit test
-        double validation_sum = 0.0;
-        for (int m = 0; m < region_sizes[1]; ++m) {
-            validation_sum += D_bins[0][m + region_sizes[0]]; // region_sizes[0] is the offset
-        }
-        assert(validation_sum == D[0][1]);
-
-        D = D_bins;
-        ground_truth = ground_truth_bins;
     }
 
     void sample_region_sizes(int n_bins, unsigned min_width = 1)
@@ -245,7 +206,7 @@ public:
 
         // write the D matrix
         std::ofstream D_mat_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_d_mat.csv");
-        for (auto const &v1: this->D) {
+        for (auto const &v1: this->d_bins) {
             for (size_t i = 0; i < v1.size(); i++)
             {
                 if (i == v1.size()-1) // the last element

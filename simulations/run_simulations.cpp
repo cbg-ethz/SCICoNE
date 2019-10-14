@@ -99,8 +99,6 @@ int main(int argc, char* argv[]) {
 
     sim.simulate_count_matrix(false, nu);
 
-    sim.split_regions_to_bins();
-
     sim.write_output(f_name_postfix);
 
     std::cout<<"Successfully simulated." << std::endl;
