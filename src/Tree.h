@@ -155,7 +155,11 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
 
     /*
      * Computes the attachment score of a node per cell.
+     * Throws std::logic_error
      * */
+
+    if (D.size() != r.size())
+        throw std::logic_error("Size of the counts per cell needs to be equal to the number of regions!");
 
     if (node->parent == nullptr)
     {
