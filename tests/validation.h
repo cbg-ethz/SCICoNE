@@ -71,7 +71,7 @@ void test_ploidy_attachment_score()
      * Checks if two nodes on different trees with same ploidy have the same attachment scores
      * */
 
-    vector<int> reg_sizes = {4,2};
+    vector<int> reg_sizes = {4,2, 8, 15, 25};
 
     Tree t_two(2, reg_sizes.size());
     t_two.insert_at(0,{{0, 1}, {1,1}});
