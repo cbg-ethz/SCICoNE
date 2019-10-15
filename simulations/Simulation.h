@@ -31,7 +31,6 @@ public:
     vector<vector<double>> D;
     vector<int> region_sizes;
     vector<vector<int>> ground_truth; // default init value: ploidy
-    vector<vector<int>> inferred_cnvs;
 
 public:
     // constructor
@@ -41,7 +40,9 @@ public:
               n_nodes(n_nodes),
               ploidy(ploidy),
               n_cells(n_cells),
-              n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions), ground_truth(n_cells, vector<int>(n_regions, ploidy)), inferred_cnvs(n_cells, vector<int>(n_regions, ploidy)), D(n_cells, vector<double>(n_regions)), region_sizes(n_regions)
+              n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions),
+              ground_truth(n_cells, vector<int>(n_regions, ploidy)),
+              D(n_cells, vector<double>(n_regions)), region_sizes(n_regions)
     {
 
     }
