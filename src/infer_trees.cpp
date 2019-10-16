@@ -63,7 +63,10 @@ int main( int argc, char* argv[]) {
     lambda_s = 0.5;
     copy_number_limit = 5;
 
+    // overdispersion parameter
     double nu = 1.0;
+    // learning rate constant
+    double alpha = 0.0;
     bool random_init = true;
 
     // move probabilities
@@ -92,6 +95,7 @@ int main( int argc, char* argv[]) {
             ("c_penalise","term that penalises trees containing cancelling events to be added to tree event prior",cxxopts::value(c_penalise))
             // ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
             ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))
+            ("alpha","alpha parameter, the constant in the learning rate",cxxopts::value(alpha))
             ("random_init","Boolean parameter to enable random initialisation of the tree", cxxopts::value(random_init))
             ("move_probs","The vector of move probabilities",cxxopts::value(move_probs))
             ;
@@ -138,6 +142,10 @@ int main( int argc, char* argv[]) {
     }
     if (result.count("tree_file")) // undo random_init
         random_init = false;
+    if(result.count("alpha"))
+        std::cout<<"the learning rate alpha constant is specified to be " << alpha <<std::endl;
+    else
+        std::cout<<"the learning rate alpha constant is " << alpha << " since it is not specified" <<std::endl;
 
     std::cout << "Reading the input matrix..." << std::endl;
     vector<vector<double>> d_regions(n_cells, vector<double>(n_regions));
@@ -205,7 +213,7 @@ int main( int argc, char* argv[]) {
     auto start = high_resolution_clock::now();
 
     std::cout << "Inferring the tree using MCMC with " << n_iters << " iterations..." << std::endl;
-    mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters, size_limit);
+    mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters, size_limit, alpha);
 
     // Get ending timepoint
     auto stop = high_resolution_clock::now();
