@@ -73,7 +73,7 @@ public:
     bool apply_overdispersion_change(const vector<vector<double>> &D, const vector<int> &r);
     Tree *comparison(int m, double gamma, unsigned move_id);
     void infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs,
-                    int n_iters, unsigned int size_limit, double alpha);
+                    int n_iters, unsigned int size_limit, double alpha, double gamma);
 
     void update_t_scores();
     void random_initialize(u_int n_nodes, u_int n_regions, int max_iters); // randomly initializes a tree and copies it into the other
@@ -444,14 +444,12 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id) {
 }
 
 void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs,
-                           int n_iters, unsigned int size_limit, double alpha) {
+                           int n_iters, unsigned int size_limit, double alpha, double gamma) {
 
     int m = static_cast<int>(D.size());
 
     u_int n_rejected = 0;
     u_int n_accepted = 0;
-
-    double gamma = 1.0; // gamma param to amplify the difference in log likelihoods
 
     // for writing the posteriors on file
     std::ofstream mcmc_scores_file;

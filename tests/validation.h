@@ -158,7 +158,7 @@ void test_reproducibility()
     unsigned size_limit = std::numeric_limits<unsigned>::max();
 
     std::cout << "Running reproducibility test..." << std::endl;
-    mcmc.infer_mcmc(D, r, move_probs, 5000, size_limit, 0);
+    mcmc.infer_mcmc(D, r, move_probs, 5000, size_limit, 0.0, 1.0);
 
     cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << std::endl;
     std::cout<<"Epsilon: " << epsilon << std::endl;
