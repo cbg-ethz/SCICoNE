@@ -81,6 +81,7 @@ public:
                 }
             }
         }
+        mcmc.t.nu = mcmc.t_prime.nu = nu; // set nu
 
         // create the p_read_region_cell values, not normalized yet.
         for (std::size_t i = 0; i < p_read_region_cell.size(); ++i) {
