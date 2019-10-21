@@ -233,9 +233,6 @@ Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const ve
             log_likelihood += sum_D*log(node->parent->z);
         }
 
-        assert(!std::isnan(log_likelihood));
-        assert(!std::isinf(log_likelihood));
-
         node->attachment_score = log_likelihood;
         node->z = z;
     }
@@ -537,13 +534,6 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
      *
      * */
 
-    if (!is_valid_subtree(this->root))
-    {
-        std::cout<<"debug the invalid tree";
-        !is_valid_subtree(this->root);
-    }
-    assert(is_valid_subtree(this->root));
-
     if (all_nodes_vec.size() <= 2)
         throw InvalidMove("prune and reattach move does not make sense when there is only one node besides the root");
 
@@ -624,9 +614,11 @@ Node *Tree::prune(Node *pos) {
     /*
      * Removes the element at the position but does not deallocate!
      * The caller method has the responsibility to deallocate.
+     * Throws std::logic_error
      * */
 
-    assert(pos != root);
+    if (pos == root)
+        throw std::logic_error("root cannot be pruned!");
 
     // if pos is the first child then pos' next is the new first child
     if (pos == pos->parent->first_child)
@@ -768,6 +760,7 @@ void Tree::load_from_file(string file) {
 map<int, double> Tree::get_children_id_score(Node *node) { // TODO: make it a method of node instead
 /*
  * Returns the ids and the log scores of the descendent nodes
+ * Throws std::logic_error
  * */
 
     map<int,double> id_score_pairs;
@@ -783,7 +776,8 @@ map<int, double> Tree::get_children_id_score(Node *node) { // TODO: make it a me
             stk.push(temp);
         }
         // make sure the id is not in the map before
-        assert(id_score_pairs.find(top->id) == id_score_pairs.end());
+        if (id_score_pairs.find(top->id) != id_score_pairs.end())
+            throw std::logic_error("the id of the node should not be in the map already");
         id_score_pairs[top->id] = top->attachment_score;
     }
     return id_score_pairs;
@@ -882,13 +876,6 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
      * Swaps the labels between two nodes
      * Requires more than 2 nodes to work
      * */
-
-    assert(is_valid_subtree(this->root));
-    if (!is_valid_subtree(this->root))
-        std::cout<<"debug the invalid tree";
-    if (subtree_out_of_bound(this->root))
-        std::cout <<"something is wrong!";
-
 
     if (all_nodes_vec.size() <= 2)
         throw InvalidMove("swapping labels does not make sense when they is only one node besides the root");
@@ -1005,13 +992,6 @@ Node *Tree::add_remove_events(bool weighted, bool validation_test_mode) {
      * Throws logical error if the "n_regions_to_sample" value, (drawn from a poisson) is bigger than total number of regions available.
      * Returns the pointer to the node being affected.
      * */
-
-    assert(is_valid_subtree(this->root));
-    if (!is_valid_subtree(this->root))
-        std::cout<<"debug the invalid tree";
-    if (subtree_out_of_bound(this->root))
-        std::cout <<"something is wrong!";
-
 
     if (all_nodes_vec.size() <= 1)
         throw InvalidMove("Adding or removing events does not make sense when there is 1 node or less. Root has to be neutral.");
@@ -1176,13 +1156,6 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
      *
      * */
 
-    if (!is_valid_subtree(this->root))
-        is_valid_subtree(this->root);
-    assert(is_valid_subtree(this->root));
-    if (subtree_out_of_bound(this->root))
-        std::cout <<"something is wrong!";
-
-
     Node* return_node = nullptr;
 
     vector<double> chi = chi_insert_delete(weighted); // add weights
@@ -1278,13 +1251,6 @@ Node *Tree::condense_split_node(unsigned int size_limit, bool weighted) {
     /*
      * Condenses two nodes into one or splits a node into two.
      * */
-
-    assert(is_valid_subtree(this->root));
-    if (!is_valid_subtree(this->root))
-        std::cout<<"debug the invalid tree";
-    if (subtree_out_of_bound(this->root))
-        std::cout <<"something is wrong!";
-
 
     if (all_nodes_vec.size() <= 1)
         throw InvalidMove("condense or split does not make sense when there is 1 node or less. ");
@@ -1606,6 +1572,7 @@ double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector
 double Tree::event_prior() {
     /*
      * Computes and returns the tree event prior
+     * Throws std::logic_error
      * */
 
     int n = this->get_n_nodes(); //n_nodes
@@ -1619,7 +1586,9 @@ double Tree::event_prior() {
 
     }
 
-    assert(n==static_cast<int>(p_v.size()));
+    if (n != static_cast<int>(p_v.size()))
+        throw std::logic_error("number of nodes needs to be equal to the size of the event prior vector");
+
     double PV = 0.0;
     PV += std::accumulate(p_v.begin(), p_v.end(), 0.0);
     PV -= Lgamma::get_val(n+1);
@@ -1635,13 +1604,6 @@ void Tree::genotype_preserving_prune_reattach(double gamma) {
      * Performs gibbs sampling and returns the tree.
      * Requires more than two nodes to perform.
      * */
-
-    assert(is_valid_subtree(this->root));
-    if (!is_valid_subtree(this->root))
-        std::cout<<"debug the invalid tree";
-    if (subtree_out_of_bound(this->root))
-        std::cout <<"something is wrong!";
-
 
     if (this->all_nodes_vec.size() <= 2)
         throw InvalidMove("prune and reattach move does not make sense when there is only one node besides the root");
@@ -1686,9 +1648,6 @@ void Tree::genotype_preserving_prune_reattach(double gamma) {
 
         // recompute the weights after the tree structure is changed
         this->compute_weights();
-
-        assert(is_valid_subtree(attach_pos));
-        assert(is_valid_subtree(this->root));
 
         to_prune = pruned_node = attach_pos = nullptr;
 

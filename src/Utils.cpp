@@ -141,6 +141,7 @@ void Utils::read_vector(vector<int> &vec, const string &path) {
 
     /*
      * Reads a 1 dimensional vector file at path path to reference vec.
+     * Throws std::logic_error
      * */
 
     ifstream filein(path);
@@ -155,7 +156,8 @@ void Utils::read_vector(vector<int> &vec, const string &path) {
         }
     }
 
-    assert(vec.size() != 0);
+    if (vec.size() == 0)
+        throw std::logic_error("The size of the vector should not be zero!");
 
 }
 
