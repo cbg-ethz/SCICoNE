@@ -152,6 +152,8 @@ int main( int argc, char* argv[]) {
         std::cout<<"initial gamma is specified to be " << gamma <<std::endl;
     else
         std::cout<<"gamma value is not specified, the default value is: " << gamma <<std::endl;
+    if (result.count("cf"))
+        std::cout<<"Cluster fraction in tree prior is: " << cf << std::endl;
 
     std::cout << "Reading the input matrix..." << std::endl;
     vector<vector<double>> d_regions(n_cells, vector<double>(n_regions));
