@@ -150,8 +150,7 @@ void Tree::compute_root_score(const vector<int> &r) {
     root->z = z;
 }
 
-void
-Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, double eta) {
+void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, double eta) {
 
     /*
      * Computes the attachment score of a node per cell.
