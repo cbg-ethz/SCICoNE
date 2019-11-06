@@ -30,6 +30,7 @@ public:
 
     vector<vector<double>> D;
     vector<int> region_sizes;
+    vector<int> cluster_sizes;
     vector<vector<int>> ground_truth; // default init value: ploidy
 
 public:
@@ -42,7 +43,7 @@ public:
               n_cells(n_cells),
               n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions),
               ground_truth(n_cells, vector<int>(n_regions, ploidy)),
-              D(n_cells, vector<double>(n_regions)), region_sizes(n_regions)
+              D(n_cells, vector<double>(n_regions)), region_sizes(n_regions), cluster_sizes(n_cells)
     {
 
     }
@@ -138,8 +139,8 @@ public:
         if (not is_neutral) // do not compute the tree for the null model
         {
             // compute the tree and store it in this->tree
-            mcmc.compute_t_table(D,region_sizes);
-            mcmc.compute_t_od_scores(D, region_sizes);
+            mcmc.compute_t_table(D,region_sizes,cluster_sizes);
+            mcmc.compute_t_od_scores(D, region_sizes,cluster_sizes);
         }
 
         this->tree = mcmc.t;
@@ -213,6 +214,15 @@ public:
         if (sum != n_bins)
             cout << "WARNING: sum of all of the region sizes is not equal to n_bins since probabilities don't always sum up to 1 due to precision loss"
                     " (e.g. they can sum up to 0.999999999999997) as a result the last bin may have zero count." <<endl;
+
+    }
+
+    void sample_cluster_sizes(int n_cells)
+    {
+        /*
+         * Uniformly samples the region sizes and returns the vector of region sizes.
+         * */
+         vector<int> cluster_sizes(D_cells.size(), 1);
 
     }
 
