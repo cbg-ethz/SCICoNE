@@ -211,7 +211,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
         this->t_scores.push_back(scores_vec);
         this->t_sums.push_back(MathOp::log_sum(scores_vec));
     }
-    std::cout << "\n";
+
     int m = D.size();
     int n = t.get_n_nodes();
 

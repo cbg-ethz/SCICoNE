@@ -43,7 +43,7 @@ public:
               n_cells(n_cells),
               n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions),
               ground_truth(n_cells, vector<int>(n_regions, ploidy)),
-              D(n_cells, vector<double>(n_regions)), region_sizes(n_regions), cluster_sizes(n_cells)
+              D(n_cells, vector<double>(n_regions)), region_sizes(n_regions), cluster_sizes(n_cells, 1)
     {
 
     }
@@ -216,16 +216,6 @@ public:
                     " (e.g. they can sum up to 0.999999999999997) as a result the last bin may have zero count." <<endl;
 
     }
-
-    void sample_cluster_sizes(int n_cells)
-    {
-        /*
-         * Uniformly samples the region sizes and returns the vector of region sizes.
-         * */
-         vector<int> cluster_sizes(D_cells.size(), 1);
-
-    }
-
 
     void write_output(const string& f_name_postfix)
     {
