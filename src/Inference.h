@@ -40,9 +40,10 @@ public:
     std::vector<std::map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
     int verbosity;
+    bool max_scoring;
 
 public:
-    Inference(u_int n_regions, int ploidy=2, int verbosity=2);
+    Inference(u_int n_regions, int ploidy=2, int verbosity=2, max_scoring=true);
     ~Inference();
     void destroy();
     void compute_t_od_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
@@ -165,13 +166,14 @@ void Inference::initialize_worked_example() {
 
 }
 
-Inference::Inference(u_int n_regions, int ploidy, int verbosity) : t(ploidy, n_regions),
+Inference::Inference(u_int n_regions, int ploidy, int verbosity, bool max_scoring) : t(ploidy, n_regions),
                                                                    t_prime(ploidy, n_regions),
                                                                    best_tree(ploidy, n_regions) {
 
     this->n_regions = n_regions;
     this->ploidy = ploidy;
     this->verbosity = verbosity;
+    this->max_scoring = max_scoring;
 }
 
 Inference::~Inference() {
@@ -871,7 +873,12 @@ double Inference::log_tree_prior(int m, int n) {
      * */
 
 //    double log_prior = - (n -1 + m) * log(n+1) -m * n * log(2); // tree prior
-    double log_prior = -(n-1+m)*log(n+1) -cf*m*n*log(2);
+    double combinatorial_penalization = 0
+    if (not max_scoring)
+        combinatorial_penalization = cf*m*n*log(2);
+
+    double log_prior = -(n-1+m)*log(n+1) - combinatorial_penalization
+    
     return log_prior;
 }
 
