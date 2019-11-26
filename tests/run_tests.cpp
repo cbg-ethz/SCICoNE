@@ -21,6 +21,7 @@ unsigned is_overdispersed;
 string f_name_posfix;
 int verbosity;
 double eta;
+bool max_scoring;
 // endof globals
 
 
