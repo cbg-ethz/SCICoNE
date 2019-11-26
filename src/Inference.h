@@ -43,7 +43,7 @@ public:
     bool max_scoring;
 
 public:
-    Inference(u_int n_regions, int ploidy=2, int verbosity=2, bool max_scoring=true);
+    Inference(u_int n_regions, int ploidy=2, int verbosity=2, bool max_scoring=false);
     ~Inference();
     void destroy();
     void compute_t_od_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
@@ -211,7 +211,22 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
         std::map<int, double> scores_vec = this->t.get_children_id_score(this->t.root);
 
         this->t_scores.push_back(scores_vec);
-        this->t_sums.push_back(MathOp::log_sum(scores_vec));
+
+        double t_sum = 0;
+        if (max_scoring) {
+          // Get maximum score for cell
+          double currentMax = - DBL_MAX;
+          unsigned arg_max = 0;
+          for (auto it = scores_vec.cbegin(); it != scores_vec.cend(); ++it ) {
+              if (it->second > currentMax)
+                  currentMax = it->second;
+          }
+          t_sum = currentMax;
+        }
+        else
+            t_sum = MathOp::log_sum(scores_vec);
+
+        this->t_sums.push_back(t_sum);
     }
 
     int m = D.size();
@@ -871,11 +886,11 @@ double Inference::log_tree_prior(int m, int n) {
      * */
 
 //    double log_prior = - (n -1 + m) * log(n+1) -m * n * log(2); // tree prior
-    double combinatorial_penalization = 0;
+    double combinatorial_penalization = 0.0;
     if (not max_scoring)
-        combinatorial_penalization = cf*m*n*log(2);
+        combinatorial_penalization = - cf*m*n*log(2);
 
-    double log_prior = -(n-1+m)*log(n+1) - combinatorial_penalization;
+    double log_prior = -(n-1+m)*log(n+1) + combinatorial_penalization;
 
     return log_prior;
 }
@@ -979,43 +994,57 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
 
     int deleted_index = deleted_node_idx(); // if -1 then not deleted, otherwise the index of the deleted
 
-    for (unsigned i = 0; i < D.size(); ++i) {
-        vector<double> old_vals;
-        old_vals.reserve(t_scores[i].size()); // the max possible size
-        vector<double> new_vals;
-        new_vals.reserve(t_scores[i].size());
+    if (max_scoring) {
+        for (unsigned i = 0; i < D.size(); i++) { // each cell i
+            unsigned currentMax = -DBL_MAX;
+            unsigned arg_max = 0;
+            for (auto it = t_prime_scores[i].cbegin(); it != t_prime_scores[i].cend(); ++it ) {
+                if (it->second > currentMax)
+                    currentMax = it->second;
+            }
+            double res = currentMax;
+            t_prime_sums.push_back(res);
+        }
+    }
+    else {
+        for (unsigned i = 0; i < D.size(); ++i) {
+            vector<double> old_vals;
+            old_vals.reserve(t_scores[i].size()); // the max possible size
+            vector<double> new_vals;
+            new_vals.reserve(t_scores[i].size());
 
-        map<int,double> unchanged_vals = t_scores[i]; // initiate with all values and remove the changed ones
+            map<int,double> unchanged_vals = t_scores[i]; // initiate with all values and remove the changed ones
 
 
-        for (auto &u_map : t_prime_scores[i]) {
-            if (t_scores[i].count(u_map.first)) // add only if it is existing in the old vals // for the insertion case
+            for (auto &u_map : t_prime_scores[i]) {
+                if (t_scores[i].count(u_map.first)) // add only if it is existing in the old vals // for the insertion case
+                {
+                    old_vals.push_back(t_scores[i][u_map.first]); // again the indices should match
+                    unchanged_vals.erase(u_map.first); // erase it from the unchanged vals
+                }
+
+
+                new_vals.push_back(u_map.second);
+            }
+
+            if (deleted_index != -1)
             {
-                old_vals.push_back(t_scores[i][u_map.first]); // again the indices should match
-                unchanged_vals.erase(u_map.first); // erase it from the unchanged vals
+                old_vals.push_back(t_scores[i][deleted_index]);
+                unchanged_vals.erase(deleted_index); // erase it from the unchanged vals
             }
 
 
-            new_vals.push_back(u_map.second);
+            // in case of delete, the deleted val is in old_vals not in unchanged
+
+            double res = MathOp::log_replace_sum(t_sums[i], old_vals, new_vals, unchanged_vals); // it takes t_sums[i]
+            // subtracts the olds and adds the news
+            // in case of delete, subtract an extra value
+            // in case of insert, add an extra value
+            // if the tree size changes, update it (tree.n_nodes). Posterior takes that into account
+            assert(!std::isnan(res));
+
+            t_prime_sums.push_back(res);
         }
-
-        if (deleted_index != -1)
-        {
-            old_vals.push_back(t_scores[i][deleted_index]);
-            unchanged_vals.erase(deleted_index); // erase it from the unchanged vals
-        }
-
-
-        // in case of delete, the deleted val is in old_vals not in unchanged
-
-        double res = MathOp::log_replace_sum(t_sums[i], old_vals, new_vals, unchanged_vals); // it takes t_sums[i]
-        // subtracts the olds and adds the news
-        // in case of delete, subtract an extra value
-        // in case of insert, add an extra value
-        // if the tree size changes, update it (tree.n_nodes). Posterior takes that into account
-        assert(!std::isnan(res));
-
-        t_prime_sums.push_back(res);
     }
 }
 

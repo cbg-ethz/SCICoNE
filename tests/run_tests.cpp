@@ -21,7 +21,6 @@ unsigned is_overdispersed;
 string f_name_posfix;
 int verbosity;
 double eta;
-bool max_scoring;
 // endof globals
 
 
@@ -37,7 +36,6 @@ int main()
     is_overdispersed = 0;
     verbosity = 2;
     eta = 1e-4;
-    max_scoring = false;
 
     std::cout<<"UNIT TESTS" <<std::endl;
 //     set a seed number for reproducibility
