@@ -148,7 +148,7 @@ void test_reproducibility()
     SingletonRandomGenerator::get_instance(42);
 
     int local_verbosity = 0;
-    Inference mcmc(r.size(), ploidy, local_verbosity);
+    Inference mcmc(r.size(), ploidy, local_verbosity, max_scoring);
 
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
@@ -176,7 +176,7 @@ void test_swap_label()
      * Tests the swap label move
      * */
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
     mcmc.update_t_prime(); // set t_prime to t
@@ -223,7 +223,7 @@ void test_weighted_sample()
      *
      * */
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
 
     // get the subvector
@@ -258,7 +258,7 @@ void test_condense_split_weights()
      * Tests the condense split weights
      * */
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     std::vector<std::map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
 
@@ -346,7 +346,7 @@ void test_insert_delete_weights()
      * Validation test for the weights of the insert_delete node move.
      * */
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
 
@@ -417,7 +417,7 @@ void test_tree_prior()
      * Validation test for the tree prior computation
      * */
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
     u_int n = mcmc.t.get_n_nodes();
 
@@ -436,7 +436,7 @@ void test_event_prior()
      * Validation test for the event prior computation
      * */
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
 
@@ -454,7 +454,7 @@ void test_tree_attachment()
      * Tests the correctness of tree score computation methods on worked example
      * */
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
 
@@ -485,7 +485,7 @@ void test_prune_reattach()
      * Tests the prune and reattach move
      * */
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
     mcmc.update_t_prime(); // set t_prime to t
@@ -536,7 +536,7 @@ void test_weighted_prune_reattach()
      * Tests the weighted prune reattach move
      * */
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
     mcmc.update_t_prime(); // set t_prime to t
@@ -563,7 +563,7 @@ void test_add_remove_event()
      * Tests the add remove event move
      * */
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes); // assignment operator changes the order
     mcmc.update_t_prime(); // set t_prime to t
@@ -682,7 +682,7 @@ void test_n_descendents_computation()
      * Verifies the n_descendents variable is computed correctly for all nodes
      * */
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
 
     assert(mcmc.t.all_nodes_vec[0]->n_descendents == 6);
@@ -705,7 +705,7 @@ void test_overdispersed_score()
     is_overdispersed = 1; // enable overdispersion
     double local_nu = 2.0;
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
     mcmc.t.nu = mcmc.t_prime.nu = local_nu;
     mcmc.compute_t_table(D,r,cluster_sizes);
@@ -747,7 +747,7 @@ void test_genotype_preserving_move_scores()
      * Tests the gibbs sampling scores distribution found after genotype preserving prune reattach move
      * */
 
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
 
@@ -801,7 +801,7 @@ void test_apply_multiple_times()
     /*
      * Tests the apply multiple times method
      * */
-    Inference mcmc(r.size(), ploidy, verbosity);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
 
     unsigned n_times = 50;
     mcmc.apply_multiple_times(n_times, increase_counter);
@@ -837,14 +837,14 @@ void test_cluster_scoring()
     };
     const vector<int> cluster_sizes = {2, 1, 3};
 
-    Inference mcmc_cells(n_regions, ploidy, verbosity);
+    Inference mcmc_cells(n_regions, ploidy, verbosity, max_scoring);
     mcmc_cells.initialize_worked_example();
     mcmc_cells.compute_t_table(D_cells, reg_sizes, vect);
     double score_cells_t_table = mcmc_cells.t.total_attachment_score;
     std::cout << "Cell score\n";
     std::cout << score_cells_t_table;
     std::cout << "\n";
-    Inference mcmc_clusters(n_regions, ploidy, verbosity);
+    Inference mcmc_clusters(n_regions, ploidy, verbosity, max_scoring);
     mcmc_clusters.initialize_worked_example();
     mcmc_clusters.compute_t_table(D_clusters, reg_sizes, cluster_sizes);
     double score_clusters_t_table = mcmc_clusters.t.total_attachment_score;
