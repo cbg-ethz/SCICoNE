@@ -574,6 +574,26 @@ double MathOp::median(vector<T> v) {
 }
 
 template<class T>
+double MathOp::iqm(vector<T> v) {
+
+    /*
+     * Returns the inter-quartile mean value of the vector
+     * */
+
+    // sort using the default operator<
+    std::sort(v.begin(), v.end());
+
+    // discard bottom and top 2 values
+    v.erase(v.begin(), v.begin() + 2);
+    v.erase(v.end() - 2, v.end());
+
+    // get the mean of the remaining values
+    double mean = MathOp::vec_avg(v);
+
+    return mean;
+}
+
+template<class T>
 double MathOp::st_deviation(vector<T> &v) {
 
     /*
@@ -626,8 +646,8 @@ double MathOp::compute_linear_regression_slope(const vector<double> &x, const ve
 template double MathOp::st_deviation(vector<double> &v);
 template double MathOp::st_deviation(vector<int> &v);
 template double MathOp::median(vector<double> v);
+template double MathOp::iqm(vector<double> v);
 template double MathOp::vec_avg(const vector<double> &v);
 template double MathOp::vec_avg(const vector<int> &v);
 template double MathOp::percentile_val<double>(vector<double>, double percentile_val);
 template long double MathOp::percentile_val<long double>(vector<long double>, double percentile_val);
-
