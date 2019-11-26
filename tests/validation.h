@@ -825,27 +825,34 @@ void test_cluster_scoring()
         {39, 37, 45, 49, 30},
         {69, 58, 68, 34, 21},
         {69, 58, 68, 34, 21},
-        {69, 58, 68, 34, 21}
+        {69, 58, 68, 34, 21},
+        {619, 58, 68, 34, 21}
     };
     const vector<int> vect(D_cells.size(), 1);
 
     const vector<vector<double>> D_clusters = {
         {39, 37, 45, 49, 30},
+        {619, 58, 68, 34, 21},
         {69, 58, 68, 34, 21}
     };
-    const vector<int> cluster_sizes = {2, 3};
+    const vector<int> cluster_sizes = {2, 1, 3};
 
     Inference mcmc_cells(n_regions, ploidy, verbosity);
     mcmc_cells.initialize_worked_example();
     mcmc_cells.compute_t_table(D_cells, reg_sizes, vect);
     double score_cells_t_table = mcmc_cells.t.total_attachment_score;
-
+    std::cout << "Cell score\n";
+    std::cout << score_cells_t_table;
+    std::cout << "\n";
     Inference mcmc_clusters(n_regions, ploidy, verbosity);
     mcmc_clusters.initialize_worked_example();
     mcmc_clusters.compute_t_table(D_clusters, reg_sizes, cluster_sizes);
     double score_clusters_t_table = mcmc_clusters.t.total_attachment_score;
+    std::cout << "Cluster score\n";
+    std::cout << score_clusters_t_table;
+    std::cout << "\n";
 
-    assert(score_cells_t_table == score_clusters_t_table);
+    assert(abs(score_cells_t_table - score_clusters_t_table) <= epsilon);
 
     cout<<"Cluster tree scoring validation test passed!"<<endl;
 
