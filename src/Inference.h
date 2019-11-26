@@ -272,134 +272,140 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
     double log_acceptance_prob = 0.0; // later gets modified
 
 
-    // compute nbd correction
-    double total_nbd_corr = 1.0;
-    double nbd_corr= 1.0;
-    double sum_chi=0.0, sum_chi_prime=0.0, sum_omega=0.0, sum_omega_prime=0.0;
-
-    if (move_id == 1) // weighted prune-reattach
-    {
-        nbd_corr = t.cost() / t_prime.cost();
-        assert(!std::isinf(nbd_corr));
-        if (std::isinf(nbd_corr))
-            return &t; // reject
-
-        // ro variable
-        total_nbd_corr *= nbd_corr;
+    // compute nbd correction if posterior sampling
+    if (max_scoring) {
+        double total_nbd_corr = 0.0;
     }
-    else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
+    else
     {
+        double total_nbd_corr = 1.0;
+        double nbd_corr= 1.0;
+        double sum_chi=0.0, sum_chi_prime=0.0, sum_omega=0.0, sum_omega_prime=0.0;
 
-        vector<double> chi = t.chi_insert_delete(weighted);
-        sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-        vector<double> chi_prime = t_prime.chi_insert_delete(weighted);
-        sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
-
-        if (std::isinf(sum_chi))
-            throw std::out_of_range("sum_chi is infinity, insert/delete move will be rejected");
-
-        vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted);
-        sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-        vector<double> omega_prime = t_prime.omega_insert_delete(lambda_r, lambda_c, weighted);
-        sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
-    }
-    else if (move_id == 8 || move_id == 9) // condense/split move or weighted cs
-    {
-
-        vector<double> chi = t.chi_condense_split(weighted);
-        sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-        vector<double> chi_prime = t_prime.chi_condense_split(weighted);
-        sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
-
-        vector<double> omega = t.omega_condense_split(lambda_s, weighted);
-        sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-        vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, weighted);
-        sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
-    }
-
-    if (move_id == 6 || move_id == 7 || move_id == 8 || move_id == 9) // moves that require nbd correction
-    {
-        double n = static_cast<double>(t_n_nodes);
-        if (t_n_nodes < t_prime_n_nodes) // insert, split
+        if (move_id == 1) // weighted prune-reattach
         {
-            double weight = sum_chi/sum_omega_prime;
-            total_nbd_corr *= weight;
+            nbd_corr = t.cost() / t_prime.cost();
+            assert(!std::isinf(nbd_corr));
+            if (std::isinf(nbd_corr))
+                return &t; // reject
+
+            // ro variable
+            total_nbd_corr *= nbd_corr;
         }
-        else // delete, condense
+        else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
         {
-            double weight = sum_omega/sum_chi_prime;
-            total_nbd_corr *= weight;
+
+            vector<double> chi = t.chi_insert_delete(weighted);
+            sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+            vector<double> chi_prime = t_prime.chi_insert_delete(weighted);
+            sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
+
+            if (std::isinf(sum_chi))
+                throw std::out_of_range("sum_chi is infinity, insert/delete move will be rejected");
+
+            vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted);
+            sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+            vector<double> omega_prime = t_prime.omega_insert_delete(lambda_r, lambda_c, weighted);
+            sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
         }
-    }
-
-    if (move_id == 7 || move_id == 9) // weighted insert-delete or weighted condense-split
-    {
-        if (t_n_nodes > t_prime_n_nodes) // delete
+        else if (move_id == 8 || move_id == 9) // condense/split move or weighted cs
         {
-            // find the node that is deleted
-            // use the get_id_score function since it returns a map having node id as a key
-            map<int,double> t_prime_scores = t_prime.get_children_id_score(t_prime.root);
-            Node* deleted = nullptr;
-            for (auto const &t_node : t.root->get_descendents(false)) // root won't be contained!
-                if (!t_prime_scores.count(t_node->id))
-                {
-                    deleted = t_node;
-                    break;
-                }
-            if (deleted == nullptr)
-                throw std::logic_error("The deleted node could not be found in t!");
 
-            unsigned d_i_T = deleted->n_descendents;
-            unsigned d_i_T_prime = 0;
+            vector<double> chi = t.chi_condense_split(weighted);
+            sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+            vector<double> chi_prime = t_prime.chi_condense_split(weighted);
+            sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
 
-            // find it's parent in t_prime
-            int parent_id = deleted->parent->id;
-            for (auto const &t_prime_node : t_prime.root->get_descendents(true))
-                if (parent_id == t_prime_node->id)
-                {
-                    d_i_T_prime = t_prime_node->n_descendents;
-                    break;
-                }
-            if (d_i_T == 0)
-                throw std::logic_error("The deleted node's parent could not be found in t_prime!");
-
-            double p_add_corr_num = d_i_T_prime + 1;
-            double p_add_corr_denom = 2 * d_i_T;
-            double ratio = p_add_corr_num / p_add_corr_denom;
-            total_nbd_corr *= ratio;
+            vector<double> omega = t.omega_condense_split(lambda_s, weighted);
+            sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+            vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, weighted);
+            sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
         }
-        else // insert
+
+        if (move_id == 6 || move_id == 7 || move_id == 8 || move_id == 9) // moves that require nbd correction
         {
-            // find the node that is inserted in t_prime
-            map<int,double> t_scores = t.get_children_id_score(t.root);
+            double n = static_cast<double>(t_n_nodes);
+            if (t_n_nodes < t_prime_n_nodes) // insert, split
+            {
+                double weight = sum_chi/sum_omega_prime;
+                total_nbd_corr *= weight;
+            }
+            else // delete, condense
+            {
+                double weight = sum_omega/sum_chi_prime;
+                total_nbd_corr *= weight;
+            }
+        }
 
-            Node* added = nullptr;
-            for (auto const &t_prime_node : t_prime.root->get_descendents(false)) // without root
-                if (!t_scores.count(t_prime_node->id))
-                {
-                    added = t_prime_node;
-                    break;
-                }
-            if (added == nullptr)
-                throw std::logic_error("The inserted node could not be found in t_prime!");
+        if (move_id == 7 || move_id == 9) // weighted insert-delete or weighted condense-split
+        {
+            if (t_n_nodes > t_prime_n_nodes) // delete
+            {
+                // find the node that is deleted
+                // use the get_id_score function since it returns a map having node id as a key
+                map<int,double> t_prime_scores = t_prime.get_children_id_score(t_prime.root);
+                Node* deleted = nullptr;
+                for (auto const &t_node : t.root->get_descendents(false)) // root won't be contained!
+                    if (!t_prime_scores.count(t_node->id))
+                    {
+                        deleted = t_node;
+                        break;
+                    }
+                if (deleted == nullptr)
+                    throw std::logic_error("The deleted node could not be found in t!");
 
-            unsigned d_i_T_prime = added->n_descendents;
-            unsigned d_i_T = 0;
-            // find it's parent in t
-            int parent_id = added->parent->id;
-            for (auto const &t_node : t.root->get_descendents(true))
-                if (parent_id == t_node->id)
-                {
-                    d_i_T = t_node->n_descendents;
-                    break;
-                }
-            if (d_i_T == 0)
-                throw std::logic_error("The inserted node's parent could not be found in t!");
+                unsigned d_i_T = deleted->n_descendents;
+                unsigned d_i_T_prime = 0;
 
-            double p_add_corr_num = 2 * d_i_T_prime;
-            double p_add_corr_denom = d_i_T + 1;
-            double ratio = p_add_corr_num / p_add_corr_denom;
-            total_nbd_corr *= ratio;
+                // find it's parent in t_prime
+                int parent_id = deleted->parent->id;
+                for (auto const &t_prime_node : t_prime.root->get_descendents(true))
+                    if (parent_id == t_prime_node->id)
+                    {
+                        d_i_T_prime = t_prime_node->n_descendents;
+                        break;
+                    }
+                if (d_i_T == 0)
+                    throw std::logic_error("The deleted node's parent could not be found in t_prime!");
+
+                double p_add_corr_num = d_i_T_prime + 1;
+                double p_add_corr_denom = 2 * d_i_T;
+                double ratio = p_add_corr_num / p_add_corr_denom;
+                total_nbd_corr *= ratio;
+            }
+            else // insert
+            {
+                // find the node that is inserted in t_prime
+                map<int,double> t_scores = t.get_children_id_score(t.root);
+
+                Node* added = nullptr;
+                for (auto const &t_prime_node : t_prime.root->get_descendents(false)) // without root
+                    if (!t_scores.count(t_prime_node->id))
+                    {
+                        added = t_prime_node;
+                        break;
+                    }
+                if (added == nullptr)
+                    throw std::logic_error("The inserted node could not be found in t_prime!");
+
+                unsigned d_i_T_prime = added->n_descendents;
+                unsigned d_i_T = 0;
+                // find it's parent in t
+                int parent_id = added->parent->id;
+                for (auto const &t_node : t.root->get_descendents(true))
+                    if (parent_id == t_node->id)
+                    {
+                        d_i_T = t_node->n_descendents;
+                        break;
+                    }
+                if (d_i_T == 0)
+                    throw std::logic_error("The inserted node's parent could not be found in t!");
+
+                double p_add_corr_num = 2 * d_i_T_prime;
+                double p_add_corr_denom = d_i_T + 1;
+                double ratio = p_add_corr_num / p_add_corr_denom;
+                total_nbd_corr *= ratio;
+            }
         }
     }
 

@@ -74,6 +74,9 @@ int main( int argc, char* argv[]) {
     // move probabilities
     vector<float> move_probs;
 
+    // scoring mode
+    bool max_scoring = true;
+
     cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
     options.add_options()
             ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
@@ -102,6 +105,7 @@ int main( int argc, char* argv[]) {
             ("gamma","gamma parameter, the initial learning rate value",cxxopts::value(gamma))
             ("random_init","Boolean parameter to enable random initialisation of the tree", cxxopts::value(random_init))
             ("move_probs","The vector of move probabilities",cxxopts::value(move_probs))
+            ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value(move_probs))
             ;
 
     auto result = options.parse(argc, argv);
@@ -179,8 +183,11 @@ int main( int argc, char* argv[]) {
         cluster_sizes = std::vector<int>(n_cells, 1);
     }
 
+    if (max_scoring)
+        std::cout<<"Will perform maximum scoring."
+
     // run mcmc inference
-    Inference mcmc(n_regions, ploidy, verbosity);
+    Inference mcmc(n_regions, ploidy, verbosity, max_scoring);
 
     if (random_init)
     {
