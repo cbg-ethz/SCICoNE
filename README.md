@@ -1,6 +1,6 @@
 # SCICoNE
 
-[![CircleCI](https://circleci.com/gh/anilbey/sc-dna/tree/master.svg?style=svg&circle-token=ccc7efcfe007311847eb0d7260382125518d68ca)](https://circleci.com/gh/anilbey/sc-dna/tree/master)
+[![CircleCI](https://circleci.com/gh/anilbey/SCICoNE/tree/master.svg?style=svg&circle-token=ccc7efcfe007311847eb0d7260382125518d68ca)](https://circleci.com/gh/anilbey/sc-dna/tree/master)
 
 ## About
 
