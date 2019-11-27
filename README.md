@@ -18,13 +18,11 @@ the copy number profiles of the individual cells.
 
 ## Installation
 
-1. Open your terminal in your preferred directory and clone this project
-```bash
-$ git clone https://github.com/anilbey/sc-dna
-```
+1. Clone the repository
+
 2. Enter the project directory
 ```bash
-$ cd sc-dna
+$ cd SCICoNE
 ```
 3. Create and enter the build directory
 ```bash
@@ -40,8 +38,7 @@ $ make
 ```
 That's it! :octocat:
 
-Three executables (simulation, inference and test) will be generated after the installation.
-
+Multiple executables (such as simulation, inference, test, score) will be created after the installation.
 
 ## Simulation
 Simulates the count matrix. Outputs the count matrix, region sizes, ground truth and the tree that generated the data.
