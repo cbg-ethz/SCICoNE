@@ -1,5 +1,15 @@
 # SCICoNE
+
 [![CircleCI](https://circleci.com/gh/anilbey/sc-dna/tree/master.svg?style=svg&circle-token=ccc7efcfe007311847eb0d7260382125518d68ca)](https://circleci.com/gh/anilbey/sc-dna/tree/master)
+
+## About
+
+Single-cell copy number calling and event history reconstruction.
+A statistical model and MCMC algorithm tailored to single-cell copy
+number profiling from shallow whole-genome DNA sequencing data. SCICoNE reconstructs the
+history of copy number events in the tumour and uses these evolutionary relationships to identify
+the copy number profiles of the individual cells. 
+
 ## Requirements
 
 * C++ compiler that supports C++14 standards (e.g. `gcc>=5.2.0`, `clang>=5.0.0)`)
