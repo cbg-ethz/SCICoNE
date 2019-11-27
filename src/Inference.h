@@ -887,8 +887,10 @@ double Inference::log_tree_prior(int m, int n) {
 
 //    double log_prior = - (n -1 + m) * log(n+1) -m * n * log(2); // tree prior
     double combinatorial_penalization = 0.0;
-    if (not max_scoring)
+    if (not max_scoring) {
         combinatorial_penalization = - cf*m*n*log(2);
+        m = 0;
+    }
 
     double log_prior = -(n-1+m)*log(n+1) + combinatorial_penalization;
 
