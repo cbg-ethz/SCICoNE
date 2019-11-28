@@ -112,3 +112,4 @@ Runs the validation tests and writes the results to the standard output and erro
 $ ./tests
 ```
 
+Logo url: https://logomakr.com/9tSL7m
