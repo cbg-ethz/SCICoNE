@@ -32,6 +32,12 @@ $ mkdir build && cd build
 ```bash
 $ cmake ..
 ```
+
+or more specifically
+```bash
+$ cmake -DCMAKE_BUILD_TYPE=Release ..
+```
+
 5. Build the executable
 ```bash
 $ make
