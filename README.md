@@ -2,10 +2,8 @@
   <img src="logo.png" >
 </div>
 
-**`CircleCI`** |
-------------------- |
 [![CircleCI](https://circleci.com/gh/anilbey/SCICoNE/tree/master.svg?style=svg&circle-token=ccc7efcfe007311847eb0d7260382125518d68ca)](https://circleci.com/gh/anilbey/sc-dna/tree/master)
- 
+[![Python Version](https://img.shields.io/badge/C++-14-orange)](https://img.shields.io/badge/C++-14-orange)
 
 
 
