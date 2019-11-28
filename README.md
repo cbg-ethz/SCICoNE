@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo.png" width="480">
+  <img src="logo.png" >
 </div>
 
 **`CircleCI`** |
