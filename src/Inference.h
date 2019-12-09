@@ -16,6 +16,7 @@
 #include <cmath>
 #include <array>
 #include <functional>
+#include <cfloat>
 #include "globals.cpp"
 #include "Lgamma.h"
 
@@ -215,7 +216,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
         double t_sum = 0;
         if (max_scoring) {
           // Get maximum score for cell
-          double currentMax = - DBL_MAX;
+          double currentMax = -DBL_MAX;
           unsigned arg_max = 0;
           for (auto it = scores_vec.cbegin(); it != scores_vec.cend(); ++it ) {
               if (it->second > currentMax)
@@ -887,9 +888,11 @@ double Inference::log_tree_prior(int m, int n) {
 
 //    double log_prior = - (n -1 + m) * log(n+1) -m * n * log(2); // tree prior
     double combinatorial_penalization = 0.0;
-    if (not max_scoring) {
-        combinatorial_penalization = - cf*m*n*log(2);
-        m = 0;
+    if (max_scoring) {
+      combinatorial_penalization = 0.;
+      m = 0.;
+    } else {
+      combinatorial_penalization = - cf*m*n*log(2);
     }
 
     double log_prior = -(n-1+m)*log(n+1) + combinatorial_penalization;
@@ -942,6 +945,10 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
     bool is_empty_table = t_prime_scores.empty();
 
     int j = 0;
+
+    if (max_scoring)
+      attached_node = t_prime.root;
+
     for (auto const &d: D)
     {
         double sum_d = accumulate( d.begin(), d.end(), 0.0);
@@ -998,8 +1005,8 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
 
     if (max_scoring) {
         for (unsigned i = 0; i < D.size(); i++) { // each cell i
-            unsigned currentMax = -DBL_MAX;
-            unsigned arg_max = 0;
+            double currentMax = -DBL_MAX;
+            // Need to go through all nodes to get maximum, not just the ones which change
             for (auto it = t_prime_scores[i].cbegin(); it != t_prime_scores[i].cend(); ++it ) {
                 if (it->second > currentMax)
                     currentMax = it->second;
