@@ -105,7 +105,7 @@ int main( int argc, char* argv[]) {
             ("gamma","gamma parameter, the initial learning rate value",cxxopts::value(gamma))
             ("random_init","Boolean parameter to enable random initialisation of the tree", cxxopts::value(random_init))
             ("move_probs","The vector of move probabilities",cxxopts::value(move_probs))
-            ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value(move_probs))
+            ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value<bool>(max_scoring))
             ;
 
     auto result = options.parse(argc, argv);
