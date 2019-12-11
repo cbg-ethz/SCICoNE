@@ -359,22 +359,22 @@ void test_condense_split_weights()
     // intentional override
     double lambda_s = 0.5;
 
-    vector<double> omega = t.omega_condense_split(lambda_s, false);
+    vector<double> omega = t.omega_condense_split(lambda_s, false, local_max_scoring);
     double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
     double sum_omega_gt = 0.296;
     assert(abs(sum_omega - sum_omega_gt) <= epsilon);
 
-    vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, false);
+    vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, false, local_max_scoring);
     double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
     double sum_omega_prime_gt = 0.488;
     assert(abs(sum_omega_prime - sum_omega_prime_gt) <= epsilon);
 
-    vector<double> upsilon = t.omega_condense_split(lambda_s, true);
+    vector<double> upsilon = t.omega_condense_split(lambda_s, true, local_max_scoring);
     double sum_upsilon = accumulate(upsilon.begin(), upsilon.end(), 0.0);
     double sum_upsilon_gt = 0.0878;
     assert(abs(sum_upsilon - sum_upsilon_gt) <= epsilon);
 
-    vector<double> upsilon_tp = t_prime.omega_condense_split(lambda_s, true);
+    vector<double> upsilon_tp = t_prime.omega_condense_split(lambda_s, true, local_max_scoring);
     double sum_upsilon_tp = accumulate(upsilon_tp.begin(), upsilon_tp.end(), 0.0);
     double sum_upsilon_tp_gt = 0.1956;
     assert(abs(sum_upsilon_tp - sum_upsilon_tp_gt) <= epsilon);
@@ -445,22 +445,22 @@ void test_condense_split_weights()
     // intentional override
     lambda_s = 0.5;
 
-    omega = t_max.omega_condense_split(lambda_s, false);
+    omega = t_max.omega_condense_split(lambda_s, false, local_max_scoring);
     sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
     sum_omega_gt = 0.296;
     assert(abs(sum_omega - sum_omega_gt) <= epsilon);
 
-    omega_prime = t_max_prime.omega_condense_split(lambda_s, false);
+    omega_prime = t_max_prime.omega_condense_split(lambda_s, false, local_max_scoring);
     sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
     sum_omega_prime_gt = 0.488;
     assert(abs(sum_omega_prime - sum_omega_prime_gt) <= epsilon);
 
-    upsilon = t_max.omega_condense_split(lambda_s, true);
+    upsilon = t_max.omega_condense_split(lambda_s, true, local_max_scoring);
     sum_upsilon = accumulate(upsilon.begin(), upsilon.end(), 0.0);
     sum_upsilon_gt = 0.0878;
     assert(abs(sum_upsilon - sum_upsilon_gt) <= epsilon);
 
-    upsilon_tp = t_max_prime.omega_condense_split(lambda_s, true);
+    upsilon_tp = t_max_prime.omega_condense_split(lambda_s, true, local_max_scoring);
     sum_upsilon_tp = accumulate(upsilon_tp.begin(), upsilon_tp.end(), 0.0);
     sum_upsilon_tp_gt = 0.1956;
     assert(abs(sum_upsilon_tp - sum_upsilon_tp_gt) <= epsilon);
@@ -521,7 +521,7 @@ void test_insert_delete_weights()
     double lambda_r = 2.0;
     double lambda_c = 1.0;
 
-    vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, false); // delete weights
+    vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, false, local_max_scoring); // delete weights
     assert(abs(omega[0] - 0.916e-03) <=epsilon_sens);
     assert(abs(omega.back() - 4.979e-03) <=epsilon_sens);
 
@@ -529,7 +529,7 @@ void test_insert_delete_weights()
     double sum_omega_gt = 0.0217;
     assert(abs(sum_omega - sum_omega_gt) <= epsilon);
 
-    vector<double> upsilon = t.omega_insert_delete(lambda_r, lambda_c, true); // cost weighted omega
+    vector<double> upsilon = t.omega_insert_delete(lambda_r, lambda_c, true, local_max_scoring); // cost weighted omega
     vector<double> xi = t.chi_insert_delete(true); // cost weighted chi;
 
     double sum_upsilon = accumulate(upsilon.begin(), upsilon.end(), 0.0);
@@ -593,7 +593,7 @@ void test_insert_delete_weights()
     lambda_r = 2.0;
     lambda_c = 1.0;
 
-    omega = t_max.omega_insert_delete(lambda_r, lambda_c, false); // delete weights
+    omega = t_max.omega_insert_delete(lambda_r, lambda_c, false, local_max_scoring); // delete weights
     assert(abs(omega[0] - 0.916e-03) <=epsilon_sens);
     assert(abs(omega.back() - 4.979e-03) <=epsilon_sens);
 
@@ -601,7 +601,7 @@ void test_insert_delete_weights()
     sum_omega_gt = 0.0217;
     assert(abs(sum_omega - sum_omega_gt) <= epsilon);
 
-    upsilon = t_max.omega_insert_delete(lambda_r, lambda_c, true); // cost weighted omega
+    upsilon = t_max.omega_insert_delete(lambda_r, lambda_c, true, local_max_scoring); // cost weighted omega
     xi = t_max.chi_insert_delete(true); // cost weighted chi;
 
     sum_upsilon = accumulate(upsilon.begin(), upsilon.end(), 0.0);

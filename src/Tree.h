@@ -61,8 +61,8 @@ public:
     Node* delete_leaf();
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node *add_remove_events(bool weighted, bool validation_test_mode=false);
-    Node *insert_delete_node(unsigned int size_limit, bool weighted);
-    Node *condense_split_node(unsigned int size_limit, bool weighted);
+    Node *insert_delete_node(unsigned int size_limit, bool weighted, bool max_scoring);
+    Node *condense_split_node(unsigned int size_limit, bool weighted, bool max_scoring);
     std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
 
     Node* delete_node(Node* node);
@@ -87,10 +87,10 @@ public:
     bool zero_ploidy_changes(Node* n) const;// TODO: can be a method of node instead
     double cost();
 
-    vector<double> omega_condense_split(double lambda_s, bool weighted);
+    vector<double> omega_condense_split(double lambda_s, bool weighted, bool max_scoring);
     vector<double> chi_condense_split(bool weighted);
 
-    vector<double> omega_insert_delete(double lambda_r, double lambda_c, bool weighted);
+    vector<double> omega_insert_delete(double lambda_r, double lambda_c, bool weighted, bool max_scoring);
     vector<double> chi_insert_delete(bool weighted);
 
     void load_from_file(string file);
@@ -1148,7 +1148,7 @@ bool Tree::is_redundant() const {
 
 }
 
-Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
+Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted, bool max_scoring) {
     /*
      * Adds or deletes nodes move, that takes the mcmc transition probabilities into account.
      * Returns the node to perform partial score computation on.
@@ -1158,7 +1158,7 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
     Node* return_node = nullptr;
 
     vector<double> chi = chi_insert_delete(weighted); // add weights
-    vector<double> omega = omega_insert_delete(lambda_r, lambda_c, weighted); // delete weights
+    vector<double> omega = omega_insert_delete(lambda_r, lambda_c, weighted, max_scoring); // delete weights
 
     // sample the number of regions to be affected with Poisson(lambda_r)+1
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
@@ -1246,7 +1246,7 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
     return return_node;
 }
 
-Node *Tree::condense_split_node(unsigned int size_limit, bool weighted) {
+Node *Tree::condense_split_node(unsigned int size_limit, bool weighted, bool max_scoring) {
     /*
      * Condenses two nodes into one or splits a node into two.
      * */
@@ -1257,7 +1257,7 @@ Node *Tree::condense_split_node(unsigned int size_limit, bool weighted) {
 
     Node* return_node = nullptr;
     vector<double> chi = this->chi_condense_split(weighted); // split weights
-    vector<double> omega = this->omega_condense_split(lambda_s, weighted); // condense weights
+    vector<double> omega = this->omega_condense_split(lambda_s, weighted, max_scoring); // condense weights
 
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
     // n_regions from Poisson(lambda_S)+1
@@ -1420,7 +1420,7 @@ Node* Tree::delete_node(Node *node) {
     return parent_of_deleted; // return the node that is going to be used for the partial trees scoring
 }
 
-vector<double> Tree::omega_condense_split(double lambda_s, bool weighted) {
+vector<double> Tree::omega_condense_split(double lambda_s, bool weighted, bool max_scoring) {
     /*
      * Returns the omega probabilities computed for a tree for the condense/split move.
      * Omega vector is representing the condense weights
@@ -1431,7 +1431,9 @@ vector<double> Tree::omega_condense_split(double lambda_s, bool weighted) {
 
     for (auto const &node : descendents_of_root)
     {
-        double omega_val = MathOp::compute_omega_condense_split(node, lambda_s, this->n_regions);
+        double omega_val = 1.0;
+        if (not max_scoring)
+          omega_val = MathOp::compute_omega_condense_split(node, lambda_s, this->n_regions);
         if (weighted)
             omega_val /= (node->parent->n_descendents-1);
         omega.push_back(omega_val);
@@ -1492,7 +1494,7 @@ vector<double> Tree::chi_insert_delete(bool weighted) {
 
 }
 
-vector<double> Tree::omega_insert_delete(double lambda_r, double lambda_c, bool weighted) {
+vector<double> Tree::omega_insert_delete(double lambda_r, double lambda_c, bool weighted, bool max_scoring) {
     /*
      * Returns the omega probabilities computed for the insert/delete move.
      * Omega vector is representing the delete weights
@@ -1503,7 +1505,9 @@ vector<double> Tree::omega_insert_delete(double lambda_r, double lambda_c, bool 
 
     vector<Node*> all_nodes = root->get_descendents(false); // without root
     for (auto const &node : all_nodes) { // computes the omega vector
-        double omega_val = MathOp::compute_omega_insert_delete(node, lambda_r, lambda_c, K);
+        double omega_val = 1.0;
+        if (not max_scoring)
+          omega_val = MathOp::compute_omega_insert_delete(node, lambda_r, lambda_c, K);
         if (weighted)
             omega_val = omega_val/node->n_descendents;
         omega.push_back(omega_val);
