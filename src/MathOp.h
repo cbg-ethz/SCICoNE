@@ -15,6 +15,7 @@
 #include <algorithm>
 #include "SingletonRandomGenerator.h"
 #include <boost/random/uniform_int_distribution.hpp>
+#include <nlopt.hpp>
 
 #ifndef SC_DNA_NODE_H
 #include "Node.h"
@@ -56,12 +57,19 @@ public:
     static double iqm(vector<T> v);
     template <class T>
     static double st_deviation(vector<T>& v);
+    template<class T>
+    static double MathOp::third_quartile(vector<T> &v)
     static double compute_omega_insert_delete(Node *node, double lambda_r, double lambda_c, unsigned long K);
     static double compute_omega_condense_split(Node *node, double lambda_s, unsigned int n_regions);
     static double frobenius_avg(vector<vector<int>>& mat, vector<vector<int>>& ground_truth);
     static vector<long double> dirichlet_sample(size_t len, double alpha = 1.0);
     static vector<double> dirichlet_sample(vector<double> alphas);
+    static double ll_linear_model(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data);
+    static vector<double> compute_linear_regression_parameters(const vector<double> &z);
 
+    typedef struct {
+        vector<double> z;
+    } segment_counts;
 };
 
 

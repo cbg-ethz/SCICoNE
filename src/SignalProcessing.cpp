@@ -186,8 +186,11 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
     // take log of the signal
     this->log_transform(signal);
 
-    double stdev = MathOp::st_deviation(signal);
-    double threshold = threshold_coefficient * stdev;
+    // double stdev = MathOp::st_deviation(signal);
+    double third_q = MathOp::third_quartile(signal);
+    double median = MathOp::median(signal);
+    double range = third_q - median;
+    double threshold = threshold_coefficient * range;
 
     // use log of max_val
     max_val = log(max_val);
@@ -279,33 +282,33 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
 
     size_t n_cells = mat.size();
 
-    // compute the AIC scores
+    // compute the LR scores
 
-    vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
+    vector<vector<double>> lr_vec = MathOp::likelihood_ratio(mat,window_size);
 
     if (verbosity > 0)
     {
-        std::ofstream aic_vec_file("./" + f_name_posfix + "_aic_vec" + ".csv");
-        for (auto const &v1: aic_vec) {
+        std::ofstream lr_vec_file("./" + f_name_posfix + "_lr_vec" + ".csv");
+        for (auto const &v1: lr_vec) {
             for (size_t i = 0; i < v1.size(); i++)
             {
                 if (i == v1.size()-1) // the last element
-                    aic_vec_file << v1[i];
+                    lr_vec_file << v1[i];
                 else // add comma
-                    aic_vec_file << v1[i] << ',';
+                    lr_vec_file << v1[i] << ',';
             }
-            aic_vec_file << endl;
+            lr_vec_file << endl;
         }
     }
 
-    size_t n_breakpoints = aic_vec.size();
+    size_t n_breakpoints = lr_vec.size();
     cout <<"n_breakpoints: " << n_breakpoints << " n_cells: " << n_cells <<endl;
 
     vector<vector<double>> sigma(n_breakpoints,vector<double>(n_cells+1)); // +1 because combine scores considers
     // the breakpoint occurring in zero cells as well
 
     for (size_t i = 0; i < n_breakpoints; ++i) // compute sigma matrix
-        sigma[i] = MathOp::combine_scores(aic_vec[i]);
+        sigma[i] = MathOp::combine_scores(lr_vec[i]);
 
     vector<double> log_priors;
     log_priors.reserve(n_cells+1);
@@ -409,5 +412,3 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
 template int SignalProcessing::find_highest_peak(vector<double> &signal, int lb, int ub);
 template vector<double> SignalProcessing::crop<double>(vector<double>& signal, int offset);
 template vector<long double> SignalProcessing::crop<long double>(vector<long double>& signal, int offset);
-
-

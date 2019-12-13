@@ -1,4 +1,4 @@
-//
+lr//
 // Created by Tuncel  Mustafa Anil on 6/19/18.
 //
 
@@ -45,18 +45,18 @@ double MathOp::breakpoint_log_likelihood(std::vector<double> v, double lambda, d
 vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int window_size) {
     /*
      *
-     * Computes the difference of the AIC_break and AIC_segment cases to tell whether to break or not
+     * Computes the difference of the likelihood_break and likelihood_segment cases to tell whether to break or not
      * */
 
     //MathOp mo = MathOp();
     // the last breakpoint
-    size_t bp_size = mat[0].size();
+    size_t bp_size = mat[0].size(); // bp_size = number of bins initially
 
     //cout << bp_size << endl;
     size_t n_cells = mat.size();
 
     // u_int cell_no = 0;
-    vector<vector<double>> aic_vec(bp_size,vector<double>(n_cells)); // fill constructor
+    vector<vector<double>> lr_vec(bp_size, vector<double>(n_cells)); // LR of each bin for each cell
 
     for (unsigned i = 0; i < bp_size; ++i) {
 
@@ -77,59 +77,73 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
 
             size_t n_bins = all_bins.size();
 
-            double lambda_r = median(rbins); // max likelihood value is the avg. (poisson property)
-            double lambda_l = median(lbins);
-            double lambda_all = vec_avg(all_bins);
-
             vector<double> bin_positions(n_bins);
             for (size_t l = 0; l < n_bins; ++l) {
                 bin_positions[l] = l+1; // 1 indexed
             }
 
-
-            // predicting the lambdas_regression
-            vector<double> lambdas_regression(n_bins);
-            double beta_regression = compute_linear_regression_slope(bin_positions, all_bins);
-            double mean_x = vec_avg(bin_positions);
-            double mean_y = vec_avg(all_bins);
+            // 1. Likelihood of null model, where mean of all bins in segment follows a linear model.
+            //   The mean across the bins in the window can change according to a linear model,
+            //   which includes the case where all the bins have the same min (if the slope is zero)
+            vector<double> lambdas_segment(n_bins);
+            vector<double> regression_parameters = compute_linear_regression_parameters(bin_positions, all_bins);
+            double alpha = regression_parameters[0];
+            double beta = regression_parameters[1];
 
             for (size_t k = 0; k < n_bins; ++k)
             {
-                lambdas_regression[k] = mean_y + beta_regression*(bin_positions[k] - mean_x); // prediction
-                if (lambdas_regression[k] <= 0)
-                    lambdas_regression[k] = 0.0001;
+                lambdas_segment[k] = alpha + beta_regression*bin_positions[k]; // prediction
+                if (lambdas_segment[k] <= 0)
+                    lambdas_segment[k] = 0.0001;
             }
 
+            double ll_segment = 0;
+            for (size_t m = 0; m < n_bins; ++m) {
+                ll_segment += breakpoint_log_likelihood(vector<double>(all_bins.begin()+m, all_bins.begin()+m+1), lambdas_segment[m], 1.0);
+            }
+
+            // 2. Likelihood of breakpoint model, where left and right bin segments have different means
+            //    This means that if there is a breakpoint there is a step change between the two semi segments
+            double lambda_r = iqm(rbins);
+            double lambda_l = iqm(lbins);
+            double lambda_all = vec_avg(all_bins);
+
+            //    The distance between the left and right segments must be > lambda_all/4, so we update the
+            //    segments accordingly
+            if (lambda_r > lambda_l) {
+              double gap = lambda_r - lambda_all;
+              double gap_thres = lambda_all/4;
+              double scaling = std::max(lambda_all/(4*gap), 1.0);
+              while (gap < gap_thres) {
+                lambda_r = lambda_all + scaling*gap;
+                gap = lambda_r - lambda_all;
+                scaling = std::max(lambda_all/(4*gap), 1.0);
+              }
+            } else {
+              double gap = lambda_l - lambda_all;
+              double gap_thres = lambda_all/4;
+              double scaling = std::max(lambda_all/(4*gap), 1.0);
+              while (gap < gap_thres) {
+                lambda_l = lambda_all + scaling*gap;
+                gap = lambda_l - lambda_all;
+                scaling = std::max(lambda_all/(4*gap), 1.0);
+              }
+            }
 
             if (lambda_r == 0)
                 lambda_r = 0.0001;
             if (lambda_l == 0)
                 lambda_l = 0.0001;
 
-            double ll_difference = 0.0;
-            double ll_segment = breakpoint_log_likelihood(all_bins, lambda_all, 1.0);
-
             double ll_break = breakpoint_log_likelihood(lbins, lambda_l, 1.0) +
                               breakpoint_log_likelihood(rbins, lambda_r, 1.0);
-            double k_break = 1.0;
-            if (ll_break < ll_segment - k_break)
-                ll_break = ll_segment - k_break;
-
-            double k_slope = 1.0;
-            double ll_slope = 0.0;
-
-            for (size_t m = 0; m < n_bins; ++m) {
-                ll_slope += breakpoint_log_likelihood(vector<double>(all_bins.begin()+m, all_bins.begin()+m+1), lambdas_regression[m], 1.0);
-            }
-            ll_slope -= k_slope;
 
 
-            ll_difference = ll_break - std::max(ll_slope, ll_segment);
-
-            aic_vec[i][j] = 2 * ll_difference;
+            // 3. Output the difference between the two models' likelihoods
+            lr_vec[i][j] = ll_break - ll_segment;
         }
     }
-    return aic_vec;
+    return lr_vec;
 }
 
 long double MathOp::log_add(long double val1, long double val2)
@@ -613,31 +627,97 @@ double MathOp::st_deviation(vector<T> &v) {
     return stdev;
 }
 
-double MathOp::compute_linear_regression_slope(const vector<double> &x, const vector<double> &y) {
+template<class T>
+double MathOp::third_quartile(vector<T> &v) {
+
     /*
-     * Computes the b1 (slope) of the formula Yi = b0 + b1Xi
+     * Returns the third quartile of a vector of elements.
+     * */
+     int size = v.size();
+
+     sort(v.begin(), v.end());
+
+     int mid = size/2;
+     double median;
+     median = size % 2 == 0 ? (v[mid] + v[mid-1])/2 : v[mid];
+
+     vector<double> first;
+     vector<double> third;
+
+     for (int i = 0; i!=mid; ++i) {
+         first[i] = quantile[i];
+     }
+
+     for (int i = mid; i!= size; ++i) {
+         third[i] = quantile[i];
+     }
+
+     double fst;
+     double trd;
+
+     int side_length = 0;
+
+     if (size % 2 == 0)
+     {
+         side_length = size/2;
+     }
+     else {
+         side_length = (size-1)/2;
+     }
+
+     fst = (size/2) % 2 == 0 ? (first[side_length/2]/2 + first[(side_length-1)/2])/2 : first[side_length/2];
+     trd = (size/2) % 2 == 0 ? (third[side_length/2]/2 + third[(side_length-1)/2])/2 : third[side_length/2];
+
+    return trd;
+}
+
+double ll_linear_model(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
+{
+    double mu = 1;
+
+    segment_counts *d = reinterpret_cast<segment_counts*>(my_func_data);
+    vector<double> z = d->z;
+
+    int size = z.size();
+    double lambda = 0;
+    double res = 0;
+
+    for (size_t l = 0; l < size; ++l) {
+      lambda = x[0] + (l+1)*x[1];
+      // lambda = x[0];
+      res = res + z[l]*(log(lambda) - log(lambda + mu)) - mu*log(lambda + mu);
+    }
+
+    return res;
+}
+
+vector<double> MathOp::compute_linear_regression_parameters(const vector<double> &z) {
+    /*
+     * Computes the alpha and beta of y = alpha + beta * x
      * */
 
-    if(x.size() != y.size()){
-        throw length_error("Length of y and x must be equal in simple linear regression");
+    double lambda_all = vec_avg(z);
+
+    nlopt::opt opt(nlopt::LN_NELDERMEAD, 2);
+    std::vector<double> lb(2);
+    lb[0] = 0; lb[1] = -HUGE_VAL; // lower bounds on alpha, beta
+    opt.set_lower_bounds(lb);
+    opt.set_max_objective(func, &z);
+    opt.set_xtol_rel(1e-4);
+    std::vector<double> x(2);
+    x[0] = vec_avg(z); x[1] = 0.; // initial alpha, beta
+    double minf;
+
+    try{
+        nlopt::result result = opt.optimize(x, minf);
+        std::cout << "found maximum at f(" << x[0] << ", " << x[1] << ") = "
+            << std::setprecision(10) << minf << std::endl;
+
+        return x; // optimized alpha, beta
     }
-
-    double mean_x = vec_avg(x);
-    double mean_y = vec_avg(y);
-
-    double numerator = 0.0;
-    double denominator = 0.0;
-
-    for(unsigned i=0; i<x.size(); ++i){
-        numerator += (x[i] - mean_x) * (y[i] - mean_y);
-        denominator += (x[i] - mean_x) * (x[i] - mean_x);
+    catch(std::exception &e) {
+        std::cout << "nlopt failed: " << e.what() << std::endl;
     }
-
-    if(denominator == 0){
-        throw domain_error("Denominator cannot be zero");
-    }
-
-    return numerator / denominator;
 }
 
 
