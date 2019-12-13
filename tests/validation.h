@@ -217,6 +217,44 @@ void test_swap_label()
     std::cout<<"Swap label validation test passed!"<<std::endl;
 
 
+    local_max_scoring = true;
+    Inference mcmc_max(r.size(), ploidy, verbosity, local_max_scoring);
+    mcmc_max.initialize_worked_example();
+    mcmc_max.compute_t_table(D,r,cluster_sizes);
+    mcmc_max.update_t_prime(); // set t_prime to t
+
+    // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+    std::sort(mcmc_max.t_prime.all_nodes_vec.begin(),mcmc_max.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
+
+
+    mcmc_max.apply_swap(D,r,false,true);
+
+    assert(abs(mcmc_max.t_prime_sums[0] - 2.877)  <= epsilon);
+    assert(abs(mcmc_max.t_prime_sums[1] - 2.259)  <= epsilon);
+    assert(abs(mcmc_max.t_prime_sums[2] - 29.222)  <= epsilon);
+    assert(abs(mcmc_max.t_prime_sums[3] - 6.987)  <= epsilon);
+    assert(abs(mcmc_max.t_prime_sums[4] - 7.065)  <= epsilon);
+
+    // compute the root score
+    n_cells = D.size();
+    sum_root_score = 0.0;
+    for (u_int i = 0; i < n_cells; ++i) {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+        sum_root_score += root_score;
+    }
+
+    // compute the log posterior
+    t_prime_sum = accumulate( mcmc_max.t_prime_sums.begin(), mcmc_max.t_prime_sums.end(), 0.0);
+    log_post_t_prime = mcmc_max.log_tree_posterior(t_prime_sum, m, mcmc_max.t_prime);
+    mcmc_max.t_prime.posterior_score = log_post_t_prime;
+
+    total_score = mcmc_max.t_prime.posterior_score + sum_root_score;
+    total_score_gt = -1495.78;
+    assert(abs(total_score - total_score_gt) <= epsilon);
+
+    std::cout<<"Swap label validation test with maximum scoring passed!"<<std::endl;
+
 }
 
 void test_weighted_sample()
@@ -321,28 +359,113 @@ void test_condense_split_weights()
     // intentional override
     double lambda_s = 0.5;
 
-    vector<double> omega = t.omega_condense_split(lambda_s, false);
+    vector<double> omega = t.omega_condense_split(lambda_s, false, local_max_scoring);
     double sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
     double sum_omega_gt = 0.296;
     assert(abs(sum_omega - sum_omega_gt) <= epsilon);
 
-    vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, false);
+    vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, false, local_max_scoring);
     double sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
     double sum_omega_prime_gt = 0.488;
     assert(abs(sum_omega_prime - sum_omega_prime_gt) <= epsilon);
 
-    vector<double> upsilon = t.omega_condense_split(lambda_s, true);
+    vector<double> upsilon = t.omega_condense_split(lambda_s, true, local_max_scoring);
     double sum_upsilon = accumulate(upsilon.begin(), upsilon.end(), 0.0);
     double sum_upsilon_gt = 0.0878;
     assert(abs(sum_upsilon - sum_upsilon_gt) <= epsilon);
 
-    vector<double> upsilon_tp = t_prime.omega_condense_split(lambda_s, true);
+    vector<double> upsilon_tp = t_prime.omega_condense_split(lambda_s, true, local_max_scoring);
     double sum_upsilon_tp = accumulate(upsilon_tp.begin(), upsilon_tp.end(), 0.0);
     double sum_upsilon_tp_gt = 0.1956;
     assert(abs(sum_upsilon_tp - sum_upsilon_tp_gt) <= epsilon);
 
     std::cout<<"Condense and split node weights validation test passed! " << std::endl;
 
+    // With maximum scoring
+    local_max_scoring = true;
+    Inference mcmc_max(r.size(), ploidy, verbosity, local_max_scoring);
+    std::vector<std::map<int, double>> t_max_prime_scores;
+    std::vector<double> t_max_prime_sums;
+
+    Tree t_max(ploidy, r.size());
+    t_max.random_insert({{0, 1}, {1, 1}}); // 1
+    t_max.insert_at(1,{{1, 1}, {2, 1}}); // 2
+    t_max.insert_at(2,{{0, -1}}); // 3
+    t_max.insert_at(2,{{3, -1}}); // 4
+    t_max.insert_at(1,{{0, 1}}); // 5
+
+    t_max.compute_weights();
+
+
+    Tree t_max_prime(ploidy, r.size());
+    t_max_prime.random_insert({{0, 1}, {1, 1}}); // 1
+    t_max_prime.insert_at(1,{{2, 1}}); // 2
+    t_max_prime.insert_at(2,{{1, 1}}); // 3
+    t_max_prime.insert_at(3,{{0, -1}}); // 4
+    t_max_prime.insert_at(2,{{3, -1}}); // 5
+    t_max_prime.insert_at(1,{{0, 1}}); // 6
+
+    t_max_prime.compute_weights();
+
+    n_cells = static_cast<int>(D.size());
+    for (size_t i = 0; i < n_cells; ++i)
+    {
+        t_max_prime.compute_tree(D[i], r);
+        std::map<int, double> scores_vec_prime_max = t_max_prime.get_children_id_score(t_max_prime.root);
+        t_max_prime_scores.push_back(scores_vec_prime_max);
+
+        double currentMax = -DBL_MAX;
+        for (auto it = t_max_prime_scores[i].cbegin(); it != t_max_prime_scores[i].cend(); ++it ) {
+            if (it->second > currentMax)
+                currentMax = it->second;
+        }
+        double res = currentMax;
+        // Get maximum score
+        t_max_prime_sums.push_back(res);
+    }
+    sum_root_score = 0.0;
+    for (size_t i = 0; i < n_cells; ++i)
+    {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+        sum_root_score = sum_root_score + root_score * cluster_sizes[i];
+    }
+
+    event_prior = t_max_prime.event_prior();
+    event_prior_tp_gt = -30.395;
+    assert(abs(event_prior - event_prior_tp_gt) <= epsilon);
+
+    double t_max_prime_sum = accumulate( t_max_prime_sums.begin(), t_max_prime_sums.end(), 0.0);
+    t_max_prime.posterior_score = mcmc_max.log_tree_posterior(t_max_prime_sum, m, t_max_prime);
+
+    total_score_tp = sum_root_score + t_max_prime.posterior_score;
+    total_score_tp_gt = -1498.800;
+    assert(abs(total_score_tp - total_score_tp_gt) <= epsilon);
+
+    // intentional override
+    lambda_s = 0.5;
+
+    omega = t_max.omega_condense_split(lambda_s, false, local_max_scoring);
+    sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+    sum_omega_gt = 0.296;
+    assert(abs(sum_omega - sum_omega_gt) <= epsilon);
+
+    omega_prime = t_max_prime.omega_condense_split(lambda_s, false, local_max_scoring);
+    sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
+    sum_omega_prime_gt = 0.488;
+    assert(abs(sum_omega_prime - sum_omega_prime_gt) <= epsilon);
+
+    upsilon = t_max.omega_condense_split(lambda_s, true, local_max_scoring);
+    sum_upsilon = accumulate(upsilon.begin(), upsilon.end(), 0.0);
+    sum_upsilon_gt = 0.0878;
+    assert(abs(sum_upsilon - sum_upsilon_gt) <= epsilon);
+
+    upsilon_tp = t_max_prime.omega_condense_split(lambda_s, true, local_max_scoring);
+    sum_upsilon_tp = accumulate(upsilon_tp.begin(), upsilon_tp.end(), 0.0);
+    sum_upsilon_tp_gt = 0.1956;
+    assert(abs(sum_upsilon_tp - sum_upsilon_tp_gt) <= epsilon);
+
+    std::cout<<"Condense and split node weights validation test with maximum scoring passed! " << std::endl;
 }
 
 void test_insert_delete_weights()
@@ -398,7 +521,7 @@ void test_insert_delete_weights()
     double lambda_r = 2.0;
     double lambda_c = 1.0;
 
-    vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, false); // delete weights
+    vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, false, local_max_scoring); // delete weights
     assert(abs(omega[0] - 0.916e-03) <=epsilon_sens);
     assert(abs(omega.back() - 4.979e-03) <=epsilon_sens);
 
@@ -406,7 +529,7 @@ void test_insert_delete_weights()
     double sum_omega_gt = 0.0217;
     assert(abs(sum_omega - sum_omega_gt) <= epsilon);
 
-    vector<double> upsilon = t.omega_insert_delete(lambda_r, lambda_c, true); // cost weighted omega
+    vector<double> upsilon = t.omega_insert_delete(lambda_r, lambda_c, true, local_max_scoring); // cost weighted omega
     vector<double> xi = t.chi_insert_delete(true); // cost weighted chi;
 
     double sum_upsilon = accumulate(upsilon.begin(), upsilon.end(), 0.0);
@@ -414,6 +537,78 @@ void test_insert_delete_weights()
     assert(abs(sum_upsilon - sum_upsilon_gt) <= epsilon);
 
     cout<<"Insert and delete node weights validation test passed!"<<endl;
+
+    local_max_scoring = true;
+    Inference mcmc_max(r.size(), ploidy, verbosity, local_max_scoring);
+    std::vector<std::map<int, double>> t_max_scores;
+    std::vector<double> t_max_sums;
+
+    Tree t_max(ploidy, r.size());
+    t_max.random_insert({{0, 1}, {1, 1}}); // 1
+    t_max.insert_at(1,{{3,1}});  // 2
+    t_max.insert_at(2,{{1, 1}, {2, 1}}); // 3
+    t_max.insert_at(3,{{0, -1}}); // 4
+    t_max.insert_at(3,{{3, -1}}); // 5
+    t_max.insert_at(1,{{0, 1}}); // 6
+
+    t_max.compute_weights();
+
+    n_cells = static_cast<int>(D.size());
+    for (size_t i = 0; i < n_cells; ++i)
+    {
+        t_max.compute_tree(D[i], r);
+        std::map<int, double> scores_vec = t_max.get_children_id_score(t_max.root);
+
+        t_max_scores.push_back(scores_vec);
+
+        double currentMax = -DBL_MAX;
+        for (auto it = t_max_scores[i].cbegin(); it != t_max_scores[i].cend(); ++it ) {
+            if (it->second > currentMax)
+                currentMax = it->second;
+        }
+        double res = currentMax;
+        // Get maximum score
+        t_max_sums.push_back(res);
+    }
+    sum_root_score = 0.0;
+    for (u_int i = 0; i < n_cells; ++i) {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+        sum_root_score += root_score;
+    }
+
+    m = D.size();
+    t_sum = accumulate( t_max_sums.begin(), t_max_sums.end(), 0.0);
+    t_max.posterior_score = mcmc_max.log_tree_posterior(t_sum, m, t);
+
+    event_prior = t_max.event_prior();
+    event_prior_gt = -40.395;
+    assert(abs(event_prior - event_prior_gt) <= epsilon);
+
+    total_score = sum_root_score + t_max.posterior_score;
+    total_score_gt = -1516.125;
+    assert(abs(total_score - total_score_gt) <= epsilon);
+
+    // intentional overriding of parameters
+    lambda_r = 2.0;
+    lambda_c = 1.0;
+
+    omega = t_max.omega_insert_delete(lambda_r, lambda_c, false, local_max_scoring); // delete weights
+    assert(abs(omega[0] - 0.916e-03) <=epsilon_sens);
+    assert(abs(omega.back() - 4.979e-03) <=epsilon_sens);
+
+    sum_omega = accumulate(omega.begin(), omega.end(), 0.0);
+    sum_omega_gt = 0.0217;
+    assert(abs(sum_omega - sum_omega_gt) <= epsilon);
+
+    upsilon = t_max.omega_insert_delete(lambda_r, lambda_c, true, local_max_scoring); // cost weighted omega
+    xi = t_max.chi_insert_delete(true); // cost weighted chi;
+
+    sum_upsilon = accumulate(upsilon.begin(), upsilon.end(), 0.0);
+    sum_upsilon_gt = 0.0166;
+    assert(abs(sum_upsilon - sum_upsilon_gt) <= epsilon);
+
+    cout<<"Insert and delete node weights validation test with maximum scoring passed!"<<endl;
 
 }
 
@@ -442,8 +637,7 @@ void test_event_prior()
      * Validation test for the event prior computation
      * */
 
-    bool local_max_scoring = false;
-    Inference mcmc(r.size(), ploidy, verbosity, local_max_scoring);
+    Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
 
@@ -485,6 +679,24 @@ void test_tree_attachment()
         assert(abs(mcmc.t_sums[i] - t_sums_gt[i])  <= epsilon);
 
     std::cout<<"Tree attachment computation test passed!"<<std::endl;
+
+    // And now using maximum maximum scoring
+    local_max_scoring = true;
+    Inference mcmc_max(r.size(), ploidy, verbosity, local_max_scoring);
+    mcmc_max.initialize_worked_example();
+    mcmc_max.compute_t_table(D,r,cluster_sizes);
+
+    // the natural sum on the log space values
+    std::vector<double> t_max_gt = {4.327, 3.520, 29.222, 7.684, 10.464};
+
+    for (size_t i = 0; i < t_scores_gt.size(); ++i)
+        for (size_t j = 0; j < t_scores_gt[0].size(); ++ j)
+            assert(abs(mcmc_max.t_scores[i][j] - t_scores_gt[i][j])  <= epsilon);
+
+    for (size_t i = 0; i < t_max_gt.size(); ++i)
+        assert(abs(mcmc_max.t_sums[i] - t_max_gt[i])  <= epsilon);
+
+    std::cout<<"Maximum tree attachment computation test passed!"<<std::endl;
 }
 
 void test_prune_reattach()
@@ -536,6 +748,51 @@ void test_prune_reattach()
 
 
     cout<<"Prune and reattach validation test passed!"<<std::endl;
+
+    local_max_scoring = true;
+    Inference mcmc_max(r.size(), ploidy, verbosity, local_max_scoring);
+    mcmc_max.initialize_worked_example();
+    mcmc_max.compute_t_table(D,r,cluster_sizes);
+    mcmc_max.update_t_prime(); // set t_prime to t
+
+    // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+    std::sort(mcmc_max.t_prime.all_nodes_vec.begin(),mcmc_max.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
+
+    assert(abs(mcmc_max.t.posterior_score - 21.7499) <= epsilon);
+
+    mcmc_max.apply_prune_reattach(D, r, false, true);
+
+    cout << "First cell's score" << endl;
+    cout << mcmc_max.t_prime_sums[0] << endl;
+    assert(abs(mcmc_max.t_prime_sums[0] - 0.613)  <= epsilon);
+    assert(abs(mcmc_max.t_prime_sums[1] - 1.444)  <= epsilon);
+    assert(abs(mcmc_max.t_prime_sums[2] - 24.051)  <= epsilon);
+    assert(abs(mcmc_max.t_prime_sums[3] - 7.684)  <= epsilon);
+    assert(abs(mcmc_max.t_prime_sums[4] - 10.464)  <= epsilon);
+
+    // compute the root score
+    n_cells = D.size();
+    sum_root_score = 0.0;
+    for (u_int i = 0; i < n_cells; ++i) {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+        sum_root_score += root_score;
+    }
+
+    sum_root_score_gt = -1510.724;
+    assert(abs(sum_root_score - sum_root_score_gt) <= epsilon);
+
+    t_prime_sum = accumulate( mcmc_max.t_prime_sums.begin(), mcmc_max.t_prime_sums.end(), 0.0);
+    log_post_t_prime = mcmc_max.log_tree_posterior(t_prime_sum, m, mcmc_max.t_prime);
+    mcmc_max.t_prime.posterior_score = log_post_t_prime;
+    assert(abs(mcmc_max.t_prime.posterior_score - 10.788) <= epsilon);
+
+    // total score
+    total_score_gt = -1499.936;
+    total_score = mcmc_max.t_prime.posterior_score + sum_root_score;
+    assert(abs(total_score - total_score_gt) <= epsilon);
+
+    cout<<"Prune and reattach validation test with maximum scoring passed!"<<std::endl;
 }
 
 void test_weighted_prune_reattach()
@@ -564,6 +821,26 @@ void test_weighted_prune_reattach()
     assert(abs(zeta_prime - 2.783) <= epsilon);
 
     cout<<"Weighted prune &reattach validation test passed!"<<endl;
+
+    local_max_scoring = true;
+    Inference mcmc_max(r.size(), ploidy, verbosity, local_max_scoring);
+    mcmc_max.initialize_worked_example();
+    mcmc_max.compute_t_table(D,r,cluster_sizes);
+    mcmc_max.update_t_prime(); // set t_prime to t
+
+    // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+    std::sort(mcmc_max.t_prime.all_nodes_vec.begin(),mcmc_max.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
+
+    mcmc_max.apply_prune_reattach(D, r, false, true);
+
+    zeta = mcmc_max.t.cost();
+    zeta_prime = mcmc_max.t_prime.cost();
+
+    assert(abs(zeta - 3.533) <= epsilon);
+    assert(abs(zeta_prime - 2.783) <= epsilon);
+
+    cout<<"Weighted prune &reattach validation test with maximum scoring passed!"<<endl;
+
 
 }
 
@@ -622,6 +899,56 @@ void test_add_remove_event()
     assert(abs(total_score - total_score_gt) <= epsilon);
 
     std::cout<<"Add / remove event validation test passed!"<<std::endl;
+
+    local_max_scoring = true;
+    Inference mcmc_max(r.size(), ploidy, verbosity, local_max_scoring);
+    mcmc_max.initialize_worked_example();
+    mcmc_max.compute_t_table(D,r,cluster_sizes); // assignment operator changes the order
+    mcmc_max.update_t_prime(); // set t_prime to t
+
+    // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+    std::sort(mcmc_max.t_prime.all_nodes_vec.begin(),mcmc_max.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
+
+    mcmc_max.apply_add_remove_events(D, r, false, true);
+
+    event_prior = mcmc_max.t_prime.event_prior();
+    event_prior_tp_gt = -28.603;
+    assert(abs(event_prior - event_prior_tp_gt) <= epsilon);
+
+    assert(abs(mcmc_max.t_prime_scores[0][5] - (-427.753)) <= epsilon);
+    assert(abs(mcmc_max.t_prime_scores[1][5] - (-411.611)) <= epsilon);
+    assert(abs(mcmc_max.t_prime_scores[2][5] - (-251.846)) <= epsilon);
+    assert(abs(mcmc_max.t_prime_scores[3][5] - (-387.5)) <= epsilon);
+    assert(abs(mcmc_max.t_prime_scores[4][5] - (-313.559)) <= epsilon);
+
+    assert(abs(mcmc_max.t_prime_sums[0] - 4.327)  <= epsilon);
+    assert(abs(mcmc_max.t_prime_sums[1] - 3.520)  <= epsilon);
+    assert(abs(mcmc_max.t_prime_sums[2] - 29.222)  <= epsilon);
+    assert(abs(mcmc_max.t_prime_sums[3] - 6.987)  <= epsilon);
+    assert(abs(mcmc_max.t_prime_sums[4] - 7.065)  <= epsilon);
+
+    // compute the root score
+    n_cells = D.size();
+    sum_root_score = 0.0;
+    for (u_int i = 0; i < n_cells; ++i) {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+        sum_root_score += root_score;
+    }
+
+    sum_root_score_gt = -1510.724;
+    assert(abs(sum_root_score - sum_root_score_gt) <= epsilon);
+
+    t_prime_sum = accumulate( mcmc_max.t_prime_sums.begin(), mcmc_max.t_prime_sums.end(), 0.0);
+    log_post_t_prime = mcmc_max.log_tree_posterior(t_prime_sum, m, mcmc_max.t_prime);
+    mcmc_max.t_prime.posterior_score = log_post_t_prime;
+
+    // total score
+    total_score_gt = -1495.372;
+    total_score = mcmc_max.t_prime.posterior_score + sum_root_score;
+    assert(abs(total_score - total_score_gt) <= epsilon);
+
+    std::cout<<"Add / remove event validation test with maximum scoring passed!"<<std::endl;
 }
 
 void test_tree_validation()
@@ -750,6 +1077,42 @@ void test_overdispersed_score()
     is_overdispersed = 0; // disable it back
     std::cout<<"Overdispersion score test passed!"<<std::endl;
 
+    // Test maximum scoring
+    is_overdispersed = 1; // enable overdispersion
+    local_nu = 2.0;
+    local_max_scoring = true;
+    Inference mcmc_max(r.size(), ploidy, verbosity, local_max_scoring);
+    mcmc_max.initialize_worked_example();
+    mcmc_max.t.nu = mcmc_max.t_prime.nu = local_nu;
+    mcmc_max.compute_t_table(D,r,cluster_sizes);
+
+
+    // compute the root score
+    n_cells = D.size();
+    vector<double> root_scores_max(n_cells);
+    for (u_int i = 0; i < n_cells; ++i)
+    {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        double root_score = mcmc_max.t_prime.get_od_root_score(r, sum_d, D[i]);
+        root_scores_max[i] = root_score;
+    }
+    assert(abs(root_scores_max[0] - (-323.687)) <= epsilon);
+    assert(abs(root_scores_max[1] - (-233.387)) <= epsilon);
+    assert(abs(root_scores_max[2] - (-391.958)) <= epsilon);
+    assert(abs(root_scores_max[3] - (-307.943)) <= epsilon);
+    assert(abs(root_scores_max[4] - (-219.915)) <= epsilon);
+
+    sum_root_score = std::accumulate(root_scores_max.begin(), root_scores_max.end(),0.0);
+    assert(abs(sum_root_score - (-1476.89)) <= epsilon);
+
+    double t_sum_max = std::accumulate(mcmc_max.t_sums.begin(), mcmc_max.t_sums.end(), 0.0);
+    double log_post_t_max = mcmc_max.log_tree_posterior(t_sum_max, m, mcmc_max.t);
+    double total_score_max = log_post_t_max + sum_root_score;
+    assert(abs(total_score_max - (-1495.819)) <= epsilon);
+
+
+    is_overdispersed = 0; // disable it back
+    std::cout<<"Overdispersion score test with maximum scoring passed!"<<std::endl;
 
 }
 
@@ -871,5 +1234,44 @@ void test_cluster_scoring()
 
 }
 
+void test_print_scores()
+{
+  Inference mcmc(r.size(), ploidy, verbosity, max_scoring);
+  mcmc.initialize_worked_example();
+
+  const vector<vector<double>> D_cells = {
+      {39, 37, 45, 49, 30},
+      {39, 37, 45, 49, 30},
+      {69, 58, 68, 34, 21},
+      {69, 58, 68, 34, 21},
+      {69, 58, 68, 34, 21}
+  };
+
+  mcmc.compute_t_table(D_cells,r,cluster_sizes);
+  vector<std::map<int, double>> scores = mcmc.t_scores; // vector of map<int, double>
+
+  // Write score matrix
+  for (int j=0;j<D.size();j++) {
+    map<int,double>::const_iterator map_iter;
+    int i = 0;
+    for(map_iter=scores[j].begin(); map_iter!=scores[j].end(); ++map_iter)
+    {
+      if (i == scores[j].size()-1) // the last element
+          std::cout << map_iter->second;
+      else // add comma
+          std::cout << map_iter->second << ',';
+      i++;
+    }
+    std::cout << "\n";
+  }
+
+}
+
+// void test_iqm()
+// {
+//   const vector<double> v = {5, 8, 4, 38, 8, 6, 9, 7, 7, 3, 1, 6};
+//   double val = MathOp::iqm(v);
+//   std::cout << val;
+// }
 
 #endif //SC_DNA_VALIDATION_H

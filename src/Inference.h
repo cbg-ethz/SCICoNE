@@ -16,6 +16,7 @@
 #include <cmath>
 #include <array>
 #include <functional>
+#include <cfloat>
 #include "globals.cpp"
 #include "Lgamma.h"
 
@@ -215,7 +216,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
         double t_sum = 0;
         if (max_scoring) {
           // Get maximum score for cell
-          double currentMax = - DBL_MAX;
+          double currentMax = -DBL_MAX;
           unsigned arg_max = 0;
           for (auto it = scores_vec.cbegin(); it != scores_vec.cend(); ++it ) {
               if (it->second > currentMax)
@@ -318,9 +319,9 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
             if (std::isinf(sum_chi))
                 throw std::out_of_range("sum_chi is infinity, insert/delete move will be rejected");
 
-            vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted);
+            vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted, max_scoring);
             sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-            vector<double> omega_prime = t_prime.omega_insert_delete(lambda_r, lambda_c, weighted);
+            vector<double> omega_prime = t_prime.omega_insert_delete(lambda_r, lambda_c, weighted, max_scoring);
             sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
         }
         else if (move_id == 8 || move_id == 9) // condense/split move or weighted cs
@@ -331,9 +332,9 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
             vector<double> chi_prime = t_prime.chi_condense_split(weighted);
             sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
 
-            vector<double> omega = t.omega_condense_split(lambda_s, weighted);
+            vector<double> omega = t.omega_condense_split(lambda_s, weighted, max_scoring);
             sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-            vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, weighted);
+            vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, weighted, max_scoring);
             sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
         }
 
@@ -887,8 +888,12 @@ double Inference::log_tree_prior(int m, int n) {
 
 //    double log_prior = - (n -1 + m) * log(n+1) -m * n * log(2); // tree prior
     double combinatorial_penalization = 0.0;
-    if (not max_scoring)
-        combinatorial_penalization = - cf*m*n*log(2);
+    if (max_scoring) {
+      combinatorial_penalization = 0.;
+      m = 0.;
+    } else {
+      combinatorial_penalization = - cf*m*n*log(2);
+    }
 
     double log_prior = -(n-1+m)*log(n+1) + combinatorial_penalization;
 
@@ -940,6 +945,10 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
     bool is_empty_table = t_prime_scores.empty();
 
     int j = 0;
+
+    if (max_scoring)
+      attached_node = t_prime.root;
+
     for (auto const &d: D)
     {
         double sum_d = accumulate( d.begin(), d.end(), 0.0);
@@ -996,8 +1005,8 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
 
     if (max_scoring) {
         for (unsigned i = 0; i < D.size(); i++) { // each cell i
-            unsigned currentMax = -DBL_MAX;
-            unsigned arg_max = 0;
+            double currentMax = -DBL_MAX;
+            // Need to go through all nodes to get maximum, not just the ones which change
             for (auto it = t_prime_scores[i].cbegin(); it != t_prime_scores[i].cend(); ++it ) {
                 if (it->second > currentMax)
                     currentMax = it->second;
@@ -1081,7 +1090,7 @@ bool Inference::apply_insert_delete_node(const vector<vector<double>> &D, const 
 
     Node* tobe_computed;
 
-    tobe_computed = t_prime.insert_delete_node(size_limit, weighted);
+    tobe_computed = t_prime.insert_delete_node(size_limit, weighted, max_scoring);
 
 
     if (tobe_computed != nullptr)
@@ -1124,7 +1133,7 @@ bool Inference::apply_condense_split(const vector<vector<double>> &D, const vect
      * */
 
     Node* tobe_computed;
-    tobe_computed = t_prime.condense_split_node(size_limit, weighted);
+    tobe_computed = t_prime.condense_split_node(size_limit, weighted, max_scoring);
 
     if (tobe_computed != nullptr)
     {

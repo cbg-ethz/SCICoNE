@@ -105,7 +105,7 @@ int main( int argc, char* argv[]) {
             ("gamma","gamma parameter, the initial learning rate value",cxxopts::value(gamma))
             ("random_init","Boolean parameter to enable random initialisation of the tree", cxxopts::value(random_init))
             ("move_probs","The vector of move probabilities",cxxopts::value(move_probs))
-            ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value(move_probs))
+            ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value<bool>(max_scoring))
             ;
 
     auto result = options.parse(argc, argv);
@@ -262,6 +262,8 @@ int main( int argc, char* argv[]) {
 
     vector<vector<int>> inferred_cnvs_bins = Utils::regions_to_bins_cnvs(inferred_cnvs, region_sizes);
 
+    std::vector<std::map<int, double>> attachment_scores = mcmc.t_scores; // cell-by-node score matrix
+
     // write the inferred(best) tree
     std::ofstream tree_output_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_tree_inferred" + ".txt");
     tree_output_file << mcmc.best_tree;
@@ -278,6 +280,22 @@ int main( int argc, char* argv[]) {
                 inferred_cnvs_file << v1[i] << ',';
         }
         inferred_cnvs_file << endl;
+    }
+
+    // write score matrix
+    std::ofstream attachment_scores_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_attachment_scores" + ".csv");
+    for (int j=0;j<n_cells;j++) {
+      map<int,double>::const_iterator map_iter;
+      int i = 0;
+      for(map_iter=attachment_scores[j].begin(); map_iter!=attachment_scores[j].end(); ++map_iter)
+      {
+        if (i == attachment_scores[j].size()-1) // the last element
+            attachment_scores_file << map_iter->second;
+        else // add comma
+            attachment_scores_file << map_iter->second << ',';
+        i++;
+      }
+      attachment_scores_file << endl;
     }
 
     std::cout << "Tree inference is successfully completed!" <<std::endl;
