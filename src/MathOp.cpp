@@ -107,27 +107,46 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             double lambda_r = iqm(rbins);
             double lambda_l = iqm(lbins);
             double lambda_all = vec_avg(all_bins);
-
-            //    The distance between the left and right segments must be > lambda_all/4, so we update the
-            //    segments accordingly
+            lambda_all = std::max(lambda_all, std::min(lambda_r, lambda_l));
+            lambda_all = std::min(lambda_all, std::max(lambda_r, lambda_l));
+            std::cout << lambda_r << ", " << lambda_l << ", " << lambda_all << std::endl;
+             // The distance between the left and right segments must be > lambda_all/4, so we update the
+             // segments accordingly
             if (lambda_r > lambda_l) {
-              double gap = lambda_r - lambda_all;
+              double gap = lambda_r - lambda_l;
               double gap_thres = lambda_all/4;
               double scaling = std::max(lambda_all/(4*gap), 1.0);
-              while (gap < gap_thres) {
-                lambda_r = lambda_all + scaling*gap;
-                gap = lambda_r - lambda_all;
-                scaling = std::max(lambda_all/(4*gap), 1.0);
+              if (gap < gap_thres) {
+                lambda_r = lambda_all + scaling*(lambda_r-lambda_all);
+                lambda_l = lambda_all - scaling*(lambda_all-lambda_l);
               }
-            } else {
-              double gap = lambda_l - lambda_all;
+              // double ratio = lambda_r/lambda_l;
+              // double ratio_thres = 4./3.;
+              // std::cout << ratio << ", " << ratio_thres << std::endl;
+              // if (ratio < ratio_thres) {
+              //   std::cout << "Increasing gap 1" << std::endl;
+              //   double chi = sqrt(4./3. * lambda_l/lambda_r);
+              //   lambda_r = lambda_r * chi;
+              //   lambda_l = lambda_l / chi;
+              // }
+
+            } else if (lambda_r < lambda_l) {
+              double gap = lambda_l - lambda_r;
               double gap_thres = lambda_all/4;
               double scaling = std::max(lambda_all/(4*gap), 1.0);
-              while (gap < gap_thres) {
-                lambda_l = lambda_all + scaling*gap;
-                gap = lambda_l - lambda_all;
-                scaling = std::max(lambda_all/(4*gap), 1.0);
+              if (gap < gap_thres) {
+                lambda_l = lambda_all + scaling*(lambda_l-lambda_all);
+                lambda_r = lambda_all - scaling*(lambda_all-lambda_r);
               }
+              // double ratio = lambda_l/lambda_r;
+              // double ratio_thres = 4./3.;
+              // std::cout << ratio << ", " << ratio_thres << std::endl;
+              // if (ratio < ratio_thres) {
+              //   std::cout << "Increasing gap 2" << std::endl;
+              //   double chi = sqrt(4./3. * lambda_r/lambda_l);
+              //   lambda_l = lambda_l * chi;
+              //   lambda_r = lambda_r / chi;
+              // }
             }
 
             if (lambda_r == 0)
@@ -645,13 +664,12 @@ double MathOp::third_quartile(vector<T> &v) {
      vector<double> third;
 
      for (int i = 0; i!=mid; ++i) {
-         first[i] = v[i];
+         first.push_back(v[i]);
      }
 
      for (int i = mid; i!= size; ++i) {
-         third[i] = v[i];
+         third.push_back(v[i]);
      }
-
      double fst;
      double trd;
 

@@ -190,6 +190,7 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
     double third_q = MathOp::third_quartile(signal);
     double median = MathOp::median(signal);
     double range = third_q - median;
+    // double range = stdev;
     double threshold = threshold_coefficient * range;
 
     // use log of max_val
