@@ -109,7 +109,6 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             double lambda_all = vec_avg(all_bins);
             lambda_all = std::max(lambda_all, std::min(lambda_r, lambda_l));
             lambda_all = std::min(lambda_all, std::max(lambda_r, lambda_l));
-            std::cout << lambda_r << ", " << lambda_l << ", " << lambda_all << std::endl;
              // The distance between the left and right segments must be > lambda_all/4, so we update the
              // segments accordingly
             if (lambda_r > lambda_l) {
