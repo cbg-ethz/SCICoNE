@@ -24,6 +24,8 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -gdwarf-3")
 
 # Search for boost
 find_package(Boost 1.47 COMPONENTS random REQUIRED)
+find_package(NLopt REQUIRED)
+include_directories(${NLOPT_INCLUDE_DIRS})
 
 include_directories(src)
 include_directories(include)
@@ -45,6 +47,7 @@ add_executable(score src/score_tree.cpp src/MathOp.cpp
 
 add_executable(breakpoint_detection
         src/breakpoint_detection.cpp src/MathOp.cpp src/MathOp.h  src/Utils.cpp src/Utils.h  src/SignalProcessing.cpp src/SignalProcessing.h src/Lgamma.cpp src/Lgamma.h include/xxhash.h include/xxhash.c src/CustomExceptions.h)
+target_link_libraries(breakpoint_detection ${NLOPT_LIBRARY_DIRS}/libnlopt.so)
 
 # tests
 enable_testing()

@@ -1,4 +1,4 @@
-lr//
+//
 // Created by Tuncel  Mustafa Anil on 6/19/18.
 //
 
@@ -86,13 +86,13 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             //   The mean across the bins in the window can change according to a linear model,
             //   which includes the case where all the bins have the same min (if the slope is zero)
             vector<double> lambdas_segment(n_bins);
-            vector<double> regression_parameters = compute_linear_regression_parameters(bin_positions, all_bins);
+            vector<double> regression_parameters = compute_linear_regression_parameters(all_bins);
             double alpha = regression_parameters[0];
             double beta = regression_parameters[1];
 
             for (size_t k = 0; k < n_bins; ++k)
             {
-                lambdas_segment[k] = alpha + beta_regression*bin_positions[k]; // prediction
+                lambdas_segment[k] = alpha + beta*bin_positions[k]; // prediction
                 if (lambdas_segment[k] <= 0)
                     lambdas_segment[k] = 0.0001;
             }
@@ -645,11 +645,11 @@ double MathOp::third_quartile(vector<T> &v) {
      vector<double> third;
 
      for (int i = 0; i!=mid; ++i) {
-         first[i] = quantile[i];
+         first[i] = v[i];
      }
 
      for (int i = mid; i!= size; ++i) {
-         third[i] = quantile[i];
+         third[i] = v[i];
      }
 
      double fst;
@@ -671,7 +671,7 @@ double MathOp::third_quartile(vector<T> &v) {
     return trd;
 }
 
-double ll_linear_model(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
+double MathOp::ll_linear_model(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
 {
     double mu = 1;
 
@@ -691,7 +691,7 @@ double ll_linear_model(const std::vector<double> &x, std::vector<double> &grad, 
     return res;
 }
 
-vector<double> MathOp::compute_linear_regression_parameters(const vector<double> &z) {
+vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z) {
     /*
      * Computes the alpha and beta of y = alpha + beta * x
      * */
@@ -702,7 +702,7 @@ vector<double> MathOp::compute_linear_regression_parameters(const vector<double>
     std::vector<double> lb(2);
     lb[0] = 0; lb[1] = -HUGE_VAL; // lower bounds on alpha, beta
     opt.set_lower_bounds(lb);
-    opt.set_max_objective(func, &z);
+    opt.set_max_objective(ll_linear_model, &z);
     opt.set_xtol_rel(1e-4);
     std::vector<double> x(2);
     x[0] = vec_avg(z); x[1] = 0.; // initial alpha, beta
@@ -710,8 +710,6 @@ vector<double> MathOp::compute_linear_regression_parameters(const vector<double>
 
     try{
         nlopt::result result = opt.optimize(x, minf);
-        std::cout << "found maximum at f(" << x[0] << ", " << x[1] << ") = "
-            << std::setprecision(10) << minf << std::endl;
 
         return x; // optimized alpha, beta
     }
@@ -726,6 +724,7 @@ vector<double> MathOp::compute_linear_regression_parameters(const vector<double>
 template double MathOp::st_deviation(vector<double> &v);
 template double MathOp::st_deviation(vector<int> &v);
 template double MathOp::median(vector<double> v);
+template double MathOp::third_quartile(vector<double> &v);
 template double MathOp::iqm(vector<double> v);
 template double MathOp::vec_avg(const vector<double> &v);
 template double MathOp::vec_avg(const vector<int> &v);

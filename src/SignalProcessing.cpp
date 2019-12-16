@@ -201,7 +201,7 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
     if (verbosity > 0)
     {
         std::ofstream bp_vals_file("./" + f_name_posfix + "_all_bps_comparison.csv", std::ios_base::app);
-        bp_vals_file << max_idx + window_size << ',' << max_val << ',' << stdev << std::endl; // 10 for window size
+        bp_vals_file << max_idx + window_size << ',' << max_val << ',' << third_q << std::endl; // 10 for window size
     }
 
     if (max_val > threshold)
