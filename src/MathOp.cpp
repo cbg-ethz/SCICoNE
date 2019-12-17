@@ -715,7 +715,7 @@ vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z) {
 
     double lambda_all = vec_avg(z);
 
-    nlopt::opt opt(nlopt::LN_NELDERMEAD, 2);
+    nlopt::opt opt(nlopt::LN_BOBYQA, 2);
     std::vector<double> lb(2);
     lb[0] = 0; lb[1] = -HUGE_VAL; // lower bounds on alpha, beta
     opt.set_lower_bounds(lb);
