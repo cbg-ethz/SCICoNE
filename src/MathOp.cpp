@@ -19,7 +19,7 @@ double MathOp::vec_avg(const vector<T> &v) {
 double MathOp::breakpoint_log_likelihood(std::vector<double> v, double lambda, double nu)
 {
     /*
-     * Returns the max likelihood value for the Negative binomial distribution with mean: lambda and overdispersion: nu
+     * Returns the log likelihood for the Negative binomial distribution with mean: lambda and overdispersion: nu
      * Mean lambda is inferred by maximum likelihood approach.
      *
      */
@@ -59,18 +59,15 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
     vector<vector<double>> lr_vec(bp_size, vector<double>(n_cells)); // LR of each bin for each cell
 
     for (unsigned i = 0; i < bp_size; ++i) {
-
         int start = i - window_size;
         int end = i + window_size;
 
         // end cannot be equal to bp_size because cellranger DNA is putting 0 to the end
         if (start < 0 || end >= static_cast<int>(bp_size)) {
-            //cout << "continue" << endl;
             continue;
         }
 
         for (unsigned j = 0; j < n_cells; ++j) {
-
             vector<double> lbins = vector<double>(mat[j].begin() + start, mat[j].begin() + i);
             vector<double> rbins = vector<double>(mat[j].begin() + i, mat[j].begin() + end);
             vector<double> all_bins = vector<double>(mat[j].begin() + start, mat[j].begin() + end);
@@ -109,6 +106,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             double lambda_all = vec_avg(all_bins);
             lambda_all = std::max(lambda_all, std::min(lambda_r, lambda_l));
             lambda_all = std::min(lambda_all, std::max(lambda_r, lambda_l));
+
              // The distance between the left and right segments must be > lambda_all/4, so we update the
              // segments accordingly
             if (lambda_r > lambda_l) {
@@ -147,7 +145,6 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
               //   lambda_r = lambda_r / chi;
               // }
             }
-
             if (lambda_r == 0)
                 lambda_r = 0.0001;
             if (lambda_l == 0)
@@ -155,7 +152,6 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
 
             double ll_break = breakpoint_log_likelihood(lbins, lambda_l, 1.0) +
                               breakpoint_log_likelihood(rbins, lambda_r, 1.0);
-
 
             // 3. Output the difference between the two models' likelihoods
             lr_vec[i][j] = ll_break - ll_segment;
@@ -659,17 +655,12 @@ double MathOp::third_quartile(vector<T> &v) {
      double median;
      median = size % 2 == 0 ? (v[mid] + v[mid-1])/2 : v[mid];
 
-     vector<double> first;
      vector<double> third;
-
-     for (int i = 0; i!=mid; ++i) {
-         first.push_back(v[i]);
-     }
 
      for (int i = mid; i!= size; ++i) {
          third.push_back(v[i]);
      }
-     double fst;
+
      double trd;
 
      int side_length = 0;
@@ -682,7 +673,6 @@ double MathOp::third_quartile(vector<T> &v) {
          side_length = (size-1)/2;
      }
 
-     fst = (size/2) % 2 == 0 ? (first[side_length/2]/2 + first[(side_length-1)/2])/2 : first[side_length/2];
      trd = (size/2) % 2 == 0 ? (third[side_length/2]/2 + third[(side_length-1)/2])/2 : third[side_length/2];
 
     return trd;
