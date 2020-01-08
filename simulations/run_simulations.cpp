@@ -97,7 +97,6 @@ int main(int argc, char* argv[]) {
         std::cout<<"Simulating without overdispersion" << std::endl;
         is_overdispersed = 0;
     }
-    sim.sample_cluster_sizes(n_cells);
 
     sim.sample_region_sizes(n_bins, min_region_size);
 
