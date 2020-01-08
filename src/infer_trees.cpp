@@ -180,12 +180,11 @@ int main( int argc, char* argv[]) {
       cluster_sizes = std::vector<int>(n_cells, 1);
 
       if (n_cells < 20)
-        std::cout << "Warning: there are only " << n_cells <<  " observations. If these are clusters, the cluster_sizes_file parameter should be specified for accurate tree scoring.";
+        std::cout << "Warning: there are only " << n_cells <<  " observations. If these are clusters, the cluster_sizes_file parameter should be specified for accurate tree scoring." << std::endl;
     }
-
     if (max_scoring) {
-        std::cout << "Will perform maximum scoring.";
-        move_probs.back() = 0.0f; // no need to prune tree 
+        std::cout << "Will perform maximum scoring." << std::endl;
+        move_probs.back() = 0.0f; // no need to prune tree
     }
 
     // run mcmc inference
