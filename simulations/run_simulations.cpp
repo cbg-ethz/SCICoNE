@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
 
     print_precision = 15;
 
-    cxxopts::Options options("Mcmc simulations", "Simulates the count matrix. Outputs the count matrix, region sizes, ground truth and the tree that generated the data.");
+    cxxopts::Options options("MCMC simulations", "Simulates the count matrix. Outputs the count matrix, region sizes, ground truth and the tree that generated the data.");
     options.add_options()
             ("n_bins", "Number of bins of the input matrix", cxxopts::value(n_bins))
             ("n_cells", "Number of cells", cxxopts::value(n_cells))

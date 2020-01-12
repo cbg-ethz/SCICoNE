@@ -43,6 +43,7 @@ int main( int argc, char* argv[]) {
     int seed = 0;
     string region_sizes_file;
     string d_matrix_file;
+    string cluster_sizes_file;
     string tree_file;
 
     unsigned size_limit = std::numeric_limits<unsigned>::max();
@@ -77,6 +78,7 @@ int main( int argc, char* argv[]) {
     options.add_options()
             ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
             ("d_matrix_file", "Path to the counts matrix file, delimiter: ',', line separator: '\n' ", cxxopts::value(d_matrix_file))
+            ("cluster_sizes_file", "Path to the file containing the cluster sizes, each line contains one cluster size", cxxopts::value(cluster_sizes_file))
             ("tree_file", "the tree file to load", cxxopts::value(tree_file))
             ("n_regions", "Number of regions in the input matrix", cxxopts::value(n_regions))
             ("n_iters", "Number of iterations", cxxopts::value(n_iters))
@@ -163,6 +165,20 @@ int main( int argc, char* argv[]) {
     vector<int> region_sizes;
     Utils::read_vector(region_sizes, region_sizes_file);
 
+    vector<int> cluster_sizes;
+    if (result.count("cluster_sizes_file"))
+    {
+      std::cout << "Reading the cluster_sizes file..." << std::endl;
+      Utils::read_vector(cluster_sizes, cluster_sizes_file);
+    }
+    else
+    {
+      if (n_cells < 20)
+        std::cout << "Warning: there are only " << n_cells <<  " observations. If these are clusters, the cluster_sizes_file parameter should be specified for accurate tree scoring.";
+
+        cluster_sizes = std::vector<int>(n_cells, 1);
+    }
+
     // run mcmc inference
     Inference mcmc(n_regions, ploidy, verbosity);
 
@@ -212,8 +228,8 @@ int main( int argc, char* argv[]) {
     }
 
     std::cout << "Computing the t table and overdispersion scores for the initial tree..." << std::endl;
-    mcmc.compute_t_table(d_regions,region_sizes);
-    mcmc.compute_t_od_scores(d_regions, region_sizes);
+    mcmc.compute_t_table(d_regions,region_sizes,cluster_sizes);
+    mcmc.compute_t_od_scores(d_regions, region_sizes,cluster_sizes);
 
     mcmc.update_t_prime(); // set t_prime to t
 
@@ -221,7 +237,7 @@ int main( int argc, char* argv[]) {
     auto start = high_resolution_clock::now();
 
     std::cout << "Inferring the tree using MCMC with " << n_iters << " iterations..." << std::endl;
-    mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters, size_limit, alpha, gamma);
+    mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters, size_limit, alpha, gamma, cluster_sizes);
 
     // Get ending timepoint
     auto stop = high_resolution_clock::now();
@@ -233,7 +249,7 @@ int main( int argc, char* argv[]) {
 
     std::cout << "Writing the inferred tree and cnvs..." <<std::endl;
 
-    vector<vector<int>> inferred_cnvs = mcmc.assign_cells_to_nodes(d_regions, region_sizes); // returns the inferred CNVs
+    vector<vector<int>> inferred_cnvs = mcmc.assign_cells_to_nodes(d_regions, region_sizes, cluster_sizes); // returns the inferred CNVs
 
     vector<vector<int>> inferred_cnvs_bins = Utils::regions_to_bins_cnvs(inferred_cnvs, region_sizes);
 
@@ -251,7 +267,7 @@ int main( int argc, char* argv[]) {
                 inferred_cnvs_file << v1[i];
             else // add comma
                 inferred_cnvs_file << v1[i] << ',';
-        }   
+        }
         inferred_cnvs_file << endl;
     }
 

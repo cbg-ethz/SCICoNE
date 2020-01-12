@@ -29,6 +29,9 @@ const vector<vector<double>> D = {
 // region sizes
 const vector<int> r = {4,2,3,5,2};
 
+// cluster sizes
+const vector<int> cluster_sizes = {1, 1, 1, 1, 1};
+
 // error tolerance
 const double epsilon = 0.001;
 const double epsilon_sens = 1e-06;
@@ -97,7 +100,7 @@ void test_mathop()
     /*
      * Tests for mathop functions
      * */
-    
+
     vector<double> vals1 = {12.5, 5.2, 10, 3.8, 15.5};
     vector<double> vals2 = {12.5, 5.2, 10, 44.1, 3.8, 19.5};
 
@@ -148,7 +151,7 @@ void test_reproducibility()
     Inference mcmc(r.size(), ploidy, local_verbosity);
 
     mcmc.initialize_worked_example();
-    mcmc.compute_t_table(D,r);
+    mcmc.compute_t_table(D,r,cluster_sizes);
     mcmc.update_t_prime(); // set t_prime to t
 
     // move probabilities
@@ -158,7 +161,7 @@ void test_reproducibility()
     unsigned size_limit = std::numeric_limits<unsigned>::max();
 
     std::cout << "Running reproducibility test..." << std::endl;
-    mcmc.infer_mcmc(D, r, move_probs, 5000, size_limit, 0.0, 1.0);
+    mcmc.infer_mcmc(D, r, move_probs, 5000, size_limit, 0.0, 1.0, cluster_sizes);
 
     cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << std::endl;
     std::cout<<"Epsilon: " << epsilon << std::endl;
@@ -175,7 +178,7 @@ void test_swap_label()
 
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
-    mcmc.compute_t_table(D,r);
+    mcmc.compute_t_table(D,r,cluster_sizes);
     mcmc.update_t_prime(); // set t_prime to t
 
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
@@ -292,7 +295,7 @@ void test_condense_split_weights()
     {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
         double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
-        sum_root_score += root_score;
+        sum_root_score = sum_root_score + root_score * cluster_sizes[i];
     }
 
     double event_prior = t_prime.event_prior();
@@ -300,7 +303,10 @@ void test_condense_split_weights()
     assert(abs(event_prior - event_prior_tp_gt) <= epsilon);
 
 
-    double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
+    // double t_prime_sum = accumulate( t_prime_sums.begin(), t_prime_sums.end(), 0.0);
+    double t_prime_sum = 0.;
+    for (int i=0; i<m; i++)
+      t_prime_sum = t_prime_sum + t_prime_sums[i] * cluster_sizes[i];
     t_prime.posterior_score = mcmc.log_tree_posterior(t_prime_sum, m, t_prime);
 
     double total_score_tp = sum_root_score + t_prime.posterior_score;
@@ -432,7 +438,7 @@ void test_event_prior()
 
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
-    mcmc.compute_t_table(D,r);
+    mcmc.compute_t_table(D,r,cluster_sizes);
 
     double event_prior = mcmc.t.event_prior();
     double event_prior_gt = -26.3;
@@ -450,7 +456,7 @@ void test_tree_attachment()
 
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
-    mcmc.compute_t_table(D,r);
+    mcmc.compute_t_table(D,r,cluster_sizes);
 
     std::vector<std::vector<double>> t_scores_gt = {
         {0.0,-3.555, 0.613, 4.327, -8.629, -12.352},
@@ -481,7 +487,7 @@ void test_prune_reattach()
 
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
-    mcmc.compute_t_table(D,r);
+    mcmc.compute_t_table(D,r,cluster_sizes);
     mcmc.update_t_prime(); // set t_prime to t
 
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
@@ -532,7 +538,7 @@ void test_weighted_prune_reattach()
 
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
-    mcmc.compute_t_table(D,r);
+    mcmc.compute_t_table(D,r,cluster_sizes);
     mcmc.update_t_prime(); // set t_prime to t
 
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
@@ -559,7 +565,7 @@ void test_add_remove_event()
 
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
-    mcmc.compute_t_table(D,r); // assignment operator changes the order
+    mcmc.compute_t_table(D,r,cluster_sizes); // assignment operator changes the order
     mcmc.update_t_prime(); // set t_prime to t
 
     // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
@@ -702,7 +708,7 @@ void test_overdispersed_score()
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
     mcmc.t.nu = mcmc.t_prime.nu = local_nu;
-    mcmc.compute_t_table(D,r);
+    mcmc.compute_t_table(D,r,cluster_sizes);
 
 
     // compute the root score
@@ -743,7 +749,7 @@ void test_genotype_preserving_move_scores()
 
     Inference mcmc(r.size(), ploidy, verbosity);
     mcmc.initialize_worked_example();
-    mcmc.compute_t_table(D,r);
+    mcmc.compute_t_table(D,r,cluster_sizes);
 
     std::vector<double> all_possible_scores; // event priors of all valid attachments
     std::vector<std::pair<int,int>> prune_attach_indices;
@@ -804,6 +810,52 @@ void test_apply_multiple_times()
     assert(global_counter == 55);
 
     std::cout << "Apply multiple times test passed!" << std::endl;
+}
+
+void test_cluster_scoring()
+{
+    /*
+     * Checks if same tree has the same score on clustered versus full data
+     * */
+    int n_regions = 5;
+    const vector<int> reg_sizes = {4, 2, 8, 15, 25};
+
+    const vector<vector<double>> D_cells = {
+        {39, 37, 45, 49, 30},
+        {39, 37, 45, 49, 30},
+        {69, 58, 68, 34, 21},
+        {69, 58, 68, 34, 21},
+        {69, 58, 68, 34, 21},
+        {619, 58, 68, 34, 21}
+    };
+    const vector<int> vect(D_cells.size(), 1);
+
+    const vector<vector<double>> D_clusters = {
+        {39, 37, 45, 49, 30},
+        {619, 58, 68, 34, 21},
+        {69, 58, 68, 34, 21}
+    };
+    const vector<int> cluster_sizes = {2, 1, 3};
+
+    Inference mcmc_cells(n_regions, ploidy, verbosity);
+    mcmc_cells.initialize_worked_example();
+    mcmc_cells.compute_t_table(D_cells, reg_sizes, vect);
+    double score_cells_t_table = mcmc_cells.t.total_attachment_score;
+    std::cout << "Cell score\n";
+    std::cout << score_cells_t_table;
+    std::cout << "\n";
+    Inference mcmc_clusters(n_regions, ploidy, verbosity);
+    mcmc_clusters.initialize_worked_example();
+    mcmc_clusters.compute_t_table(D_clusters, reg_sizes, cluster_sizes);
+    double score_clusters_t_table = mcmc_clusters.t.total_attachment_score;
+    std::cout << "Cluster score\n";
+    std::cout << score_clusters_t_table;
+    std::cout << "\n";
+
+    assert(abs(score_cells_t_table - score_clusters_t_table) <= epsilon);
+
+    cout<<"Cluster tree scoring validation test passed!"<<endl;
+
 }
 
 
