@@ -1,5 +1,5 @@
 import os
-import subproces
+import subprocess
 from snakemake.workflow import Workflow, Rules
 import snakemake.workflow
 from snakemake import shell
@@ -37,35 +37,76 @@ class SCICoNE(object):
     processed using scgenpy, a generic package for pre, post-processing and
     visualization of single-cell copy number data.
     """
-    def __init__(self, tree_output_path, bp_output_path=None, persistence=False):
+    def __init__(self, binary_path, output_path, persistence=False):
         """Create a SCICoNE object.
 
-        tree_results_path : type
-            Description of parameter `tree_results_path`.
-        bp_results_path : type
-            Description of parameter `bp_results_path`.
+        binary_path : type
+            Path to SCICoNE binaries.
+        output_path : type
+            Path to SCICoNE output files.
         persistence : boolean
             Wether to delete output files from C++ after loading them into the class.
         """
-        self.tree_results_path = tree_results_path
-        self.bp_results_path = bp_results_path
+        self.binary_path = binary_path
+        self.simulation_binary = os.path.join(self.binary_path, 'simulation')
+        self.bp_binary = os.path.join(self.binary_path, 'breakpoint_detection')
+        self.inference_binary = os.path.join(self.binary_path, 'inference')
+        self.score_binary = os.path.join(self.binary_path, 'score')
+
+        self.output_path = output_path
         self.persistence = persistence
+        self.postfix = 'PYSCICONETEMP'
 
         self.n_cells = 0
         self.n_nodes = 0
         self.best_tree = None
         self.tree_list = []
 
-
-    def simulate_data(self, n_cells=500, n_nodes=50, n_regions=50, n_reads=10000, ploidy=2):
-        {params.sim_bin} --n_regions {wildcards.regions} --n_reads {wildcards.reads} --n_iters {params.n_iters} --n_cells {params.n_cells} --n_bins {params.n_bins} --n_nodes \
-        {params.n_nodes} --verbosity 0 --ploidy 2 --postfix {wildcards.rep_id};
+    def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, ploidy=2, verbosity=0):
+        cwd = os.getcwd()
+        output_path = os.path.join(self.output_path, f"simulation_{self.postfix}")
         try:
-            cmd_output = subprocess.run([params.binary, f"--d_matrix_file={input.d_matrix_file}", f"--n_bins={n_bins}",\
-                f"--n_cells={n_cells}", f"--window_size={params.window_size}", f"--postfix={params.posfix}",\
-                f"--verbosity={params.verbosity}", f"--threshold={params.threshold}", f"--bp_limit={params.bp_limit}"])
+            os.mkdir(output_path)
+            os.chdir(output_path)
+        except OSError as e:
+            print("OSError: ", e.returncode, e.output, e.stdout, e.stderr)
+
+        try:
+            cmd_output = subprocess.run([self.simulation_binary, f"--n_cells={n_cells}", f"--n_nodes={n_nodes}",\
+                f"--n_regions={n_regions}", f"--n_bins={n_bins}", f"--n_reads={n_reads}", f"--nu={nu}",\
+                f"--ploidy={ploidy}", f"--verbosity={verbosity}", f"--postfix={self.postfix}"])
         except subprocess.SubprocessError as e:
-            print("Status : FAIL", e.returncode, e.output, e.stdout, e.stderr)
+            print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
+
+        # The binary generates 4 files: *_d_mat.csv, *_ground_truth.csv, *_region_sizes.txt and *_tree.txt.
+        # We read each one of these files into np.array, np.array, np.array and Tree structures, respectively,
+        # and output a dictionary with keys "d_mat", "ground_truth", "region_sizes" and "tree".
+        d_mat_file = os.path.join(output_path, f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_d_mat.csv")
+        ground_truth_file = os.path.join(output_path, f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_ground_truth.csv")
+        region_sizes_file = os.path.join(output_path, f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_region_sizes.txt")
+        tree_file = os.path.join(output_path, f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_tree.txt")
+
+        output = dict()
+        output['d_mat'] = np.loadtxt(d_mat_file, delimiter=',')
+        output['ground_truth'] = np.loadtxt(ground_truth_file, delimiter=',')
+        output['region_sizes'] = np.loadtxt(region_sizes_file, delimiter=',')
+
+        tree = Tree()
+        tree.read_from_file(tree_file)
+
+        output['tree'] = tree
+
+        # Now that we've read all outputs into memory, we delete the temporary files if persistence==False
+        if not self.persistence:
+            os.remove(d_mat_file)
+            os.remove(ground_truth_file)
+            os.remove(region_sizes_file)
+            os.remove(tree_file)
+            os.rmdir(output_path)
+
+        os.chdir(cwd)
+        return output
+
 
     def detect_breakpoints(self):
         pass
@@ -78,7 +119,6 @@ class SCICoNE(object):
         # pick best tree
 
         # load best tree
-        self.tree = _read_tree_from_file()
 
         if not self.persistence:
             # delete files
