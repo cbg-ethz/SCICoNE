@@ -13,12 +13,12 @@ import graphviz
 
 class Tree(object):
     def __init__(self):
-        self.traces\ = None
+        self.traces = None
         self.best_scores = None
-        self.
+        self.graphviz_str = None
 
-    def read_tree_from_file(self):
-        pass
+    def read_from_file(self, file):
+        self.graphviz_str = f"hello, this is the graphviz string for the tree in {file}"
 
     def learn_tree(self, data):
         pass
