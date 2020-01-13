@@ -1,4 +1,4 @@
-import os
+import os, shutil
 import subprocess
 from snakemake.workflow import Workflow, Rules
 import snakemake.workflow
@@ -7,6 +7,13 @@ from snakemake.logging import setup_logger
 import numpy as np
 import pandas as pd
 import graphviz
+from collections import Counter
+from sklearn.metrics import roc_curve, auc
+from scipy.cluster.hierarchy import ward, leaves_list
+from scipy.spatial.distance import pdist
+import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set_style('ticks')
 
 # See https://gist.github.com/marcelm/7e432275dfa5e762b4f8 on how to run a
 # Snakemake workflow from Python
@@ -65,11 +72,11 @@ class SCICoNE(object):
     def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, ploidy=2, verbosity=0):
         cwd = os.getcwd()
         output_path = os.path.join(self.output_path, f"simulation_{self.postfix}")
-        try:
-            os.mkdir(output_path)
-            os.chdir(output_path)
-        except OSError as e:
-            print("OSError: ", e.returncode, e.output, e.stdout, e.stderr)
+
+        if os.path.exists(output_path):
+            shutil.rmtree(output_path)
+        os.mkdir(output_path)
+        os.chdir(output_path)
 
         try:
             cmd_output = subprocess.run([self.simulation_binary, f"--n_cells={n_cells}", f"--n_nodes={n_nodes}",\
@@ -86,23 +93,23 @@ class SCICoNE(object):
         region_sizes_file = os.path.join(output_path, f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_region_sizes.txt")
         tree_file = os.path.join(output_path, f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_tree.txt")
 
-        output = dict()
-        output['d_mat'] = np.loadtxt(d_mat_file, delimiter=',')
-        output['ground_truth'] = np.loadtxt(ground_truth_file, delimiter=',')
-        output['region_sizes'] = np.loadtxt(region_sizes_file, delimiter=',')
+        try:
+            output = dict()
+            output['d_mat'] = np.loadtxt(d_mat_file, delimiter=',')
+            output['ground_truth'] = np.loadtxt(ground_truth_file, delimiter=',')
+            output['region_sizes'] = np.loadtxt(region_sizes_file, delimiter=',')
 
-        tree = Tree()
-        tree.read_from_file(tree_file)
+            tree = Tree()
+            tree.read_from_file(tree_file)
 
-        output['tree'] = tree
+            output['tree'] = tree
+
+        except OSError as e:
+            print("OSError: ", e.output, e.stdout, e.stderr)
 
         # Now that we've read all outputs into memory, we delete the temporary files if persistence==False
         if not self.persistence:
-            os.remove(d_mat_file)
-            os.remove(ground_truth_file)
-            os.remove(region_sizes_file)
-            os.remove(tree_file)
-            os.rmdir(output_path)
+            shutil.rmtree(output_path)
 
         os.chdir(cwd)
         return output
