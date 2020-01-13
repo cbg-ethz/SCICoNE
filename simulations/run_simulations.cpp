@@ -82,8 +82,6 @@ int main(int argc, char* argv[]) {
         SingletonRandomGenerator::get_instance(seed);
     }
 
-
-
     Simulation sim(n_regions, n_bins, n_nodes, n_cells, n_reads, max_region_size, ploidy);
 
     if(result.count("nu"))
@@ -101,8 +99,6 @@ int main(int argc, char* argv[]) {
     sim.sample_region_sizes(n_bins, min_region_size);
 
     sim.simulate_count_matrix(false, nu);
-
-    sim.split_regions_to_bins();
 
     sim.write_output(f_name_postfix);
 
