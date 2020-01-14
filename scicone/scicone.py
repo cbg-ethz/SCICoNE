@@ -7,13 +7,6 @@ from snakemake.logging import setup_logger
 import numpy as np
 import pandas as pd
 import graphviz
-from collections import Counter
-from sklearn.metrics import roc_curve, auc
-from scipy.cluster.hierarchy import ward, leaves_list
-from scipy.spatial.distance import pdist
-import matplotlib.pyplot as plt
-import seaborn as sns
-sns.set_style('ticks')
 
 # See https://gist.github.com/marcelm/7e432275dfa5e762b4f8 on how to run a
 # Snakemake workflow from Python
@@ -71,7 +64,7 @@ class SCICoNE(object):
 
     def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, ploidy=2, verbosity=0):
         cwd = os.getcwd()
-        output_path = os.path.join(self.output_path, f"simulation_{self.postfix}")
+        output_path = os.path.join(self.output_path, f"{self.postfix}_simulation")
 
         if os.path.exists(output_path):
             shutil.rmtree(output_path)
@@ -114,9 +107,62 @@ class SCICoNE(object):
         os.chdir(cwd)
         return output
 
+    def detect_breakpoints(self, data, window_size=30, threshold=3.0, bp_limit=300):
+        n_cells = data.shape[0]
+        n_bins = data.shape[1]
+        verbosity = 1 # > 0 to generate all files
 
-    def detect_breakpoints(self):
-        pass
+        cwd = os.getcwd()
+        output_path = os.path.join(self.output_path, f"{self.postfix}_bp_detection")
+
+        if os.path.exists(output_path):
+            shutil.rmtree(output_path)
+        os.mkdir(output_path)
+        os.chdir(output_path)
+
+        try:
+            # Write the data to a file to be read by the binary
+            data_file = output_path + ".txt"
+            np.savetxt(data_file, data, delimiter=',')
+
+            cmd_output = subprocess.run([self.bp_binary, f"--d_matrix_file={data_file}", f"--n_bins={n_bins}",\
+                f"--n_cells={n_cells}", f"--window_size={window_size}", f"--threshold={threshold}", \
+                f"--bp_limit={bp_limit}", f"--verbosity={verbosity}", f"--postfix={self.postfix}"])
+
+            # Delete the data file
+            data_file = output_path + ".txt"
+            os.remove(data_file)
+
+        except subprocess.SubprocessError as e:
+            print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
+
+        # Read outputs
+        all_bps_comparison_file = os.path.join(output_path, f"{self.postfix}_all_bps_comparison.csv")
+        expected_k_vec_file = os.path.join(output_path, f"{self.postfix}_expected_k_vec.csv")
+        log_posterior_vec_file = os.path.join(output_path, f"{self.postfix}_log_posterior_vec.csv")
+        lr_vec_file = os.path.join(output_path, f"{self.postfix}_lr_vec.csv")
+        segmented_region_sizes_file = os.path.join(output_path, f"{self.postfix}_segmented_region_sizes.txt")
+        segmented_regions_file = os.path.join(output_path, f"{self.postfix}_segmented_regions.txt")
+        sp_vec_file = os.path.join(output_path, f"{self.postfix}_sp_vec.csv")
+
+        try:
+            output = dict()
+            output['all_bps_comparison'] = np.loadtxt(all_bps_comparison_file, delimiter=',')
+            output['expected_k_vec'] = np.loadtxt(expected_k_vec_file, delimiter=',')
+            output['log_posterior_vec'] = np.loadtxt(log_posterior_vec_file, delimiter=',')
+            output['lr_vec'] = np.loadtxt(lr_vec_file, delimiter=',')
+            output['segmented_region_sizes'] = np.loadtxt(segmented_region_sizes_file, delimiter=',')
+            output['segmented_regions'] = np.loadtxt(segmented_regions_file, delimiter=',')
+            output['sp_vec'] = np.loadtxt(sp_vec_file, delimiter=',')
+        except OSError as e:
+            print("OSError: ", e.output, e.stdout, e.stderr)
+
+        # Now that we've read all outputs into memory, we delete the temporary files if persistence==False
+        if not self.persistence:
+            shutil.rmtree(output_path)
+
+        os.chdir(cwd)
+        return output
 
     def learn_tree(self, n_reps=10):
         # run tree bin using the complete snakemake workflow
