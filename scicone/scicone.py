@@ -63,18 +63,20 @@ class SCICoNE(object):
         self.tree_list = []
 
     def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, ploidy=2, verbosity=0):
-        cwd = os.getcwd()
         output_path = os.path.join(self.output_path, f"{self.postfix}_simulation")
 
         if os.path.exists(output_path):
             shutil.rmtree(output_path)
         os.mkdir(output_path)
-        os.chdir(output_path)
 
         try:
             cmd_output = subprocess.run([self.simulation_binary, f"--n_cells={n_cells}", f"--n_nodes={n_nodes}",\
                 f"--n_regions={n_regions}", f"--n_bins={n_bins}", f"--n_reads={n_reads}", f"--nu={nu}",\
                 f"--ploidy={ploidy}", f"--verbosity={verbosity}", f"--postfix={self.postfix}"])
+
+            # Move output files to temp directory
+            mv_output = subprocess.run([f"mv *{self.postfix}*csv {output_path}"])
+            mv_output = subprocess.run([f"mv *{self.postfix}*txt {output_path}"])
         except subprocess.SubprocessError as e:
             print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
 
@@ -104,7 +106,6 @@ class SCICoNE(object):
         if not self.persistence:
             shutil.rmtree(output_path)
 
-        os.chdir(cwd)
         return output
 
     def detect_breakpoints(self, data, window_size=30, threshold=3.0, bp_limit=300):
@@ -112,13 +113,11 @@ class SCICoNE(object):
         n_bins = data.shape[1]
         verbosity = 1 # > 0 to generate all files
 
-        cwd = os.getcwd()
         output_path = os.path.join(self.output_path, f"{self.postfix}_bp_detection")
 
         if os.path.exists(output_path):
             shutil.rmtree(output_path)
         os.mkdir(output_path)
-        os.chdir(output_path)
 
         try:
             # Write the data to a file to be read by the binary
@@ -133,6 +132,9 @@ class SCICoNE(object):
             data_file = output_path + ".txt"
             os.remove(data_file)
 
+            # Move output files to temp directory
+            mv_output = subprocess.run([f"mv *{self.postfix}*csv {output_path}"])
+            mv_output = subprocess.run([f"mv *{self.postfix}*txt {output_path}"])
         except subprocess.SubprocessError as e:
             print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
 
@@ -161,7 +163,6 @@ class SCICoNE(object):
         if not self.persistence:
             shutil.rmtree(output_path)
 
-        os.chdir(cwd)
         return output
 
     def learn_tree(self, n_reps=10):
