@@ -27,6 +27,7 @@ public:
     int n_cells;
     int n_reads;
     int max_region_size;
+    int max_regions_per_node;
 
     vector<vector<double>> D;
     vector<int> region_sizes;
@@ -36,13 +37,14 @@ public:
 
 public:
     // constructor
-    Simulation(int n_regions, int n_bins, int n_nodes, int n_cells, int n_reads, int max_region_size, int ploidy)
+    Simulation(int n_regions, int n_bins, int n_nodes, int n_cells, int n_reads, int max_region_size, int ploidy, int max_regions_per_node)
             : n_regions(n_regions),
               n_bins(n_bins),
               n_nodes(n_nodes),
               ploidy(ploidy),
               n_cells(n_cells),
-              n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions),
+              n_reads(n_reads), max_region_size(max_region_size), max_regions_per_node(max_regions_per_node),
+              tree(ploidy, n_regions),
               ground_truth(n_cells, vector<int>(n_regions, ploidy)),
               ground_truth_bins(n_cells, vector<int>(n_bins, ploidy)),
               D(n_cells, vector<double>(n_bins)), region_sizes(n_regions), cluster_sizes(n_cells, 1)
@@ -93,7 +95,7 @@ public:
 
         if (not is_neutral) // tree will generate the data
         {
-            mcmc.random_initialize(n_nodes, n_regions, 10000); // creates a random tree, mcmc.t
+            mcmc.random_initialize(n_nodes, n_regions, 10000, max_regions_per_node); // creates a random tree, mcmc.t
 
             // assign cells uniformly to the nodes
             for (int i = 0; i < n_cells; ++i) {
