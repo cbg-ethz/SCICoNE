@@ -32,6 +32,7 @@ public:
     vector<int> region_sizes;
     vector<int> cluster_sizes;
     vector<vector<int>> ground_truth; // default init value: ploidy
+    vector<vector<int>> ground_truth_bins;
 
 public:
     // constructor
@@ -43,6 +44,7 @@ public:
               n_cells(n_cells),
               n_reads(n_reads), max_region_size(max_region_size), tree(ploidy, n_regions),
               ground_truth(n_cells, vector<int>(n_regions, ploidy)),
+              ground_truth_bins(n_cells, vector<int>(n_bins, ploidy)),
               D(n_cells, vector<double>(n_bins)), region_sizes(n_regions), cluster_sizes(n_cells, 1)
     {
 
@@ -108,8 +110,6 @@ public:
         mcmc.t.nu = mcmc.t_prime.nu = nu; // set nu
 
         // Split regions into bins to generate counts
-        vector<vector<int>> ground_truth_bins(n_cells, vector<int>(n_bins));
-
         for (std::size_t i = 0; i < n_cells; ++i) // for each cell
         {
             int region_offset = 0;
@@ -122,13 +122,12 @@ public:
                 region_offset += region_sizes[j];
             }
         }
-        ground_truth = ground_truth_bins;
 
         // create the unnormalised p_bin_region_cell values
         for (std::size_t i = 0; i < p_read_bin_cell.size(); ++i) { // for each cell
             for (std::size_t j = 0; j < p_read_bin_cell[i].size(); ++j) { // for each bin
                 if (not is_neutral)
-                    p_read_bin_cell[i][j] = ground_truth[i][j];
+                    p_read_bin_cell[i][j] = ground_truth_bins[i][j];
                 else
                     p_read_bin_cell[i][j] = ploidy;
             }
@@ -226,7 +225,7 @@ public:
 
         // write the ground truth
         std::ofstream ground_truth_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_ground_truth.csv");
-        for (auto const &v1: this->ground_truth) {
+        for (auto const &v1: this->ground_truth_bins) {
             for (size_t i = 0; i < v1.size(); i++)
             {
                 if (i == v1.size()-1) // the last element

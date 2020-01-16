@@ -1,4 +1,4 @@
-import os
+import os, shutil
 import subprocess
 from snakemake.workflow import Workflow, Rules
 import snakemake.workflow
@@ -63,53 +63,92 @@ class SCICoNE(object):
         self.tree_list = []
 
     def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, ploidy=2, verbosity=0):
+        output_path = os.path.join(self.output_path, f"{self.postfix}_simulation")
+
+        if os.path.exists(output_path):
+            shutil.rmtree(output_path)
+        os.mkdir(output_path)
         cwd = os.getcwd()
-        output_path = os.path.join(self.output_path, f"simulation_{self.postfix}")
-        try:
-            os.mkdir(output_path)
-            os.chdir(output_path)
-        except OSError as e:
-            print("OSError: ", e.returncode, e.output, e.stdout, e.stderr)
 
         try:
             cmd_output = subprocess.run([self.simulation_binary, f"--n_cells={n_cells}", f"--n_nodes={n_nodes}",\
                 f"--n_regions={n_regions}", f"--n_bins={n_bins}", f"--n_reads={n_reads}", f"--nu={nu}",\
                 f"--ploidy={ploidy}", f"--verbosity={verbosity}", f"--postfix={self.postfix}"])
+
+            # The binary generates 4 files: *_d_mat.csv, *_ground_truth.csv, *_region_sizes.txt and *_tree.txt.
+            # We read each one of these files into np.array, np.array, np.array and Tree structures, respectively,
+            # and output a dictionary with keys "d_mat", "ground_truth", "region_sizes" and "tree".
+            d_mat_file = f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_d_mat.csv"
+            ground_truth_file = f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_ground_truth.csv"
+            region_sizes_file = f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_region_sizes.txt"
+            tree_file = f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_tree.txt"
+
+            # Move to output directory
+            cwd = os.getcwd()
+            os.rename(os.path.join(cwd, d_mat_file), os.path.join(output_path, d_mat_file))
+            os.rename(os.path.join(cwd, ground_truth_file), os.path.join(output_path, ground_truth_file))
+            os.rename(os.path.join(cwd, region_sizes_file), os.path.join(output_path, region_sizes_file))
+            os.rename(os.path.join(cwd, tree_file), os.path.join(output_path, tree_file))
         except subprocess.SubprocessError as e:
             print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
 
-        # The binary generates 4 files: *_d_mat.csv, *_ground_truth.csv, *_region_sizes.txt and *_tree.txt.
-        # We read each one of these files into np.array, np.array, np.array and Tree structures, respectively,
-        # and output a dictionary with keys "d_mat", "ground_truth", "region_sizes" and "tree".
         d_mat_file = os.path.join(output_path, f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_d_mat.csv")
         ground_truth_file = os.path.join(output_path, f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_ground_truth.csv")
         region_sizes_file = os.path.join(output_path, f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_region_sizes.txt")
         tree_file = os.path.join(output_path, f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_tree.txt")
 
-        output = dict()
-        output['d_mat'] = np.loadtxt(d_mat_file, delimiter=',')
-        output['ground_truth'] = np.loadtxt(ground_truth_file, delimiter=',')
-        output['region_sizes'] = np.loadtxt(region_sizes_file, delimiter=',')
+        try:
+            output = dict()
+            output['d_mat'] = np.loadtxt(d_mat_file, delimiter=',')
+            output['ground_truth'] = np.loadtxt(ground_truth_file, delimiter=',')
+            output['region_sizes'] = np.loadtxt(region_sizes_file, delimiter=',')
 
-        tree = Tree()
-        tree.read_from_file(tree_file)
+            tree = Tree()
+            tree.read_from_file(tree_file)
 
-        output['tree'] = tree
+            output['tree'] = tree
+
+        except OSError as e:
+            print("OSError: ", e.output, e.stdout, e.stderr)
 
         # Now that we've read all outputs into memory, we delete the temporary files if persistence==False
         if not self.persistence:
-            os.remove(d_mat_file)
-            os.remove(ground_truth_file)
-            os.remove(region_sizes_file)
-            os.remove(tree_file)
-            os.rmdir(output_path)
+            shutil.rmtree(output_path)
 
-        os.chdir(cwd)
         return output
 
+    def detect_breakpoints(self, data, window_size=30, threshold=3.0, bp_limit=300):
+        n_cells = data.shape[0]
+        n_bins = data.shape[1]
+        verbosity = 1 # > 0 to generate all files
 
-    def detect_breakpoints(self):
-        pass
+        try:
+            # Write the data to a file to be read by the binary
+            data_file = f"{self.postfix}_bp_detection.txt"
+            np.savetxt(data_file, data, delimiter=',')
+
+            cmd_output = subprocess.run([self.bp_binary, f"--d_matrix_file={data_file}", f"--n_bins={n_bins}",\
+                f"--n_cells={n_cells}", f"--window_size={window_size}", f"--threshold={threshold}", \
+                f"--bp_limit={bp_limit}", f"--verbosity={verbosity}", f"--postfix={self.postfix}"])
+
+            # Delete the data file
+            os.remove(data_file)
+        except subprocess.SubprocessError as e:
+            print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
+
+        output = dict()
+
+        try:
+            cwd = os.getcwd()
+            for fn in os.listdir(cwd):
+                if self.postfix in fn:
+                    key = fn.split('_', 1)[1].split('.')[0]
+                    output[key] = np.loadtxt(fn, delimiter=',')
+                    os.remove(fn)
+        except OSError as e:
+            print("OSError: ", e.output, e.stdout, e.stderr)
+
+        return output
 
     def learn_tree(self, n_reps=10):
         # run tree bin using the complete snakemake workflow
@@ -126,3 +165,141 @@ class SCICoNE(object):
 
     def plot_bps(self, cluster_cells=True):
         pass
+
+#####TEST######################
+
+def generate_bp_roc(inferred_bps_dict, true_bps_indicator, threshold_coeffs):
+    bps = pd.DataFrame(inferred_bps_dict['all_bps_comparison'])
+    bps.columns = ['idx','log_sp','range']
+    bps.sort_values('idx')['idx'].tolist()
+    bps.index = bps['idx']
+
+    bps['ranking'] = bps['log_sp'] / bps['range']
+    bps = bps.dropna()
+    # threshold_coeffs = sorted(bps['ranking'].values)
+
+    tpr_values = []
+    fpr_values = []
+    for thr in threshold_coeffs:
+        inferred_bps = []
+        for index, row in bps.iterrows():
+            if row['ranking'] > thr:
+                inferred_bps.append(row['idx'])
+            else:
+                break
+
+        inferred_bps_indicator = np.zeros(true_bps_indicator.shape[0])
+        inferred_bps_indicator[np.array(inferred_bps).astype(int)] = 1.
+        inferred_bps_indicator = np.array(inferred_bps_indicator)
+
+        tp = np.count_nonzero(inferred_bps_indicator[np.where(true_bps_indicator==1)[0]]==1)
+        fp = np.count_nonzero(inferred_bps_indicator[np.where(true_bps_indicator==0)[0]]==1)
+        tn = np.count_nonzero(inferred_bps_indicator[np.where(true_bps_indicator==0)[0]]==0)
+        fn = np.count_nonzero(inferred_bps_indicator[np.where(true_bps_indicator==1)[0]]==0)
+
+        tpr = tp / (tp + fn)
+        fpr = fp / (fp + tn)
+
+        tpr_values.append(tpr)
+        fpr_values.append(fpr)
+
+    roc_curve = dict()
+    roc_curve['tpr'] = tpr_values
+    roc_curve['fpr'] = fpr_values
+
+    return roc_curve
+
+import pandas as pd
+import numpy as np
+from collections import Counter
+from sklearn.metrics import roc_curve, auc
+from scipy.cluster.hierarchy import ward, leaves_list
+from scipy.spatial.distance import pdist
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+new_sci = SCICoNE('/cluster/work/bewi/members/pedrof/sc-dna/build/',
+                  '/cluster/work/bewi/members/pedrof/sc-dna/notebooks/', persistence=False)
+old_sci = SCICoNE('/cluster/work/bewi/ngs/projects/tumorProfiler/code/dna-pipeline/sc-dna/bin/',
+                  '/cluster/work/bewi/members/pedrof/sc-dna/notebooks/', persistence=False)
+
+data = new_sci.simulate_data(n_cells=200, n_nodes=5, n_bins=1000, n_regions=100, n_reads=10000, nu=1.0)
+data
+cell_genotypes = pd.DataFrame(data['ground_truth'])
+cell_bps = cell_genotypes.diff(periods=1, axis=1)
+cell_bps = cell_bps.fillna(value=0.0)
+cell_bps[cell_bps != 0] = 1 # replace the non-zeroes by 1
+grouped_cell_bps = cell_bps.sum(axis=0)
+ground_truth = grouped_cell_bps[grouped_cell_bps > 0]
+ground_truth = ground_truth.index.tolist()
+
+bps_indicator = np.zeros(grouped_cell_bps.shape[0])
+bps_indicator[grouped_cell_bps>=1] = 1
+print(f"Number of true breakpoints: {np.sum(bps_indicator==1)}")
+
+counts = data['d_mat']
+Z = ward(pdist(counts))
+hclust_index = leaves_list(Z)
+counts = counts[hclust_index]
+cell_genotypes = cell_genotypes.to_numpy()
+cell_genotypes = cell_genotypes[hclust_index]
+
+fig = plt.figure(figsize=(16, 4))
+cmap = sns.diverging_palette(220, 10, as_cmap=True)
+plt.pcolor(counts, cmap=cmap)
+plt.colorbar()
+ax = plt.gca()
+plt.title('Raw counts with breakpoints')
+plt.ylabel('cell')
+ax.vlines(np.where(bps_indicator)[0], *ax.get_ylim(), colors='black', linestyles='dashed', linewidths=2)
+plt.show()
+
+fig = plt.figure(figsize=(16, 4))
+cmap = sns.diverging_palette(220, 10, as_cmap=True)
+plt.pcolor(cell_genotypes, cmap=cmap)
+plt.colorbar()
+ax = plt.gca()
+plt.title('True copy numbers with breakpoints')
+plt.xlabel('bin')
+plt.ylabel('cell')
+ax.vlines(np.where(bps_indicator)[0], *ax.get_ylim(), colors='black', linestyles='dashed', linewidths=2)
+plt.show()
+
+# Global thresholds to try
+threshold_coeffs = np.linspace(0.0,20.0, 100) # 100 thresholds btw 1 and 16
+n_bins = cell_genotypes.shape[1]
+
+# New method
+new_bps = new_sci.detect_breakpoints(data['d_mat'])
+new_roc_curve = generate_bp_roc(new_bps, bps_indicator, threshold_coeffs)
+
+# Old method
+old_bps = old_sci.detect_breakpoints(data['d_mat'])
+old_roc_curve = generate_bp_roc(old_bps, bps_indicator, threshold_coeffs)
+np.where(bps_indicator)[0]
+sorted(new_bps['all_bps_comparison'][:, 0])
+new_bps['all_bps_comparison'][:, 1] / new_bps['all_bps_comparison'][:, 2]
+# Plot the ROC of each method
+plt.figure(figsize=(8,8))
+plt.plot(new_roc_curve['fpr'], new_roc_curve['tpr'], color="darkorange", label='New ROC curve (area = %0.2f)' % auc(new_roc_curve['fpr'], new_roc_curve['tpr']))
+plt.plot(old_roc_curve['fpr'], old_roc_curve['tpr'], color="navy", label='Old ROC curve (area = %0.2f)' % auc(old_roc_curve['fpr'], old_roc_curve['tpr']))
+plt.plot([0, 1], [0, 1], color='gray', linestyle='--')
+plt.gca().set_aspect('equal', adjustable='box')
+plt.grid(True)
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver operating characteristic')
+plt.legend(loc="lower right")
+plt.show()
+
+plt.plot(threshold_coeffs, new_roc_curve['tpr'], marker='.', label='New')
+plt.plot(threshold_coeffs, old_roc_curve['tpr'], marker='.', label='Old')
+plt.legend()
+plt.xlabel('threshold')
+plt.title('TPR')
+
+plt.plot(threshold_coeffs, new_roc_curve['fpr'], marker='.', label='New')
+plt.plot(threshold_coeffs, old_roc_curve['fpr'], marker='.', label='Old')
+plt.legend()
+plt.xlabel('threshold')
+plt.title('FPR')
