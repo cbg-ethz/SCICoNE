@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
         int upper_bound = (int) n_regions/n_nodes;
         if (max_regions_per_node > upper_bound)
           max_regions_per_node = upper_bound;
-        std::cout<<"Simulating with maximum  affected regions per node: " << max_regions_per_node << std::endl;
+        std::cout<<"Simulating with maximum affected regions per node: " << max_regions_per_node << std::endl;
     }
 
     Simulation sim(n_regions, n_bins, n_nodes, n_cells, n_reads, max_region_size, ploidy, max_regions_per_node);
