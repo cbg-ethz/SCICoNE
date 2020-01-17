@@ -83,7 +83,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             //   The mean across the bins in the window can change according to a linear model,
             //   which includes the case where all the bins have the same min (if the slope is zero)
             vector<double> lambdas_segment(n_bins);
-            vector<double> regression_parameters = compute_linear_regression_parameters(all_bins);
+            vector<double> regression_parameters = compute_linear_regression_parameters(all_bins, window_size);
             double alpha = regression_parameters[0];
             double beta = regression_parameters[1];
 
@@ -680,10 +680,14 @@ double MathOp::third_quartile(vector<T> &v) {
 
 double MathOp::ll_linear_model(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
 {
-    double mu = 1;
+    double nu = 1; // inverse overdispersion parameter
 
     segment_counts *d = reinterpret_cast<segment_counts*>(my_func_data);
     vector<double> z = d->z;
+
+    double mean = vec_avg(z);
+    double var = st_deviation(z);
+    nu = pow(mean, 2) / (var - mean);
 
     int size = z.size();
     double lambda = 0;
@@ -692,13 +696,13 @@ double MathOp::ll_linear_model(const std::vector<double> &x, std::vector<double>
     for (size_t l = 0; l < size; ++l) {
       lambda = x[0] + (l+1)*x[1];
       // lambda = x[0];
-      res = res + z[l]*(log(lambda) - log(lambda + mu)) - mu*log(lambda + mu);
+      res = res + z[l]*(log(lambda) - log(lambda + nu)) - nu*log(lambda + nu);
     }
 
     return res;
 }
 
-vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z) {
+vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z, int window_size) {
     /*
      * Computes the alpha and beta of y = alpha + beta * x
      * */
@@ -708,6 +712,8 @@ vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z) {
     nlopt::opt opt(nlopt::LN_BOBYQA, 2);
     std::vector<double> lb(2);
     lb[0] = 0; lb[1] = -HUGE_VAL; // lower bounds on alpha, beta
+    std::vector<double> ub(2);
+    ub[0] = HUGE_VAL; ub[1] = 1.0/4.0 * 1.0/window_size; // upper bounds on alpha, beta
     opt.set_lower_bounds(lb);
     opt.set_max_objective(ll_linear_model, &z);
     opt.set_xtol_rel(1e-4);

@@ -69,7 +69,7 @@ public:
     static vector<long double> dirichlet_sample(size_t len, double alpha = 1.0);
     static vector<double> dirichlet_sample(vector<double> alphas);
     static double ll_linear_model(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data);
-    static vector<double> compute_linear_regression_parameters(vector<double> &z);
+    static vector<double> compute_linear_regression_parameters(vector<double> &z, int window_size);
 };
 
 
