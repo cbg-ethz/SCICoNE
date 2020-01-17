@@ -495,24 +495,26 @@ plt.xlabel('threshold')
 plt.title('FPR')
 
 # Multiple runs
-n_reps = 10
+n_reps = 100
 n_cells = 200
 n_nodes = 10
 n_bins = 1000
 n_regions = 40
 n_reads = 10000
-nu = 1.0
+nu = 10.0
 window_size = 10
 threshold_coeffs = np.linspace(0.0, 20.0, 100)
 roc_curve_lists = dict()
 roc_curve_lists['new'] = []
 roc_curve_lists['old'] = []
+data_list = []
 for rep in range(n_reps):
     print(f"Rep. number {rep+1}")
 
     # Generate data
     data = new_sci.simulate_data(n_cells=n_cells, n_nodes=n_nodes, n_bins=n_bins, n_regions=n_regions,
                             n_reads=n_reads, nu=nu, max_regions_per_node=2, min_reg_size=2*window_size)
+    data_list.append(data)
 
     # Get true breakpoints
     cell_genotypes = pd.DataFrame(data['ground_truth'])
@@ -534,8 +536,8 @@ for rep in range(n_reps):
     old_roc_curve = generate_bp_roc(old_bps, bps_indicator, threshold_coeffs, window_size, correct_close=True, add_dummy_bps=True)
 
     # Add to list
-    roc_curve_lists['new'].append(new_roc_curve)
-    roc_curve_lists['old'].append(old_roc_curve)
+    roc_curve_lists['new'].append({'bps': new_bps, 'roc_curve': new_roc_curve})
+    roc_curve_lists['old'].append({'bps': old_bps, 'roc_curve': old_roc_curve})
 
 plt.figure(figsize=(8,8))
 old_fprs = []
@@ -543,13 +545,13 @@ old_tprs = []
 new_fprs = []
 new_tprs = []
 for old_roc_curve in roc_curve_lists['old']:
-    old_fprs.append(old_roc_curve['fpr'])
-    old_tprs.append(old_roc_curve['tpr'])
-    plt.plot(old_roc_curve['fpr'], old_roc_curve['tpr'], color="navy", alpha=0.4)
+    old_fprs.append(old_roc_curve['roc_curve']['fpr'])
+    old_tprs.append(old_roc_curve['roc_curve']['tpr'])
+    plt.plot(old_roc_curve['roc_curve']['fpr'], old_roc_curve['roc_curve']['tpr'], color="navy", alpha=0.4)
 for new_roc_curve in roc_curve_lists['new']:
-    new_fprs.append(new_roc_curve['fpr'])
-    new_tprs.append(new_roc_curve['tpr'])
-    plt.plot(new_roc_curve['fpr'], new_roc_curve['tpr'], color="darkorange", alpha=0.4)
+    new_fprs.append(new_roc_curve['roc_curve']['fpr'])
+    new_tprs.append(new_roc_curve['roc_curve']['tpr'])
+    plt.plot(new_roc_curve['roc_curve']['fpr'], new_roc_curve['roc_curve']['tpr'], color="darkorange", alpha=0.4)
 old_auc = auc(np.append(1, np.mean(old_fprs, axis=0)), np.append(1, np.mean(old_tprs, axis=0)))
 new_auc = auc(np.append(1, np.mean(new_fprs, axis=0)), np.append(1, np.mean(new_tprs, axis=0)))
 plt.plot([0, 1], [0, 1], color='gray', linestyle='--')
@@ -563,7 +565,6 @@ plt.ylabel('True Positive Rate')
 plt.title(f"Receiver operating characteristic (n_nodes={n_nodes})")
 plt.legend(loc="lower right")
 plt.show()
-
 
 plt.figure(figsize=(8,8))
 plt.plot(np.append(1, np.mean(old_fprs, axis=0)), np.append(1, np.mean(old_tprs, axis=0)), color="navy", alpha=0.8)
@@ -580,6 +581,26 @@ plt.title(f"Mean receiver operating characteristic (n_nodes={n_nodes})")
 plt.legend(loc="lower right")
 plt.show()
 
+# Look at the data set in which we fared worse than the old method
+bad_data = np.where(np.array([curve['auc'] for curve in roc_curve_lists['new']]) - np.array([curve['auc'] for curve in roc_curve_lists['old']]) < 0)[0]
+bad_data
+
+idx = 4
+data = data_list[idx]
+roc_curve_lists['new'][idx]['auc']
+roc_curve_lists['old'][idx]['auc']
+
+# Get true breakpoints
+cell_genotypes = pd.DataFrame(data['ground_truth'])
+cell_bps = cell_genotypes.diff(periods=1, axis=1)
+cell_bps = cell_bps.fillna(value=0.0)
+cell_bps[cell_bps != 0] = 1 # replace the non-zeroes by 1
+grouped_cell_bps = cell_bps.sum(axis=0)
+ground_truth = grouped_cell_bps[grouped_cell_bps > 0]
+ground_truth = ground_truth.index.tolist()
+
+bps_indicator = np.zeros(grouped_cell_bps.shape[0])
+bps_indicator[grouped_cell_bps>=1] = 1
 
 counts = data['d_mat']
 cell_genotypes = data['ground_truth']
@@ -587,6 +608,33 @@ Z = ward(pdist(counts))
 hclust_index = leaves_list(Z)
 counts = counts[hclust_index]
 cell_genotypes = cell_genotypes[hclust_index]
+
+fig = plt.figure(figsize=(16, 12))
+ax = plt.subplot(2, 1, 1)
+plt.pcolor(counts, cmap=cmap)
+# plt.colorbar()
+ax = plt.gca()
+plt.title('True copy numbers with inferred breakpoints')
+plt.xlabel('bin')
+plt.ylabel('cell')
+ax.vlines(np.where(roc_curve_lists['new'][idx]['bps'][20])[0], *ax.get_ylim(), colors='black', linestyles='dashed', linewidths=2)
+
+ax = plt.subplot(2, 1, 2, sharex=ax)
+cmap = sns.diverging_palette(220, 10, as_cmap=True)
+plt.pcolor(cell_genotypes, cmap=cmap)
+# plt.colorbar()
+ax = plt.gca()
+plt.title('True copy numbers with inferred breakpoints')
+plt.xlabel('bin')
+plt.ylabel('cell')
+ax.vlines(np.where(roc_curve_lists['new'][idx]['bps'][20])[0], *ax.get_ylim(), colors='black', linestyles='dashed', linewidths=2)
+
+# roc_curve_lists['new'][0]
+# plt.subplot(3, 1, 3, sharex=ax)
+# plt.plot(np.log(roc_curve_lists['new'][0]['sp_vec']))
+# ax = plt.gca()
+# # ax.vlines(np.where(new_roc_curve['bps'][5]), *ax.get_ylim(), colors='black', linestyles='dashed', linewidths=2)
+# plt.show()
 
 fig = plt.figure(figsize=(16, 12))
 ax = plt.subplot(3, 1, 1)
@@ -640,3 +688,16 @@ plt.plot(np.log(old_bps['sp_vec']))
 ax = plt.gca()
 # ax.vlines(np.where(new_roc_curve['bps'][5]), *ax.get_ylim(), colors='black', linestyles='dashed', linewidths=2)
 plt.show()
+
+mean = np.mean(data['d_mat'])
+var = np.var(data['d_mat'])
+nu = mean**2 / (var - mean)
+nu
+
+fig = plt.figure(figsize=(16, 4))
+plt.pcolor(data['d_mat'], cmap=cmap)
+plt.colorbar()
+ax = plt.gca()
+plt.title('True copy numbers with inferred breakpoints')
+plt.xlabel('bin')
+plt.ylabel('cell')
