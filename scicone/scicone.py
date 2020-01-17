@@ -1,5 +1,5 @@
 import os, shutil
-import subprocess
+import subprocess, re
 from snakemake.workflow import Workflow, Rules
 import snakemake.workflow
 from snakemake import shell
@@ -7,6 +7,7 @@ from snakemake.logging import setup_logger
 import numpy as np
 import pandas as pd
 import graphviz
+from graphviz import Source
 
 # See https://gist.github.com/marcelm/7e432275dfa5e762b4f8 on how to run a
 # Snakemake workflow from Python
@@ -15,17 +16,113 @@ class Tree(object):
     def __init__(self):
         self.traces = None
         self.best_scores = None
-        self.graphviz_str = None
+        self.graphviz_str = ""
 
-    def read_from_file(self, file):
-        self.graphviz_str = f"hello, this is the graphviz string for the tree in {file}"
+    def read_from_file(self, file, output_path=None):
+        """
+            reads the file containing a tree and converts it to graphviz format
+            :param file: path to the tree file.
+            :param output_path: (optional) path to the output file.
+        """
+        with open(file) as f:
+            list_tree_file = list(f)
+
+        graphviz_header = [
+            "digraph {",
+            'node [style=filled,color="#D4C0D6",fontsize=20,margin=0,shape=oval]'
+            'edge [arrowhead=none, color="#602A86"]',
+        ]
+
+        graphviz_labels = []
+        graphviz_links = []
+
+        graphviz_labels.append("0[label=<<font point-size='30'> Neutral </font>>]")  # root
+
+        for line in list_tree_file:
+            if line.startswith("node 0:"):
+                continue
+            elif line.startswith("node"):
+                comma_splits = line.split(",")
+
+                comma_first = re.split(" |:", comma_splits[0])
+                node_id = comma_first[1]
+                p_id = comma_first[4]
+                comma_rest = comma_splits[1:]
+                comma_rest[0] = comma_rest[0].lstrip("[")
+                comma_rest[-1] = comma_rest[-1].rstrip("]\n")
+                merged_labels = []
+                [k_begin, previous_v] = (int(x) for x in comma_rest[0].split(":"))
+                k_end = k_begin
+                for term in comma_rest[1:]:  # events vector
+                    [k, v] = (int(x) for x in term.split(":"))
+                    if k == k_end + 1 and v == previous_v:
+                        k_end = k  # update the end
+                    else:
+                        if k_begin == k_end:
+                            merged_labels.append(f"{previous_v:+}R{k_begin}")
+                        else:
+                            merged_labels.append(f"{previous_v:+}R{k_begin}:{k_end}")
+                        k_begin = k_end = k
+                    previous_v = v
+                # print the last one
+                if k_begin == k_end:
+                    merged_labels.append(f"{previous_v:+}R{k_begin}")
+                else:
+                    merged_labels.append(f"{previous_v:+}R{k_begin}:{k_end}")
+
+                str_merged_labels = (
+                    "<i> </i>"
+                    + " ".join(
+                        f"{x}<i> </i><br/>" if i % 10 == 0 and i > 0 else str(x)
+                        for i, x in enumerate(merged_labels)
+                    )
+                    + "<i> </i>"
+                )
+
+                newline = "<br/>"
+                endline = "<i> </i>"
+
+                # If there are newlines followed by endlines, switch
+                str_merged_labels = str_merged_labels.replace(
+                    newline + endline, endline + newline
+                )
+
+                # Remove whatever comes after the last endline position
+                new_end_pos = (
+                    [m.start() for m in re.finditer(endline, str_merged_labels)][-1]
+                    + len(endline)
+                    - 1
+                )
+                if len(str_merged_labels) > new_end_pos + 1:
+                    str_merged_labels = str_merged_labels[: new_end_pos + 1]
+
+                # Replace multiple endlines with one
+                while endline * 2 in str_merged_labels:
+                    str_merged_labels = str_merged_labels.replace(endline * 2, endline)
+
+                graphviz_labels.append(
+                    f"{node_id}[label=<{str_merged_labels}>]"
+                )  # use < > to allow HTML
+                graphviz_links.append(f"{p_id} -> {node_id}")
+
+        self.graphviz_str = graphviz_header + graphviz_labels + graphviz_links + ["}"]
+
+        if output_path is not None:
+            with open(output_path, "w") as file:
+                for line in self.graphviz_str:
+                    file.write(f"{line}\n")
+
+        self.graphviz_str = '\n'.join(self.graphviz_str)
 
     def learn_tree(self, data):
         pass
 
     def plot_tree(self, show_genes=True):
-        pass
-
+        if self.graphviz_str != "":
+            s = Source(self.graphviz_str)
+            return s
+        else:
+            raise Exception("No graphviz string available. Please read from file or learn a new tree from data.")
 
 class SCICoNE(object):
     """
@@ -62,27 +159,43 @@ class SCICoNE(object):
         self.best_tree = None
         self.tree_list = []
 
-    def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, ploidy=2, verbosity=0):
+    def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, min_reg_size=10, max_regions_per_node=1, ploidy=2, verbosity=0):
         output_path = os.path.join(self.output_path, f"{self.postfix}_simulation")
 
         if os.path.exists(output_path):
             shutil.rmtree(output_path)
         os.mkdir(output_path)
+        cwd = os.getcwd()
 
-        try:
-            cmd_output = subprocess.run([self.simulation_binary, f"--n_cells={n_cells}", f"--n_nodes={n_nodes}",\
-                f"--n_regions={n_regions}", f"--n_bins={n_bins}", f"--n_reads={n_reads}", f"--nu={nu}",\
-                f"--ploidy={ploidy}", f"--verbosity={verbosity}", f"--postfix={self.postfix}"])
+        done = False
+        while not done:
+            try:
+                cmd_output = subprocess.run([self.simulation_binary, f"--n_cells={n_cells}", f"--n_nodes={n_nodes}",\
+                    f"--n_regions={n_regions}", f"--n_bins={n_bins}", f"--n_reads={n_reads}", f"--nu={nu}",\
+                    f"--min_reg_size={min_reg_size}", f"--max_regions_per_node={max_regions_per_node}",\
+                    f"--ploidy={ploidy}", f"--verbosity={verbosity}", f"--postfix={self.postfix}"])
+            except subprocess.SubprocessError as e:
+                print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
 
-            # Move output files to temp directory
-            mv_output = subprocess.run([f"mv *{self.postfix}*csv {output_path}"])
-            mv_output = subprocess.run([f"mv *{self.postfix}*txt {output_path}"])
-        except subprocess.SubprocessError as e:
-            print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
+            # The binary generates 4 files: *_d_mat.csv, *_ground_truth.csv, *_region_sizes.txt and *_tree.txt.
+            # We read each one of these files into np.array, np.array, np.array and Tree structures, respectively,
+            # and output a dictionary with keys "d_mat", "ground_truth", "region_sizes" and "tree".
+            d_mat_file = f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_d_mat.csv"
+            ground_truth_file = f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_ground_truth.csv"
+            region_sizes_file = f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_region_sizes.txt"
+            tree_file = f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_tree.txt"
 
-        # The binary generates 4 files: *_d_mat.csv, *_ground_truth.csv, *_region_sizes.txt and *_tree.txt.
-        # We read each one of these files into np.array, np.array, np.array and Tree structures, respectively,
-        # and output a dictionary with keys "d_mat", "ground_truth", "region_sizes" and "tree".
+            try:
+                # Move to output directory
+                cwd = os.getcwd()
+                os.rename(os.path.join(cwd, d_mat_file), os.path.join(output_path, d_mat_file))
+                os.rename(os.path.join(cwd, ground_truth_file), os.path.join(output_path, ground_truth_file))
+                os.rename(os.path.join(cwd, region_sizes_file), os.path.join(output_path, region_sizes_file))
+                os.rename(os.path.join(cwd, tree_file), os.path.join(output_path, tree_file))
+                done = True
+            except OSError as e:
+                pass
+
         d_mat_file = os.path.join(output_path, f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_d_mat.csv")
         ground_truth_file = os.path.join(output_path, f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_ground_truth.csv")
         region_sizes_file = os.path.join(output_path, f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_region_sizes.txt")
@@ -113,15 +226,9 @@ class SCICoNE(object):
         n_bins = data.shape[1]
         verbosity = 1 # > 0 to generate all files
 
-        output_path = os.path.join(self.output_path, f"{self.postfix}_bp_detection")
-
-        if os.path.exists(output_path):
-            shutil.rmtree(output_path)
-        os.mkdir(output_path)
-
         try:
             # Write the data to a file to be read by the binary
-            data_file = output_path + ".txt"
+            data_file = f"{self.postfix}_bp_detection.txt"
             np.savetxt(data_file, data, delimiter=',')
 
             cmd_output = subprocess.run([self.bp_binary, f"--d_matrix_file={data_file}", f"--n_bins={n_bins}",\
@@ -129,39 +236,21 @@ class SCICoNE(object):
                 f"--bp_limit={bp_limit}", f"--verbosity={verbosity}", f"--postfix={self.postfix}"])
 
             # Delete the data file
-            data_file = output_path + ".txt"
             os.remove(data_file)
-
-            # Move output files to temp directory
-            mv_output = subprocess.run([f"mv *{self.postfix}*csv {output_path}"])
-            mv_output = subprocess.run([f"mv *{self.postfix}*txt {output_path}"])
         except subprocess.SubprocessError as e:
             print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
 
-        # Read outputs
-        all_bps_comparison_file = os.path.join(output_path, f"{self.postfix}_all_bps_comparison.csv")
-        expected_k_vec_file = os.path.join(output_path, f"{self.postfix}_expected_k_vec.csv")
-        log_posterior_vec_file = os.path.join(output_path, f"{self.postfix}_log_posterior_vec.csv")
-        lr_vec_file = os.path.join(output_path, f"{self.postfix}_lr_vec.csv")
-        segmented_region_sizes_file = os.path.join(output_path, f"{self.postfix}_segmented_region_sizes.txt")
-        segmented_regions_file = os.path.join(output_path, f"{self.postfix}_segmented_regions.txt")
-        sp_vec_file = os.path.join(output_path, f"{self.postfix}_sp_vec.csv")
+        output = dict()
 
         try:
-            output = dict()
-            output['all_bps_comparison'] = np.loadtxt(all_bps_comparison_file, delimiter=',')
-            output['expected_k_vec'] = np.loadtxt(expected_k_vec_file, delimiter=',')
-            output['log_posterior_vec'] = np.loadtxt(log_posterior_vec_file, delimiter=',')
-            output['lr_vec'] = np.loadtxt(lr_vec_file, delimiter=',')
-            output['segmented_region_sizes'] = np.loadtxt(segmented_region_sizes_file, delimiter=',')
-            output['segmented_regions'] = np.loadtxt(segmented_regions_file, delimiter=',')
-            output['sp_vec'] = np.loadtxt(sp_vec_file, delimiter=',')
+            cwd = os.getcwd()
+            for fn in os.listdir(cwd):
+                if self.postfix in fn:
+                    key = fn.split('_', 1)[1].split('.')[0]
+                    output[key] = np.loadtxt(fn, delimiter=',')
+                    os.remove(fn)
         except OSError as e:
             print("OSError: ", e.output, e.stdout, e.stderr)
-
-        # Now that we've read all outputs into memory, we delete the temporary files if persistence==False
-        if not self.persistence:
-            shutil.rmtree(output_path)
 
         return output
 
