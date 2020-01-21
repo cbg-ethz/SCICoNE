@@ -584,6 +584,39 @@ double MathOp::compute_omega_condense_split(Node *node, double lambda_s, unsigne
     return omega_val;
 }
 
+int MathOp::median_idx(int l, int r) {
+    int s = r - l + 1;
+    s = (s + 1) / 2 - 1;
+    return s + l;
+}
+
+template<class T>
+double MathOp::iqm(vector<T> v) {
+    std::sort(v.begin(), v.end());
+    int n = v.size();
+
+    // Index of median of entire data
+    int mid_index = median_idx(0, n);
+
+    // Index of median of first half
+    int q1_index = median_idx(0, mid_index);
+
+    // Index of median of second half
+    int q3_index = median_idx(mid_index + 1, n);
+
+    // Mean within Q1 and Q3
+    double sum = 0;
+    int counter = 0;
+    for (int i = q1_index; i <= q3_index; i++) {
+      sum = sum + v[i];
+      counter = counter + 1;
+    }
+
+    double res = sum / counter;
+
+    return res;
+}
+
 template<class T>
 double MathOp::median(vector<T> v) {
 
@@ -599,26 +632,6 @@ double MathOp::median(vector<T> v) {
         return (double)v[n/2];
     return (double)(v[(n-1)/2] + v[n/2])/2.0; // even
 
-}
-
-template<class T>
-double MathOp::iqm(vector<T> v) {
-
-    /*
-     * Returns the inter-quartile mean value of the vector
-     * */
-
-    // sort using the default operator<
-    std::sort(v.begin(), v.end());
-
-    // discard bottom and top 2 values
-    v.erase(v.begin(), v.begin() + 2);
-    v.erase(v.end() - 2, v.end());
-
-    // get the mean of the remaining values
-    double mean = MathOp::vec_avg(v);
-
-    return mean;
 }
 
 template<class T>
