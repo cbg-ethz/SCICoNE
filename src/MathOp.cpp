@@ -104,6 +104,8 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             double lambda_r = iqm(rbins);
             double lambda_l = iqm(lbins);
             double lambda_all = vec_avg(all_bins);
+
+            // make sure lambda_all is between the left and right bounds
             lambda_all = std::max(lambda_all, std::min(lambda_r, lambda_l));
             lambda_all = std::min(lambda_all, std::max(lambda_r, lambda_l));
 
@@ -111,8 +113,8 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
              // segments accordingly
             if (lambda_r > lambda_l) {
               double gap = lambda_r - lambda_l;
-              double gap_thres = lambda_all/4;
-              double scaling = std::max(lambda_all/(4*gap), 1.0);
+              double gap_thres = lambda_all/5.0;
+              double scaling = std::max(lambda_all/(5.0*gap), 1.0);
               if (gap < gap_thres) {
                 lambda_r = lambda_all + scaling*(lambda_r-lambda_all);
                 lambda_l = lambda_all - scaling*(lambda_all-lambda_l);
@@ -129,8 +131,8 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
 
             } else if (lambda_r < lambda_l) {
               double gap = lambda_l - lambda_r;
-              double gap_thres = lambda_all/4;
-              double scaling = std::max(lambda_all/(4*gap), 1.0);
+              double gap_thres = lambda_all/5.0;
+              double scaling = std::max(lambda_all/(5.0*gap), 1.0);
               if (gap < gap_thres) {
                 lambda_l = lambda_all + scaling*(lambda_l-lambda_all);
                 lambda_r = lambda_all - scaling*(lambda_all-lambda_r);
@@ -724,10 +726,11 @@ vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z, i
 
     nlopt::opt opt(nlopt::LN_BOBYQA, 2);
     std::vector<double> lb(2);
-    lb[0] = 0; lb[1] = -HUGE_VAL; // lower bounds on alpha, beta
-    std::vector<double> ub(2);
-    ub[0] = HUGE_VAL; ub[1] = 1.0/4.0 * 1.0/window_size; // upper bounds on alpha, beta
+    lb[0] = 0; lb[1] = - 1.0/5.0 * 1.0/window_size; // lower bounds on alpha, beta
     opt.set_lower_bounds(lb);
+    std::vector<double> ub(2);
+    ub[0] = HUGE_VAL; ub[1] = 1.0/5.0 * 1.0/window_size; // upper bounds on alpha, beta
+    opt.set_upper_bounds(ub);
     opt.set_max_objective(ll_linear_model, &z);
     opt.set_xtol_rel(1e-4);
     std::vector<double> x(2);
