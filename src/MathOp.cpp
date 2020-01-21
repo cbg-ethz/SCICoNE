@@ -695,14 +695,10 @@ double MathOp::third_quartile(vector<T> &v) {
 
 double MathOp::ll_linear_model(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
 {
-    double nu = 1; // inverse overdispersion parameter
+    double nu = 10.0; // inverse overdispersion parameter: lower nu gets you more dispersion. Assume low disperson
 
     segment_counts *d = reinterpret_cast<segment_counts*>(my_func_data);
     vector<double> z = d->z;
-
-    double mean = vec_avg(z);
-    double var = st_deviation(z);
-    nu = pow(mean, 2) / (var - mean);
 
     int size = z.size();
     double lambda = 0;

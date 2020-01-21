@@ -51,6 +51,7 @@ public:
     static double compute_linear_regression_slope(const vector<double>& x, const vector<double>& y);
     static double log_n_choose_k(unsigned long n, unsigned long k);
     static int random_uniform(int min, int max);
+    static int median_idx(int l, int r);
     template <class T>
     static double vec_avg(const vector<T> &v);
     template <class T>
