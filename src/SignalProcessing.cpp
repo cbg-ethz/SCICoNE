@@ -187,9 +187,10 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
     this->log_transform(signal);
 
     // double stdev = MathOp::st_deviation(signal);
-    double third_q = MathOp::third_quartile(signal);
-    double median = MathOp::median(signal);
-    double range = third_q - median;
+    // double third_q = MathOp::third_quartile(signal);
+    // double median = MathOp::median(signal);
+    // double range = third_q - median;
+    double range = MathOp::interquartile_range(signal, true); // thirdq - median
     // double range = stdev;
     double threshold = threshold_coefficient * range;
 
@@ -271,7 +272,13 @@ int SignalProcessing::find_highest_peak(vector<T> &signal, int lb, int ub) {
 }
 
 vector<double>
-SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star) {
+SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star, bool compute_lr, bool lr_only) {
+  vector<vector<double>> lr_vec;
+  return SignalProcessing::breakpoint_detection(mat, window_size, k_star, lr_vec, compute_lr, lr_only);
+}
+
+vector<double>
+SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star, vector<vector<double>> &lr_vec, bool compute_lr, bool lr_only) {
     /*
      * Performs the breakpoint detection
      * window_size: there cannot be multiple breakpoints within a window_size
@@ -284,8 +291,10 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
     size_t n_cells = mat.size();
 
     // compute the LR scores
-
-    vector<vector<double>> lr_vec = MathOp::likelihood_ratio(mat,window_size);
+    if (compute_lr)
+      lr_vec = MathOp::likelihood_ratio(mat, window_size);
+    else
+      std::cout << "Skipping LR computation" << std::endl;
 
     if (verbosity > 0)
     {
@@ -302,9 +311,15 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
         }
     }
 
+    if (lr_only) {
+      vector<double> sp_vec_dummy;
+      return sp_vec_dummy;
+    }
+
     size_t n_breakpoints = lr_vec.size();
     cout <<"n_breakpoints: " << n_breakpoints << " n_cells: " << n_cells <<endl;
 
+    std::cout << "Combining scores..." << std::endl;
     vector<vector<double>> sigma(n_breakpoints,vector<double>(n_cells+1)); // +1 because combine scores considers
     // the breakpoint occurring in zero cells as well
 
@@ -405,6 +420,7 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
         sp_file << std::endl;
 
     }
+    std::cout << "Done." << std::endl;
 
     return s_p;
 

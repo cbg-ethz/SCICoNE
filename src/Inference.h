@@ -38,13 +38,16 @@ public:
     int ploidy;
     std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
+    std::vector<std::pair<int, double>> t_maxs;
     std::vector<std::map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
+    std::vector<std::pair<int, double>> t_prime_maxs;
     int verbosity;
     bool max_scoring;
+    int n_cells;
 
 public:
-    Inference(u_int n_regions, int ploidy=2, int verbosity=2, bool max_scoring=false);
+    Inference(u_int n_regions, int n_cells, int ploidy=2, int verbosity=2, bool max_scoring=false);
     ~Inference();
     void destroy();
     void compute_t_od_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
@@ -111,7 +114,7 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters,
             // create a map, fill it properly with r amount of labels
             map<u_int, int> distinct_regions;
             try {
-                Utils::random_initialize_labels_map(distinct_regions, n_regions, max_regions_per_node); // modifies the distinct_regions
+                Utils::random_initialize_labels_map(distinct_regions, n_regions, max_regions_per_node, (double)max_regions_per_node/2.0); // modifies the distinct_regions
             }catch (const std::out_of_range& e)
             {
                 if (verbosity > 1)
@@ -167,14 +170,20 @@ void Inference::initialize_worked_example() {
 
 }
 
-Inference::Inference(u_int n_regions, int ploidy, int verbosity, bool max_scoring) : t(ploidy, n_regions),
+Inference::Inference(u_int n_regions, int n_cells, int ploidy, int verbosity, bool max_scoring) : t(ploidy, n_regions),
                                                                    t_prime(ploidy, n_regions),
-                                                                   best_tree(ploidy, n_regions) {
+                                                                   best_tree(ploidy, n_regions),
+                                                                   t_prime_sums(n_cells),
+                                                                   t_sums(n_cells),
+                                                                   t_maxs(n_cells),
+                                                                   t_prime_maxs(n_cells)
+                                                                   {
 
     this->n_regions = n_regions;
     this->ploidy = ploidy;
     this->verbosity = verbosity;
     this->max_scoring = max_scoring;
+    this->n_cells = n_cells;
 }
 
 Inference::~Inference() {
@@ -205,6 +214,9 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
     // If D is cluster by region, we iterate over each cluster and compute the sum of each cluster's
     // score weighted by its size
 
+    double currentMax = -DBL_MAX;
+    std::pair<int, double> currentMax_node;
+
     int j = static_cast<int>(D.size());
     for (int i = 0; i < j; ++i)
     {
@@ -215,19 +227,33 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
 
         double t_sum = 0;
         if (max_scoring) {
-          // Get maximum score for cell
-          double currentMax = -DBL_MAX;
-          unsigned arg_max = 0;
+          currentMax = -DBL_MAX;
           for (auto it = scores_vec.cbegin(); it != scores_vec.cend(); ++it ) {
-              if (it->second > currentMax)
-                  currentMax = it->second;
+              if (it->second > currentMax) {
+                  currentMax_node.first = it->first;
+                  currentMax_node.second = it->second;
+                  currentMax = currentMax_node.second;
+              }
           }
           t_sum = currentMax;
+          this->t_maxs[i].first = currentMax_node.first;
+          this->t_maxs[i].second = currentMax;
         }
-        else
+        // if (max_scoring) {
+        //   // Get maximum score for cell
+        //   double currentMax = -DBL_MAX;
+        //   unsigned arg_max = 0;
+        //   for (auto it = scores_vec.cbegin(); it != scores_vec.cend(); ++it ) {
+        //       if (it->second > currentMax)
+        //           currentMax = it->second;
+        //   }
+        //   t_sum = currentMax;
+        // }
+        else {
             t_sum = MathOp::log_sum(scores_vec);
+          }
 
-        this->t_sums.push_back(t_sum);
+        this->t_sums[i] = t_sum;
     }
 
     int m = D.size();
@@ -791,6 +817,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 acceptance_ratio_file << std::setprecision(print_precision) << static_cast<int>(move_id) << ((i==n_iters-1) ? "" : ",");
                 n_accepted++;
                 t_sums = t_prime_sums;
+                t_maxs = t_prime_maxs;
                 update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
                 t = t_prime;
                 if ((t_prime.posterior_score + t_prime.od_score)  > (best_tree.posterior_score + best_tree.od_score))
@@ -811,7 +838,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             if (gamma < 1.0/100.0)
                 gamma = 1.0/100.0;
 
-            t_prime_sums.clear();
+            // t_prime_sums.clear();
             t_prime_scores.clear();
         }
 
@@ -946,8 +973,9 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
 
     int j = 0;
 
-    if (max_scoring)
-      attached_node = t_prime.root;
+    // I was doing this to make sure t_prime_scores would have every node when I compute the maximum, which makes this slower
+    // if (max_scoring)
+    //   attached_node = t_prime.root;
 
     for (auto const &d: D)
     {
@@ -964,7 +992,7 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
         {
             // append the contents of second hashmap into the first
             // note that they cannot have overlapping keys
-            for (auto const& map_item : t_prime.get_children_id_score(attached_node))
+            for (auto const& map_item : t_prime.get_children_id_score(attached_node)) // go to each child of the changed node and get its score
             {
                 t_prime_scores[j][map_item.first] = map_item.second;
             }
@@ -1004,22 +1032,83 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
     int deleted_index = deleted_node_idx(); // if -1 then not deleted, otherwise the index of the deleted
 
     if (max_scoring) {
+      // Parallelize cells
+      #pragma omp parallel for
         for (unsigned i = 0; i < D.size(); i++) { // each cell i
-            double currentMax = -DBL_MAX;
-            // Need to go through all nodes to get maximum, not just the ones which change
-            for (auto it = t_prime_scores[i].cbegin(); it != t_prime_scores[i].cend(); ++it ) {
-                if (it->second > currentMax)
-                    currentMax = it->second;
+            vector<double> old_vals; // old values of kept nodes
+            old_vals.reserve(t_scores[i].size()); // the max possible size
+
+            map<int,double> unchanged_vals = t_scores[i]; // initiate with all values and remove the changed ones
+
+            // Instead of going through all the nodes, go through the updated ones to get their best
+            // and compare with previous best
+            double currentMax_newval = -DBL_MAX;
+            pair<int, double> currentMax_newnode;
+            bool prev_max_in_new = false;
+            for (auto &u_map : t_prime_scores[i]) { // go through each updated node in T'
+                if (t_scores[i].count(u_map.first)) // if this node was already present
+                {
+                    unchanged_vals.erase(u_map.first); // erase it from the unchanged vals
+                }
+
+                // Check if an updated node was the previous maximum
+                if (t_maxs[i].first == u_map.first) {
+                  prev_max_in_new = true;
+                }
+
+                // Best new node, including the inserted ones
+                if (u_map.second > currentMax_newval) {
+                  currentMax_newval = u_map.second;
+                  currentMax_newnode.first = u_map.first;
+                  currentMax_newnode.second = currentMax_newval;
+                }
             }
-            double res = currentMax;
-            t_prime_sums.push_back(res);
+
+            if (deleted_index != -1)
+            {
+                unchanged_vals.erase(deleted_index); // erase it from the unchanged vals
+            }
+
+            pair<int, double> prev_best;
+            prev_best.first = t_maxs[i].first; // If the previous max was not changed, take it
+            prev_best.second = t_maxs[i].second;
+            // If the previous max was changed (or if it was deleted), we need find the maximum among the unchanged nodes.
+            if (prev_max_in_new || (t_maxs[i].first == deleted_index)) { // find best unchanged and compare against it
+              double currentMax = -DBL_MAX;
+              pair<int, double> currentMax_unchangednode;
+              for (auto &u_map : unchanged_vals) {
+                  if (u_map.second > currentMax) {
+                      currentMax_unchangednode.first = u_map.first;
+                      currentMax_unchangednode.second = u_map.second;
+                      currentMax = u_map.second;
+                  }
+              }
+              prev_best.first = currentMax_unchangednode.first;
+              prev_best.second = currentMax_unchangednode.second;
+            }
+
+            // Update cell score
+            pair<int, double> newMax_node;
+            newMax_node.first = currentMax_newnode.first;
+            newMax_node.second = currentMax_newval;
+            if (prev_best.second > currentMax_newval) {
+              newMax_node.first = prev_best.first;
+              newMax_node.second = prev_best.second;
+            }
+            t_prime_maxs[i].first = newMax_node.first;
+            t_prime_maxs[i].second = newMax_node.second;
+
+            assert(!std::isnan(newMax_node.second));
+            t_prime_sums[i] = newMax_node.second;
         }
     }
     else {
+      // Parallelize cells
+      #pragma omp parallel for
         for (unsigned i = 0; i < D.size(); ++i) {
-            vector<double> old_vals;
+            vector<double> old_vals; // old values of kept nodes
             old_vals.reserve(t_scores[i].size()); // the max possible size
-            vector<double> new_vals;
+            vector<double> new_vals; // new values of kept nodes
             new_vals.reserve(t_scores[i].size());
 
             map<int,double> unchanged_vals = t_scores[i]; // initiate with all values and remove the changed ones
@@ -1052,7 +1141,7 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
             // if the tree size changes, update it (tree.n_nodes). Posterior takes that into account
             assert(!std::isnan(res));
 
-            t_prime_sums.push_back(res);
+            t_prime_sums[i] = res;
         }
     }
 }

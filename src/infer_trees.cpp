@@ -182,13 +182,15 @@ int main( int argc, char* argv[]) {
       if (n_cells < 20)
         std::cout << "Warning: there are only " << n_cells <<  " observations. If these are clusters, the cluster_sizes_file parameter should be specified for accurate tree scoring." << std::endl;
     }
+
+    std::cout << "max_scoring: " << max_scoring << std::endl;
     if (max_scoring) {
         std::cout << "Will perform maximum scoring." << std::endl;
         move_probs.back() = 0.0f; // no need to prune tree
     }
 
     // run mcmc inference
-    Inference mcmc(n_regions, ploidy, verbosity, max_scoring);
+    Inference mcmc(n_regions, n_cells, ploidy, verbosity, max_scoring);
 
     if (random_init)
     {
@@ -281,20 +283,23 @@ int main( int argc, char* argv[]) {
         inferred_cnvs_file << endl;
     }
 
-    // write score matrix
-    std::ofstream attachment_scores_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_attachment_scores" + ".csv");
-    for (int j=0;j<n_cells;j++) {
-      map<int,double>::const_iterator map_iter;
-      int i = 0;
-      for(map_iter=attachment_scores[j].begin(); map_iter!=attachment_scores[j].end(); ++map_iter)
-      {
-        if (i == attachment_scores[j].size()-1) // the last element
-            attachment_scores_file << map_iter->second;
-        else // add comma
-            attachment_scores_file << map_iter->second << ',';
-        i++;
+    if (verbosity > 0)
+    {
+      // write score matrix
+      std::ofstream attachment_scores_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_attachment_scores" + ".csv");
+      for (int j=0;j<n_cells;j++) {
+        map<int,double>::const_iterator map_iter;
+        int i = 0;
+        for(map_iter=attachment_scores[j].begin(); map_iter!=attachment_scores[j].end(); ++map_iter)
+        {
+          if (i == attachment_scores[j].size()-1) // the last element
+              attachment_scores_file << map_iter->second;
+          else // add comma
+              attachment_scores_file << map_iter->second << ',';
+          i++;
+        }
+        attachment_scores_file << endl;
       }
-      attachment_scores_file << endl;
     }
 
     std::cout << "Tree inference is successfully completed!" <<std::endl;

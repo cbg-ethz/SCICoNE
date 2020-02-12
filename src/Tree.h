@@ -120,9 +120,9 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
     vector<Node*> nodes = t.root->get_descendents(true);
 
     os << "Tree posterior: " << setprecision(print_precision) << t.posterior_score << std::endl;
-    os << "Tree prior: " << setprecision(print_precision) << t.prior_score
-       << ", Event prior: " << t.event_prior()
-       << ", Log likelihood: " << t.total_attachment_score << std::endl;
+    os << "Tree prior: " << setprecision(print_precision) << t.prior_score  << std::endl;
+    os << "Event prior: " << setprecision(print_precision )<< t.event_prior() << std::endl;
+    os << "Log likelihood: " << setprecision(print_precision) << t.total_attachment_score << std::endl;
     os << "Root score: " << setprecision(print_precision) << t.od_score << std::endl;
     os << "Tree score: " << setprecision(print_precision) << t.posterior_score + t.od_score << std::endl;
     os << "Nu: " << setprecision(print_precision) << t.nu<< std::endl;
@@ -1013,9 +1013,7 @@ Node *Tree::add_remove_events(bool weighted, bool validation_test_mode) {
 
         // n_regions from Poisson(lambda_R)+1
         boost::random::poisson_distribution<int> poisson_dist(lambda_r); // the param is to be specified later
-        int n_regions_to_sample = poisson_dist(generator);
-        if (n_regions_to_sample == 0)
-            n_regions_to_sample += 1; // to have a region to sample
+        int n_regions_to_sample = poisson_dist(generator) + 1;
         // sample n_regions_to_sample distinct regions uniformly
         int n_regions = this->n_regions;
         int regions_sampled = 0;

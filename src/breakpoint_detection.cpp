@@ -32,6 +32,11 @@ int main( int argc, char* argv[]) {
     verbosity = 0;
     int evidence_min_cells = 4;
     unsigned breakpoints_limit = 300;
+    string lr_file;
+    string sp_file;
+    bool compute_lr = true;
+    bool compute_sp = true;
+    bool evaluate_peaks = true;
 
     cxxopts::Options options("Breakpoint detection executable", "detects the breakpoints in the genome across all cells.");
     options.add_options()
@@ -40,10 +45,15 @@ int main( int argc, char* argv[]) {
             ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("window_size", "the size of the window used in breakpoint detection", cxxopts::value(window_size))
-            ("threshold", "the coefficient of the breakpoint threshold", cxxopts::value(threshold_coefficient))
+            ("threshold", "the coefficient of the breakpoint threshold. If -1, stop after computing the LR.", cxxopts::value(threshold_coefficient))
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_posfix))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
             ("bp_limit","the maximum number of breakpoints to be returned. The breakpoints get sorted and the top ones are returned",cxxopts::value(breakpoints_limit))
+            ("compute_lr","Boolean indicator of wether the per bin cell-wise breakpoint evidence should be computed (true) or if a file is passed (false)",cxxopts::value<bool>(compute_lr))
+            ("lr_file","Path to a matrix containing the evidence for breakpoint at each bin in each cell.",cxxopts::value(lr_file))
+            ("sp_file","Path to a vector containing the combined evidence for breakpoint at each bin across all cells.",cxxopts::value(sp_file))
+            ("compute_sp","Boolean indicator of wether the per bin breakpoint evidence should be computed (true) or if a file is passed (false)",cxxopts::value<bool>(compute_sp))
+            ("evaluate_peaks","Boolean indicator of wether to evaluate peaks and call breakpoints.",cxxopts::value<bool>(evaluate_peaks))
             ;
 
     auto result = options.parse(argc, argv);
@@ -67,12 +77,27 @@ int main( int argc, char* argv[]) {
     {
         std::cout << "min_cells is not specified, " << evidence_min_cells << " cells are going to be considered" <<std::endl;
     }
+    if ((not compute_lr) && (not result.count("lr_file")))
+    {
+        std::cout << "No LR file passed. Will compute new one." << std::endl;
+        compute_lr = true;
+    }
 
-    std::cout<<"Reading the input matrix..."<<std::endl;
+    vector<vector<double>> lr_vec(n_bins, vector<double>(n_cells)); // LR of each bin for each cell
+    if (result.count("lr_file")) {
+      if (lr_file.compare("") != 0) {
+        std::cout << "Reading provided LR: " << lr_file << std::endl;
+        Utils::read_counts(lr_vec, lr_file);
+        std::cout << "Done." << std::endl;
+        compute_lr = false;
+      } else {
+        compute_lr = true;
+      }
+    }
 
+    std::cout<<"Reading the input matrix: " << d_matrix_file <<std::endl;
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
     Utils::read_counts(d_bins, d_matrix_file);
-
     std::cout<<"Input matrix is read."<<std::endl;
 
     // create the region_sizes
@@ -82,9 +107,33 @@ int main( int argc, char* argv[]) {
     // perform segmentation and peak detection, then define the region sizes
     SignalProcessing dsp;
 
-    std::cout<<"Computing the probability of a region being a breakpoint..."<<std::endl;
-    vector<double> s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells);
-    std::cout<<"Computed probabilities for all regions."<<std::endl;
+    vector<double> s_p;
+    if (result.count("sp_file")) {
+      if (sp_file.compare("") != 0) {
+        std::cout << "Reading Sp vector: " << sp_file << std::endl;
+        Utils::read_vector_double(s_p, sp_file);
+        std::cout << "Done." << std::endl;
+        compute_sp = false;
+      } else {
+        compute_sp = true;
+      }
+    }
+
+    if (compute_sp) {
+      std::cout<<"Computing the probability of a region being a breakpoint..."<<std::endl;
+      if (compute_lr)
+        s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells);
+      else
+        s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells, lr_vec, compute_lr);
+      std::cout<<"Computed probabilities for all regions."<<std::endl;
+    }
+
+    if (result.count("evaluate_peaks")) {
+      if (not evaluate_peaks) {
+        std::cout << "Will not evaluate peaks." << std::endl;
+        return EXIT_SUCCESS;
+      }
+    }
 
     vector<double> sp_cropped = dsp.crop(s_p, window_size);
 
@@ -122,7 +171,7 @@ int main( int argc, char* argv[]) {
     while(!q_map.empty())
     {
         pair<int,int> elem = q_map.rbegin()->second; // use the rbegin to get the largest val
-        q_map.erase(q_map.rbegin()->first); // remove the largest val by it's key
+        q_map.erase(q_map.rbegin()->first); // remove the largest val by its key
 
         if (elem.second - elem.first > smaller_window_size)
         {

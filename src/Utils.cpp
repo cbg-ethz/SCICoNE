@@ -28,7 +28,7 @@ bool Utils::is_empty_map(std::map<u_int, int> &dict){
     return true;
 }
 
-void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions, int n_regions, int max_regions_per_node)
+void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions, int n_regions, int max_regions_per_node, double lambda_r)
 {
     /*
      * Initializes an empty map to represent the c_change attribute of a node.
@@ -42,7 +42,7 @@ void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions,
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
     // n_regions from Poisson(lambda_R)+1
-    boost::random::poisson_distribution<int> poisson_r((double)max_regions_per_node/2);
+    boost::random::poisson_distribution<int> poisson_r(lambda_r);
 
     // n_copies from Poisson(lambda_c)+1
     // boost::random::poisson_distribution<int> poisson_c(lambda_c); // the param is to be specified later
@@ -138,6 +138,30 @@ vector<vector<double>> Utils::condense_matrix(vector<vector<double>>& D, vector<
 }
 
 void Utils::read_vector(vector<int> &vec, const string &path) {
+
+    /*
+     * Reads a 1 dimensional vector file at path path to reference vec.
+     * Throws std::logic_error
+     * */
+
+    ifstream filein(path);
+
+    for (std::string line; std::getline(filein, line); )
+    {
+        istringstream fline(line);
+        std::string val;
+        while (std::getline(fline, val))
+        {
+            vec.push_back(stod(val)); // push_back is fine since this file is much smaller
+        }
+    }
+
+    if (vec.size() == 0)
+        throw std::logic_error("The size of the vector should not be zero!");
+
+}
+
+void Utils::read_vector_double(vector<double> &vec, const string &path) {
 
     /*
      * Reads a 1 dimensional vector file at path path to reference vec.

@@ -16,6 +16,23 @@ double MathOp::vec_avg(const vector<T> &v) {
     return average;
 }
 
+template<class T>
+double MathOp::mat_moment(const vector<vector<T>> &v, int moment) {
+
+    int rows = v.size();
+    int cols = v[0].size();
+
+    double sum = 0.;
+    for (size_t i = 0; i < rows; ++i) {
+      for (size_t j = 0; j < cols; ++j) {
+        sum = sum + pow(v[i][j], moment);
+      }
+    }
+    double average = sum / (rows*cols);
+
+    return average;
+}
+
 double MathOp::breakpoint_log_likelihood(std::vector<double> v, double lambda, double nu)
 {
     /*
@@ -48,6 +65,12 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
      * Computes the difference of the likelihood_break and likelihood_segment cases to tell whether to break or not
      * */
 
+    // Estimate nu with method of moments, assuming all cells are in the same state
+    double global_mean = mat_moment(mat, 1);
+    double global_moment_2 = mat_moment(mat, 2);
+    double nu = pow(global_mean, 2) / global_moment_2;
+    std::cout << "Method of moments estimated nu=" << nu << std::endl;
+
     //MathOp mo = MathOp();
     // the last breakpoint
     size_t bp_size = mat[0].size(); // bp_size = number of bins initially
@@ -58,16 +81,18 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
     // u_int cell_no = 0;
     vector<vector<double>> lr_vec(bp_size, vector<double>(n_cells)); // LR of each bin for each cell
 
-    for (unsigned i = 0; i < bp_size; ++i) {
-        int start = i - window_size;
-        int end = i + window_size;
+    // Parallelize cells
+    #pragma omp parallel for
+    for (unsigned j = 0; j < n_cells; ++j) {
+        for (unsigned i = 0; i < bp_size; ++i) {
+            int start = i - window_size;
+            int end = i + window_size;
 
-        // end cannot be equal to bp_size because cellranger DNA is putting 0 to the end
-        if (start < 0 || end >= static_cast<int>(bp_size)) {
-            continue;
-        }
+            // end cannot be equal to bp_size because cellranger DNA is puts 0 to the end
+            if (start < 0 || end >= static_cast<int>(bp_size)) {
+                continue;
+            }
 
-        for (unsigned j = 0; j < n_cells; ++j) {
             vector<double> lbins = vector<double>(mat[j].begin() + start, mat[j].begin() + i);
             vector<double> rbins = vector<double>(mat[j].begin() + i, mat[j].begin() + end);
             vector<double> all_bins = vector<double>(mat[j].begin() + start, mat[j].begin() + end);
@@ -83,7 +108,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             //   The mean across the bins in the window can change according to a linear model,
             //   which includes the case where all the bins have the same min (if the slope is zero)
             vector<double> lambdas_segment(n_bins);
-            vector<double> regression_parameters = compute_linear_regression_parameters(all_bins, window_size);
+            vector<double> regression_parameters = compute_linear_regression_parameters(all_bins, window_size, nu);
             double alpha = regression_parameters[0];
             double beta = regression_parameters[1];
 
@@ -96,7 +121,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
 
             double ll_segment = 0;
             for (size_t m = 0; m < n_bins; ++m) {
-                ll_segment += breakpoint_log_likelihood(vector<double>(all_bins.begin()+m, all_bins.begin()+m+1), lambdas_segment[m], 1.0);
+                ll_segment += breakpoint_log_likelihood(vector<double>(all_bins.begin()+m, all_bins.begin()+m+1), lambdas_segment[m], nu);
             }
 
             // 2. Likelihood of breakpoint model, where left and right bin segments have different means
@@ -113,8 +138,8 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
              // segments accordingly
             if (lambda_r > lambda_l) {
               double gap = lambda_r - lambda_l;
-              double gap_thres = lambda_all/5.0;
-              double scaling = std::max(lambda_all/(5.0*gap), 1.0);
+              double gap_thres = lambda_all/4.0;
+              double scaling = std::max(lambda_all/(4.0*gap), 1.0);
               if (gap < gap_thres) {
                 lambda_r = lambda_all + scaling*(lambda_r-lambda_all);
                 lambda_l = lambda_all - scaling*(lambda_all-lambda_l);
@@ -131,8 +156,8 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
 
             } else if (lambda_r < lambda_l) {
               double gap = lambda_l - lambda_r;
-              double gap_thres = lambda_all/5.0;
-              double scaling = std::max(lambda_all/(5.0*gap), 1.0);
+              double gap_thres = lambda_all/4.0;
+              double scaling = std::max(lambda_all/(4.0*gap), 1.0);
               if (gap < gap_thres) {
                 lambda_l = lambda_all + scaling*(lambda_l-lambda_all);
                 lambda_r = lambda_all - scaling*(lambda_all-lambda_r);
@@ -152,11 +177,11 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
             if (lambda_l == 0)
                 lambda_l = 0.0001;
 
-            double ll_break = breakpoint_log_likelihood(lbins, lambda_l, 1.0) +
-                              breakpoint_log_likelihood(rbins, lambda_r, 1.0);
+            double ll_break = breakpoint_log_likelihood(lbins, lambda_l, nu) +
+                              breakpoint_log_likelihood(rbins, lambda_r, nu);
 
             // 3. Output the difference between the two models' likelihoods
-            lr_vec[i][j] = ll_break - ll_segment;
+            lr_vec[i][j] = 2*(ll_break - ll_segment);
         }
     }
     return lr_vec;
@@ -620,6 +645,34 @@ double MathOp::iqm(vector<T> v) {
 }
 
 template<class T>
+double MathOp::robust_mean(vector<T> v) {
+    std::sort(v.begin(), v.end());
+    int n = v.size();
+
+    // Get data below 5th percentile
+    double lower_perc = MathOp::percentile_val(v, 0.05);
+
+    // Get data above 95th percentile
+    double upper_perc = MathOp::percentile_val(v, 0.95);
+
+    // Replace with values below and above limites
+    vector<double> new_v(n);
+    for (int i = 0; i < n; ++i) {
+      if (v[i] <= lower_perc)
+        new_v[i] = lower_perc;
+      else if (v[i] >= upper_perc)
+        new_v[i] = upper_perc;
+      else
+        new_v[i] = v[i];
+    }
+
+    // Take mean of new vector
+    double res = vec_avg(new_v);
+
+    return res;
+}
+
+template<class T>
 double MathOp::median(vector<T> v) {
 
     /*
@@ -693,12 +746,63 @@ double MathOp::third_quartile(vector<T> &v) {
     return trd;
 }
 
+template<class T>
+double MathOp::interquartile_range(vector<T> &v, bool top) {
+    /*
+     * Returns the IQR of a vector
+     * */
+     int size = v.size();
+
+     auto const Q1 = v.size() / 4;
+     auto const Q2 = v.size() / 2;
+     auto const Q3 = Q1 + Q2;
+
+     std::nth_element(v.begin(),          v.begin() + Q1, v.end());
+     std::nth_element(v.begin() + Q1 + 1, v.begin() + Q2, v.end());
+     std::nth_element(v.begin() + Q2 + 1, v.begin() + Q3, v.end());
+
+     int mid = size/2;
+     double median;
+     median = size % 2 == 0 ? (v[mid] + v[mid-1])/2 : v[mid];
+
+     vector<double> first;
+     vector<double> third;
+
+     for (int i = 0; i!=mid; ++i)
+        first.push_back(v[i]);
+
+      for (int i = mid; i!= size; ++i)
+        third.push_back(v[i]);
+
+     double fst;
+     double trd;
+
+     int side_length = 0;
+
+     if (size % 2 == 0)
+     {
+         side_length = size/2;
+     }
+     else {
+         side_length = (size-1)/2;
+     }
+
+     fst = (size/2) % 2 == 0 ? (first[side_length/2]/2 + first[(side_length-1)/2])/2 : first[side_length/2];
+     trd = (size/2) % 2 == 0 ? (third[side_length/2]/2 + third[(side_length-1)/2])/2 : third[side_length/2];
+
+     double iqr = trd - fst;
+
+     if (top)
+      iqr = trd - median;
+
+    return iqr;
+}
+
 double MathOp::ll_linear_model(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
 {
-    double nu = 10.0; // inverse overdispersion parameter: lower nu gets you more dispersion. Assume low disperson
-
     segment_counts *d = reinterpret_cast<segment_counts*>(my_func_data);
     vector<double> z = d->z;
+    double nu = d->nu; // inverse overdispersion parameter: lower nu gets you more dispersion. Assume low disperson
 
     int size = z.size();
     double lambda = 0;
@@ -713,21 +817,26 @@ double MathOp::ll_linear_model(const std::vector<double> &x, std::vector<double>
     return res;
 }
 
-vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z, int window_size) {
+vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z, int window_size, double nu) {
     /*
-     * Computes the alpha and beta of y = alpha + beta * x
+     * Computes the alpha and beta of y = alpha + beta * x for z = NB(mean=y, idisp=nu)
      * */
 
     double lambda_all = vec_avg(z);
 
+    segment_counts func_data = {
+      z = z,
+      nu = nu,
+    };
+
     nlopt::opt opt(nlopt::LN_BOBYQA, 2);
     std::vector<double> lb(2);
-    lb[0] = 0; lb[1] = - 1.0/5.0 * 1.0/window_size; // lower bounds on alpha, beta
+    lb[0] = 0; lb[1] = - 1.0/8.0 * 1.0/window_size; // lower bounds on alpha, beta
     opt.set_lower_bounds(lb);
     std::vector<double> ub(2);
-    ub[0] = HUGE_VAL; ub[1] = 1.0/5.0 * 1.0/window_size; // upper bounds on alpha, beta
+    ub[0] = HUGE_VAL; ub[1] = 1.0/8.0 * 1.0/window_size; // upper bounds on alpha, beta
     opt.set_upper_bounds(ub);
-    opt.set_max_objective(ll_linear_model, &z);
+    opt.set_max_objective(ll_linear_model, &func_data);
     opt.set_xtol_rel(1e-4);
     std::vector<double> x(2);
     x[0] = vec_avg(z); x[1] = 0.; // initial alpha, beta
@@ -753,5 +862,9 @@ template double MathOp::third_quartile(vector<double> &v);
 template double MathOp::iqm(vector<double> v);
 template double MathOp::vec_avg(const vector<double> &v);
 template double MathOp::vec_avg(const vector<int> &v);
+template double MathOp::mat_moment(const vector<vector<int>> &v, int moment);
+template double MathOp::mat_moment(const vector<vector<double>> &v, int moment);
 template double MathOp::percentile_val<double>(vector<double>, double percentile_val);
 template long double MathOp::percentile_val<long double>(vector<long double>, double percentile_val);
+template double MathOp::interquartile_range(vector<double> &v, bool top);
+template double MathOp::robust_mean(vector<double> v);

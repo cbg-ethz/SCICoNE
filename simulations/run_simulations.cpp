@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
 
     if(result.count("max_regions_per_node"))
     {
-        int upper_bound = (int) n_regions/n_nodes;
+        int upper_bound = std::max((int) n_regions/n_nodes, 1);
         if (max_regions_per_node > upper_bound)
           max_regions_per_node = upper_bound;
         std::cout<<"Simulating with maximum affected regions per node: " << max_regions_per_node << std::endl;
@@ -105,10 +105,13 @@ int main(int argc, char* argv[]) {
         std::cout<<"Simulating without overdispersion" << std::endl;
         is_overdispersed = 0;
     }
-
+    std::cout << "Sampling region sizes" << std::endl;
     sim.sample_region_sizes(n_bins, min_region_size);
+    std::cout << "Done sampling region sizes" << std::endl;
 
+    std::cout << "Sampling counts" << std::endl;
     sim.simulate_count_matrix(false, nu);
+    std::cout << "Done sampling counts" << std::endl;
 
     sim.write_output(f_name_postfix);
 

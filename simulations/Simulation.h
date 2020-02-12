@@ -88,7 +88,7 @@ public:
          * nu is the overdispersion parameter.
          */
 
-        Inference mcmc(n_regions, ploidy, verbosity);
+        Inference mcmc(n_regions, n_cells, ploidy, verbosity);
         vector<vector<double>> p_read_bin_cell(n_cells, vector<double>(n_bins)); // initialize with the default value
 
         std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
@@ -189,11 +189,13 @@ public:
               int region_id = 0;
               int region_count = 0;
               for (std::size_t j = 0; j < n_bins; ++j) { // for each bin
-                D_regions[i][region_id] += D[i][j];
-                region_count += 1;
-                if (region_count == region_sizes[region_id]) {
-                  region_id += 1;
-                  region_count = 0;
+                if (region_id < n_regions) {
+                  D_regions[i][region_id] += D[i][j];
+                  region_count += 1;
+                  if (region_count == region_sizes[region_id]) {
+                    region_id += 1;
+                    region_count = 0;
+                  }
                 }
               }
             }
