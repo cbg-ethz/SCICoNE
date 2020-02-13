@@ -53,6 +53,9 @@ public:
               cluster_sizes(n_cells, 1)
     {
       this->region_neutral_states = region_neutral_states;
+      for (u_int i = 0; i < n_cells; ++i) {
+        this->ground_truth[i] = this->region_neutral_states;
+      }
     }
 
     void sample_region_sizes(int n_bins, unsigned min_width = 1)
@@ -108,7 +111,7 @@ public:
 
                 for (auto const &x : uniform_node->c) // iterate over map, fill the existing region values, the others will be zero by default
                 {
-                    ground_truth[i][x.first] = x.second + ploidy;
+                    ground_truth[i][x.first] = x.second + region_neutral_states[x.first];
                 }
             }
         }

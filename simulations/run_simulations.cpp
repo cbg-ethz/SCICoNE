@@ -96,11 +96,15 @@ int main(int argc, char* argv[]) {
     }
 
     vector<int> region_neutral_states;
+    bool read_neutral_states = false;
     if (result.count("region_neutral_states_file")) {
-      std::cout << "Reading the region_neutral_states file..." << std::endl;
-      Utils::read_vector(region_neutral_states, region_neutral_states_file);
+      if (region_neutral_states_file.compare("") != 0) {
+        std::cout << "Reading the region_neutral_states file..." << std::endl;
+        Utils::read_vector(region_neutral_states, region_neutral_states_file);
+        read_neutral_states = true;
+      }
     }
-    else {
+    if (not read_neutral_states) {
       std::cout << "Assuming root to have copy number state " << ploidy << " in all regions" << std::endl;
       region_neutral_states = std::vector<int>(n_regions, ploidy);
     }

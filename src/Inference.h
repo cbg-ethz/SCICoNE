@@ -1267,6 +1267,9 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
     size_t n_cells = t_scores.size();
 
     vector<vector<int>> cell_regions(n_cells, vector<int>(this->n_regions, ploidy)); //fill ctor, initialise with ploidy
+    for (u_int i = 0; i < n_cells; ++i) {
+      cell_regions[i] = this->region_neutral_states;
+    }
 
     for (size_t j = 0; j < n_cells; ++j) {
         // t_scores[i] is the map

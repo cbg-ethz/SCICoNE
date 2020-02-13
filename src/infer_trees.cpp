@@ -174,13 +174,15 @@ int main( int argc, char* argv[]) {
     Utils::read_vector(region_sizes, region_sizes_file);
 
     vector<int> cluster_sizes;
-    if (result.count("cluster_sizes_file"))
-    {
-      std::cout << "Reading the cluster_sizes file..." << std::endl;
-      Utils::read_vector(cluster_sizes, cluster_sizes_file);
+    bool read_cluster_sizes = false;
+    if (result.count("cluster_sizes_file")) {
+      if (cluster_sizes_file.compare("") != 0) {
+        std::cout << "Reading the cluster_sizes file..." << std::endl;
+        Utils::read_vector(cluster_sizes, cluster_sizes_file);
+        read_cluster_sizes = true;
+      }
     }
-    else
-    {
+    if (not read_cluster_sizes) {
       cluster_sizes = std::vector<int>(n_cells, 1);
 
       if (n_cells < 20)
@@ -194,11 +196,15 @@ int main( int argc, char* argv[]) {
     }
 
     vector<int> region_neutral_states;
+    bool read_neutral_states = false;
     if (result.count("region_neutral_states_file")) {
-      std::cout << "Reading the region_neutral_states file..." << std::endl;
-      Utils::read_vector(region_neutral_states, region_neutral_states_file);
+      if (region_neutral_states_file.compare("") != 0) {
+        std::cout << "Reading the region_neutral_states file..." << std::endl;
+        Utils::read_vector(region_neutral_states, region_neutral_states_file);
+        read_neutral_states = true;
+      }
     }
-    else {
+    if (not read_neutral_states) {
       std::cout << "Assuming root to have copy number state " << ploidy << " in all regions" << std::endl;
       region_neutral_states = std::vector<int>(n_regions, ploidy);
     }

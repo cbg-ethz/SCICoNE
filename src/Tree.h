@@ -301,6 +301,7 @@ Tree::Tree(u_int ploidy, u_int n_regions, vector<int> &region_neutral_states)
     root->c_hash = c_hash;
 
     this->region_neutral_states = region_neutral_states;
+
     this->ploidy = ploidy;
     this->n_regions = n_regions;
     n_nodes = 0;
@@ -1082,9 +1083,11 @@ bool Tree::subtree_out_of_bound(Node *n) const{
     int ub = copy_number_limit; // global variable
     vector<Node*> descendents = n->get_descendents(true);
     for (auto const &elem : descendents)
-        for (auto const &it : elem->c)
+        for (auto const &it : elem->c) {
+            lb = -this->region_neutral_states[it.first];
             if (it.second < lb || it.second > ub)
                 return true;
+        }
     return false;
 
 }
@@ -1101,9 +1104,9 @@ bool Tree::zero_ploidy_changes(Node *n) const{
     {
         if (node->id == 0)
             continue; // root cannot have events
+
         for (auto const &it : node->parent->c)
-            if(it.second <= (-1 * ploidy))
-            {
+            if(it.second <= (-1 * this->region_neutral_states[it.first])) {
                 bool does_change = region_changes(node, it.first);
                 if (does_change)
                     return true;
