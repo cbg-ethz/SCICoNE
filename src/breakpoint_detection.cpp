@@ -37,6 +37,9 @@ int main( int argc, char* argv[]) {
     bool compute_lr = true;
     bool compute_sp = true;
     bool evaluate_peaks = true;
+    string input_breakpoints_file;
+    int n_input_breakpoints;
+    bool add_input_breakpoints = false;
 
     cxxopts::Options options("Breakpoint detection executable", "detects the breakpoints in the genome across all cells.");
     options.add_options()
@@ -54,6 +57,8 @@ int main( int argc, char* argv[]) {
             ("sp_file","Path to a vector containing the combined evidence for breakpoint at each bin across all cells.",cxxopts::value(sp_file))
             ("compute_sp","Boolean indicator of wether the per bin breakpoint evidence should be computed (true) or if a file is passed (false)",cxxopts::value<bool>(compute_sp))
             ("evaluate_peaks","Boolean indicator of wether to evaluate peaks and call breakpoints.",cxxopts::value<bool>(evaluate_peaks))
+            ("input_breakpoints_file","Path to file indicating bins which correspond to known breakpoints that must be included.",cxxopts::value(input_breakpoints_file))
+            ("n_input_breakpoints","Number of bins which correspond to known breakpoints that must be included.",cxxopts::value(n_input_breakpoints))
             ;
 
     auto result = options.parse(argc, argv);
@@ -95,6 +100,16 @@ int main( int argc, char* argv[]) {
       }
     }
 
+    vector<int> input_breakpoints(n_input_breakpoints); // List of bins corresponding to known breakpoints (e.g. chromosome stops)
+    if (result.count("input_breakpoints_file")) {
+      if (input_breakpoints_file.compare("") != 0) {
+        std::cout << "Reading provided breakpoints: " << input_breakpoints_file << std::endl;
+        Utils::read_vector(input_breakpoints, input_breakpoints_file);
+        std::cout << "Done." << std::endl;
+        add_input_breakpoints = true;
+      }
+    }
+
     std::cout<<"Reading the input matrix: " << d_matrix_file <<std::endl;
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
     Utils::read_counts(d_bins, d_matrix_file);
@@ -133,6 +148,13 @@ int main( int argc, char* argv[]) {
         std::cout << "Will not evaluate peaks." << std::endl;
         return EXIT_SUCCESS;
       }
+    }
+
+    if (add_input_breakpoints) {
+      // Prioritize the known breakpoints by setting their Sp to be larger than the maximum
+      double max = MathOp::vec_max(s_p);
+      for (auto const &b: input_breakpoints)
+        s_p[b] = 2 * max;
     }
 
     vector<double> sp_cropped = dsp.crop(s_p, window_size);
