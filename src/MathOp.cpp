@@ -611,6 +611,18 @@ double MathOp::compute_omega_condense_split(Node *node, double lambda_s, unsigne
     return omega_val;
 }
 
+template<class T>
+double MathOp::vec_max(vector<T> v) {
+  double currentMax = -DBL_MAX;
+
+  for (u_int i = 0; i < v.size(); ++i){
+    if (v[i] > currentMax)
+      currentMax = v[i];
+  }
+
+  return currentMax;
+}
+
 int MathOp::median_idx(int l, int r) {
     int s = r - l + 1;
     s = (s + 1) / 2 - 1;
@@ -855,6 +867,7 @@ vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z, i
 
 
 
+template double MathOp::vec_max(vector<double> v);
 template double MathOp::st_deviation(vector<double> &v);
 template double MathOp::st_deviation(vector<int> &v);
 template double MathOp::median(vector<double> v);

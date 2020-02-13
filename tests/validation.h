@@ -39,6 +39,7 @@ const double epsilon_sens = 1e-06;
 
 unsigned ploidy = 2;
 bool max_scoring = true;
+vector<int> region_neutral_states = std::vector<int>(r.size(), ploidy);
 
 void test_breakpoint_detection()
 {
@@ -78,11 +79,11 @@ void test_ploidy_attachment_score()
 
     vector<int> reg_sizes = {4,2, 8, 15, 25};
 
-    Tree t_two(2, reg_sizes.size());
+    Tree t_two(2, reg_sizes.size(), region_neutral_states);
     t_two.insert_at(0,{{0, 1}, {1,1}});
     t_two.compute_weights();
 
-    Tree t_three(3, reg_sizes.size());
+    Tree t_three(3, reg_sizes.size(), region_neutral_states);
     t_three.compute_weights();
 
     vector<double> counts = {10, 40, 80, 120, 500};
@@ -151,7 +152,7 @@ void test_reproducibility()
 
     int local_verbosity = 0;
     bool local_max_scoring = false;
-    Inference mcmc(r.size(), m, ploidy, local_verbosity, local_max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, local_verbosity, local_max_scoring);
 
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
@@ -180,7 +181,7 @@ void test_swap_label()
      * */
 
     bool local_max_scoring = false;
-    Inference mcmc(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
     mcmc.update_t_prime(); // set t_prime to t
@@ -223,7 +224,7 @@ void test_swap_label()
 
 
     local_max_scoring = true;
-    Inference mcmc_max(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc_max(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc_max.initialize_worked_example();
     mcmc_max.compute_t_table(D,r,cluster_sizes);
     mcmc_max.update_t_prime(); // set t_prime to t
@@ -273,7 +274,7 @@ void test_weighted_sample()
      * */
 
     bool local_max_scoring = false;
-    Inference mcmc(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc.initialize_worked_example();
 
     // get the subvector
@@ -309,11 +310,11 @@ void test_condense_split_weights()
      * */
 
     bool local_max_scoring = false;
-    Inference mcmc(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     std::vector<std::map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
 
-    Tree t(ploidy, r.size());
+    Tree t(ploidy, r.size(), region_neutral_states);
     t.random_insert({{0, 1}, {1, 1}}); // 1
     t.insert_at(1,{{1, 1}, {2, 1}}); // 2
     t.insert_at(2,{{0, -1}}); // 3
@@ -323,7 +324,7 @@ void test_condense_split_weights()
     t.compute_weights();
 
 
-    Tree t_prime(ploidy, r.size());
+    Tree t_prime(ploidy, r.size(), region_neutral_states);
     t_prime.random_insert({{0, 1}, {1, 1}}); // 1
     t_prime.insert_at(1,{{2, 1}}); // 2
     t_prime.insert_at(2,{{1, 1}}); // 3
@@ -391,11 +392,11 @@ void test_condense_split_weights()
 
     // With maximum scoring
     local_max_scoring = true;
-    Inference mcmc_max(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc_max(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     std::vector<std::map<int, double>> t_max_prime_scores;
     std::vector<double> t_max_prime_sums;
 
-    Tree t_max(ploidy, r.size());
+    Tree t_max(ploidy, r.size(), region_neutral_states);
     t_max.random_insert({{0, 1}, {1, 1}}); // 1
     t_max.insert_at(1,{{1, 1}, {2, 1}}); // 2
     t_max.insert_at(2,{{0, -1}}); // 3
@@ -405,7 +406,7 @@ void test_condense_split_weights()
     t_max.compute_weights();
 
 
-    Tree t_max_prime(ploidy, r.size());
+    Tree t_max_prime(ploidy, r.size(), region_neutral_states);
     t_max_prime.random_insert({{0, 1}, {1, 1}}); // 1
     t_max_prime.insert_at(1,{{2, 1}}); // 2
     t_max_prime.insert_at(2,{{1, 1}}); // 3
@@ -483,11 +484,11 @@ void test_insert_delete_weights()
      * */
 
     bool local_max_scoring = false;
-    Inference mcmc(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
 
-    Tree t(ploidy, r.size());
+    Tree t(ploidy, r.size(), region_neutral_states);
     t.random_insert({{0, 1}, {1, 1}}); // 1
     t.insert_at(1,{{3,1}});  // 2
     t.insert_at(2,{{1, 1}, {2, 1}}); // 3
@@ -547,11 +548,11 @@ void test_insert_delete_weights()
     cout<<"Insert and delete node weights validation test passed!"<<endl;
 
     local_max_scoring = true;
-    Inference mcmc_max(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc_max(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     std::vector<std::map<int, double>> t_max_scores;
     std::vector<double> t_max_sums;
 
-    Tree t_max(ploidy, r.size());
+    Tree t_max(ploidy, r.size(), region_neutral_states);
     t_max.random_insert({{0, 1}, {1, 1}}); // 1
     t_max.insert_at(1,{{3,1}});  // 2
     t_max.insert_at(2,{{1, 1}, {2, 1}}); // 3
@@ -627,7 +628,7 @@ void test_tree_prior()
      * */
 
     bool local_max_scoring = false;
-    Inference mcmc(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc.initialize_worked_example();
     u_int n = mcmc.t.get_n_nodes();
 
@@ -645,7 +646,7 @@ void test_event_prior()
      * Validation test for the event prior computation
      * */
 
-    Inference mcmc(r.size(), m, ploidy, verbosity, max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
 
@@ -664,7 +665,7 @@ void test_tree_attachment()
      * */
 
     bool local_max_scoring = false;
-    Inference mcmc(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
 
@@ -690,7 +691,7 @@ void test_tree_attachment()
 
     // And now using maximum maximum scoring
     local_max_scoring = true;
-    Inference mcmc_max(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc_max(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc_max.initialize_worked_example();
     mcmc_max.compute_t_table(D,r,cluster_sizes);
 
@@ -714,7 +715,7 @@ void test_prune_reattach()
      * */
 
     bool local_max_scoring = false;
-    Inference mcmc(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
     mcmc.update_t_prime(); // set t_prime to t
@@ -762,7 +763,7 @@ void test_prune_reattach()
     cout<<"Prune and reattach validation test passed!"<<std::endl;
 
     local_max_scoring = true;
-    Inference mcmc_max(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc_max(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc_max.initialize_worked_example();
     mcmc_max.compute_t_table(D,r,cluster_sizes);
     mcmc_max.update_t_prime(); // set t_prime to t
@@ -818,7 +819,7 @@ void test_weighted_prune_reattach()
      * */
 
     bool local_max_scoring = false;
-    Inference mcmc(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
     mcmc.update_t_prime(); // set t_prime to t
@@ -838,7 +839,7 @@ void test_weighted_prune_reattach()
     cout<<"Weighted prune &reattach validation test passed!"<<endl;
 
     local_max_scoring = true;
-    Inference mcmc_max(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc_max(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc_max.initialize_worked_example();
     mcmc_max.compute_t_table(D,r,cluster_sizes);
     mcmc_max.update_t_prime(); // set t_prime to t
@@ -866,7 +867,7 @@ void test_add_remove_event()
      * */
 
     bool local_max_scoring = false;
-    Inference mcmc(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes); // assignment operator changes the order
     mcmc.update_t_prime(); // set t_prime to t
@@ -919,7 +920,7 @@ void test_add_remove_event()
     std::cout<<"Add / remove event validation test passed!"<<std::endl;
 
     local_max_scoring = true;
-    Inference mcmc_max(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc_max(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc_max.initialize_worked_example();
     mcmc_max.compute_t_table(D,r,cluster_sizes); // assignment operator changes the order
     mcmc_max.update_t_prime(); // set t_prime to t
@@ -979,20 +980,20 @@ void test_tree_validation()
      * */
 
     u_int n_regions = 0;
-    Tree* t = new Tree(ploidy, n_regions);
+    Tree* t = new Tree(ploidy, n_regions, region_neutral_states);
 
     t->load_from_file("../tests/trees_to_validate/valid_tree_1.txt");
     assert(t->is_valid_subtree(t->root));
     assert(not t->is_redundant());
     delete t;
 
-    t = new Tree(ploidy, n_regions);
+    t = new Tree(ploidy, n_regions, region_neutral_states);
     t->load_from_file("../tests/trees_to_validate/valid_tree_2.txt");
     assert(t->is_valid_subtree(t->root));
     assert(not t->is_redundant());
     delete t;
 
-    t = new Tree(ploidy, n_regions);
+    t = new Tree(ploidy, n_regions, region_neutral_states);
     try
     {
         t->load_from_file("../tests/trees_to_validate/invalid_tree_2.txt");
@@ -1005,7 +1006,7 @@ void test_tree_validation()
     assert(t->is_redundant()); // IS REDUNDANT, two nodes carry the same genotype
     delete t;
 
-    t = new Tree(ploidy, n_regions);
+    t = new Tree(ploidy, n_regions, region_neutral_states);
     try
     {
         t->load_from_file("../tests/trees_to_validate/invalid_tree_3.txt");
@@ -1018,7 +1019,7 @@ void test_tree_validation()
     assert(not t->is_redundant());
     delete t;
 
-    t = new Tree(ploidy, n_regions);
+    t = new Tree(ploidy, n_regions, region_neutral_states);
     try
     {
         t->load_from_file("../tests/trees_to_validate/invalid_tree_4.txt");
@@ -1041,7 +1042,7 @@ void test_n_descendents_computation()
      * Verifies the n_descendents variable is computed correctly for all nodes
      * */
 
-    Inference mcmc(r.size(), m, ploidy, verbosity, max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, max_scoring);
     mcmc.initialize_worked_example();
 
     assert(mcmc.t.all_nodes_vec[0]->n_descendents == 6);
@@ -1065,7 +1066,7 @@ void test_overdispersed_score()
     double local_nu = 2.0;
 
     bool local_max_scoring = false;
-    Inference mcmc(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc.initialize_worked_example();
     mcmc.t.nu = mcmc.t_prime.nu = local_nu;
     mcmc.compute_t_table(D,r,cluster_sizes);
@@ -1102,7 +1103,7 @@ void test_overdispersed_score()
     is_overdispersed = 1; // enable overdispersion
     local_nu = 2.0;
     local_max_scoring = true;
-    Inference mcmc_max(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc_max(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc_max.initialize_worked_example();
     mcmc_max.t.nu = mcmc_max.t_prime.nu = local_nu;
     mcmc_max.compute_t_table(D,r,cluster_sizes);
@@ -1144,7 +1145,7 @@ void test_genotype_preserving_move_scores()
      * */
 
     bool local_max_scoring = false;
-    Inference mcmc(r.size(), m, ploidy, verbosity, local_max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
     mcmc.initialize_worked_example();
     mcmc.compute_t_table(D,r,cluster_sizes);
 
@@ -1198,7 +1199,7 @@ void test_apply_multiple_times()
     /*
      * Tests the apply multiple times method
      * */
-    Inference mcmc(r.size(), m, ploidy, verbosity, max_scoring);
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, max_scoring);
 
     unsigned n_times = 50;
     mcmc.apply_multiple_times(n_times, increase_counter);
@@ -1235,14 +1236,14 @@ void test_cluster_scoring()
     };
     const vector<int> cluster_sizes = {2, 1, 3};
 
-    Inference mcmc_cells(n_regions, n_cells, ploidy, verbosity, max_scoring);
+    Inference mcmc_cells(n_regions, n_cells, region_neutral_states, ploidy, verbosity, max_scoring);
     mcmc_cells.initialize_worked_example();
     mcmc_cells.compute_t_table(D_cells, reg_sizes, vect);
     double score_cells_t_table = mcmc_cells.t.total_attachment_score;
     std::cout << "Cell score\n";
     std::cout << score_cells_t_table;
     std::cout << "\n";
-    Inference mcmc_clusters(n_regions, n_cells, ploidy, verbosity, max_scoring);
+    Inference mcmc_clusters(n_regions, n_cells, region_neutral_states, ploidy, verbosity, max_scoring);
     mcmc_clusters.initialize_worked_example();
     mcmc_clusters.compute_t_table(D_clusters, reg_sizes, cluster_sizes);
     double score_clusters_t_table = mcmc_clusters.t.total_attachment_score;
@@ -1258,7 +1259,7 @@ void test_cluster_scoring()
 
 void test_print_scores()
 {
-  Inference mcmc(r.size(), m, ploidy, verbosity, max_scoring);
+  Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, max_scoring);
   mcmc.initialize_worked_example();
 
   const vector<vector<double>> D_cells = {

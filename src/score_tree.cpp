@@ -52,6 +52,9 @@ int main( int argc, char* argv[]) {
     double nu = 1.0;
     eta = 1e-4;
 
+    // region neutral states
+    string region_neutral_states_file;
+
     cxxopts::Options options("Score tree", "Scores the tree written in a file");
     options.add_options()
             ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
@@ -66,6 +69,7 @@ int main( int argc, char* argv[]) {
             ("is_overdispersed", "multinomial or dirichlet multinomial in the likelihood", cxxopts::value(is_overdispersed))
             ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))
             ("cf", "cluster fraction variable between 0 and 1 to affect the tree prior coefficient", cxxopts::value(cf))
+            ("region_neutral_states_file", "Path to the file containing the neutral state of each region to use as the root of the tree", cxxopts::value(region_neutral_states_file))
             ;
     auto result = options.parse(argc, argv);
 
@@ -93,7 +97,17 @@ int main( int argc, char* argv[]) {
       cluster_sizes = std::vector<int>(n_cells, 1);
     }
 
-    Inference mcmc(n_regions, ploidy, verbosity);
+    vector<int> region_neutral_states;
+    if (result.count("region_neutral_states_file")) {
+      std::cout << "Reading the region_neutral_states file..." << std::endl;
+      Utils::read_vector(region_neutral_states, region_neutral_states_file);
+    }
+    else {
+      std::cout << "Assuming root to have copy number state " << ploidy << " in all regions" << std::endl;
+      region_neutral_states = std::vector<int>(n_regions, ploidy);
+    }
+
+    Inference mcmc(n_regions, n_cells, region_neutral_states, ploidy, verbosity);
     mcmc.initialize_from_file(file);
     mcmc.t.nu = nu;
     //mcmc.compute_neutral_table(d_regions, region_sizes);

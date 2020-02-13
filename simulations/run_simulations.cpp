@@ -54,6 +54,8 @@ int main(int argc, char* argv[]) {
 
     print_precision = 15;
 
+    string region_neutral_states_file;
+
     cxxopts::Options options("MCMC simulations", "Simulates the count matrix. Outputs the count matrix, region sizes, ground truth and the tree that generated the data.");
     options.add_options()
             ("n_bins", "Number of bins of the input matrix", cxxopts::value(n_bins))
@@ -72,6 +74,7 @@ int main(int argc, char* argv[]) {
             ("c_penalise","term that penalises trees containing cancelling events to be added to tree event prior",cxxopts::value(c_penalise))
             ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))
             ("max_regions_per_node", "Maximum number of regions to be affected within a node in the simulated tree", cxxopts::value(max_regions_per_node))
+            ("region_neutral_states_file", "Path to the file containing the neutral state of each region to use as the root of the tree", cxxopts::value(region_neutral_states_file))
             ;
 
     auto result = options.parse(argc, argv);
@@ -92,7 +95,17 @@ int main(int argc, char* argv[]) {
         std::cout<<"Simulating with maximum affected regions per node: " << max_regions_per_node << std::endl;
     }
 
-    Simulation sim(n_regions, n_bins, n_nodes, n_cells, n_reads, max_region_size, ploidy, max_regions_per_node);
+    vector<int> region_neutral_states;
+    if (result.count("region_neutral_states_file")) {
+      std::cout << "Reading the region_neutral_states file..." << std::endl;
+      Utils::read_vector(region_neutral_states, region_neutral_states_file);
+    }
+    else {
+      std::cout << "Assuming root to have copy number state " << ploidy << " in all regions" << std::endl;
+      region_neutral_states = std::vector<int>(n_regions, ploidy);
+    }
+
+    Simulation sim(n_regions, n_bins, n_nodes, n_cells, n_reads, max_region_size, ploidy, max_regions_per_node, region_neutral_states);
 
     if(result.count("nu"))
     {

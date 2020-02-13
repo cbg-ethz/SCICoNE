@@ -37,6 +37,7 @@ private:
     u_int n_nodes; //the number of nodes without the root
     int ploidy; // to be added to values of the unordered map for each node
     int counter = 0; // counter for the node ids to be given
+    vector<int> region_neutral_states;
 public:
     Node* root;
     std::vector<Node*> all_nodes_vec; // for random selection, destructor, insertion by position, iterating without order (e.g. for each node)
@@ -50,7 +51,7 @@ public:
     double nu;
 public:
     // constructor
-    Tree(u_int ploidy, u_int n_regions);
+    Tree(u_int ploidy, u_int n_regions, vector<int> &region_neutral_states);
     // copy constructor
     Tree(Tree& source);
     // destructor
@@ -143,8 +144,11 @@ void Tree::compute_root_score(const vector<int> &r) {
      * */
 
     int z = 0;
-    for (auto const &x : r)
-        z += x * this->ploidy;
+    int i = 0;
+    for (auto const &x : r) {
+        z += x * this->region_neutral_states[i];
+        i = i + 1;
+    }
 
     root->attachment_score = 0;
     root->z = z;
@@ -171,6 +175,8 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
         double z = node->parent->z;
         double z_parent = node->parent->z;
 
+        int p = ploidy;
+
         // for debug purposes
         double z_orig = z;
 
@@ -181,8 +187,9 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
             int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
 
             // to prevent log(0)
-            double node_cn = (cf+ploidy)==0?(eta):(cf+ploidy);
-            double parent_cn = (cp_f+ploidy)==0?(eta):(cp_f+ploidy);
+            p = this->region_neutral_states[x.first];
+            double node_cn = (cf+p)==0?(eta):(cf+p);
+            double parent_cn = (cp_f+p)==0?(eta):(cp_f+p);
 
             z += r[x.first] * (node_cn - parent_cn);
         }
@@ -195,8 +202,9 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
             int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0);
 
             // to prevent log(0)
-            double node_cn = (cf+ploidy)==0?(eta):(cf+ploidy);
-            double parent_cn = (cp_f+ploidy)==0?(eta):(cp_f+ploidy);
+            p = this->region_neutral_states[x.first];
+            double node_cn = (cf+p)==0?(eta):(cf+p);
+            double parent_cn = (cp_f+p)==0?(eta):(cp_f+p);
 
             // option for the overdispersed version
             if (is_overdispersed)
@@ -281,7 +289,7 @@ void Tree::compute_stack(Node *node, const vector<double> &D, double &sum_D, con
 }
 
 
-Tree::Tree(u_int ploidy, u_int n_regions)
+Tree::Tree(u_int ploidy, u_int n_regions, vector<int> &region_neutral_states)
 {
     // Tree constructor
     root = new Node();
@@ -292,6 +300,7 @@ Tree::Tree(u_int ploidy, u_int n_regions)
     uint64_t c_hash = Utils::calculate_hash(&keys_values[0], size_for_hash);
     root->c_hash = c_hash;
 
+    this->region_neutral_states = region_neutral_states;
     this->ploidy = ploidy;
     this->n_regions = n_regions;
     n_nodes = 0;
@@ -487,6 +496,7 @@ void Tree::copy_tree(const Tree& source_tree) {
      * call it recursively (using stack)
     */
 
+    this->region_neutral_states = source_tree.region_neutral_states;
     this->ploidy = source_tree.ploidy;
     this->total_attachment_score = source_tree.total_attachment_score;
     this->counter = source_tree.counter;
@@ -1089,7 +1099,7 @@ bool Tree::zero_ploidy_changes(Node *n) const{
 
     for (auto const &node : descendents)
     {
-        if (node->id == 0 || node->parent->id == 0)
+        if (node->id == 0)
             continue; // root cannot have events
         for (auto const &it : node->parent->c)
             if(it.second <= (-1 * ploidy))
@@ -1544,16 +1554,18 @@ double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector
     if (is_overdispersed)
     {
         int z = 0;
-        for (auto const &x : r)
-            z += x * this->ploidy;
-
+        int k = 0;
+        for (auto const &x : r) {
+            z += x * this->region_neutral_states[k];
+            k = k + 1;
+        }
         od_root_score += lgamma(nu*z);
         od_root_score -= lgamma(sum_D+nu*z);
 
         for (u_int i = 0; i < r.size(); ++i)
         {
-            od_root_score += lgamma(D[i] + nu*ploidy*r[i]);
-            od_root_score -= lgamma(nu*ploidy*r[i]);
+            od_root_score += lgamma(D[i] + nu*this->region_neutral_states[i]*r[i]);
+            od_root_score -= lgamma(nu*this->region_neutral_states[i]*r[i]);
         }
     }
     else

@@ -77,6 +77,9 @@ int main( int argc, char* argv[]) {
     // scoring mode
     bool max_scoring = true;
 
+    // region neutral states
+    string region_neutral_states_file;
+
     cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
     options.add_options()
             ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
@@ -106,6 +109,7 @@ int main( int argc, char* argv[]) {
             ("random_init","Boolean parameter to enable random initialisation of the tree", cxxopts::value(random_init))
             ("move_probs","The vector of move probabilities",cxxopts::value(move_probs))
             ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value<bool>(max_scoring))
+            ("region_neutral_states_file", "Path to the file containing the neutral state of each region to use as the root of the tree", cxxopts::value(region_neutral_states_file))
             ;
 
     auto result = options.parse(argc, argv);
@@ -189,8 +193,18 @@ int main( int argc, char* argv[]) {
         move_probs.back() = 0.0f; // no need to prune tree
     }
 
+    vector<int> region_neutral_states;
+    if (result.count("region_neutral_states_file")) {
+      std::cout << "Reading the region_neutral_states file..." << std::endl;
+      Utils::read_vector(region_neutral_states, region_neutral_states_file);
+    }
+    else {
+      std::cout << "Assuming root to have copy number state " << ploidy << " in all regions" << std::endl;
+      region_neutral_states = std::vector<int>(n_regions, ploidy);
+    }
+
     // run mcmc inference
-    Inference mcmc(n_regions, n_cells, ploidy, verbosity, max_scoring);
+    Inference mcmc(n_regions, n_cells, region_neutral_states, ploidy, verbosity, max_scoring);
 
     if (random_init)
     {

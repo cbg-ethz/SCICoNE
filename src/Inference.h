@@ -45,9 +45,10 @@ public:
     int verbosity;
     bool max_scoring;
     int n_cells;
+    std::vector<int> region_neutral_states;
 
 public:
-    Inference(u_int n_regions, int n_cells, int ploidy=2, int verbosity=2, bool max_scoring=false);
+    Inference(u_int n_regions, int n_cells, vector<int> &region_neutral_states, int ploidy=2, int verbosity=2, bool max_scoring=false);
     ~Inference();
     void destroy();
     void compute_t_od_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
@@ -103,7 +104,7 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters,
     while(true)
     {
         i++;
-        random_tree = new Tree(ploidy, n_regions);
+        random_tree = new Tree(ploidy, n_regions, this->region_neutral_states);
         for (unsigned j = 0; j < n_nodes; ++j)
         {
             /*
@@ -121,7 +122,7 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters,
                     std::cout << " an out of range error was caught during the initialize labels map method, with message '"
                               << e.what() << "'\n";
                 delete random_tree; // delete the tree
-                random_tree = new Tree(ploidy, n_regions);
+                random_tree = new Tree(ploidy, n_regions, this->region_neutral_states);
                 break;
             }
             random_tree->random_insert(static_cast<map<u_int, int> &&>(distinct_regions));
@@ -170,9 +171,9 @@ void Inference::initialize_worked_example() {
 
 }
 
-Inference::Inference(u_int n_regions, int n_cells, int ploidy, int verbosity, bool max_scoring) : t(ploidy, n_regions),
-                                                                   t_prime(ploidy, n_regions),
-                                                                   best_tree(ploidy, n_regions),
+Inference::Inference(u_int n_regions, int n_cells, vector<int> &region_neutral_states, int ploidy, int verbosity, bool max_scoring) : t(ploidy, n_regions, region_neutral_states),
+                                                                   t_prime(ploidy, n_regions, region_neutral_states),
+                                                                   best_tree(ploidy, n_regions, region_neutral_states),
                                                                    t_prime_sums(n_cells),
                                                                    t_sums(n_cells),
                                                                    t_maxs(n_cells),
@@ -184,6 +185,7 @@ Inference::Inference(u_int n_regions, int n_cells, int ploidy, int verbosity, bo
     this->verbosity = verbosity;
     this->max_scoring = max_scoring;
     this->n_cells = n_cells;
+    this->region_neutral_states = region_neutral_states;
 }
 
 Inference::~Inference() {
@@ -1279,7 +1281,7 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
 
         for (auto const& x : max_node->c) // iterate over map
         {
-            cell_regions[j][x.first] = x.second + ploidy;
+            cell_regions[j][x.first] = x.second + this->region_neutral_states[x.first];
         }
 
     }

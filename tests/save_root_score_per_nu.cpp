@@ -41,7 +41,7 @@ struct double_iota
 };
 
 
-void save_root_by_nu(int ploidy, size_t n_regions, int n_cells, const vector<vector<double>> &d_regions, const vector<int> &region_sizes)
+void save_root_by_nu(int ploidy, size_t n_regions, int n_cells, const vector<vector<double>> &d_regions, const vector<int> &region_sizes, vector<int> &region_neutral_states)
 {
     /*
      * Writes the overdispersed root scores for various values of nu.
@@ -54,7 +54,7 @@ void save_root_by_nu(int ploidy, size_t n_regions, int n_cells, const vector<vec
     std::vector<double> nu(std::size_t(((max - min + step - std::numeric_limits<double>::epsilon())) / step));
     std::iota(nu.begin(), nu.end(), double_iota(step, min));
 
-    Tree t(ploidy,n_regions);
+    Tree t(ploidy,n_regions,region_neutral_states);
 
     std::ofstream root_nu_scores_file("root_scores_per_nu.csv");
 
@@ -90,6 +90,7 @@ int main(int argc, char* argv[])
     is_overdispersed = 1;
     eta = 1e-4;
     cf = 1.0;
+    string region_neutral_states_file;
 
     cxxopts::Options options("Statistical tests", "for testing the statistical properties of the programme");
     options.add_options()
@@ -97,7 +98,8 @@ int main(int argc, char* argv[])
             ("d_matrix_file", "Path to the counts matrix file, delimiter: ' ', line separator: '\n' ", cxxopts::value(d_matrix_file))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
             ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
-            ("ploidy", "ploidy", cxxopts::value(ploidy));
+            ("ploidy", "ploidy", cxxopts::value(ploidy))
+            ("region_neutral_states_file", "Path to the file containing the neutral state of each region to use as the root of the tree", cxxopts::value(region_neutral_states_file));
 
     auto result = options.parse(argc, argv);
 
@@ -115,7 +117,17 @@ int main(int argc, char* argv[])
     d_regions = Utils::condense_matrix(d_bins, region_sizes);
     size_t n_regions = region_sizes.size();
 
-    save_root_by_nu(ploidy, n_regions, n_cells, d_regions, region_sizes);
+    vector<int> region_neutral_states;
+    if (result.count("region_neutral_states_file")) {
+      std::cout << "Reading the region_neutral_states file..." << std::endl;
+      Utils::read_vector(region_neutral_states, region_neutral_states_file);
+    }
+    else {
+      std::cout << "Assuming root to have copy number state " << ploidy << " in all regions" << std::endl;
+      region_neutral_states = std::vector<int>(n_regions, ploidy);
+    }
+
+    save_root_by_nu(ploidy, n_regions, n_cells, d_regions, region_sizes, region_neutral_states);
 
 
 }

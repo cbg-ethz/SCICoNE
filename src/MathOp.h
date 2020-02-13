@@ -16,6 +16,7 @@
 #include "SingletonRandomGenerator.h"
 #include <boost/random/uniform_int_distribution.hpp>
 #include <nlopt.hpp>
+#include <cfloat>
 
 #ifndef SC_DNA_NODE_H
 #include "Node.h"
@@ -52,6 +53,8 @@ public:
     static double compute_linear_regression_slope(const vector<double>& x, const vector<double>& y);
     static double log_n_choose_k(unsigned long n, unsigned long k);
     static int random_uniform(int min, int max);
+    template <class T>
+    static double vec_max(vector<T> v);
     static int median_idx(int l, int r);
     template <class T>
     static double vec_avg(const vector<T> &v);

@@ -34,22 +34,25 @@ public:
     vector<int> cluster_sizes;
     vector<vector<int>> ground_truth; // default init value: ploidy
     vector<vector<int>> ground_truth_bins;
+    vector<int> region_neutral_states;
 
 public:
     // constructor
-    Simulation(int n_regions, int n_bins, int n_nodes, int n_cells, int n_reads, int max_region_size, int ploidy, int max_regions_per_node)
+    Simulation(int n_regions, int n_bins, int n_nodes, int n_cells, int n_reads, int max_region_size, int ploidy, int max_regions_per_node, vector<int> region_neutral_states)
             : n_regions(n_regions),
               n_bins(n_bins),
               n_nodes(n_nodes),
               ploidy(ploidy),
               n_cells(n_cells),
               n_reads(n_reads), max_region_size(max_region_size), max_regions_per_node(max_regions_per_node),
-              tree(ploidy, n_regions),
+              tree(ploidy, n_regions, region_neutral_states),
               ground_truth(n_cells, vector<int>(n_regions, ploidy)),
               ground_truth_bins(n_cells, vector<int>(n_bins, ploidy)),
-              D(n_cells, vector<double>(n_bins)), region_sizes(n_regions), cluster_sizes(n_cells, 1)
+              D(n_cells, vector<double>(n_bins)),
+              region_sizes(n_regions),
+              cluster_sizes(n_cells, 1)
     {
-
+      this->region_neutral_states = region_neutral_states;
     }
 
     void sample_region_sizes(int n_bins, unsigned min_width = 1)
@@ -88,7 +91,7 @@ public:
          * nu is the overdispersion parameter.
          */
 
-        Inference mcmc(n_regions, n_cells, ploidy, verbosity);
+        Inference mcmc(n_regions, n_cells, region_neutral_states, ploidy, verbosity);
         vector<vector<double>> p_read_bin_cell(n_cells, vector<double>(n_bins)); // initialize with the default value
 
         std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
