@@ -38,7 +38,6 @@ int main( int argc, char* argv[]) {
     bool compute_sp = true;
     bool evaluate_peaks = true;
     string input_breakpoints_file;
-    int n_input_breakpoints;
     bool add_input_breakpoints = false;
 
     cxxopts::Options options("Breakpoint detection executable", "detects the breakpoints in the genome across all cells.");
@@ -58,7 +57,6 @@ int main( int argc, char* argv[]) {
             ("compute_sp","Boolean indicator of wether the per bin breakpoint evidence should be computed (true) or if a file is passed (false)",cxxopts::value<bool>(compute_sp))
             ("evaluate_peaks","Boolean indicator of wether to evaluate peaks and call breakpoints.",cxxopts::value<bool>(evaluate_peaks))
             ("input_breakpoints_file","Path to file indicating bins which correspond to known breakpoints that must be included.",cxxopts::value(input_breakpoints_file))
-            ("n_input_breakpoints","Number of bins which correspond to known breakpoints that must be included.",cxxopts::value(n_input_breakpoints))
             ;
 
     auto result = options.parse(argc, argv);
@@ -100,7 +98,7 @@ int main( int argc, char* argv[]) {
       }
     }
 
-    vector<int> input_breakpoints(n_input_breakpoints); // List of bins corresponding to known breakpoints (e.g. chromosome stops)
+    vector<int> input_breakpoints; // List of bins corresponding to known breakpoints (e.g. chromosome stops)
     if (result.count("input_breakpoints_file")) {
       if (input_breakpoints_file.compare("") != 0) {
         std::cout << "Reading provided breakpoints: " << input_breakpoints_file << std::endl;
