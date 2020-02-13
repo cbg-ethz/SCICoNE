@@ -1,19 +1,3 @@
-import os
-import itertools
-import pandas as pd
-import numpy as np
-from collections import Counter
-from sklearn.metrics import roc_curve, auc
-import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-from tqdm import tqdm as tqdm
-import re
-import phenograph
-from scgenpy import *
-from scgenpy.preprocessing.utils import *
-sns.set(rc={'figure.figsize':(15.7,8.27)})
-
 import os, shutil
 import subprocess, re
 from snakemake.workflow import Workflow, Rules
@@ -35,8 +19,11 @@ from scipy.spatial.distance import pdist
 import phenograph
 from collections import Counter
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 class Tree(object):
-    def __init__(self, binary_path, output_path, postfix='PYSCICONETREETEMP', persistence=False, ploidy=2, copy_number_limit=2):
+    def __init__(self, binary_path, output_path, postfix='PYSCICONETREETEMP', persistence=False, ploidy=2, copy_number_limit=6):
         self.binary_path = binary_path
 
         self.output_path = output_path
@@ -59,10 +46,10 @@ class Tree(object):
         self.score = 0.
         self.nu = 1.
 
-        self.outputs = dict(tree_inferred=None, inferred_cnvs=None,
-                            rel_markov_chain=None, cell_node_ids=None,
-                            cell_region_cnvs=None, acceptance_ratio=None,
-                            gamma_values=None)
+        self.outputs = dict()#tree_inferred=None, inferred_cnvs=None,
+                            # rel_markov_chain=None, cell_node_ids=None,
+                            # cell_region_cnvs=None, acceptance_ratio=None,
+                            # gamma_values=None, attachment_scores=None, markov_chain=None)
 
     def read_from_file(self, file, output_path=None):
         """
@@ -185,7 +172,7 @@ class Tree(object):
         self.graphviz_str = '\n'.join(self.graphviz_str)
 
     def learn_tree(self, segmented_data, segmented_region_sizes, n_iters=1000, move_probs=[0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.01],
-                    n_nodes=3,  seed=42, postfix="", initial_tree=None, nu=1.0, cluster_sizes=None, alpha=0., verbosity=1):
+                    n_nodes=3,  seed=42, postfix="", initial_tree=None, nu=1.0, cluster_sizes=None, region_neutral_states=None, alpha=0., max_scoring=True,copy_number_limit=2, verbosity=1):
         if postfix == "":
             postfix = self.postfix
 
@@ -193,16 +180,22 @@ class Tree(object):
         move_probs_str = ",".join(str(p) for p in move_probs)
 
         # Save temporary files
-        temp_segmented_data_file = f"{postfix}_temp_segmented_data.txt"
+        temp_segmented_data_file = f"{postfix}_tree_temp_segmented_data.txt"
         np.savetxt(temp_segmented_data_file, segmented_data, delimiter=',')
 
-        temp_segmented_region_sizes_file = f"{postfix}_temp_segmented_region_sizes.txt"
+        temp_segmented_region_sizes_file = f"{postfix}_tree_temp_segmented_region_sizes.txt"
         np.savetxt(temp_segmented_region_sizes_file, segmented_region_sizes, delimiter=',')
 
-        if cluster_sizes is None:
-            cluster_sizes = np.ones((n_cells,))
-        temp_cluster_sizes_file = f"{postfix}_temp_cluster_sizes.txt"
-        np.savetxt(temp_cluster_sizes_file, cluster_sizes, delimiter=',')
+
+        temp_cluster_sizes_file = ""
+        if cluster_sizes is not None:
+            temp_cluster_sizes_file = f"{postfix}_tree_temp_cluster_sizes.txt"
+            np.savetxt(temp_cluster_sizes_file, cluster_sizes, delimiter=',')
+
+        temp_region_neutral_states_file = ""
+        if region_neutral_states is not None:
+            temp_region_neutral_states_file = f"{postfix}_tree_temp_region_neutral_states_file.txt"
+            np.savetxt(temp_region_neutral_states_file, region_neutral_states, delimiter=',')
 
         if initial_tree is not None:
             temp_tree_file = f"{postfix}_temp_tree.txt"
@@ -212,10 +205,10 @@ class Tree(object):
             try:
                 cmd_output = subprocess.run([self.binary_path, f"--d_matrix_file={temp_segmented_data_file}", f"--n_regions={n_regions}",\
                     f"--n_cells={n_cells}", f"--ploidy={self.ploidy}", f"--verbosity={verbosity}", f"--postfix={postfix}",\
-                    f"--copy_number_limit={self.copy_number_limit}", f"--n_iters={n_iters}", f"--n_nodes={n_nodes}",\
+                    f"--copy_number_limit={copy_number_limit}", f"--n_iters={n_iters}", f"--n_nodes={n_nodes}",\
                     f"--move_probs={move_probs_str}", f"--seed={seed}", f"--region_sizes_file={temp_segmented_region_sizes_file}",\
                     f"--tree_file={temp_tree_file}", f"--nu={nu}", f"--cluster_sizes_file={temp_cluster_sizes_file}", f"--alpha={alpha}",\
-                    "--max_scoring=true"])
+                    f"--max_scoring={max_scoring}", f"--region_neutral_states_file={temp_region_neutral_states_file}"])
             except subprocess.SubprocessError as e:
                 print("Status : FAIL", e.returncode, e.output, e.stdout, e.stderr)
             else:
@@ -228,9 +221,10 @@ class Tree(object):
             try:
                 cmd_output = subprocess.run([self.binary_path, f"--d_matrix_file={temp_segmented_data_file}", f"--n_regions={n_regions}",\
                     f"--n_cells={n_cells}", f"--ploidy={self.ploidy}", f"--verbosity={verbosity}", f"--postfix={postfix}",\
-                    f"--copy_number_limit={self.copy_number_limit}", f"--n_iters={n_iters}", f"--n_nodes={n_nodes}",\
+                    f"--copy_number_limit={copy_number_limit}", f"--n_iters={n_iters}", f"--n_nodes={n_nodes}",\
                     f"--move_probs={move_probs_str}", f"--seed={seed}", f"--region_sizes_file={temp_segmented_region_sizes_file}",\
-                    f"--nu={nu}", f"--cluster_sizes_file={temp_cluster_sizes_file}", f"--alpha={alpha}", "--max_scoring=true"])
+                    f"--nu={nu}", f"--cluster_sizes_file={temp_cluster_sizes_file}", f"--alpha={alpha}", f"--max_scoring={max_scoring}",\
+                    f"--region_neutral_states_file={temp_region_neutral_states_file}"])
             except subprocess.SubprocessError as e:
                 print("Status : FAIL", e.returncode, e.output, e.stdout, e.stderr)
             else:
@@ -241,24 +235,26 @@ class Tree(object):
         os.remove(temp_segmented_data_file)
         os.remove(temp_segmented_region_sizes_file)
         os.remove(temp_cluster_sizes_file)
+        os.remove(temp_region_neutral_states_file)
 
         # Read in all the outputs
         try:
             cwd = os.getcwd()
             for fn in os.listdir(cwd):
                 if postfix in fn and (".csv" in fn or ".tsv" in fn): # Read in all data
-                    for key in self.outputs.keys():
-                        if key in fn:
-                            delim = ','
-                            if ".tsv" in fn:
-                                delim = '\t'
-                            self.outputs[key] = np.loadtxt(fn, delimiter=delim)
-                            os.remove(fn)
+                    key = fn.split(postfix)[1].split('_', 1)[-1].split('.')[0]
+                    delim = ','
+                    if ".tsv" in fn:
+                        delim = '\t'
+                    self.outputs[key] = np.loadtxt(fn, delimiter=delim)
+                    if not self.persistence:
+                        os.remove(fn)
                 elif postfix in fn and "tree_inferred.txt" in fn: # Parse tree structure, score and nu
                     self.read_from_file(fn)
-                    os.remove(fn)
-        except OSError as e:
-            pass
+                    if not self.persistence:
+                        os.remove(fn)
+        except Exception:
+            print('Could not load {}'.format(fn))
             # print("OSError: ", e.output, e.stdout, e.stderr)
 
         return cmd_output
@@ -308,7 +304,7 @@ class SCICoNE(object):
         self.full_tree_robustness_score = 0.
         self.tree_list = []
 
-    def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, min_reg_size=10, max_regions_per_node=1, ploidy=2, verbosity=0):
+    def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, min_reg_size=10, max_regions_per_node=1, ploidy=2, region_neutral_states=None, verbosity=0):
         output_path = os.path.join(self.output_path, f"{self.postfix}_simulation")
 
         if os.path.exists(output_path):
@@ -316,13 +312,21 @@ class SCICoNE(object):
         os.mkdir(output_path)
         cwd = os.getcwd()
 
+        region_neutral_states_file = ""
+        if region_neutral_states is not None:
+            # Use provided region_neutral_states instead of assuming the same state for all regions
+            region_neutral_states_file = f"{self.postfix}_pre_region_neutral_states_file.txt"
+            np.savetxt(region_neutral_states_file, region_neutral_states, delimiter=',')
+
+
         done = False
         while not done:
             try:
                 cmd_output = subprocess.run([self.simulation_binary, f"--n_cells={n_cells}", f"--n_nodes={n_nodes}",\
                     f"--n_regions={n_regions}", f"--n_bins={n_bins}", f"--n_reads={n_reads}", f"--nu={nu}",\
                     f"--min_reg_size={min_reg_size}", f"--max_regions_per_node={max_regions_per_node}",\
-                    f"--ploidy={ploidy}", f"--verbosity={verbosity}", f"--postfix={self.postfix}"])
+                    f"--ploidy={ploidy}", f"--verbosity={verbosity}", f"--postfix={self.postfix}",\
+                    f"--region_neutral_states_file={region_neutral_states_file}"])
             except subprocess.SubprocessError as e:
                 print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
 
@@ -333,6 +337,9 @@ class SCICoNE(object):
             ground_truth_file = f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_ground_truth.csv"
             region_sizes_file = f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_region_sizes.txt"
             tree_file = f"{n_nodes}nodes_{n_regions}regions_{n_reads}reads_{self.postfix}_tree.txt"
+
+            if region_neutral_states is not None:
+                os.remove(region_neutral_states_file)
 
             try:
                 # Move to output directory
@@ -371,54 +378,7 @@ class SCICoNE(object):
 
         return output
 
-    def _detect_breakpoints(self, data, window_size=30, threshold=3.0, bp_limit=300, lr=None):
-        n_cells = data.shape[0]
-        n_bins = data.shape[1]
-        verbosity = 1 # > 0 to generate all files
-
-        compute_lr = True
-        lr_file = f"{self.postfix}_pre_lr_vec.txt"
-        if lr is not None:
-            compute_lr = False
-            # Use provided lr values instead of computing new ones
-            if lr.shape[0] < lr.shape[1]:
-                lr = lr.T # make sure it's bins by cells
-            np.savetxt(lr_file, lr, delimiter=',')
-
-        try:
-            # Write the data to a file to be read by the binary
-            data_file = f"{self.postfix}_bp_detection.txt"
-            np.savetxt(data_file, data, delimiter=',')
-
-            cmd_output = subprocess.run([self.bp_binary, f"--d_matrix_file={data_file}", f"--n_bins={n_bins}",\
-                f"--n_cells={n_cells}", f"--window_size={window_size}", f"--threshold={threshold}",\
-                f"--bp_limit={bp_limit}",\
-                f"--verbosity={verbosity}", f"--postfix={self.postfix}"])
-
-            # Delete the data file
-            os.remove(data_file)
-
-            if not compute_lr:
-                os.remove(lr_file)
-        except subprocess.SubprocessError as e:
-            print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
-
-        output = dict()
-
-        try:
-            cwd = os.getcwd()
-            for fn in os.listdir(cwd):
-                if self.postfix in fn:
-                    key = fn.split('_', 1)[1].split('.')[0]
-                    output[key] = np.loadtxt(fn, delimiter=',')
-                    if not self.persistence:
-                        os.remove(fn)
-        except OSError as e:
-            print("OSError: ", e.output, e.stdout, e.stderr)
-
-        return output
-
-    def detect_breakpoints(self, data, window_size=30, threshold=3.0, bp_limit=300, lr=None, sp=None, evaluate_peaks=True, compute_lr=True, compute_sp=True):
+    def detect_breakpoints(self, data, window_size=30, threshold=3.0, bp_limit=300, lr=None, sp=None, evaluate_peaks=True, compute_lr=True, compute_sp=True, input_breakpoints=None):
         n_cells = data.shape[0]
         n_bins = data.shape[1]
         verbosity = 1 # > 0 to generate all files
@@ -438,6 +398,11 @@ class SCICoNE(object):
             sp_file = f"{self.postfix}_pre_sp_vec.txt"
             np.savetxt(sp_file, sp, delimiter=',')
 
+        input_breakpoints_file = ""
+        if input_breakpoints is not None:
+            input_breakpoints_file = f"{self.postfix}_pre_input_breakpoints_file.txt"
+            np.savetxt(input_breakpoints_file, input_breakpoints, delimiter=',')
+
         try:
             # Write the data to a file to be read by the binary
             data_file = f"{self.postfix}_bp_detection.txt"
@@ -447,7 +412,8 @@ class SCICoNE(object):
                 f"--n_cells={n_cells}", f"--window_size={window_size}", f"--threshold={threshold}",\
                 f"--bp_limit={bp_limit}", f"--compute_lr={compute_lr}", f"--lr_file={lr_file}",\
                 f"--compute_sp={compute_sp}", f"--sp_file={sp_file}", f"--verbosity={verbosity}",\
-                f"--evaluate_peaks={evaluate_peaks}", f"--postfix={self.postfix}"])
+                f"--evaluate_peaks={evaluate_peaks}", f"--postfix={self.postfix}",\
+                f"--input_breakpoints_file={input_breakpoints_file}"])
 
             # Delete the data file
             os.remove(data_file)
@@ -529,7 +495,7 @@ class SCICoNE(object):
         return tree
 
     def learn_tree_parallel(self, segmented_data, segmented_region_sizes, n_reps=10, **tree_kwargs):
-        pool = ThreadPool(n_reps)
+        pool = Pool(n_reps)
         results = []
         for i in range(n_reps):
             kwargs = dict(seed=i+42, postfix=f"rep{i}_PYSCICONETREETEMP_{self.postfix}")
@@ -556,8 +522,25 @@ class SCICoNE(object):
 
         return best_tree, robustness_score, trees
 
-
     def learn_tree(self, segmented_data, segmented_region_sizes, n_reps=10, cluster=True, full=True, cluster_tree_n_iters=4000, full_tree_n_iters=4000, max_tries=2, robustness_thr=0.5, **kwargs):
+        if "region_neutral_states" in kwargs:
+            region_neutral_states = np.array(kwargs['region_neutral_states'])
+
+            if np.any(region_neutral_states) < 0:
+                raise Exception("Neutral states can not be negative!")
+
+            # If there is a region with neutral state = 0, remove it to facilitate tree inference
+            zero_neutral_regions = np.where(region_neutral_states==0)[0]
+            if len(zero_neutral_regions) > 0:
+                full_segmented_region_sizes = segmented_region_sizes.astype(int)
+                full_segmented_data = segmented_data
+                full_region_neutral_states = region_neutral_states
+                segmented_data = np.delete(segmented_data, zero_neutral_regions, axis=1)
+                segmented_region_sizes = np.delete(segmented_region_sizes, zero_neutral_regions)
+                region_neutral_states = np.delete(region_neutral_states, zero_neutral_regions)
+
+                kwargs['region_neutral_states'] = region_neutral_states
+
         if cluster:
             # Get the average read counts
             clustered_segmented_data, cluster_sizes, cluster_assignments = self.condense_segmented_clusters(segmented_data)
@@ -582,6 +565,28 @@ class SCICoNE(object):
 
             tree.outputs['inferred_cnvs'] = cell_bin_genotypes
 
+            # Add back regions with neutral state = 0
+            if "region_neutral_states" in kwargs:
+                if len(zero_neutral_regions) > 0:
+                    rec_cell_bin_genotypes = np.zeros((cell_bin_genotypes.shape[0], np.sum(full_segmented_region_sizes)))
+                    new_start = 0
+                    start = 0
+                    for region in range(len(full_region_neutral_states)):
+                        new_region_size = full_segmented_region_sizes[region]
+
+                        new_end = new_start+new_region_size
+                        if full_region_neutral_states[region] == 0:
+                            rec_cell_bin_genotypes[:, new_start:new_end] = 0
+                            new_start = new_end
+                        else:
+                            end = start+new_region_size
+                            rec_cell_bin_genotypes[:, new_start:new_end] = cell_bin_genotypes[:, start:end]
+                            start = end
+
+                        new_start = new_end
+
+                    tree.outputs['inferred_cnvs'] = rec_cell_bin_genotypes
+
             self.best_cluster_tree = tree
             self.cluster_tree_robustness_score = robustness_score
 
@@ -603,6 +608,29 @@ class SCICoNE(object):
                     nu = tree.nu
                     tree, robustness_score, trees = self.learn_tree_parallel(segmented_data, segmented_region_sizes, n_reps=n_reps, nu=nu, initial_tree=tree, n_iters=full_tree_n_iters)
                     cnt += 1
+
+                cell_bin_genotypes = tree.outputs['inferred_cnvs']
+                # Add back regions with neutral state = 0
+                if "region_neutral_states" in kwargs:
+                    if len(zero_neutral_regions) > 0:
+                        rec_cell_bin_genotypes = np.zeros((cell_bin_genotypes.shape[0], np.sum(full_segmented_region_sizes)))
+                        new_start = 0
+                        start = 0
+                        for region in range(len(full_region_neutral_states)):
+                            new_region_size = full_segmented_region_sizes[region]
+
+                            new_end = new_start+new_region_size
+                            if full_region_neutral_states[region] == 0:
+                                rec_cell_bin_genotypes[:, new_start:new_end] = 0
+                                new_start = new_end
+                            else:
+                                end = start+new_region_size
+                                rec_cell_bin_genotypes[:, new_start:new_end] = cell_bin_genotypes[:, start:end]
+                                start = end
+
+                            new_start = new_end
+
+                        tree.outputs['inferred_cnvs'] = cell_bin_genotypes
 
                 self.best_full_tree = tree
                 self.full_tree_robustness_score = robustness_score
@@ -628,16 +656,19 @@ def filter_lr(lr_matrix, H=None):
     return filtered_lr
 
 
-threshold_coeffs = np.arange(0., 20.5, step=0.5)
-threshold_coeffs
-sci = SCICoNE('/cluster/work/bewi/members/pedrof/sc-dna/build',
-                  '/cluster/work/bewi/members/pedrof/temp/', postfix="XYZA", persistence=False)
+sci = SCICoNE('/cluster/work/bewi/members/pedrof/sc-dna/build_fix_root',
+                  '/cluster/work/bewi/members/pedrof/', postfix="XYZA", persistence=False)
 
-data = sci.simulate_data(n_cells=200, n_nodes=30, n_bins=10000, n_regions=120,
-                        n_reads=20000, nu=10, max_regions_per_node=10, min_reg_size=20)
+n_regions = 10
+region_neutral_states = np.ones((n_regions,)) * 2
+region_neutral_states[:2] = 1
+region_neutral_states
+data = sci.simulate_data(n_cells=200, n_nodes=1, n_bins=1000, n_regions=n_regions,
+            n_reads=2000, nu=10, max_regions_per_node=10, min_reg_size=20, region_neutral_states=region_neutral_states)
 true_tree = data['tree']
-
+data.keys()
 true_tree.plot_tree()
+
 
 # Get true breakpoints
 cell_genotypes = pd.DataFrame(data['ground_truth'])
@@ -659,7 +690,7 @@ cell_genotypes = cell_genotypes.to_numpy()
 cell_genotypes = cell_genotypes[hclust_index]
 cell_bps = cell_bps.to_numpy()[hclust_index]
 
-fig = plt.figure(figsize=(36, 20))
+fig = plt.figure()
 normalized_counts = data / np.sum(data, axis=1)[:, np.newaxis] * n_bins
 cmap = sns.diverging_palette(220, 10, as_cmap=True)
 plt.pcolor(normalized_counts, cmap=cmap, vmax=2)
@@ -673,6 +704,7 @@ plt.colorbar()
 ax = plt.gca()
 ax.vlines(np.where(bps_indicator)[0], *ax.get_ylim(), linestyle='--')
 plt.show()
+np.where(bps_indicator)
 
 window_size = 20
 freq = np.fft.fftfreq(n_bins, 1)
@@ -681,40 +713,14 @@ gpl = np.exp(- ((freq-1/(2*window_size))/(2*df))**2)  # pos. frequencies
 gmn = np.exp(- ((freq+1/(2*window_size))/(2*df))**2)
 g = gpl + gmn
 
-bps = sci.detect_breakpoints(data, window_size=window_size, threshold=1.0, evaluate_peaks=False, compute_sp=False)
-len(bps['segmented_regions'])
-
-logsp = bps['all_bps_comparison'][:, 1]
-logsprange = bps['all_bps_comparison'][:, 2]
-ranking = np.argsort(logsp/logsprange)[::-1]
-
-np.count_nonzero((logsp/logsprange)[ranking] > 20)
-plt.plot((logsp/logsprange)[ranking], marker='.')
-thres = np.median((logsp/logsprange)[ranking]) + np.percentile((logsp/logsprange)[ranking], 75)
-ax = plt.gca()
-ax.hlines(thres, *ax.get_xlim(), linestyle='dashed')
-
-
-newbps = flbps['all_bps_comparison'][:,0][ranking][:10]
+# Generate list of known breakpoints
+input_breakpoints = np.array([200, 500])
+bps = sci.detect_breakpoints(data, window_size=window_size, threshold=3.0, evaluate_peaks=True, compute_sp=True,  input_breakpoints=input_breakpoints)
+bps['segmented_regions']
 
 filtered_lr = filter_lr(bps['lr_vec'].T, H=g)
-fbps = sci.detect_breakpoints(data, window_size=window_size, threshold=4.0, lr=filtered_lr, evaluate_peaks=False, compute_sp=True)
-sp = fbps['sp_vec']
-fbps = sci.detect_breakpoints(data, window_size=window_size, threshold=1.0, lr=filtered_lr, evaluate_peaks=True, sp=sp)
-len(fbps['segmented_regions'])
-np.count_nonzero(bps_indicator)
-
-logsp = fbps['all_bps_comparison'][:, 1]
-logsprange = fbps['all_bps_comparison'][:, 2]
-ranking = np.argsort(logsp/logsprange)[::-1]
-
-plt.plot((logsp/logsprange)[ranking], marker='.')
-thres = np.percentile((logsp/logsprange)[ranking], 75)
-ax = plt.gca()
-ax.hlines(thres, *ax.get_xlim(), linestyle='dashed')
-
-np.count_nonzero(logsp/logsprange > thres)
-
+fbps = sci.detect_breakpoints(data, window_size=window_size, threshold=4.0, lr=filtered_lr, evaluate_peaks=True, compute_sp=True, input_breakpoints=input_breakpoints)
+fbps['segmented_regions']
 
 plt.pcolor(normalized_counts, cmap=cmap, vmax=2)
 plt.colorbar()
@@ -728,8 +734,11 @@ segmented_region_sizes = fbps['segmented_region_sizes']
 condensed_data = sci.condense_regions(data, segmented_region_sizes)
 condensed_normalised_data = sci.condense_regions(normalized_counts, segmented_region_sizes)
 
-sci.learn_tree(condensed_data, segmented_region_sizes, n_reps=1, full=True, cluster=True,
-                cluster_tree_n_iters=10000, full_tree_n_iters=10000, max_tries=1, robustness_thr=0.5, max_scoring=True, verbosity=1)
+region_neutral_states = np.ones((condensed_data.shape[1]),) * 2
+region_neutral_states[:3] = 1
+region_neutral_states
+sci.learn_tree(condensed_data, segmented_region_sizes, n_reps=5, full=False, cluster=True,
+                cluster_tree_n_iters=10000, full_tree_n_iters=10000, max_tries=1, robustness_thr=0.5, max_scoring=True, verbosity=1, region_neutral_states=region_neutral_states)
 
 sci.best_cluster_tree.plot_tree()
 
