@@ -81,6 +81,8 @@ public:
     static vector<double> dirichlet_sample(vector<double> alphas);
     static double ll_linear_model(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data);
     static vector<double> compute_linear_regression_parameters(vector<double> &z, int window_size, double nu);
+    static double huber_loss(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data);
+    static double huber_mean(vector<double> &z, double delta);
 };
 
 

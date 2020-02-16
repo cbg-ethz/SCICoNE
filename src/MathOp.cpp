@@ -126,8 +126,8 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
 
             // 2. Likelihood of breakpoint model, where left and right bin segments have different means
             //    This means that if there is a breakpoint there is a step change between the two semi segments
-            double lambda_r = iqm(rbins);
-            double lambda_l = iqm(lbins);
+            double lambda_r = robust_mean(rbins);
+            double lambda_l = robust_mean(lbins);
             double lambda_all = vec_avg(all_bins);
 
             // make sure lambda_all is between the left and right bounds
@@ -667,7 +667,7 @@ double MathOp::robust_mean(vector<T> v) {
     // Get data above 95th percentile
     double upper_perc = MathOp::percentile_val(v, 0.95);
 
-    // Replace with values below and above limites
+    // Replace with values below and above limits
     vector<double> new_v(n);
     for (int i = 0; i < n; ++i) {
       if (v[i] <= lower_perc)
@@ -808,6 +808,57 @@ double MathOp::interquartile_range(vector<T> &v, bool top) {
       iqr = trd - median;
 
     return iqr;
+}
+
+double MathOp::huber_loss(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
+{
+  segment_counts *d = reinterpret_cast<segment_counts*>(my_func_data);
+  vector<double> z = d->z;
+  double delta = d->nu;
+
+  int size = z.size();
+  double res = 0;
+  int a = 0;
+
+  for (size_t l = 0; l < size; ++l) {
+    a = z[l] - x[0];
+    res = res + pow(delta, 2) * (pow(1 + pow(a/delta, 2), 0.5) - 1);
+  }
+
+  return res;
+}
+
+double MathOp::huber_mean(vector<double> &z, double nu) {
+    /*
+     * Computes the robust mean estimate of the bins in z
+     * */
+
+    segment_counts func_data = {
+      z = z,
+      nu = nu,
+    };
+
+    nlopt::opt opt(nlopt::LN_BOBYQA, 1);
+    std::vector<double> lb(1);
+    lb[0] = 0;
+    opt.set_lower_bounds(lb);
+    std::vector<double> ub(1);
+    ub[0] = HUGE_VAL;
+    opt.set_upper_bounds(ub);
+    opt.set_min_objective(huber_loss, &func_data);
+    opt.set_xtol_rel(1e-4);
+    std::vector<double> x(1);
+    x[0] = vec_avg(z);
+    double minf;
+
+    try{
+        nlopt::result result = opt.optimize(x, minf);
+
+        return x[0]; // optimized alpha, beta
+    }
+    catch(std::exception &e) {
+        std::cout << "nlopt failed: " << e.what() << std::endl;
+    }
 }
 
 double MathOp::ll_linear_model(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
