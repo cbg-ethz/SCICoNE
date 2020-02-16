@@ -173,7 +173,7 @@ int main( int argc, char* argv[]) {
     vector<int> region_sizes;
     Utils::read_vector(region_sizes, region_sizes_file);
 
-    vector<int> cluster_sizes(n_cells, 1);
+    vector<int> cluster_sizes;
     bool read_cluster_sizes = false;
     if (result.count("cluster_sizes_file")) {
       if (cluster_sizes_file.compare("") != 0) {
@@ -183,6 +183,7 @@ int main( int argc, char* argv[]) {
       }
     }
     if (not read_cluster_sizes) {
+      cluster_sizes = std::vector<int>(n_cells, 1);
       if (n_cells < 20)
         std::cout << "Warning: there are only " << n_cells <<  " observations. If these are clusters, the cluster_sizes_file parameter should be specified for accurate tree scoring." << std::endl;
     }
@@ -193,14 +194,18 @@ int main( int argc, char* argv[]) {
         move_probs.back() = 0.0f; // no need to prune tree
     }
 
-    vector<int> region_neutral_states(n_regions, ploidy);
-    bool read_neutral_states = false;
+    vector<int> region_neutral_states;
+    bool read_region_neutral_states = false;
     if (result.count("region_neutral_states_file")) {
       if (region_neutral_states_file.compare("") != 0) {
         std::cout << "Reading the region_neutral_states file..." << std::endl;
         Utils::read_vector(region_neutral_states, region_neutral_states_file);
-        read_neutral_states = true;
+        read_region_neutral_states = true;
       }
+    }
+    if (not read_region_neutral_states) {
+      std::cout << "Assuming root to have copy number state " << ploidy << " in all regions" << std::endl;
+      region_neutral_states = std::vector<int>(n_regions, ploidy);
     }
 
     // run mcmc inference
