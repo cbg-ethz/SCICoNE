@@ -89,9 +89,9 @@ int main(int argc, char* argv[]) {
 
     if(result.count("max_regions_per_node"))
     {
-        int upper_bound = std::max((int) n_regions/n_nodes, 1);
-        if (max_regions_per_node > upper_bound)
-          max_regions_per_node = upper_bound;
+        // int upper_bound = std::max((int) n_regions/n_nodes, 1);
+        // if (max_regions_per_node > upper_bound)
+        //   max_regions_per_node = upper_bound;
         std::cout<<"Simulating with maximum affected regions per node: " << max_regions_per_node << std::endl;
     }
 

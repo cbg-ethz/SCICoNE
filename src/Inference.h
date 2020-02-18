@@ -115,7 +115,7 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters,
             // create a map, fill it properly with r amount of labels
             map<u_int, int> distinct_regions;
             try {
-                Utils::random_initialize_labels_map(distinct_regions, n_regions, max_regions_per_node, (double)max_regions_per_node/2.0); // modifies the distinct_regions
+                Utils::random_initialize_labels_map(distinct_regions, n_regions, max_regions_per_node, lambda_r); // modifies the distinct_regions
             }catch (const std::out_of_range& e)
             {
                 if (verbosity > 1)
