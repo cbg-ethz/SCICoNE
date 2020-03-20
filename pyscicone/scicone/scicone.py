@@ -477,7 +477,8 @@ class SCICoNE(object):
         # Cluster the segmented counts
         n_cells = segmented_data.shape[0]
         n_regions = segmented_data.shape[1]
-        n_neighbours = max(1, int(n_cells / 10))
+        n_neighbours = max(int(n_cells / 10), 2) # avoid errors
+        print(f"n_neighbours to be used: {str(n_neighbours)}")
         communities, graph, Q = phenograph.cluster(data=segmented_data, k=n_neighbours, n_jobs=1, jaccard=True)
         communities_df = pd.DataFrame(communities, columns=["cluster"])
         communities_df["cell_barcode"] = communities_df.index
