@@ -570,11 +570,10 @@ class SCICoNE(object):
             cluster_node_ids = tree.outputs['cell_node_ids']
 
             cell_bin_genotypes = np.empty((segmented_data.shape[0], cluster_bin_genotypes.shape[1]))
-            cell_node_ids = np.empty((segmented_data.shape[0], 2))
-            cell_node_ids[:, 0] = range(segmented_data.shape[0])
+            cell_node_ids = np.empty((segmented_data.shape[0], 1))
             for id in np.unique(cluster_assignments):
                 cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = cluster_bin_genotypes[id]
-                cell_node_ids[np.where(cluster_assignments==id)[0],1] = cluster_node_ids[id,1]
+                cell_node_ids[np.where(cluster_assignments==id)[0],0] = cluster_node_ids[id,1]
 
             tree.outputs['inferred_cnvs'] = cell_bin_genotypes
             tree.outputs['cell_node_ids'] = cell_node_ids
