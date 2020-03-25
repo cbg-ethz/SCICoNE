@@ -64,9 +64,9 @@ class Tree(object):
         tree_strs.append(f"Nu: {self.nu}")
 
         for node in self.node_dict:
-            event_str = ','.join([f'{key}:{val}' for key, val in node_dict[node]["event_dict"].items()])
+            event_str = ','.join([f'{key}:{val}' for key, val in self.node_dict[node]["event_dict"].items()])
             event_str = f'[{event_str}]'
-            node_str = f'node {node}: p_id:{node_dict[node]["parent_id"]},{event_str}'
+            node_str = f'node {node}: p_id:{self.node_dict[node]["parent_id"]},{event_str}'
             tree_strs.append(node_str)
 
         tree_str = '\n'.join(tree_strs) + '\n'
@@ -261,9 +261,12 @@ class Tree(object):
             np.savetxt(temp_region_neutral_states_file, region_neutral_states, delimiter=',')
 
         if initial_tree is not None:
+            print("Using initial tree.")
             temp_tree_file = f"{postfix}_temp_tree.txt"
             f = open(temp_tree_file, "w")
             f.write(initial_tree.tree_str)
+            f.close()
+            nu = initial_tree.nu
 
             try:
                 cmd_output = subprocess.run([self.binary_path, f"--d_matrix_file={temp_segmented_data_file}", f"--n_regions={n_regions}",\
