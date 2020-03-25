@@ -46,11 +46,72 @@ class Tree(object):
         self.root_score = 0.
         self.score = 0.
         self.nu = 1.
+        self.node_dict = dict() #node_dict = dict(key=p_id, val=event_vec)
 
         self.outputs = dict()#tree_inferred=None, inferred_cnvs=None,
                             # rel_markov_chain=None, cell_node_ids=None,
                             # cell_region_cnvs=None, acceptance_ratio=None,
                             # gamma_values=None, attachment_scores=None, markov_chain=None)
+
+    def update_tree_str(self):
+        tree_strs = []
+        tree_strs.append(f"Tree posterior: {self.posterior_score}")
+        tree_strs.append(f"Tree prior: {self.tree_prior_score}")
+        tree_strs.append(f"Event prior: {self.event_prior_score}")
+        tree_strs.append(f"Log likelihood: {self.log_likelihood}")
+        tree_strs.append(f"Root score: {self.root_score}")
+        tree_strs.append(f"Tree score: {self.score}")
+        tree_strs.append(f"Nu: {self.nu}")
+
+        for node in self.node_dict:
+            event_str = ','.join([f'{key}:{val}' for key, val in node_dict[node]["event_dict"].items()])
+            event_str = f'[{event_str}]'
+            node_str = f'node {node}: p_id:{node_dict[node]["parent_id"]},{event_str}'
+            tree_strs.append(node_str)
+
+        tree_str = '\n'.join(tree_strs) + '\n'
+
+        self.tree_str = tree_str
+
+        return tree_str
+
+    def read_tree_str(self, tree_str):
+        self.tree_str = tree_str
+
+        list_tree_file = tree_str.split('\n')
+
+        for line in list_tree_file:
+            if line.startswith("Tree posterior:"):
+                self.posterior_score = float(line.split(' ')[-1].split('\n')[0])
+
+            elif line.startswith("Tree prior:"):
+                self.tree_prior_score = float(line.split(' ')[-1].split('\n')[0])
+
+            elif line.startswith("Event prior:"):
+                self.event_prior_score = float(line.split(' ')[-1].split('\n')[0])
+
+            elif line.startswith("Log likelihood:"):
+                self.log_likelihood = float(line.split(' ')[-1].split('\n')[0])
+
+            elif line.startswith("Root score:"):
+                self.root_score = float(line.split(' ')[-1].split('\n')[0])
+
+            elif line.startswith("Tree score:"):
+                self.score = float(line.split(' ')[-1].split('\n')[0])
+
+            elif line.startswith("Nu:"):
+                self.nu = float(line.split(' ')[-1].split('\n')[0])
+
+            elif line.startswith("node"):
+                colon_splits = line.split(':', 2)
+                node_id = colon_splits[0].split(" ")[1]
+                parent_id, event_str = colon_splits[2].split(',', 1)
+                event_str = event_str[1:-1] # Remove '[' and ']'
+                if parent_id != 'NULL':
+                    event_dict = dict([s.split(':') for s in event_str.split(',')])
+                else:
+                    event_dict = dict()
+                self.node_dict[node_id] = dict(parent_id=parent_id, event_dict=event_dict)
 
     def read_from_file(self, file, output_path=None):
         """
