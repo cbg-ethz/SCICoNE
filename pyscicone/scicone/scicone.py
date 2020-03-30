@@ -554,6 +554,12 @@ class SCICoNE(object):
         avg_segmented_counts = np.empty(segmented_data.shape)
         condensed_avg_segmented_counts = np.empty((len(community_ids), n_regions))
         cluster_sizes = np.zeros((len(community_ids),))
+
+        # Offset -1 if there is one
+        if np.min(community_ids) == -1:
+            communities = np.array(communities) + 1
+            community_ids = np.array(community_ids) + 1
+
         for id in community_ids:
             avg_segmented_counts[np.where(communities==id)[0]] = np.mean(segmented_data[np.where(communities==id)[0], :], axis=0)
             condensed_avg_segmented_counts[id] = avg_segmented_counts[np.where(communities==id)[0][0],:]
