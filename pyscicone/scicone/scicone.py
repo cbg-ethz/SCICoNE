@@ -315,6 +315,9 @@ class Tree(object):
                     if ".tsv" in fn:
                         delim = '\t'
                     self.outputs[key] = np.loadtxt(fn, delimiter=delim)
+                    if len(self.outputs[key].shape) == 1: # protect against 1 cluster
+                        self.outputs[key] = self.outputs[key].reshape(1, -1)
+
                     if not self.persistence:
                         os.remove(fn)
                 elif postfix in fn and "tree_inferred.txt" in fn: # Parse tree structure, score and nu
