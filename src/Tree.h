@@ -696,6 +696,8 @@ void Tree::load_from_file(string file) {
 
     std::getline(infile, line); // tree posterior
     std::getline(infile, line); // tree prior
+    std::getline(infile, line); // event prior
+    std::getline(infile, line); // log likelihood
     std::getline(infile, line); // root score
     std::getline(infile, line); // tree score
     std::getline(infile, line); // nu value
@@ -704,7 +706,7 @@ void Tree::load_from_file(string file) {
     {
         std::istringstream iss(line);
         string a, b, c ;
-        if (!(iss >> a >> b >> c)) { break; } // error
+        if (!(iss >> a >> b >> c)) { std::cout << "Error reading tree from file" << std::endl; break; } // error
         b.pop_back();
         int node_id = stoi(b);
         if (node_id > this->counter)

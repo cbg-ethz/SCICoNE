@@ -8,6 +8,8 @@ def create_fusion_tree(learned_tree, region_neutral_states):
     for i, state in enumerate(region_neutral_states):
         new_event_dict[str(i)]=str(int(state))
 
+    fusion_tree.read_tree_str(learned_tree.tree_str)
+
     for node in list(fusion_tree.node_dict):
         new_node_id = str(int(node) + 1000)
         fusion_tree.node_dict[new_node_id] = dict(parent_id=node, event_dict=new_event_dict)
