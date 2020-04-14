@@ -546,14 +546,16 @@ class SCICoNE(object):
         n_regions = segmented_data.shape[1]
         n_neighbours = max(int(n_cells / 10), 2) # avoid errors
         print(f"n_neighbours to be used: {str(n_neighbours)}")
-        communities, graph, Q = phenograph.cluster(data=segmented_data, k=n_neighbours, n_jobs=1, jaccard=True)
+        # Cluster the normalised segmented data
+        normalised_segmented_data = segmented_data/np.sum(segmented_data, axis=1)[:,np.newaxis]
+        communities, graph, Q = phenograph.cluster(data=normalised_segmented_data, k=n_neighbours, n_jobs=1, jaccard=True)
         communities_df = pd.DataFrame(communities, columns=["cluster"])
         communities_df["cell_barcode"] = communities_df.index
         communities_df = communities_df[["cell_barcode", "cluster"]]
         community_dict = dict((Counter(communities)))
         community_ids = sorted(list(community_dict))
 
-        # Compute average counts of each cluster
+        # Compute (unnormalised) average counts of each cluster
         avg_segmented_counts = np.empty(segmented_data.shape)
         condensed_avg_segmented_counts = np.empty((len(community_ids), n_regions))
         cluster_sizes = np.zeros((len(community_ids),))
