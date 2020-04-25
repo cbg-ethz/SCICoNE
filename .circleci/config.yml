@@ -9,6 +9,9 @@ jobs:
       - run:
           name: Installing SUDO
           command: 'apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*'
+      -run:
+          name: Install Git
+          command: 'apt-get update && apt-get install -y git'
       - run:
           name: Installing GCC
           command: 'apt-get update && apt-get install -y gcc g++'
@@ -18,6 +21,11 @@ jobs:
       - run:
           name: Install CMAKE
           command: 'apt-get update && sudo apt-get install -y cmake'
+      - run:
+          name: Installing NLOpt
+          command: 'git clone git://github.com/stevengj/nlopt'
+          command: 'cd nlopt && mkdir build && cd build'
+          command: 'cmake .. && make && sudo make install'
       - run:
           name: Creating Debug Build Folder
           command: 'mkdir debug'
@@ -42,4 +50,3 @@ jobs:
       - run:
           name: Unit Tests (Release)
           command: 'cd debug && ./tests'
-
