@@ -2,7 +2,8 @@
   <img src="logo.png" >
 </div>
 
-[![CircleCI](https://circleci.com/gh/anilbey/SCICoNE/tree/master.svg?style=svg&circle-token=ccc7efcfe007311847eb0d7260382125518d68ca)](https://circleci.com/gh/anilbey/sc-dna/tree/master)
+
+[![CircleCI](https://circleci.com/gh/anilbey/SCICoNE.svg?style=svg&circle-token=ccc7efcfe007311847eb0d7260382125518d68ca)](https://circleci.com/gh/anilbey/SCICoNE)
 [![C++ Standard](https://img.shields.io/badge/c++-14-blueviolet?style=flat&logo=c%2B%2B)](https://en.wikipedia.org/wiki/C%2B%2B14)
 [![License](https://img.shields.io/:license-GPLv3-blueviolet.svg?style=flat&logo=gnu)](http://www.gnu.org/licenses/gpl-3.0.html)
 
