@@ -1,5 +1,21 @@
-# CNV Trees
-[![CircleCI](https://circleci.com/gh/anilbey/sc-dna/tree/master.svg?style=svg&circle-token=ccc7efcfe007311847eb0d7260382125518d68ca)](https://circleci.com/gh/anilbey/sc-dna/tree/master)
+<div align="center">
+  <img src="logo.png" >
+</div>
+
+
+[![CircleCI](https://circleci.com/gh/anilbey/SCICoNE.svg?style=svg&circle-token=ccc7efcfe007311847eb0d7260382125518d68ca)](https://circleci.com/gh/anilbey/SCICoNE)
+[![C++ Standard](https://img.shields.io/badge/c++-14-blueviolet?style=flat&logo=c%2B%2B)](https://en.wikipedia.org/wiki/C%2B%2B14)
+[![License](https://img.shields.io/:license-GPLv3-blueviolet.svg?style=flat&logo=gnu)](http://www.gnu.org/licenses/gpl-3.0.html)
+
+
+## About
+
+Single-cell copy number calling and event history reconstruction.
+A statistical model and MCMC algorithm tailored to single-cell copy
+number profiling from shallow whole-genome DNA sequencing data. SCICoNE reconstructs the
+history of copy number events in the tumour and uses these evolutionary relationships to identify
+the copy number profiles of the individual cells.
+
 ## Requirements
 
 * C++ compiler that supports C++14 standards (e.g. `gcc>=5.2.0`, `clang>=5.0.0)`)
@@ -9,13 +25,11 @@
 
 ## Installation
 
-1. Open your terminal in your preferred directory and clone this project
-```bash
-$ git clone https://github.com/anilbey/sc-dna
-```
+1. Clone the repository
+
 2. Enter the project directory
 ```bash
-$ cd sc-dna
+$ cd SCICoNE
 ```
 3. Create and enter the build directory
 ```bash
@@ -25,14 +39,19 @@ $ mkdir build && cd build
 ```bash
 $ cmake ..
 ```
+
+or more specifically
+```bash
+$ cmake -DCMAKE_BUILD_TYPE=Release ..
+```
+
 5. Build the executable
 ```bash
 $ make
 ```
 That's it! :octocat:
 
-Three executables (simulation, inference and test) will be generated after the installation.
-
+Multiple executables (such as simulation, inference, test, score) will be created after the installation.
 
 ## Simulation
 Simulates the count matrix. Outputs the count matrix, region sizes, ground truth and the tree that generated the data.
