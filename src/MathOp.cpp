@@ -551,6 +551,9 @@ T MathOp::percentile_val(vector<T> vec, double percentile_val) {
     std::sort(vec.begin(), vec.end());
 
     int percentile_idx = static_cast<int>(percentile_val * vec.size())-1;
+    if (percentile_idx < 0) {
+      percentile_idx = 0;
+    }
 
     return vec[percentile_idx];
 }
