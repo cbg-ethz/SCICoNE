@@ -61,8 +61,6 @@ int main()
     test_apply_multiple_times();
     test_reproducibility();
     test_cluster_scoring();
-    // test_print_scores();
-    // test_iqm();
 
     return EXIT_SUCCESS;
 
