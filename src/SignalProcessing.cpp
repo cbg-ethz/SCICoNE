@@ -186,8 +186,13 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
     // take log of the signal
     this->log_transform(signal);
 
-    double stdev = MathOp::st_deviation(signal);
-    double threshold = threshold_coefficient * stdev;
+    // double stdev = MathOp::st_deviation(signal);
+    // double third_q = MathOp::third_quartile(signal);
+    // double median = MathOp::median(signal);
+    // double range = third_q - median;
+    double range = MathOp::interquartile_range(signal, true); // thirdq - median
+    // double range = stdev;
+    double threshold = threshold_coefficient * range;
 
     // use log of max_val
     max_val = log(max_val);
@@ -198,7 +203,7 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
     if (verbosity > 0)
     {
         std::ofstream bp_vals_file("./" + f_name_posfix + "_all_bps_comparison.csv", std::ios_base::app);
-        bp_vals_file << max_idx + window_size << ',' << max_val << ',' << stdev << std::endl; // 10 for window size
+        bp_vals_file << max_idx + window_size << ',' << max_val << ',' << range << std::endl; // 10 for window size
     }
 
     if (max_val > threshold)
@@ -267,7 +272,13 @@ int SignalProcessing::find_highest_peak(vector<T> &signal, int lb, int ub) {
 }
 
 vector<double>
-SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star) {
+SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star, bool compute_lr, bool lr_only) {
+  vector<vector<double>> lr_vec;
+  return SignalProcessing::breakpoint_detection(mat, window_size, k_star, lr_vec, compute_lr, lr_only);
+}
+
+vector<double>
+SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star, vector<vector<double>> &lr_vec, bool compute_lr, bool lr_only) {
     /*
      * Performs the breakpoint detection
      * window_size: there cannot be multiple breakpoints within a window_size
@@ -279,33 +290,41 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
 
     size_t n_cells = mat.size();
 
-    // compute the AIC scores
-
-    vector<vector<double>> aic_vec = MathOp::likelihood_ratio(mat,window_size);
+    // compute the LR scores
+    if (compute_lr)
+      lr_vec = MathOp::likelihood_ratio(mat, window_size);
+    else
+      std::cout << "Skipping LR computation" << std::endl;
 
     if (verbosity > 0)
     {
-        std::ofstream aic_vec_file("./" + f_name_posfix + "_aic_vec" + ".csv");
-        for (auto const &v1: aic_vec) {
+        std::ofstream lr_vec_file("./" + f_name_posfix + "_lr_vec" + ".csv");
+        for (auto const &v1: lr_vec) {
             for (size_t i = 0; i < v1.size(); i++)
             {
                 if (i == v1.size()-1) // the last element
-                    aic_vec_file << v1[i];
+                    lr_vec_file << v1[i];
                 else // add comma
-                    aic_vec_file << v1[i] << ',';
+                    lr_vec_file << v1[i] << ',';
             }
-            aic_vec_file << endl;
+            lr_vec_file << endl;
         }
     }
 
-    size_t n_breakpoints = aic_vec.size();
+    if (lr_only) {
+      vector<double> sp_vec_dummy;
+      return sp_vec_dummy;
+    }
+
+    size_t n_breakpoints = lr_vec.size();
     cout <<"n_breakpoints: " << n_breakpoints << " n_cells: " << n_cells <<endl;
 
+    std::cout << "Combining scores..." << std::endl;
     vector<vector<double>> sigma(n_breakpoints,vector<double>(n_cells+1)); // +1 because combine scores considers
     // the breakpoint occurring in zero cells as well
 
     for (size_t i = 0; i < n_breakpoints; ++i) // compute sigma matrix
-        sigma[i] = MathOp::combine_scores(aic_vec[i]);
+        sigma[i] = MathOp::combine_scores(lr_vec[i]);
 
     vector<double> log_priors;
     log_priors.reserve(n_cells+1);
@@ -401,6 +420,7 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
         sp_file << std::endl;
 
     }
+    std::cout << "Done." << std::endl;
 
     return s_p;
 
@@ -409,5 +429,3 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
 template int SignalProcessing::find_highest_peak(vector<double> &signal, int lb, int ub);
 template vector<double> SignalProcessing::crop<double>(vector<double>& signal, int offset);
 template vector<long double> SignalProcessing::crop<long double>(vector<long double>& signal, int offset);
-
-

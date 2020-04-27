@@ -15,6 +15,8 @@
 #include <algorithm>
 #include "SingletonRandomGenerator.h"
 #include <boost/random/uniform_int_distribution.hpp>
+#include <nlopt.hpp>
+#include <cfloat>
 
 #ifndef SC_DNA_NODE_H
 #include "Node.h"
@@ -23,6 +25,11 @@
 
 
 using namespace std;
+
+typedef struct {
+    vector<double> z;
+    double nu;
+} segment_counts;
 
 class MathOp {
 
@@ -47,19 +54,35 @@ public:
     static double log_n_choose_k(unsigned long n, unsigned long k);
     static int random_uniform(int min, int max);
     template <class T>
+    static double vec_max(vector<T> v);
+    static int median_idx(int l, int r);
+    template <class T>
     static double vec_avg(const vector<T> &v);
     template <class T>
     static T percentile_val(vector<T>, double percentile_val);
     template <class T>
     static double median(vector<T> v);
     template <class T>
+    static double iqm(vector<T> v);
+    template <class T>
     static double st_deviation(vector<T>& v);
+    template<class T>
+    static double third_quartile(vector<T> &v);
+    template<class T>
+    static double robust_mean(vector<T> v);
+    template <class T>
+    static double mat_moment(const vector<vector<T>> &v, int moment);
+    template <class T>
+    static double interquartile_range(vector<T> &v, bool top);
     static double compute_omega_insert_delete(Node *node, double lambda_r, double lambda_c, unsigned long K);
     static double compute_omega_condense_split(Node *node, double lambda_s, unsigned int n_regions);
     static double frobenius_avg(vector<vector<int>>& mat, vector<vector<int>>& ground_truth);
     static vector<long double> dirichlet_sample(size_t len, double alpha = 1.0);
     static vector<double> dirichlet_sample(vector<double> alphas);
-
+    static double ll_linear_model(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data);
+    static vector<double> compute_linear_regression_parameters(vector<double> &z, int window_size, double nu);
+    static double huber_loss(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data);
+    static double huber_mean(vector<double> &z, double delta);
 };
 
 

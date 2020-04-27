@@ -37,6 +37,7 @@ private:
     u_int n_nodes; //the number of nodes without the root
     int ploidy; // to be added to values of the unordered map for each node
     int counter = 0; // counter for the node ids to be given
+    vector<int> region_neutral_states;
 public:
     Node* root;
     std::vector<Node*> all_nodes_vec; // for random selection, destructor, insertion by position, iterating without order (e.g. for each node)
@@ -50,7 +51,7 @@ public:
     double nu;
 public:
     // constructor
-    Tree(u_int ploidy, u_int n_regions);
+    Tree(u_int ploidy, u_int n_regions, vector<int> &region_neutral_states);
     // copy constructor
     Tree(Tree& source);
     // destructor
@@ -61,8 +62,8 @@ public:
     Node* delete_leaf();
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node *add_remove_events(bool weighted, bool validation_test_mode=false);
-    Node *insert_delete_node(unsigned int size_limit, bool weighted);
-    Node *condense_split_node(unsigned int size_limit, bool weighted);
+    Node *insert_delete_node(unsigned int size_limit, bool weighted, bool max_scoring);
+    Node *condense_split_node(unsigned int size_limit, bool weighted, bool max_scoring);
     std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
 
     Node* delete_node(Node* node);
@@ -87,10 +88,10 @@ public:
     bool zero_ploidy_changes(Node* n) const;// TODO: can be a method of node instead
     double cost();
 
-    vector<double> omega_condense_split(double lambda_s, bool weighted);
+    vector<double> omega_condense_split(double lambda_s, bool weighted, bool max_scoring);
     vector<double> chi_condense_split(bool weighted);
 
-    vector<double> omega_insert_delete(double lambda_r, double lambda_c, bool weighted);
+    vector<double> omega_insert_delete(double lambda_r, double lambda_c, bool weighted, bool max_scoring);
     vector<double> chi_insert_delete(bool weighted);
 
     void load_from_file(string file);
@@ -120,9 +121,9 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
     vector<Node*> nodes = t.root->get_descendents(true);
 
     os << "Tree posterior: " << setprecision(print_precision) << t.posterior_score << std::endl;
-    os << "Tree prior: " << setprecision(print_precision) << t.prior_score
-       << ", Event prior: " << t.event_prior()
-       << ", Log likelihood: " << t.total_attachment_score << std::endl;
+    os << "Tree prior: " << setprecision(print_precision) << t.prior_score  << std::endl;
+    os << "Event prior: " << setprecision(print_precision )<< t.event_prior() << std::endl;
+    os << "Log likelihood: " << setprecision(print_precision) << t.total_attachment_score << std::endl;
     os << "Root score: " << setprecision(print_precision) << t.od_score << std::endl;
     os << "Tree score: " << setprecision(print_precision) << t.posterior_score + t.od_score << std::endl;
     os << "Nu: " << setprecision(print_precision) << t.nu<< std::endl;
@@ -143,8 +144,11 @@ void Tree::compute_root_score(const vector<int> &r) {
      * */
 
     int z = 0;
-    for (auto const &x : r)
-        z += x * this->ploidy;
+    int i = 0;
+    for (auto const &x : r) {
+        z += x * this->region_neutral_states[i];
+        i = i + 1;
+    }
 
     root->attachment_score = 0;
     root->z = z;
@@ -171,6 +175,8 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
         double z = node->parent->z;
         double z_parent = node->parent->z;
 
+        int p = ploidy;
+
         // for debug purposes
         double z_orig = z;
 
@@ -181,8 +187,9 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
             int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0); // use count to check without initializing
 
             // to prevent log(0)
-            double node_cn = (cf+ploidy)==0?(eta):(cf+ploidy);
-            double parent_cn = (cp_f+ploidy)==0?(eta):(cp_f+ploidy);
+            p = this->region_neutral_states[x.first];
+            double node_cn = (cf+p)==0?(eta):(cf+p);
+            double parent_cn = (cp_f+p)==0?(eta):(cp_f+p);
 
             z += r[x.first] * (node_cn - parent_cn);
         }
@@ -195,8 +202,9 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
             int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0);
 
             // to prevent log(0)
-            double node_cn = (cf+ploidy)==0?(eta):(cf+ploidy);
-            double parent_cn = (cp_f+ploidy)==0?(eta):(cp_f+ploidy);
+            p = this->region_neutral_states[x.first];
+            double node_cn = (cf+p)==0?(eta):(cf+p);
+            double parent_cn = (cp_f+p)==0?(eta):(cp_f+p);
 
             // option for the overdispersed version
             if (is_overdispersed)
@@ -281,7 +289,7 @@ void Tree::compute_stack(Node *node, const vector<double> &D, double &sum_D, con
 }
 
 
-Tree::Tree(u_int ploidy, u_int n_regions)
+Tree::Tree(u_int ploidy, u_int n_regions, vector<int> &region_neutral_states)
 {
     // Tree constructor
     root = new Node();
@@ -291,6 +299,8 @@ Tree::Tree(u_int ploidy, u_int n_regions)
     uint64_t size_for_hash = keys_values.size() * sizeof(keys_values[0]);
     uint64_t c_hash = Utils::calculate_hash(&keys_values[0], size_for_hash);
     root->c_hash = c_hash;
+
+    this->region_neutral_states = region_neutral_states;
 
     this->ploidy = ploidy;
     this->n_regions = n_regions;
@@ -487,6 +497,7 @@ void Tree::copy_tree(const Tree& source_tree) {
      * call it recursively (using stack)
     */
 
+    this->region_neutral_states = source_tree.region_neutral_states;
     this->ploidy = source_tree.ploidy;
     this->total_attachment_score = source_tree.total_attachment_score;
     this->counter = source_tree.counter;
@@ -685,6 +696,8 @@ void Tree::load_from_file(string file) {
 
     std::getline(infile, line); // tree posterior
     std::getline(infile, line); // tree prior
+    std::getline(infile, line); // event prior
+    std::getline(infile, line); // log likelihood
     std::getline(infile, line); // root score
     std::getline(infile, line); // tree score
     std::getline(infile, line); // nu value
@@ -693,7 +706,7 @@ void Tree::load_from_file(string file) {
     {
         std::istringstream iss(line);
         string a, b, c ;
-        if (!(iss >> a >> b >> c)) { break; } // error
+        if (!(iss >> a >> b >> c)) { std::cout << "Error reading tree from file" << std::endl; break; } // error
         b.pop_back();
         int node_id = stoi(b);
         if (node_id > this->counter)
@@ -1013,9 +1026,7 @@ Node *Tree::add_remove_events(bool weighted, bool validation_test_mode) {
 
         // n_regions from Poisson(lambda_R)+1
         boost::random::poisson_distribution<int> poisson_dist(lambda_r); // the param is to be specified later
-        int n_regions_to_sample = poisson_dist(generator);
-        if (n_regions_to_sample == 0)
-            n_regions_to_sample += 1; // to have a region to sample
+        int n_regions_to_sample = poisson_dist(generator) + 1;
         // sample n_regions_to_sample distinct regions uniformly
         int n_regions = this->n_regions;
         int regions_sampled = 0;
@@ -1074,9 +1085,11 @@ bool Tree::subtree_out_of_bound(Node *n) const{
     int ub = copy_number_limit; // global variable
     vector<Node*> descendents = n->get_descendents(true);
     for (auto const &elem : descendents)
-        for (auto const &it : elem->c)
+        for (auto const &it : elem->c) {
+            lb = -this->region_neutral_states[it.first];
             if (it.second < lb || it.second > ub)
                 return true;
+        }
     return false;
 
 }
@@ -1091,11 +1104,11 @@ bool Tree::zero_ploidy_changes(Node *n) const{
 
     for (auto const &node : descendents)
     {
-        if (node->id == 0 || node->parent->id == 0)
+        if (node->id == 0)
             continue; // root cannot have events
+
         for (auto const &it : node->parent->c)
-            if(it.second <= (-1 * ploidy))
-            {
+            if(it.second <= (-1 * this->region_neutral_states[it.first])) {
                 bool does_change = region_changes(node, it.first);
                 if (does_change)
                     return true;
@@ -1148,7 +1161,7 @@ bool Tree::is_redundant() const {
 
 }
 
-Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
+Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted, bool max_scoring) {
     /*
      * Adds or deletes nodes move, that takes the mcmc transition probabilities into account.
      * Returns the node to perform partial score computation on.
@@ -1158,7 +1171,7 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
     Node* return_node = nullptr;
 
     vector<double> chi = chi_insert_delete(weighted); // add weights
-    vector<double> omega = omega_insert_delete(lambda_r, lambda_c, weighted); // delete weights
+    vector<double> omega = omega_insert_delete(lambda_r, lambda_c, weighted, max_scoring); // delete weights
 
     // sample the number of regions to be affected with Poisson(lambda_r)+1
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
@@ -1246,7 +1259,7 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted) {
     return return_node;
 }
 
-Node *Tree::condense_split_node(unsigned int size_limit, bool weighted) {
+Node *Tree::condense_split_node(unsigned int size_limit, bool weighted, bool max_scoring) {
     /*
      * Condenses two nodes into one or splits a node into two.
      * */
@@ -1257,7 +1270,7 @@ Node *Tree::condense_split_node(unsigned int size_limit, bool weighted) {
 
     Node* return_node = nullptr;
     vector<double> chi = this->chi_condense_split(weighted); // split weights
-    vector<double> omega = this->omega_condense_split(lambda_s, weighted); // condense weights
+    vector<double> omega = this->omega_condense_split(lambda_s, weighted, max_scoring); // condense weights
 
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
     // n_regions from Poisson(lambda_S)+1
@@ -1420,7 +1433,7 @@ Node* Tree::delete_node(Node *node) {
     return parent_of_deleted; // return the node that is going to be used for the partial trees scoring
 }
 
-vector<double> Tree::omega_condense_split(double lambda_s, bool weighted) {
+vector<double> Tree::omega_condense_split(double lambda_s, bool weighted, bool max_scoring) {
     /*
      * Returns the omega probabilities computed for a tree for the condense/split move.
      * Omega vector is representing the condense weights
@@ -1431,7 +1444,9 @@ vector<double> Tree::omega_condense_split(double lambda_s, bool weighted) {
 
     for (auto const &node : descendents_of_root)
     {
-        double omega_val = MathOp::compute_omega_condense_split(node, lambda_s, this->n_regions);
+        double omega_val = 1.0;
+        if (not max_scoring)
+          omega_val = MathOp::compute_omega_condense_split(node, lambda_s, this->n_regions);
         if (weighted)
             omega_val /= (node->parent->n_descendents-1);
         omega.push_back(omega_val);
@@ -1492,7 +1507,7 @@ vector<double> Tree::chi_insert_delete(bool weighted) {
 
 }
 
-vector<double> Tree::omega_insert_delete(double lambda_r, double lambda_c, bool weighted) {
+vector<double> Tree::omega_insert_delete(double lambda_r, double lambda_c, bool weighted, bool max_scoring) {
     /*
      * Returns the omega probabilities computed for the insert/delete move.
      * Omega vector is representing the delete weights
@@ -1503,7 +1518,9 @@ vector<double> Tree::omega_insert_delete(double lambda_r, double lambda_c, bool 
 
     vector<Node*> all_nodes = root->get_descendents(false); // without root
     for (auto const &node : all_nodes) { // computes the omega vector
-        double omega_val = MathOp::compute_omega_insert_delete(node, lambda_r, lambda_c, K);
+        double omega_val = 1.0;
+        if (not max_scoring)
+          omega_val = MathOp::compute_omega_insert_delete(node, lambda_r, lambda_c, K);
         if (weighted)
             omega_val = omega_val/node->n_descendents;
         omega.push_back(omega_val);
@@ -1542,16 +1559,18 @@ double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector
     if (is_overdispersed)
     {
         int z = 0;
-        for (auto const &x : r)
-            z += x * this->ploidy;
-
+        int k = 0;
+        for (auto const &x : r) {
+            z += x * this->region_neutral_states[k];
+            k = k + 1;
+        }
         od_root_score += lgamma(nu*z);
         od_root_score -= lgamma(sum_D+nu*z);
 
         for (u_int i = 0; i < r.size(); ++i)
         {
-            od_root_score += lgamma(D[i] + nu*ploidy*r[i]);
-            od_root_score -= lgamma(nu*ploidy*r[i]);
+            od_root_score += lgamma(D[i] + nu*this->region_neutral_states[i]*r[i]);
+            od_root_score -= lgamma(nu*this->region_neutral_states[i]*r[i]);
         }
     }
     else

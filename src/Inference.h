@@ -16,6 +16,7 @@
 #include <cmath>
 #include <array>
 #include <functional>
+#include <cfloat>
 #include "globals.cpp"
 #include "Lgamma.h"
 
@@ -37,12 +38,17 @@ public:
     int ploidy;
     std::vector<std::map<int, double>> t_scores;
     std::vector<double> t_sums;
+    std::vector<std::pair<int, double>> t_maxs;
     std::vector<std::map<int, double>> t_prime_scores;
     std::vector<double> t_prime_sums;
+    std::vector<std::pair<int, double>> t_prime_maxs;
     int verbosity;
+    bool max_scoring;
+    int n_cells;
+    std::vector<int> region_neutral_states;
 
 public:
-    Inference(u_int n_regions, int ploidy=2, int verbosity=2);
+    Inference(u_int n_regions, int n_cells, vector<int> &region_neutral_states, int ploidy=2, int verbosity=2, bool max_scoring=false);
     ~Inference();
     void destroy();
     void compute_t_od_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
@@ -76,7 +82,7 @@ public:
                     int n_iters, unsigned int size_limit, double alpha, double gamma, const vector<int> &cluster_sizes);
 
     void update_t_scores();
-    void random_initialize(u_int n_nodes, u_int n_regions, int max_iters); // randomly initializes a tree and copies it into the other
+    void random_initialize(u_int n_nodes, u_int n_regions, int max_iters, int max_regions_per_node=1); // randomly initializes a tree and copies it into the other
     void initialize_worked_example(); // initializes the trees based on the test example
     void initialize_from_file(string path);
     vector<vector<int>> assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
@@ -87,7 +93,7 @@ private:
 
 
 
-void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters) {
+void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters, int max_regions_per_node) {
 
     Tree *random_tree;
     int i = 0;
@@ -98,7 +104,7 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters)
     while(true)
     {
         i++;
-        random_tree = new Tree(ploidy, n_regions);
+        random_tree = new Tree(ploidy, n_regions, this->region_neutral_states);
         for (unsigned j = 0; j < n_nodes; ++j)
         {
             /*
@@ -109,14 +115,14 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters)
             // create a map, fill it properly with r amount of labels
             map<u_int, int> distinct_regions;
             try {
-                Utils::random_initialize_labels_map(distinct_regions, n_regions); // modifies the distinct_regions
+                Utils::random_initialize_labels_map(distinct_regions, n_regions, max_regions_per_node, lambda_r); // modifies the distinct_regions
             }catch (const std::out_of_range& e)
             {
                 if (verbosity > 1)
                     std::cout << " an out of range error was caught during the initialize labels map method, with message '"
                               << e.what() << "'\n";
                 delete random_tree; // delete the tree
-                random_tree = new Tree(ploidy, n_regions);
+                random_tree = new Tree(ploidy, n_regions, this->region_neutral_states);
                 break;
             }
             random_tree->random_insert(static_cast<map<u_int, int> &&>(distinct_regions));
@@ -165,13 +171,21 @@ void Inference::initialize_worked_example() {
 
 }
 
-Inference::Inference(u_int n_regions, int ploidy, int verbosity) : t(ploidy, n_regions),
-                                                                   t_prime(ploidy, n_regions),
-                                                                   best_tree(ploidy, n_regions) {
+Inference::Inference(u_int n_regions, int n_cells, vector<int> &region_neutral_states, int ploidy, int verbosity, bool max_scoring) : t(ploidy, n_regions, region_neutral_states),
+                                                                   t_prime(ploidy, n_regions, region_neutral_states),
+                                                                   best_tree(ploidy, n_regions, region_neutral_states),
+                                                                   t_prime_sums(n_cells),
+                                                                   t_sums(n_cells),
+                                                                   t_maxs(n_cells),
+                                                                   t_prime_maxs(n_cells)
+                                                                   {
 
     this->n_regions = n_regions;
     this->ploidy = ploidy;
     this->verbosity = verbosity;
+    this->max_scoring = max_scoring;
+    this->n_cells = n_cells;
+    this->region_neutral_states = region_neutral_states;
 }
 
 Inference::~Inference() {
@@ -202,6 +216,9 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
     // If D is cluster by region, we iterate over each cluster and compute the sum of each cluster's
     // score weighted by its size
 
+    double currentMax = -DBL_MAX;
+    std::pair<int, double> currentMax_node;
+
     int j = static_cast<int>(D.size());
     for (int i = 0; i < j; ++i)
     {
@@ -209,7 +226,36 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
         std::map<int, double> scores_vec = this->t.get_children_id_score(this->t.root);
 
         this->t_scores.push_back(scores_vec);
-        this->t_sums.push_back(MathOp::log_sum(scores_vec));
+
+        double t_sum = 0;
+        if (max_scoring) {
+          currentMax = -DBL_MAX;
+          for (auto it = scores_vec.cbegin(); it != scores_vec.cend(); ++it ) {
+              if (it->second > currentMax) {
+                  currentMax_node.first = it->first;
+                  currentMax_node.second = it->second;
+                  currentMax = currentMax_node.second;
+              }
+          }
+          t_sum = currentMax;
+          this->t_maxs[i].first = currentMax_node.first;
+          this->t_maxs[i].second = currentMax;
+        }
+        // if (max_scoring) {
+        //   // Get maximum score for cell
+        //   double currentMax = -DBL_MAX;
+        //   unsigned arg_max = 0;
+        //   for (auto it = scores_vec.cbegin(); it != scores_vec.cend(); ++it ) {
+        //       if (it->second > currentMax)
+        //           currentMax = it->second;
+        //   }
+        //   t_sum = currentMax;
+        // }
+        else {
+            t_sum = MathOp::log_sum(scores_vec);
+          }
+
+        this->t_sums[i] = t_sum;
     }
 
     int m = D.size();
@@ -272,134 +318,138 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
     double log_acceptance_prob = 0.0; // later gets modified
 
 
-    // compute nbd correction
-    double total_nbd_corr = 1.0;
-    double nbd_corr= 1.0;
-    double sum_chi=0.0, sum_chi_prime=0.0, sum_omega=0.0, sum_omega_prime=0.0;
-
-    if (move_id == 1) // weighted prune-reattach
+    // compute nbd correction if posterior sampling
+    double total_nbd_corr = 0.0;
+    if (not max_scoring)
     {
-        nbd_corr = t.cost() / t_prime.cost();
-        assert(!std::isinf(nbd_corr));
-        if (std::isinf(nbd_corr))
-            return &t; // reject
+        total_nbd_corr = 1.0;
+        double nbd_corr= 1.0;
+        double sum_chi=0.0, sum_chi_prime=0.0, sum_omega=0.0, sum_omega_prime=0.0;
 
-        // ro variable
-        total_nbd_corr *= nbd_corr;
-    }
-    else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
-    {
-
-        vector<double> chi = t.chi_insert_delete(weighted);
-        sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-        vector<double> chi_prime = t_prime.chi_insert_delete(weighted);
-        sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
-
-        if (std::isinf(sum_chi))
-            throw std::out_of_range("sum_chi is infinity, insert/delete move will be rejected");
-
-        vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted);
-        sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-        vector<double> omega_prime = t_prime.omega_insert_delete(lambda_r, lambda_c, weighted);
-        sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
-    }
-    else if (move_id == 8 || move_id == 9) // condense/split move or weighted cs
-    {
-
-        vector<double> chi = t.chi_condense_split(weighted);
-        sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
-        vector<double> chi_prime = t_prime.chi_condense_split(weighted);
-        sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
-
-        vector<double> omega = t.omega_condense_split(lambda_s, weighted);
-        sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
-        vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, weighted);
-        sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
-    }
-
-    if (move_id == 6 || move_id == 7 || move_id == 8 || move_id == 9) // moves that require nbd correction
-    {
-        double n = static_cast<double>(t_n_nodes);
-        if (t_n_nodes < t_prime_n_nodes) // insert, split
+        if (move_id == 1) // weighted prune-reattach
         {
-            double weight = sum_chi/sum_omega_prime;
-            total_nbd_corr *= weight;
+            nbd_corr = t.cost() / t_prime.cost();
+            assert(!std::isinf(nbd_corr));
+            if (std::isinf(nbd_corr))
+                return &t; // reject
+
+            // ro variable
+            total_nbd_corr *= nbd_corr;
         }
-        else // delete, condense
+        else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
         {
-            double weight = sum_omega/sum_chi_prime;
-            total_nbd_corr *= weight;
+
+            vector<double> chi = t.chi_insert_delete(weighted);
+            sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+            vector<double> chi_prime = t_prime.chi_insert_delete(weighted);
+            sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
+
+            if (std::isinf(sum_chi))
+                throw std::out_of_range("sum_chi is infinity, insert/delete move will be rejected");
+
+            vector<double> omega = t.omega_insert_delete(lambda_r, lambda_c, weighted, max_scoring);
+            sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+            vector<double> omega_prime = t_prime.omega_insert_delete(lambda_r, lambda_c, weighted, max_scoring);
+            sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
         }
-    }
-
-    if (move_id == 7 || move_id == 9) // weighted insert-delete or weighted condense-split
-    {
-        if (t_n_nodes > t_prime_n_nodes) // delete
+        else if (move_id == 8 || move_id == 9) // condense/split move or weighted cs
         {
-            // find the node that is deleted
-            // use the get_id_score function since it returns a map having node id as a key
-            map<int,double> t_prime_scores = t_prime.get_children_id_score(t_prime.root);
-            Node* deleted = nullptr;
-            for (auto const &t_node : t.root->get_descendents(false)) // root won't be contained!
-                if (!t_prime_scores.count(t_node->id))
-                {
-                    deleted = t_node;
-                    break;
-                }
-            if (deleted == nullptr)
-                throw std::logic_error("The deleted node could not be found in t!");
 
-            unsigned d_i_T = deleted->n_descendents;
-            unsigned d_i_T_prime = 0;
+            vector<double> chi = t.chi_condense_split(weighted);
+            sum_chi = std::accumulate(chi.begin(), chi.end(), 0.0);
+            vector<double> chi_prime = t_prime.chi_condense_split(weighted);
+            sum_chi_prime = std::accumulate(chi_prime.begin(), chi_prime.end(), 0.0);
 
-            // find it's parent in t_prime
-            int parent_id = deleted->parent->id;
-            for (auto const &t_prime_node : t_prime.root->get_descendents(true))
-                if (parent_id == t_prime_node->id)
-                {
-                    d_i_T_prime = t_prime_node->n_descendents;
-                    break;
-                }
-            if (d_i_T == 0)
-                throw std::logic_error("The deleted node's parent could not be found in t_prime!");
-
-            double p_add_corr_num = d_i_T_prime + 1;
-            double p_add_corr_denom = 2 * d_i_T;
-            double ratio = p_add_corr_num / p_add_corr_denom;
-            total_nbd_corr *= ratio;
+            vector<double> omega = t.omega_condense_split(lambda_s, weighted, max_scoring);
+            sum_omega = std::accumulate(omega.begin(), omega.end(), 0.0);
+            vector<double> omega_prime = t_prime.omega_condense_split(lambda_s, weighted, max_scoring);
+            sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
         }
-        else // insert
+
+        if (move_id == 6 || move_id == 7 || move_id == 8 || move_id == 9) // moves that require nbd correction
         {
-            // find the node that is inserted in t_prime
-            map<int,double> t_scores = t.get_children_id_score(t.root);
+            double n = static_cast<double>(t_n_nodes);
+            if (t_n_nodes < t_prime_n_nodes) // insert, split
+            {
+                double weight = sum_chi/sum_omega_prime;
+                total_nbd_corr *= weight;
+            }
+            else // delete, condense
+            {
+                double weight = sum_omega/sum_chi_prime;
+                total_nbd_corr *= weight;
+            }
+        }
 
-            Node* added = nullptr;
-            for (auto const &t_prime_node : t_prime.root->get_descendents(false)) // without root
-                if (!t_scores.count(t_prime_node->id))
-                {
-                    added = t_prime_node;
-                    break;
-                }
-            if (added == nullptr)
-                throw std::logic_error("The inserted node could not be found in t_prime!");
+        if (move_id == 7 || move_id == 9) // weighted insert-delete or weighted condense-split
+        {
+            if (t_n_nodes > t_prime_n_nodes) // delete
+            {
+                // find the node that is deleted
+                // use the get_id_score function since it returns a map having node id as a key
+                map<int,double> t_prime_scores = t_prime.get_children_id_score(t_prime.root);
+                Node* deleted = nullptr;
+                for (auto const &t_node : t.root->get_descendents(false)) // root won't be contained!
+                    if (!t_prime_scores.count(t_node->id))
+                    {
+                        deleted = t_node;
+                        break;
+                    }
+                if (deleted == nullptr)
+                    throw std::logic_error("The deleted node could not be found in t!");
 
-            unsigned d_i_T_prime = added->n_descendents;
-            unsigned d_i_T = 0;
-            // find it's parent in t
-            int parent_id = added->parent->id;
-            for (auto const &t_node : t.root->get_descendents(true))
-                if (parent_id == t_node->id)
-                {
-                    d_i_T = t_node->n_descendents;
-                    break;
-                }
-            if (d_i_T == 0)
-                throw std::logic_error("The inserted node's parent could not be found in t!");
+                unsigned d_i_T = deleted->n_descendents;
+                unsigned d_i_T_prime = 0;
 
-            double p_add_corr_num = 2 * d_i_T_prime;
-            double p_add_corr_denom = d_i_T + 1;
-            double ratio = p_add_corr_num / p_add_corr_denom;
-            total_nbd_corr *= ratio;
+                // find it's parent in t_prime
+                int parent_id = deleted->parent->id;
+                for (auto const &t_prime_node : t_prime.root->get_descendents(true))
+                    if (parent_id == t_prime_node->id)
+                    {
+                        d_i_T_prime = t_prime_node->n_descendents;
+                        break;
+                    }
+                if (d_i_T == 0)
+                    throw std::logic_error("The deleted node's parent could not be found in t_prime!");
+
+                double p_add_corr_num = d_i_T_prime + 1;
+                double p_add_corr_denom = 2 * d_i_T;
+                double ratio = p_add_corr_num / p_add_corr_denom;
+                total_nbd_corr *= ratio;
+            }
+            else // insert
+            {
+                // find the node that is inserted in t_prime
+                map<int,double> t_scores = t.get_children_id_score(t.root);
+
+                Node* added = nullptr;
+                for (auto const &t_prime_node : t_prime.root->get_descendents(false)) // without root
+                    if (!t_scores.count(t_prime_node->id))
+                    {
+                        added = t_prime_node;
+                        break;
+                    }
+                if (added == nullptr)
+                    throw std::logic_error("The inserted node could not be found in t_prime!");
+
+                unsigned d_i_T_prime = added->n_descendents;
+                unsigned d_i_T = 0;
+                // find it's parent in t
+                int parent_id = added->parent->id;
+                for (auto const &t_node : t.root->get_descendents(true))
+                    if (parent_id == t_node->id)
+                    {
+                        d_i_T = t_node->n_descendents;
+                        break;
+                    }
+                if (d_i_T == 0)
+                    throw std::logic_error("The inserted node's parent could not be found in t!");
+
+                double p_add_corr_num = 2 * d_i_T_prime;
+                double p_add_corr_denom = d_i_T + 1;
+                double ratio = p_add_corr_num / p_add_corr_denom;
+                total_nbd_corr *= ratio;
+            }
         }
     }
 
@@ -769,6 +819,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 acceptance_ratio_file << std::setprecision(print_precision) << static_cast<int>(move_id) << ((i==n_iters-1) ? "" : ",");
                 n_accepted++;
                 t_sums = t_prime_sums;
+                t_maxs = t_prime_maxs;
                 update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
                 t = t_prime;
                 if ((t_prime.posterior_score + t_prime.od_score)  > (best_tree.posterior_score + best_tree.od_score))
@@ -789,7 +840,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             if (gamma < 1.0/100.0)
                 gamma = 1.0/100.0;
 
-            t_prime_sums.clear();
+            // t_prime_sums.clear();
             t_prime_scores.clear();
         }
 
@@ -865,7 +916,16 @@ double Inference::log_tree_prior(int m, int n) {
      * */
 
 //    double log_prior = - (n -1 + m) * log(n+1) -m * n * log(2); // tree prior
-    double log_prior = -(n-1+m)*log(n+1) -cf*m*n*log(2);
+    double combinatorial_penalization = 0.0;
+    if (max_scoring) {
+      combinatorial_penalization = 0.;
+      m = 0.;
+    } else {
+      combinatorial_penalization = - cf*m*n*log(2);
+    }
+
+    double log_prior = -(n-1+m)*log(n+1) + combinatorial_penalization;
+
     return log_prior;
 }
 
@@ -914,6 +974,11 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
     bool is_empty_table = t_prime_scores.empty();
 
     int j = 0;
+
+    // I was doing this to make sure t_prime_scores would have every node when I compute the maximum, which makes this slower
+    // if (max_scoring)
+    //   attached_node = t_prime.root;
+
     for (auto const &d: D)
     {
         double sum_d = accumulate( d.begin(), d.end(), 0.0);
@@ -929,7 +994,7 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
         {
             // append the contents of second hashmap into the first
             // note that they cannot have overlapping keys
-            for (auto const& map_item : t_prime.get_children_id_score(attached_node))
+            for (auto const& map_item : t_prime.get_children_id_score(attached_node)) // go to each child of the changed node and get its score
             {
                 t_prime_scores[j][map_item.first] = map_item.second;
             }
@@ -968,43 +1033,118 @@ void Inference::compute_t_prime_sums(const vector<vector<double>> &D) {
 
     int deleted_index = deleted_node_idx(); // if -1 then not deleted, otherwise the index of the deleted
 
-    for (unsigned i = 0; i < D.size(); ++i) {
-        vector<double> old_vals;
-        old_vals.reserve(t_scores[i].size()); // the max possible size
-        vector<double> new_vals;
-        new_vals.reserve(t_scores[i].size());
+    if (max_scoring) {
+      // Parallelize cells
+      #pragma omp parallel for
+        for (unsigned i = 0; i < D.size(); i++) { // each cell i
+            vector<double> old_vals; // old values of kept nodes
+            old_vals.reserve(t_scores[i].size()); // the max possible size
 
-        map<int,double> unchanged_vals = t_scores[i]; // initiate with all values and remove the changed ones
+            map<int,double> unchanged_vals = t_scores[i]; // initiate with all values and remove the changed ones
 
+            // Instead of going through all the nodes, go through the updated ones to get their best
+            // and compare with previous best
+            double currentMax_newval = -DBL_MAX;
+            pair<int, double> currentMax_newnode;
+            bool prev_max_in_new = false;
+            for (auto &u_map : t_prime_scores[i]) { // go through each updated node in T'
+                if (t_scores[i].count(u_map.first)) // if this node was already present
+                {
+                    unchanged_vals.erase(u_map.first); // erase it from the unchanged vals
+                }
 
-        for (auto &u_map : t_prime_scores[i]) {
-            if (t_scores[i].count(u_map.first)) // add only if it is existing in the old vals // for the insertion case
+                // Check if an updated node was the previous maximum
+                if (t_maxs[i].first == u_map.first) {
+                  prev_max_in_new = true;
+                }
+
+                // Best new node, including the inserted ones
+                if (u_map.second > currentMax_newval) {
+                  currentMax_newval = u_map.second;
+                  currentMax_newnode.first = u_map.first;
+                  currentMax_newnode.second = currentMax_newval;
+                }
+            }
+
+            if (deleted_index != -1)
             {
-                old_vals.push_back(t_scores[i][u_map.first]); // again the indices should match
-                unchanged_vals.erase(u_map.first); // erase it from the unchanged vals
+                unchanged_vals.erase(deleted_index); // erase it from the unchanged vals
+            }
+
+            pair<int, double> prev_best;
+            prev_best.first = t_maxs[i].first; // If the previous max was not changed, take it
+            prev_best.second = t_maxs[i].second;
+            // If the previous max was changed (or if it was deleted), we need find the maximum among the unchanged nodes.
+            if (prev_max_in_new || (t_maxs[i].first == deleted_index)) { // find best unchanged and compare against it
+              double currentMax = -DBL_MAX;
+              pair<int, double> currentMax_unchangednode;
+              for (auto &u_map : unchanged_vals) {
+                  if (u_map.second > currentMax) {
+                      currentMax_unchangednode.first = u_map.first;
+                      currentMax_unchangednode.second = u_map.second;
+                      currentMax = u_map.second;
+                  }
+              }
+              prev_best.first = currentMax_unchangednode.first;
+              prev_best.second = currentMax_unchangednode.second;
+            }
+
+            // Update cell score
+            pair<int, double> newMax_node;
+            newMax_node.first = currentMax_newnode.first;
+            newMax_node.second = currentMax_newval;
+            if (prev_best.second > currentMax_newval) {
+              newMax_node.first = prev_best.first;
+              newMax_node.second = prev_best.second;
+            }
+            t_prime_maxs[i].first = newMax_node.first;
+            t_prime_maxs[i].second = newMax_node.second;
+
+            assert(!std::isnan(newMax_node.second));
+            t_prime_sums[i] = newMax_node.second;
+        }
+    }
+    else {
+      // Parallelize cells
+      #pragma omp parallel for
+        for (unsigned i = 0; i < D.size(); ++i) {
+            vector<double> old_vals; // old values of kept nodes
+            old_vals.reserve(t_scores[i].size()); // the max possible size
+            vector<double> new_vals; // new values of kept nodes
+            new_vals.reserve(t_scores[i].size());
+
+            map<int,double> unchanged_vals = t_scores[i]; // initiate with all values and remove the changed ones
+
+
+            for (auto &u_map : t_prime_scores[i]) {
+                if (t_scores[i].count(u_map.first)) // add only if it is existing in the old vals // for the insertion case
+                {
+                    old_vals.push_back(t_scores[i][u_map.first]); // again the indices should match
+                    unchanged_vals.erase(u_map.first); // erase it from the unchanged vals
+                }
+
+
+                new_vals.push_back(u_map.second);
+            }
+
+            if (deleted_index != -1)
+            {
+                old_vals.push_back(t_scores[i][deleted_index]);
+                unchanged_vals.erase(deleted_index); // erase it from the unchanged vals
             }
 
 
-            new_vals.push_back(u_map.second);
+            // in case of delete, the deleted val is in old_vals not in unchanged
+
+            double res = MathOp::log_replace_sum(t_sums[i], old_vals, new_vals, unchanged_vals); // it takes t_sums[i]
+            // subtracts the olds and adds the news
+            // in case of delete, subtract an extra value
+            // in case of insert, add an extra value
+            // if the tree size changes, update it (tree.n_nodes). Posterior takes that into account
+            assert(!std::isnan(res));
+
+            t_prime_sums[i] = res;
         }
-
-        if (deleted_index != -1)
-        {
-            old_vals.push_back(t_scores[i][deleted_index]);
-            unchanged_vals.erase(deleted_index); // erase it from the unchanged vals
-        }
-
-
-        // in case of delete, the deleted val is in old_vals not in unchanged
-
-        double res = MathOp::log_replace_sum(t_sums[i], old_vals, new_vals, unchanged_vals); // it takes t_sums[i]
-        // subtracts the olds and adds the news
-        // in case of delete, subtract an extra value
-        // in case of insert, add an extra value
-        // if the tree size changes, update it (tree.n_nodes). Posterior takes that into account
-        assert(!std::isnan(res));
-
-        t_prime_sums.push_back(res);
     }
 }
 
@@ -1041,7 +1181,7 @@ bool Inference::apply_insert_delete_node(const vector<vector<double>> &D, const 
 
     Node* tobe_computed;
 
-    tobe_computed = t_prime.insert_delete_node(size_limit, weighted);
+    tobe_computed = t_prime.insert_delete_node(size_limit, weighted, max_scoring);
 
 
     if (tobe_computed != nullptr)
@@ -1084,7 +1224,7 @@ bool Inference::apply_condense_split(const vector<vector<double>> &D, const vect
      * */
 
     Node* tobe_computed;
-    tobe_computed = t_prime.condense_split_node(size_limit, weighted);
+    tobe_computed = t_prime.condense_split_node(size_limit, weighted, max_scoring);
 
     if (tobe_computed != nullptr)
     {
@@ -1127,6 +1267,9 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
     size_t n_cells = t_scores.size();
 
     vector<vector<int>> cell_regions(n_cells, vector<int>(this->n_regions, ploidy)); //fill ctor, initialise with ploidy
+    for (u_int i = 0; i < n_cells; ++i) {
+      cell_regions[i] = this->region_neutral_states;
+    }
 
     for (size_t j = 0; j < n_cells; ++j) {
         // t_scores[i] is the map
@@ -1141,7 +1284,7 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
 
         for (auto const& x : max_node->c) // iterate over map
         {
-            cell_regions[j][x.first] = x.second + ploidy;
+            cell_regions[j][x.first] = x.second + this->region_neutral_states[x.first];
         }
 
     }

@@ -28,7 +28,7 @@ bool Utils::is_empty_map(std::map<u_int, int> &dict){
     return true;
 }
 
-void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions, int n_regions)
+void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions, int n_regions, int max_regions_per_node, double lambda_r)
 {
     /*
      * Initializes an empty map to represent the c_change attribute of a node.
@@ -42,14 +42,14 @@ void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions,
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
     // n_regions from Poisson(lambda_R)+1
-    // boost::random::poisson_distribution<int> poisson_r(lambda_r); // the param is to be specified later
+    boost::random::poisson_distribution<int> poisson_r(lambda_r);
 
     // n_copies from Poisson(lambda_c)+1
     // boost::random::poisson_distribution<int> poisson_c(lambda_c); // the param is to be specified later
     // sign
     boost::random::bernoulli_distribution<double> bernoulli_05(0.5);
 
-    int r = 1; // poisson_r(generator) + 1; //n_regions to sample
+    int r = std::min(max_regions_per_node, poisson_r(generator) + 1); //n_regions to sample
     // sample r distinct regions uniformly
     int regions_sampled = 0;
     // if r>n_regions then reject the move. n_regions: max region index
@@ -161,6 +161,30 @@ void Utils::read_vector(vector<int> &vec, const string &path) {
 
 }
 
+void Utils::read_vector_double(vector<double> &vec, const string &path) {
+
+    /*
+     * Reads a 1 dimensional vector file at path path to reference vec.
+     * Throws std::logic_error
+     * */
+
+    ifstream filein(path);
+
+    for (std::string line; std::getline(filein, line); )
+    {
+        istringstream fline(line);
+        std::string val;
+        while (std::getline(fline, val))
+        {
+            vec.push_back(stod(val)); // push_back is fine since this file is much smaller
+        }
+    }
+
+    if (vec.size() == 0)
+        throw std::logic_error("The size of the vector should not be zero!");
+
+}
+
 vector<vector<int>> Utils::regions_to_bins_cnvs(vector<vector<int>> &cnvs, vector<int> &region_sizes) {
     /*
      * Creates a cells-bins cnvs matrix from the regions-bins cnvs matrix by duplicating the region columns by their sizes.
@@ -210,4 +234,3 @@ map<u_int, int> Utils::map_diff(map<u_int, int> a, map<u_int, int> b) {
 
     return difference;
 }
-

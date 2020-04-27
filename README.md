@@ -14,13 +14,14 @@ Single-cell copy number calling and event history reconstruction.
 A statistical model and MCMC algorithm tailored to single-cell copy
 number profiling from shallow whole-genome DNA sequencing data. SCICoNE reconstructs the
 history of copy number events in the tumour and uses these evolutionary relationships to identify
-the copy number profiles of the individual cells. 
+the copy number profiles of the individual cells.
 
 ## Requirements
 
 * C++ compiler that supports C++14 standards (e.g. `gcc>=5.2.0`, `clang>=5.0.0)`)
 * CMake version > 3.8
 * Boost >= 1.6.x
+* OpenMP >= 4.5
 
 ## Installation
 
@@ -58,7 +59,7 @@ Simulates the count matrix. Outputs the count matrix, region sizes, ground truth
 #### Simulation parameters
 
 | Parameter name | Description | Default value |
-| ---- | -------- | --- | 
+| ---- | -------- | --- |
 | **n_bins** | Number of bins of the input matrix | 10000 |
 | **n_cells** | Number of cells | 500 |
 | **n_nodes** | Number of nodes of the tree | 50 |
@@ -82,7 +83,7 @@ Finds the maximum likelihood tree given cellsxregions matrix or the simulated ma
 #### Inference parameters
 
 | Parameter name | Description | Default value |
-| ---- | -------- | --- | 
+| ---- | -------- | --- |
 | **region_sizes_file** | Path to the file containing the region sizes, each line contains one region size. Segmentation is performed if the region sizes file is not specified | "" |
 | **d_matrix_file** | Path to the counts matrix file, delimiter: ' ', line separator: '\n'  | "" |
 | **n_bins** | Number of bins in the input matrix | - |
@@ -94,7 +95,7 @@ Finds the maximum likelihood tree given cellsxregions matrix or the simulated ma
 | **seed** | Seed | - |
 | **postfix** | Postfix to be added to the output files, this is useful when you are running multiple simulations through a workflow management system | "" |
 | **print_precision** | The precision points of the score values to be printed | 16 |
-| ---- | parameters for the random initialised tree | --- | 
+| ---- | parameters for the random initialised tree | --- |
 | **n_nodes** | the number of nodes in the random initialised tree | 50 |
 | **lambda_r** | lambda param for the poisson that generates the number of regions | 0.1 |
 | **lambda_c** | lambda param for the poisson that generates the copy number state of a region | 0.2 |
@@ -103,7 +104,7 @@ Finds the maximum likelihood tree given cellsxregions matrix or the simulated ma
 
 #### *Sample run* :
 ```shell
-$ ./inference --n_reads 100000 --print_precision 16 --n_nodes 10 --n_bins 10000 --n_iters 100 --n_cells 500 --verbosity 2 --ploidy 2 --seed 42 --postfix d31 --d_matrix_file ./30_d_mat.txt --region_sizes_file ./30_region_sizes.txt 
+$ ./inference --n_reads 100000 --print_precision 16 --n_nodes 10 --n_bins 10000 --n_iters 100 --n_cells 500 --verbosity 2 --ploidy 2 --seed 42 --postfix d31 --d_matrix_file ./30_d_mat.txt --region_sizes_file ./30_region_sizes.txt
 ```
 
 ## Test
@@ -112,5 +113,3 @@ Runs the validation tests and writes the results to the standard output and erro
 ```shell
 $ ./tests
 ```
-
-Logo url: https://logomakr.com/9tSL7m

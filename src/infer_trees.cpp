@@ -55,7 +55,7 @@ int main( int argc, char* argv[]) {
     lambda_r = 0.1;
     lambda_c = 0.2;
     cf = 1.0;
-    c_penalise = 1.0;
+    c_penalise = 10.0;
     is_overdispersed = 1;
     eta = 1e-4;
 
@@ -73,6 +73,12 @@ int main( int argc, char* argv[]) {
 
     // move probabilities
     vector<float> move_probs;
+
+    // scoring mode
+    bool max_scoring = true;
+
+    // region neutral states
+    string region_neutral_states_file;
 
     cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
     options.add_options()
@@ -102,6 +108,8 @@ int main( int argc, char* argv[]) {
             ("gamma","gamma parameter, the initial learning rate value",cxxopts::value(gamma))
             ("random_init","Boolean parameter to enable random initialisation of the tree", cxxopts::value(random_init))
             ("move_probs","The vector of move probabilities",cxxopts::value(move_probs))
+            ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value<bool>(max_scoring))
+            ("region_neutral_states_file", "Path to the file containing the neutral state of each region to use as the root of the tree", cxxopts::value(region_neutral_states_file))
             ;
 
     auto result = options.parse(argc, argv);
@@ -166,21 +174,42 @@ int main( int argc, char* argv[]) {
     Utils::read_vector(region_sizes, region_sizes_file);
 
     vector<int> cluster_sizes;
-    if (result.count("cluster_sizes_file"))
-    {
-      std::cout << "Reading the cluster_sizes file..." << std::endl;
-      Utils::read_vector(cluster_sizes, cluster_sizes_file);
+    bool read_cluster_sizes = false;
+    if (result.count("cluster_sizes_file")) {
+      if (cluster_sizes_file.compare("") != 0) {
+        std::cout << "Reading the cluster_sizes file..." << std::endl;
+        Utils::read_vector(cluster_sizes, cluster_sizes_file);
+        read_cluster_sizes = true;
+      }
     }
-    else
-    {
+    if (not read_cluster_sizes) {
+      cluster_sizes = std::vector<int>(n_cells, 1);
       if (n_cells < 20)
-        std::cout << "Warning: there are only " << n_cells <<  " observations. If these are clusters, the cluster_sizes_file parameter should be specified for accurate tree scoring.";
+        std::cout << "Warning: there are only " << n_cells <<  " observations. If these are clusters, the cluster_sizes_file parameter should be specified for accurate tree scoring." << std::endl;
+    }
 
-        cluster_sizes = std::vector<int>(n_cells, 1);
+    std::cout << "max_scoring: " << max_scoring << std::endl;
+    if (max_scoring) {
+        std::cout << "Will perform maximum scoring." << std::endl;
+        move_probs.back() = 0.0f; // no need to prune tree
+    }
+
+    vector<int> region_neutral_states;
+    bool read_region_neutral_states = false;
+    if (result.count("region_neutral_states_file")) {
+      if (region_neutral_states_file.compare("") != 0) {
+        std::cout << "Reading the region_neutral_states file..." << std::endl;
+        Utils::read_vector(region_neutral_states, region_neutral_states_file);
+        read_region_neutral_states = true;
+      }
+    }
+    if (not read_region_neutral_states) {
+      std::cout << "Assuming root to have copy number state " << ploidy << " in all regions" << std::endl;
+      region_neutral_states = std::vector<int>(n_regions, ploidy);
     }
 
     // run mcmc inference
-    Inference mcmc(n_regions, ploidy, verbosity);
+    Inference mcmc(n_regions, n_cells, region_neutral_states, ploidy, verbosity, max_scoring);
 
     if (random_init)
     {
@@ -253,6 +282,8 @@ int main( int argc, char* argv[]) {
 
     vector<vector<int>> inferred_cnvs_bins = Utils::regions_to_bins_cnvs(inferred_cnvs, region_sizes);
 
+    std::vector<std::map<int, double>> attachment_scores = mcmc.t_scores; // cell-by-node score matrix
+
     // write the inferred(best) tree
     std::ofstream tree_output_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_tree_inferred" + ".txt");
     tree_output_file << mcmc.best_tree;
@@ -269,6 +300,25 @@ int main( int argc, char* argv[]) {
                 inferred_cnvs_file << v1[i] << ',';
         }
         inferred_cnvs_file << endl;
+    }
+
+    if (verbosity > 0)
+    {
+      // write score matrix
+      std::ofstream attachment_scores_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_attachment_scores" + ".csv");
+      for (int j=0;j<n_cells;j++) {
+        map<int,double>::const_iterator map_iter;
+        int i = 0;
+        for(map_iter=attachment_scores[j].begin(); map_iter!=attachment_scores[j].end(); ++map_iter)
+        {
+          if (i == attachment_scores[j].size()-1) // the last element
+              attachment_scores_file << map_iter->second;
+          else // add comma
+              attachment_scores_file << map_iter->second << ',';
+          i++;
+        }
+        attachment_scores_file << endl;
+      }
     }
 
     std::cout << "Tree inference is successfully completed!" <<std::endl;
