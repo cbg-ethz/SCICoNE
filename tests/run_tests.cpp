@@ -34,7 +34,7 @@ int main()
     cf = 0.0;
     c_penalise = 10.0;
     is_overdispersed = 0;
-    verbosity = 2;
+    verbosity = 0;
     eta = 1e-4;
 
     std::cout<<"UNIT TESTS" <<std::endl;
