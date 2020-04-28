@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.12)
 project(sc_dna)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -25,6 +25,12 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -gdwarf-3")
 # Search for OpenMP for parallelization
 find_package(OpenMP)
 
+if (OPENMP_FOUND)
+    link_directories("${OPENMP_LIBRARIES}")
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif(OPENMP_FOUND)
+
 # Search for boost and nlopt
 find_package(Boost 1.47 COMPONENTS random REQUIRED)
 find_package(NLopt REQUIRED)
@@ -39,21 +45,17 @@ add_executable(inference
         src/infer_trees.cpp
         src/MathOp.h
         src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h src/CustomExceptions.h)
-target_link_libraries(inference ${NLOPT_LIBRARY_DIRS}/libnlopt.so OpenMP::OpenMP_CXX)
 
 add_executable(simulation simulations/run_simulations.cpp src/MathOp.cpp
         src/MathOp.h
         src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h simulations/run_simulations.cpp simulations/Simulation.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h src/CustomExceptions.h)
-target_link_libraries(simulation ${NLOPT_LIBRARY_DIRS}/libnlopt.so OpenMP::OpenMP_CXX)
 
 add_executable(score src/score_tree.cpp src/MathOp.cpp
         src/MathOp.h
         src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h src/CustomExceptions.h)
-target_link_libraries(score ${NLOPT_LIBRARY_DIRS}/libnlopt.so OpenMP::OpenMP_CXX)
 
 add_executable(breakpoint_detection
         src/breakpoint_detection.cpp src/MathOp.cpp src/MathOp.h  src/Utils.cpp src/Utils.h  src/SignalProcessing.cpp src/SignalProcessing.h src/Lgamma.cpp src/Lgamma.h include/xxhash.h include/xxhash.c src/CustomExceptions.h)
-target_link_libraries(breakpoint_detection ${NLOPT_LIBRARY_DIRS}/libnlopt.so OpenMP::OpenMP_CXX)
 
 # tests
 enable_testing()
@@ -61,14 +63,26 @@ enable_testing()
 add_executable(tests tests/run_tests.cpp src/MathOp.cpp
         src/MathOp.h
         src/Tree.h src/Node.h  src/Inference.h  src/SignalProcessing.cpp src/SignalProcessing.h  src/SingletonRandomGenerator.h tests/validation.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h src/CustomExceptions.h)
-target_link_libraries(tests ${NLOPT_LIBRARY_DIRS}/libnlopt.so OpenMP::OpenMP_CXX)
 
 add_executable(save_root_per_nu tests/save_root_score_per_nu.cpp src/MathOp.cpp
         src/MathOp.h
         src/Tree.h src/Node.h  src/Inference.h src/SingletonRandomGenerator.h tests/validation.h include/xxhash.h include/xxhash.c src/Utils.cpp src/Utils.h src/globals.cpp src/Lgamma.cpp src/Lgamma.h src/CustomExceptions.h)
-target_link_libraries(save_root_per_nu ${NLOPT_LIBRARY_DIRS}/libnlopt.so OpenMP::OpenMP_CXX)
 
 # unit tests
 add_test(unit_tests tests)
 
-#src/Inference.h
+if (OPENMP_FOUND)
+  target_link_libraries(inference NLopt::nlopt OpenMP::OpenMP_CXX)
+  target_link_libraries(simulation NLopt::nlopt OpenMP::OpenMP_CXX)
+  target_link_libraries(score NLopt::nlopt OpenMP::OpenMP_CXX)
+  target_link_libraries(breakpoint_detection NLopt::nlopt OpenMP::OpenMP_CXX)
+  target_link_libraries(tests NLopt::nlopt OpenMP::OpenMP_CXX)
+  target_link_libraries(save_root_per_nu NLopt::nlopt OpenMP::OpenMP_CXX)
+else()
+  target_link_libraries(inference NLopt::nlopt)
+  target_link_libraries(simulation NLopt::nlopt)
+  target_link_libraries(score NLopt::nlopt)
+  target_link_libraries(breakpoint_detection NLopt::nlopt)
+  target_link_libraries(tests NLopt::nlopt)
+  target_link_libraries(save_root_per_nu NLopt::nlopt)
+endif(OPENMP_FOUND)
