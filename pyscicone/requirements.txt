@@ -8,3 +8,4 @@ biopython
 tqdm
 seaborn
 graphviz
+Phenograph
