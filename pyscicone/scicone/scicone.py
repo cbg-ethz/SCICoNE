@@ -1,27 +1,14 @@
 import os, shutil, sys
 import subprocess, re
-from snakemake.workflow import Workflow, Rules
-import snakemake.workflow
-from snakemake import shell
-from snakemake.logging import setup_logger
 import numpy as np
-import pandas as pd
-import graphviz
 from graphviz import Source
 
 import multiprocessing
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
 
-from scipy.cluster.hierarchy import ward, leaves_list
-from scipy.spatial.distance import pdist
-
 import phenograph
 from collections import Counter
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-
 
 class Tree(object):
     def __init__(self, binary_path, output_path, postfix='PYSCICONETREETEMP', persistence=False, ploidy=2, copy_number_limit=6):
