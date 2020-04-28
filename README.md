@@ -2,8 +2,7 @@
   <img src="logo.png" >
 </div>
 
-
-[![CircleCI](https://circleci.com/gh/anilbey/SCICoNE.svg?style=svg&circle-token=ccc7efcfe007311847eb0d7260382125518d68ca)](https://circleci.com/gh/anilbey/SCICoNE)
+[![circleci](https://img.shields.io/circleci/project/github/cbg-ethz/SCICoNE/master.svg?&logo=circleci&color=blueviolet)](https://circleci.com/gh/cbg-ethz/SCICoNE/)
 [![C++ Standard](https://img.shields.io/badge/c++-14-blueviolet?style=flat&logo=c%2B%2B)](https://en.wikipedia.org/wiki/C%2B%2B14)
 [![License](https://img.shields.io/:license-GPLv3-blueviolet.svg?style=flat&logo=gnu)](http://www.gnu.org/licenses/gpl-3.0.html)
 
@@ -51,31 +50,7 @@ $ make
 ```
 That's it! :octocat:
 
-Multiple executables (such as simulation, inference, test, score) will be created after the installation.
-
-## Simulation
-Simulates the count matrix. Outputs the count matrix, region sizes, ground truth and the tree that generated the data.
-
-#### Simulation parameters
-
-| Parameter name | Description | Default value |
-| ---- | -------- | --- |
-| **n_bins** | Number of bins of the input matrix | 10000 |
-| **n_cells** | Number of cells | 500 |
-| **n_nodes** | Number of nodes of the tree | 50 |
-| **n_regions** | Number of regions | 50 |
-| **n_iters** | Number of iterations | 10000 |
-| **n_reads** | Number of reads per cell | 10000 |
-| **ploidy** | The ploidy information | 2 (diploid, human) |
-| **verbosity** | Verbosity of the programme, 0 is non-verbose setting, 1 creates the debug files, 2 writes the inference logs as well, 3 writes the tree logs on top | 0 |
-| **seed** | Seed | - |
-| **postfix** | Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system | "" |
-| **print_precision** | The precision points of the score values to be printed | 16 |
-
-#### *Sample run* :
-```shell
-$ ./simulation --print_precision 32 --n_bins 100 --n_regions 10 --n_nodes 10 --n_reads 100000 --verbosity 2 --ploidy 2 --n_cells 400 --postfix 9 --seed 42   
-```
+Multiple executables (such as inference, simulation, test, score) will be created after the installation.
 
 ## Inference
 Finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified.
@@ -105,6 +80,30 @@ Finds the maximum likelihood tree given cellsxregions matrix or the simulated ma
 #### *Sample run* :
 ```shell
 $ ./inference --n_reads 100000 --print_precision 16 --n_nodes 10 --n_bins 10000 --n_iters 100 --n_cells 500 --verbosity 2 --ploidy 2 --seed 42 --postfix d31 --d_matrix_file ./30_d_mat.txt --region_sizes_file ./30_region_sizes.txt
+```
+
+## Simulation
+Simulates the count matrix. Outputs the count matrix, region sizes, ground truth and the tree that generated the data.
+
+#### Simulation parameters
+
+| Parameter name | Description | Default value |
+| ---- | -------- | --- |
+| **n_bins** | Number of bins of the input matrix | 10000 |
+| **n_cells** | Number of cells | 500 |
+| **n_nodes** | Number of nodes of the tree | 50 |
+| **n_regions** | Number of regions | 50 |
+| **n_iters** | Number of iterations | 10000 |
+| **n_reads** | Number of reads per cell | 10000 |
+| **ploidy** | The ploidy information | 2 (diploid, human) |
+| **verbosity** | Verbosity of the programme, 0 is non-verbose setting, 1 creates the debug files, 2 writes the inference logs as well, 3 writes the tree logs on top | 0 |
+| **seed** | Seed | - |
+| **postfix** | Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system | "" |
+| **print_precision** | The precision points of the score values to be printed | 16 |
+
+#### *Sample run* :
+```shell
+$ ./simulation --print_precision 32 --n_bins 100 --n_regions 10 --n_nodes 10 --n_reads 100000 --verbosity 2 --ploidy 2 --n_cells 400 --postfix 9 --seed 42   
 ```
 
 ## Test
