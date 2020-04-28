@@ -2,7 +2,7 @@
   <img src="logo.png" >
 </div>
 
-[![CircleCI](https://circleci.com/gh/cbg-ethz/SCICoNE.svg?style=svg)](https://circleci.com/gh/cbg-ethz/SCICoNE)
+[![circleci](https://img.shields.io/circleci/project/github/cbg-ethz/SCICoNE/master.svg?&logo=circleci&color=blueviolet)](https://circleci.com/gh/cbg-ethz/SCICoNE/)
 [![C++ Standard](https://img.shields.io/badge/c++-14-blueviolet?style=flat&logo=c%2B%2B)](https://en.wikipedia.org/wiki/C%2B%2B14)
 [![License](https://img.shields.io/:license-GPLv3-blueviolet.svg?style=flat&logo=gnu)](http://www.gnu.org/licenses/gpl-3.0.html)
 
