@@ -1,10 +1,6 @@
 numpy
 scipy
 h5py
-pandas
-snakemake
-scikit-learn
-biopython
 tqdm
 seaborn
 graphviz
