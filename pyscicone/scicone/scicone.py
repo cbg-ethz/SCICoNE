@@ -1,4 +1,4 @@
-import os, shutil
+import os, shutil, sys
 import subprocess, re
 from snakemake.workflow import Workflow, Rules
 import snakemake.workflow
@@ -347,9 +347,8 @@ class SCICoNE(object):
     processed using scgenpy, a generic package for pre, post-processing and
     visualization of single-cell copy number data.
     """
-    def __init__(self, binary_path, output_path, persistence=False, postfix="PYSCICONETEMP", n_cells=0, n_bins=0):
+    def __init__(self, binary_path=None, output_path='', persistence=False, postfix="PYSCICONETEMP", n_cells=0, n_bins=0):
         """Create a SCICoNE object.
-
         binary_path : type
             Path to SCICoNE binaries.
         output_path : type
@@ -357,11 +356,42 @@ class SCICoNE(object):
         persistence : boolean
             Wether to delete output files from C++ after loading them into the class.
         """
-        self.binary_path = binary_path
-        self.simulation_binary = os.path.join(self.binary_path, 'simulation')
-        self.bp_binary = os.path.join(self.binary_path, 'breakpoint_detection')
-        self.inference_binary = os.path.join(self.binary_path, 'inference')
-        self.score_binary = os.path.join(self.binary_path, 'score')
+        if binary_path is None:
+            bpath = os.path.join(os.path.dirname(__file__), 'bin')
+            try:
+                assert os.path.isdir(bpath)
+            except AssertionError:
+                print("Could not find binaries, tried: {}".format(bpath), flush=True)
+
+            # Determine if we're using Linux or Mac
+            if sys.platform.startswith("linux"):
+                simulation_binary = "linux-simulation"
+                bp_binary = "linux-breakpoint_detection"
+                inference_binary = "linux-inference"
+                score_binary = "linux-score"
+                tests_binary = "linux-tests"
+            elif sys.platform == "darwin":
+                simulation_binary = "simulation"
+                bp_binary = "breakpoint_detection"
+                inference_binary = "inference"
+                score_binary = "score"
+                tests_binary = "tests"
+            else:
+                raise RuntimeError("Operating system could not be determined or is not supported. "
+                                   "sys.platform == {}".format(sys.platform), flush=True)
+            # Prepend appropriate path separator
+            self.simulation_binary = os.path.join(bpath, simulation_binary)
+            self.bp_binary = os.path.join(bpath, bp_binary)
+            self.inference_binary = os.path.join(bpath, inference_binary)
+            self.score_binary = os.path.join(bpath, score_binary)
+            self.tests_binary = os.path.join(bpath, tests_binary)
+        else:
+            self.binary_path = binary_path
+            self.simulation_binary = os.path.join(self.binary_path, 'simulation')
+            self.bp_binary = os.path.join(self.binary_path, 'breakpoint_detection')
+            self.inference_binary = os.path.join(self.binary_path, 'inference')
+            self.score_binary = os.path.join(self.binary_path, 'score')
+            self.tests_binary = os.path.join(self.binary_path, 'tests')
 
         self.output_path = output_path
         self.persistence = persistence
@@ -376,6 +406,12 @@ class SCICoNE(object):
         self.full_tree_robustness_score = 0.
         self.tree_list = []
 
+    def run_tests(self):
+        try:
+            cmd_output = subprocess.run([self.tests_binary])
+        except subprocess.SubprocessError as e:
+            print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
+
     def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, min_reg_size=10, max_regions_per_node=1, ploidy=2, region_neutral_states=None, verbosity=0):
         output_path = os.path.join(self.output_path, f"{self.postfix}_simulation")
 
@@ -389,7 +425,6 @@ class SCICoNE(object):
             # Use provided region_neutral_states instead of assuming the same state for all regions
             region_neutral_states_file = f"{self.postfix}_pre_region_neutral_states_file.txt"
             np.savetxt(region_neutral_states_file, region_neutral_states, delimiter=',')
-
 
         done = False
         while not done:
