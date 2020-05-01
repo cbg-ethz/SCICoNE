@@ -21,6 +21,7 @@ the copy number profiles of the individual cells.
 * CMake version > 3.8
 * Boost >= 1.6.x
 * OpenMP >= 4.5
+* NLopt
 
 ## Installation
 
