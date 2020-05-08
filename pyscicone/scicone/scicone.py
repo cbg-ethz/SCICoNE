@@ -25,6 +25,8 @@ class Tree(object):
         self.ploidy = ploidy
         self.copy_number_limit = copy_number_limit
 
+        self.num_nodes = 0
+
         self.tree_str = ""
         self.posterior_score = 0.
         self.tree_prior_score = 0.
@@ -39,6 +41,39 @@ class Tree(object):
                             # rel_markov_chain=None, cell_node_ids=None,
                             # cell_region_cnvs=None, acceptance_ratio=None,
                             # gamma_values=None, attachment_scores=None, markov_chain=None)
+
+    def get_n_children_per_node(self):
+        n_children = dict()
+        for node_id in self.node_dict:
+            l = len([self.node_dict[i]['parent_id'] for i in self.node_dict if self.node_dict[i]['parent_id'] == node_id])
+            n_children[node_id] = l
+
+        return n_children
+
+    def get_avg_n_children_per_node(self, all=False):
+        n_children = self.get_n_children_per_node()
+        avg = np.mean([n_children[n] for n in n_children if (n_children[n] > 0 and not all) or all])
+        return avg
+
+    def get_node_depths(self):
+        # Go to each node and follow up to the root
+
+        def get_n_levels(node_id, n_levels=-1):
+            try:
+                n_levels = get_n_levels(self.node_dict[node_id]['parent_id'], n_levels+1)
+            except:
+                return n_levels
+            return n_levels
+
+        depths = dict()
+        for node_id in self.node_dict:
+            depths[node_id] = get_n_levels(node_id)
+
+        return depths
+
+    def get_max_depth(self):
+        node_depths = self.get_node_depths()
+        return max([node_depths[node] for node in node_depths])
 
     def update_tree_str(self):
         tree_strs = []
@@ -99,6 +134,9 @@ class Tree(object):
                 else:
                     event_dict = dict()
                 self.node_dict[node_id] = dict(parent_id=parent_id, event_dict=event_dict)
+
+
+        self.num_nodes = len(list(self.node_dict.keys()))
 
     def read_from_file(self, file, output_path=None):
         """
