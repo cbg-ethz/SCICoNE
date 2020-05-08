@@ -1,6 +1,7 @@
 import os, shutil, sys
 import subprocess, re
 import numpy as np
+import pandas as pd
 from graphviz import Source
 
 import multiprocessing
