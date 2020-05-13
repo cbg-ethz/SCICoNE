@@ -140,7 +140,7 @@ vector<vector<double>> Utils::condense_matrix(vector<vector<double>>& D, vector<
 void Utils::read_vector(vector<int> &vec, const string &path) {
 
     /*
-     * Reads a 1 dimensional vector file at path path to reference vec.
+     * Reads a 1 dimensional vector file at path to the reference vec.
      * Throws std::logic_error
      * */
 
