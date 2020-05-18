@@ -300,13 +300,13 @@ class Tree(object):
                     f"--copy_number_limit={copy_number_limit}", f"--n_iters={n_iters}", f"--n_nodes={n_nodes}",\
                     f"--move_probs={move_probs_str}", f"--seed={seed}", f"--region_sizes_file={temp_segmented_region_sizes_file}",\
                     f"--tree_file={temp_tree_file}", f"--nu={nu}", f"--cluster_sizes_file={temp_cluster_sizes_file}", f"--alpha={alpha}",\
-                    f"--max_scoring={max_scoring}", f"--c_penalise={c_penalise}", f"--region_neutral_states_file={temp_region_neutral_states_file}"])
+                    f"--max_scoring={max_scoring}", f"--c_penalise={c_penalise}", f"--region_neutral_states_file={temp_region_neutral_states_file}"],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             except subprocess.SubprocessError as e:
                 print("Status : FAIL", e.returncode, e.output, e.stdout, e.stderr)
             else:
-                pass
-                # print(f"subprocess out: {cmd_output}")
-                # print(f"stdout: {cmd_output.stdout}\n stderr: {cmd_output.stderr}")
+                print(f"subprocess out: {cmd_output}")
+                print(f"stdout: {cmd_output.stdout}\n stderr: {cmd_output.stderr}")
 
             os.remove(temp_tree_file)
         else:
@@ -320,8 +320,7 @@ class Tree(object):
             except subprocess.SubprocessError as e:
                 print("Status : FAIL", e.returncode, e.output, e.stdout, e.stderr)
             else:
-                pass
-                # print(f"subprocess out: {cmd_output}")
+                print(f"subprocess out: {cmd_output}")
                 # print(f"stdout: {cmd_output.stdout}\n stderr: {cmd_output.stderr}")
 
         os.remove(temp_segmented_data_file)
@@ -356,7 +355,7 @@ class Tree(object):
 
         return cmd_output
 
-    def plot_tree(self, show_genes=True):
+    def plot_tree(self):
         if self.graphviz_str != "":
             s = Source(self.graphviz_str)
             return s
@@ -438,7 +437,7 @@ class SCICoNE(object):
         except subprocess.SubprocessError as e:
             print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
 
-    def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, min_reg_size=10, max_regions_per_node=1, ploidy=2, region_neutral_states=None, verbosity=0):
+    def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, min_reg_size=10, max_regions_per_node=1, ploidy=2, region_neutral_states=None, verbosity=0, seed=42):
         output_path = os.path.join(self.output_path, f"{self.postfix}_simulation")
 
         if os.path.exists(output_path):
@@ -459,7 +458,7 @@ class SCICoNE(object):
                     f"--n_regions={n_regions}", f"--n_bins={n_bins}", f"--n_reads={n_reads}", f"--nu={nu}",\
                     f"--min_reg_size={min_reg_size}", f"--max_regions_per_node={max_regions_per_node}",\
                     f"--ploidy={ploidy}", f"--verbosity={verbosity}", f"--postfix={self.postfix}",\
-                    f"--region_neutral_states_file={region_neutral_states_file}"])
+                    f"--region_neutral_states_file={region_neutral_states_file}", f"--seed={seed}"])
             except subprocess.SubprocessError as e:
                 print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
 

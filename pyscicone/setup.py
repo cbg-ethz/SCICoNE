@@ -13,7 +13,7 @@ test_requirements = [
 ]
 
 setup(
-    name="SCICoNE",
+    name="scicone",
     version="1.0",
     description="Single-cell copy number calling and event history reconstruction.",
     author=["Pedro Falé Ferreira", "Mustafa Anil Tuncel", ],
