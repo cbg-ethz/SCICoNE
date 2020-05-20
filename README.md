@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo.png" >
+  <img src="figures/logo.png" >
 </div>
 
 [![circleci](https://img.shields.io/circleci/project/github/cbg-ethz/SCICoNE/master.svg?&logo=circleci&color=blueviolet)](https://circleci.com/gh/cbg-ethz/SCICoNE/)
@@ -18,40 +18,32 @@ the copy number profiles of the individual cells.
 ## Requirements
 
 * C++ compiler that supports C++14 standards (e.g. `gcc>=5.2.0`, `clang>=5.0.0)`)
-* CMake version > 3.8
+* CMake version >= 3.9
 * Boost >= 1.6.x
 * OpenMP >= 4.5
-* NLopt
+* NLopt >= 2.6.2
 
 ## Installation
 
-1. Clone the repository
-
-2. Enter the project directory
 ```bash
-$ cd SCICoNE
-```
-3. Create and enter the build directory
-```bash
-$ mkdir build && cd build
-```
-4. Compile the program with cmake
-```bash
-$ cmake ..
+git clone git@github.com:cbg-ethz/SCICoNE.git # Clone the repository
+cd SCICoNE
+mkdir build && cd build                       # Create and enter the build directory
+cmake ..                                      # Compile the program with cmake
+make                                          # Build the executables
 ```
 
-or more specifically
+### Python wrapper
+We also provide a Python 3 wrapper to facilitate plotting and easily integrate SCICoNE with other data analysis tools. This interface runs the C++ binaries and reads the outputs into `numpy` arrays.
 ```bash
-$ cmake -DCMAKE_BUILD_TYPE=Release ..
+cd pyscicone
+pip install -e .
 ```
 
-5. Build the executable
-```bash
-$ make
-```
 That's it! :octocat:
 
-Multiple executables (such as inference, simulation, test, score) will be created after the installation.
+## Example
+An introductory notebook showcasing the SCICoNE workflow and API is available [here]([notebooks/tutorial.ipynb).
 
 ## Inference
 Finds the maximum likelihood tree given a cells by regions matrix.
