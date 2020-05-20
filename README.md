@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="figures/logo.png" >
+  <img src="logo.png" >
 </div>
 
 [![circleci](https://img.shields.io/circleci/project/github/cbg-ethz/SCICoNE/master.svg?&logo=circleci&color=blueviolet)](https://circleci.com/gh/cbg-ethz/SCICoNE/)
@@ -39,8 +39,6 @@ We also provide a Python 3 wrapper to facilitate plotting and easily integrate S
 cd pyscicone
 pip install -e .
 ```
-
-That's it! :octocat:
 
 ## Example
 An introductory notebook showcasing the SCICoNE workflow and API is available [here]([notebooks/tutorial.ipynb).
