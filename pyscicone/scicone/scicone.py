@@ -139,7 +139,7 @@ class Tree(object):
 
         self.num_nodes = len(list(self.node_dict.keys()))
 
-    def read_from_file(self, file, output_path=None):
+    def read_from_file(self, file, output_path=None, node_sizes=None, color="#E6E6FA"):
         """
             reads the file containing a tree and converts it to graphviz format
             :param file: path to the tree file.
@@ -152,14 +152,14 @@ class Tree(object):
 
         graphviz_header = [
             "digraph {",
-            'node [style=filled,color="#D4C0D6",fontsize=20,margin=0,shape=oval]'
-            'edge [arrowhead=none, color="#602A86"]',
+            f'node [style=filled,color="{color}",fontsize=20,margin=0,shape=oval]'
+            f'edge [arrowhead=none, color="{color}"]',
         ]
 
         graphviz_labels = []
         graphviz_links = []
 
-        graphviz_labels.append("0[label=<<font point-size='30'> Neutral </font>>]")  # root
+        graphviz_labels.append("0[label=<<font point-size='20'> Neutral </font>>]")  # root
 
         for line in list_tree_file:
             if line.startswith("Tree posterior:"):
@@ -245,6 +245,23 @@ class Tree(object):
                 while endline * 2 in str_merged_labels:
                     str_merged_labels = str_merged_labels.replace(endline * 2, endline)
 
+                if node_sizes is not None:
+                    try:
+                        node_size = node_sizes[node_id]
+                    except:
+                        node_size = 0
+                    str_merged_labels = str_merged_labels + " " + newline + " " + newline
+                    str_merged_labels = (
+                        str_merged_labels
+                        + "<font point-size='20'>"
+                        + str(int(node_size))
+                        + " cell"
+                    )
+                    if int(node_size) > 1 or int(node_size) == 0:
+                        str_merged_labels = str_merged_labels + "s"
+                    str_merged_labels = str_merged_labels + "</font>"
+
+
                 graphviz_labels.append(
                     f"{node_id}[label=<{str_merged_labels}>]"
                 )  # use < > to allow HTML
@@ -261,7 +278,7 @@ class Tree(object):
 
     def learn_tree(self, segmented_data, segmented_region_sizes, n_iters=1000, move_probs=[0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.01],
                     n_nodes=3,  seed=42, postfix="", initial_tree=None, nu=1.0, cluster_sizes=None, region_neutral_states=None, alpha=0., max_scoring=True, copy_number_limit=2,
-                    c_penalise=10.0, verbosity=1):
+                    c_penalise=10.0, verbosity=1, verbose=False):
         if postfix == "":
             postfix = self.postfix
 
@@ -295,32 +312,39 @@ class Tree(object):
             nu = initial_tree.nu
 
             try:
-                cmd_output = subprocess.run([self.binary_path, f"--d_matrix_file={temp_segmented_data_file}", f"--n_regions={n_regions}",\
+                cmd = [self.binary_path, f"--d_matrix_file={temp_segmented_data_file}", f"--n_regions={n_regions}",\
                     f"--n_cells={n_cells}", f"--ploidy={self.ploidy}", f"--verbosity={verbosity}", f"--postfix={postfix}",\
                     f"--copy_number_limit={copy_number_limit}", f"--n_iters={n_iters}", f"--n_nodes={n_nodes}",\
                     f"--move_probs={move_probs_str}", f"--seed={seed}", f"--region_sizes_file={temp_segmented_region_sizes_file}",\
                     f"--tree_file={temp_tree_file}", f"--nu={nu}", f"--cluster_sizes_file={temp_cluster_sizes_file}", f"--alpha={alpha}",\
-                    f"--max_scoring={max_scoring}", f"--c_penalise={c_penalise}", f"--region_neutral_states_file={temp_region_neutral_states_file}"],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    f"--max_scoring={max_scoring}", f"--c_penalise={c_penalise}", f"--region_neutral_states_file={temp_region_neutral_states_file}"]
+                if verbose:
+                    print(' '.join(cmd))
+                cmd_output = subprocess.run(cmd)
             except subprocess.SubprocessError as e:
                 print("Status : FAIL", e.returncode, e.output, e.stdout, e.stderr)
             else:
-                print(f"subprocess out: {cmd_output}")
-                print(f"stdout: {cmd_output.stdout}\n stderr: {cmd_output.stderr}")
+                pass
+                # print(f"subprocess out: {cmd_output}")
+                # print(f"stdout: {cmd_output.stdout}\n stderr: {cmd_output.stderr}")
 
             os.remove(temp_tree_file)
         else:
             try:
-                cmd_output = subprocess.run([self.binary_path, f"--d_matrix_file={temp_segmented_data_file}", f"--n_regions={n_regions}",\
+                cmd = [self.binary_path, f"--d_matrix_file={temp_segmented_data_file}", f"--n_regions={n_regions}",\
                     f"--n_cells={n_cells}", f"--ploidy={self.ploidy}", f"--verbosity={verbosity}", f"--postfix={postfix}",\
                     f"--copy_number_limit={copy_number_limit}", f"--n_iters={n_iters}", f"--n_nodes={n_nodes}",\
                     f"--move_probs={move_probs_str}", f"--seed={seed}", f"--region_sizes_file={temp_segmented_region_sizes_file}",\
                     f"--nu={nu}", f"--cluster_sizes_file={temp_cluster_sizes_file}", f"--alpha={alpha}", f"--max_scoring={max_scoring}",\
-                    f"--c_penalise={c_penalise}", f"--region_neutral_states_file={temp_region_neutral_states_file}"])
+                    f"--c_penalise={c_penalise}", f"--region_neutral_states_file={temp_region_neutral_states_file}"]
+                if verbose:
+                    print(' '.join(cmd))
+                cmd_output = subprocess.run(cmd)
             except subprocess.SubprocessError as e:
                 print("Status : FAIL", e.returncode, e.output, e.stdout, e.stderr)
             else:
-                print(f"subprocess out: {cmd_output}")
+                pass
+                # print(f"subprocess out: {cmd_output}")
                 # print(f"stdout: {cmd_output.stdout}\n stderr: {cmd_output.stderr}")
 
         os.remove(temp_segmented_data_file)
@@ -372,7 +396,7 @@ class SCICoNE(object):
     processed using scgenpy, a generic package for pre, post-processing and
     visualization of single-cell copy number data.
     """
-    def __init__(self, binary_path=None, output_path='', persistence=False, postfix="PYSCICONETEMP", n_cells=0, n_bins=0):
+    def __init__(self, binary_path=None, output_path='', persistence=False, postfix="PYSCICONETEMP", verbose=False, n_cells=0, n_bins=0):
         """Create a SCICoNE object.
         binary_path : type
             Path to SCICoNE binaries.
@@ -431,6 +455,8 @@ class SCICoNE(object):
         self.full_tree_robustness_score = 0.
         self.tree_list = []
 
+        self.verbose = verbose
+
     def run_tests(self):
         try:
             cmd_output = subprocess.run([self.tests_binary])
@@ -454,11 +480,14 @@ class SCICoNE(object):
         done = False
         while not done:
             try:
-                cmd_output = subprocess.run([self.simulation_binary, f"--n_cells={n_cells}", f"--n_nodes={n_nodes}",\
+                cmd = [self.simulation_binary, f"--n_cells={n_cells}", f"--n_nodes={n_nodes}",\
                     f"--n_regions={n_regions}", f"--n_bins={n_bins}", f"--n_reads={n_reads}", f"--nu={nu}",\
                     f"--min_reg_size={min_reg_size}", f"--max_regions_per_node={max_regions_per_node}",\
                     f"--ploidy={ploidy}", f"--verbosity={verbosity}", f"--postfix={self.postfix}",\
-                    f"--region_neutral_states_file={region_neutral_states_file}", f"--seed={seed}"])
+                    f"--region_neutral_states_file={region_neutral_states_file}", f"--seed={seed}"]
+                if self.verbose:
+                    print(' '.join(cmd))
+                cmd_output = subprocess.run(cmd)
             except subprocess.SubprocessError as e:
                 print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
 
@@ -542,12 +571,15 @@ class SCICoNE(object):
             data_file = f"{postfix}_bp_detection.txt"
             np.savetxt(data_file, data, delimiter=',')
 
-            cmd_output = subprocess.run([self.bp_binary, f"--d_matrix_file={data_file}", f"--n_bins={n_bins}",\
+            cmd = [self.bp_binary, f"--d_matrix_file={data_file}", f"--n_bins={n_bins}",\
                 f"--n_cells={n_cells}", f"--window_size={window_size}", f"--threshold={threshold}",\
                 f"--bp_limit={bp_limit}", f"--compute_lr={compute_lr}", f"--lr_file={lr_file}",\
                 f"--compute_sp={compute_sp}", f"--sp_file={sp_file}", f"--verbosity={verbosity}",\
                 f"--evaluate_peaks={evaluate_peaks}", f"--postfix={postfix}",\
-                f"--input_breakpoints_file={input_breakpoints_file}"])
+                f"--input_breakpoints_file={input_breakpoints_file}"]
+            if self.verbose:
+                print(' '.join(cmd))
+            cmd_output = subprocess.run(cmd)
 
             # Delete the data file
             os.remove(data_file)
@@ -665,7 +697,12 @@ class SCICoNE(object):
 
         return best_tree, robustness_score, trees
 
-    def learn_tree(self, segmented_data, segmented_region_sizes, n_reps=10, cluster=True, full=True, cluster_tree_n_iters=4000, full_tree_n_iters=4000, max_tries=2, robustness_thr=0.5, **kwargs):
+    def learn_tree(self, data, segmented_region_sizes, n_reps=10, cluster=True, full=True, cluster_tree_n_iters=4000, full_tree_n_iters=4000, max_tries=2, robustness_thr=0.5, **kwargs):
+        if data.shape[1] != segmented_region_sizes.shape[0]:
+            segmented_data = self.condense_regions(data, segmented_region_sizes)
+        else:
+            segmented_data = data
+
         if "region_neutral_states" in kwargs:
             region_neutral_states = np.array(kwargs['region_neutral_states'])
 
@@ -695,7 +732,7 @@ class SCICoNE(object):
                 if cnt >= max_tries:
                     break
                 nu = tree.nu if tree is not None else 1.0
-                tree, robustness_score, trees = self.learn_tree_parallel(clustered_segmented_data, segmented_region_sizes, n_reps=n_reps, nu=nu, cluster_sizes=cluster_sizes, initial_tree=tree, n_iters=cluster_tree_n_iters, **kwargs)
+                tree, robustness_score, trees = self.learn_tree_parallel(clustered_segmented_data, segmented_region_sizes, n_reps=n_reps, nu=nu, cluster_sizes=cluster_sizes, initial_tree=tree, n_iters=cluster_tree_n_iters, verbose=self.verbose, **kwargs)
                 cnt += 1
 
             print(f"Cluster tree finished with a robustness score of {robustness_score} after {cnt} tries")
@@ -746,7 +783,7 @@ class SCICoNE(object):
                 print('Initializing nu for full tree.')
                 # Update the nu on the full data (the nu on the clustered data is very different) with this tree
                 nu = tree.nu
-                tree = self.learn_single_tree(segmented_data, segmented_region_sizes, nu=nu, initial_tree=tree, n_iters=5000, move_probs=[0,0,0,0,0,0,0,0,0,0,0,1,0], postfix=f"nu_tree_{self.postfix}", **kwargs)
+                tree = self.learn_single_tree(segmented_data, segmented_region_sizes, nu=nu, initial_tree=tree, n_iters=5000, move_probs=[0,0,0,0,0,0,0,0,0,0,0,1,0], postfix=f"nu_tree_{self.postfix}", verbose=self.verbose, **kwargs)
                 print('Done. Will start from nu={}'.format(tree.nu))
 
                 cnt = 0
@@ -755,7 +792,7 @@ class SCICoNE(object):
                     if cnt >= max_tries:
                         break
                     nu = tree.nu
-                    tree, robustness_score, trees = self.learn_tree_parallel(segmented_data, segmented_region_sizes, n_reps=n_reps, nu=nu, initial_tree=tree, n_iters=full_tree_n_iters)
+                    tree, robustness_score, trees = self.learn_tree_parallel(segmented_data, segmented_region_sizes, n_reps=n_reps, nu=nu, initial_tree=tree, n_iters=full_tree_n_iters, verbose=self.verbose)
                     cnt += 1
 
                 cell_bin_genotypes = tree.outputs['inferred_cnvs']
@@ -788,3 +825,8 @@ class SCICoNE(object):
                 print(f"Full tree finished with a robustness score of {robustness_score} after {cnt} tries")
             else:
                 raise Exception("Full trees require a cluster tree to start from. Please re-run with cluster=True.")
+
+        if cluster and not full:
+            return self.best_cluster_tree
+        elif full:
+            return self.best_full_tree
