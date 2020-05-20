@@ -41,7 +41,7 @@ pip install -e .
 ```
 
 ## Example
-An introductory notebook showcasing the SCICoNE workflow and API is available [here]([https://github.com/cbg-ethz/SCICoNE/blob/master/notebooks/tutorial.ipynb).
+An introductory notebook showcasing the SCICoNE workflow and API is available [here](https://github.com/cbg-ethz/SCICoNE/blob/master/notebooks/tutorial.ipynb).
 
 ## Inference
 Finds the maximum likelihood tree given a cells by regions matrix.
