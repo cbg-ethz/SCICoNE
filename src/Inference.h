@@ -220,14 +220,16 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
     std::pair<int, double> currentMax_node;
 
     int j = static_cast<int>(D.size());
+    double t_sum = 0;
     for (int i = 0; i < j; ++i)
     {
+
         this->t.compute_tree(D[i], r);
         std::map<int, double> scores_vec = this->t.get_children_id_score(this->t.root);
 
         this->t_scores.push_back(scores_vec);
 
-        double t_sum = 0;
+        double aux = 0;
         if (max_scoring) {
           currentMax = -DBL_MAX;
           for (auto it = scores_vec.cbegin(); it != scores_vec.cend(); ++it ) {
@@ -237,7 +239,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
                   currentMax = currentMax_node.second;
               }
           }
-          t_sum = currentMax;
+          aux = currentMax;
           this->t_maxs[i].first = currentMax_node.first;
           this->t_maxs[i].second = currentMax;
         }
@@ -252,19 +254,13 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
         //   t_sum = currentMax;
         // }
         else {
-            t_sum = MathOp::log_sum(scores_vec);
+            aux = MathOp::log_sum(scores_vec);
           }
-
-        this->t_sums[i] = t_sum;
+        t_sum = t_sum + aux * cluster_sizes[i];
     }
 
     int m = D.size();
     int n = t.get_n_nodes();
-
-    double t_sum = 0.0;
-    for (int i=0; i<m;i++)
-      t_sum = t_sum + t_sums[i]*cluster_sizes[i];
-
     t.total_attachment_score = t_sum;
     t.prior_score = log_tree_prior(m, n);
     t.posterior_score = log_tree_posterior(t_sum, m, t);
