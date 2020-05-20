@@ -32,6 +32,7 @@
 #include <boost/random/bernoulli_distribution.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
 
+
 class Tree {
 private:
     u_int n_nodes; //the number of nodes without the root
@@ -112,6 +113,7 @@ private:
     void destroy();
 };
 
+
 std::ostream& operator<<(std::ostream& os, Tree& t) {
 
     /*
@@ -136,7 +138,6 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
 }
 
 
-
 void Tree::compute_root_score(const vector<int> &r) {
 
     /*
@@ -154,6 +155,7 @@ void Tree::compute_root_score(const vector<int> &r) {
     root->z = z;
 }
 
+
 void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r, double eta) {
 
     /*
@@ -165,12 +167,9 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
         throw std::logic_error("Size of the counts per cell needs to be equal to the number of regions!");
 
     if (node->parent == nullptr)
-    {
         compute_root_score(r);
-    }
     else
     {
-
         double log_likelihood = node->parent->attachment_score;
         double z = node->parent->z;
         double z_parent = node->parent->z;
@@ -196,7 +195,6 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
 
         for (auto const &x : node->c_change)
         {
-
             // if log zero then use eta value, not to have -infinity
             int cf = (node->c.count(x.first)?node->c[x.first]:0);
             int cp_f = (node->parent->c.count(x.first) ?node->parent->c[x.first] : 0);
@@ -214,13 +212,9 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
 
                 log_likelihood -= lgamma(nu*(node_cn)*r[x.first]);
                 log_likelihood += lgamma(nu*(parent_cn)*r[x.first]);
-
             }
             else
-            {
                 log_likelihood += D[x.first] * (log(node_cn) - log(parent_cn));
-            }
-
         }
 
         if (is_overdispersed)
@@ -231,7 +225,6 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
 
             log_likelihood -= lgamma(sum_D+nu*z);
             log_likelihood += lgamma(sum_D+nu*z_parent);
-
         }
         else
         {
@@ -243,7 +236,6 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
         node->attachment_score = log_likelihood;
         node->z = z;
     }
-
 
 }
 
@@ -259,6 +251,7 @@ void Tree::compute_tree(const vector<double> &D, const vector<int> &r) {
     compute_stack(root, D, sum_d, r);
 
 }
+
 
 void Tree::compute_stack(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r)
 {
@@ -314,12 +307,13 @@ Tree::Tree(u_int ploidy, u_int n_regions, vector<int> &region_neutral_states)
     nu = 1.0 / static_cast<double>(n_regions);
     all_nodes_vec.push_back(root);
 
-
 }
+
 
 Tree::~Tree() {
     destroy();
 }
+
 
 Node* Tree::uniform_sample(bool with_root) const{
 
@@ -344,6 +338,7 @@ Node* Tree::uniform_sample(bool with_root) const{
 
     return all_nodes_vec[rand_val];
 }
+
 
 Node * Tree::insert_child(Node *pos, Node *source) {
 /*
@@ -384,6 +379,7 @@ Node * Tree::insert_child(Node *pos, Node *source) {
 
 }
 
+
 Node* Tree::insert_child(Node *pos, Node& source) {
     /*
      * Creates a child node from the reference node and inserts it to the position pos
@@ -396,6 +392,7 @@ Node* Tree::insert_child(Node *pos, Node& source) {
     return insert_child(pos,child);
 
 }
+
 
 void Tree::insert_child(Node* pos, std::map<u_int, int>&& labels) {
 
@@ -413,10 +410,12 @@ void Tree::insert_child(Node* pos, std::map<u_int, int>&& labels) {
 
 }
 
+
 void Tree::destroy() {
     /*
      * Destroys the tree
      * */
+
     for (auto elem: all_nodes_vec)
     {
         //std::cout<<"deleting " << elem->attachment_score <<std::endl;
@@ -431,6 +430,7 @@ void Tree::destroy() {
     //std::cout<<"destroyed."<<std::endl;
 }
 
+
 void Tree::random_insert(std::map<u_int, int>&& labels)
 {
     /*
@@ -441,6 +441,7 @@ void Tree::random_insert(std::map<u_int, int>&& labels)
     insert_child(pos, std::move(labels));
 
 }
+
 
 void Tree::insert_at(u_int pos, std::map<u_int, int> && labels) {
     /*
@@ -469,7 +470,6 @@ void Tree::update_label(std::map<u_int, int>& c_parent, Node *node) {
             node->c[it->first] = new_value;
     }
 
-
     // compute and store the hash
     vector<int> keys_values = {};
     for (auto const &it : node->c)  {
@@ -483,19 +483,20 @@ void Tree::update_label(std::map<u_int, int>& c_parent, Node *node) {
 }
 
 
-
 Tree::Tree(Tree &source) {
+    /* Copy constructor */
+
     if (source.root == nullptr)
         this->root = nullptr;
     else
         this->copy_tree(source);
 }
 
+
 void Tree::copy_tree(const Tree& source_tree) {
     /*
      * Copies the source tree
-     * call it recursively (using stack)
-    */
+     */
 
     this->region_neutral_states = source_tree.region_neutral_states;
     this->ploidy = source_tree.ploidy;
@@ -536,11 +537,12 @@ void Tree::copy_tree_nodes(Node *destination, Node *source) {
     }
 }
 
-Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
+Node* Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     /*
      * Prunes a node and reattaches it to another node which is not among the descendents of the pruned node.
      * Returns the pruned node (which also happens to be the attached node)
      * Requires more than two nodes to perform.
+     * Throws InvalidMove exception.
      *
      * */
 
@@ -615,9 +617,8 @@ Node * Tree::prune_reattach(bool weighted, bool validation_test_mode) {
     {
         return prune_pos = attach_pos = nullptr;
     }
-
-
 }
+
 
 Node *Tree::prune(Node *pos) {
 
@@ -658,6 +659,7 @@ Node *Tree::prune(Node *pos) {
 
 }
 
+
 u_int Tree::get_n_nodes() const {
     return n_nodes;
 }
@@ -680,7 +682,7 @@ Tree &Tree::operator=(const Tree &other) {
 void Tree::load_from_file(string file) {
     /*
      * Loads the tree from file
-     * Throws std::logic_error
+     * Throws std::logic_error, std::runtime_error, InvalidTree exception
      * */
 
     // first destroy the tree if it is not empty (or 1 node only)
@@ -834,7 +836,12 @@ void Tree::compute_weights() {
     }
 }
 
+
 Node *Tree::weighted_sample() const{
+
+    /* Samples and returns the node proportional to the weight
+     * Throws std::length_error
+     * */
 
     if (all_nodes_vec.empty())
         throw std::length_error("length of nodes must be bigger than zero, in order to sample from the tree");
@@ -863,14 +870,15 @@ Node *Tree::weighted_sample() const{
 
     }
 
-
 }
+
 
 bool Tree::is_ancestor(Node *target, Node *curr) const{
     /*
      * Returns true if the target node is an ancestor of the current node
      * Complexity: O(n) where n is the number of ancestors of the curr node
      * */
+
     Node* p = curr;
     while(p->parent != nullptr)
     {
@@ -882,11 +890,13 @@ bool Tree::is_ancestor(Node *target, Node *curr) const{
     return false;
 }
 
+
 std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) {
 
     /*
      * Swaps the labels between two nodes
      * Requires more than 2 nodes to work
+     * Throws InvalidMove, InvalidTree and std::logic_error.
      * */
 
     if (all_nodes_vec.size() <= 2)
@@ -960,6 +970,7 @@ std::vector<Node *> Tree::swap_labels(bool weighted, bool validation_test_mode) 
     return return_nodes;
 }
 
+
 void Tree::update_desc_labels(Node *node) {
 
     /*
@@ -976,11 +987,12 @@ void Tree::update_desc_labels(Node *node) {
         for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
             stk.push(temp);
         }
-        if (top == this->root) // delete move can cause this to happen (if a FO child of root is deleted) and top->parent will be NULL
+        if (top == this->root) // delete move can cause this to happen (if a F.O. child of root is deleted) and top->parent will be NULL
             continue;
         update_label(top->parent->c, top);
     }
 }
+
 
 bool Tree::is_valid_subtree(Node *node) const{
     /*
@@ -997,7 +1009,8 @@ bool Tree::is_valid_subtree(Node *node) const{
 
 }
 
-Node *Tree::add_remove_events(bool weighted, bool validation_test_mode) {
+
+Node* Tree::add_remove_events(bool weighted, bool validation_test_mode) {
 
     /*
      * Adds and removes events to a node.
@@ -1063,18 +1076,18 @@ Node *Tree::add_remove_events(bool weighted, bool validation_test_mode) {
     }
 
     if (Utils::is_empty_map(node->c_change))
-        return nullptr; //TODO: maybe throw certain exception here
+        return nullptr; //TODO: maybe throw a certain exception here
     else
     {
         update_desc_labels(node); // to update the labels of the descendents
         // check if the subtrees are valid after updating the labels
         if (!is_valid_subtree(node) || is_redundant())
-            return nullptr; //TODO: maybe throw certain exception here
+            return nullptr; //TODO: maybe throw a certain exception here
 
         return node;
     }
-
 }
+
 
 bool Tree::subtree_out_of_bound(Node *n) const{
 /*
@@ -1093,6 +1106,7 @@ bool Tree::subtree_out_of_bound(Node *n) const{
     return false;
 
 }
+
 
 bool Tree::zero_ploidy_changes(Node *n) const{
 /*
@@ -1119,6 +1133,7 @@ bool Tree::zero_ploidy_changes(Node *n) const{
 
 }
 
+
 bool Tree::region_changes(Node *n, u_int region_id) const{
     /*
      * Returns true if the region label changes in one of the descendents
@@ -1132,6 +1147,7 @@ bool Tree::region_changes(Node *n, u_int region_id) const{
     return false;
 
 }
+
 
 bool Tree::is_redundant() const {
     /*
@@ -1158,14 +1174,14 @@ bool Tree::is_redundant() const {
 
     return false;
 
-
 }
+
 
 Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted, bool max_scoring) {
     /*
      * Adds or deletes nodes move, that takes the mcmc transition probabilities into account.
      * Returns the node to perform partial score computation on.
-     *
+     * Throws std::logic_error
      * */
 
     Node* return_node = nullptr;
@@ -1259,9 +1275,11 @@ Node *Tree::insert_delete_node(unsigned int size_limit, bool weighted, bool max_
     return return_node;
 }
 
+
 Node *Tree::condense_split_node(unsigned int size_limit, bool weighted, bool max_scoring) {
     /*
      * Condenses two nodes into one or splits a node into two.
+     * Throws std::logic_error, InvalidMove
      * */
 
     if (all_nodes_vec.size() <= 1)
@@ -1433,6 +1451,7 @@ Node* Tree::delete_node(Node *node) {
     return parent_of_deleted; // return the node that is going to be used for the partial trees scoring
 }
 
+
 vector<double> Tree::omega_condense_split(double lambda_s, bool weighted, bool max_scoring) {
     /*
      * Returns the omega probabilities computed for a tree for the condense/split move.
@@ -1454,6 +1473,7 @@ vector<double> Tree::omega_condense_split(double lambda_s, bool weighted, bool m
 
     return omega;
 }
+
 
 vector<double> Tree::chi_condense_split(bool weighted) {
     /*
@@ -1483,6 +1503,7 @@ vector<double> Tree::chi_condense_split(bool weighted) {
     return chi;
 }
 
+
 vector<double> Tree::chi_insert_delete(bool weighted) {
     /*
      * Returns the chi probabilities computed for the insert/delete move.
@@ -1506,6 +1527,7 @@ vector<double> Tree::chi_insert_delete(bool weighted) {
     return chi;
 
 }
+
 
 vector<double> Tree::omega_insert_delete(double lambda_r, double lambda_c, bool weighted, bool max_scoring) {
     /*
@@ -1549,6 +1571,7 @@ double Tree::cost() {
     return zeta;
 }
 
+
 double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) const{
     /*
      * Returns the overdispersed root score
@@ -1587,6 +1610,7 @@ double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector
 
 }
 
+
 double Tree::event_prior() {
     /*
      * Computes and returns the tree event prior
@@ -1615,12 +1639,14 @@ double Tree::event_prior() {
     return PV;
 }
 
+
 void Tree::genotype_preserving_prune_reattach(double gamma) {
     /*
      * Prunes a node and reattaches it to another node which is not among the descendents of the pruned node.
      * Preserves the genotypes of all nodes.
      * Performs gibbs sampling and returns the tree.
      * Requires more than two nodes to perform.
+     * Throws InvalidMove, std::logic_error
      * */
 
     if (this->all_nodes_vec.size() <= 2)
@@ -1676,12 +1702,14 @@ void Tree::genotype_preserving_prune_reattach(double gamma) {
     }
 }
 
+
 Node *Tree::find_node(int id) {
     /*
      * Finds and returns the pointer to the node with the given id.
      * Returns nullptr if the node is not found.
      * id: The node id to look for
      * */
+
     vector<Node*> nodes = this->root->get_descendents(true);
 
     for (Node* const x : nodes)
@@ -1690,6 +1718,7 @@ Node *Tree::find_node(int id) {
 
     return nullptr; // not found
 }
+
 
 std::pair<std::vector<double>, std::vector<std::pair<int, int>>> Tree::gibbs_genotype_preserving_scores(double gamma)
 {
@@ -1778,6 +1807,7 @@ std::pair<std::vector<double>, std::vector<std::pair<int, int>>> Tree::gibbs_gen
 
     return std::make_pair(all_possible_scores, prune_attach_indices);
 }
+
 
 Node *Tree::delete_leaf() {
     /*

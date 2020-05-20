@@ -124,7 +124,7 @@ int main( int argc, char* argv[]) {
     if (result.count("sp_file")) {
       if (sp_file.compare("") != 0) {
         std::cout << "Reading Sp vector: " << sp_file << std::endl;
-        Utils::read_vector_double(s_p, sp_file);
+        Utils::read_vector(s_p, sp_file);
         std::cout << "Done." << std::endl;
         compute_sp = false;
       } else {

@@ -137,34 +137,11 @@ vector<vector<double>> Utils::condense_matrix(vector<vector<double>>& D, vector<
     return condensed_mat;
 }
 
-void Utils::read_vector(vector<int> &vec, const string &path) {
+template<class T>
+void Utils::read_vector(vector<T> &vec, const string &path) {
 
     /*
-     * Reads a 1 dimensional vector file at path path to reference vec.
-     * Throws std::logic_error
-     * */
-
-    ifstream filein(path);
-
-    for (std::string line; std::getline(filein, line); )
-    {
-        istringstream fline(line);
-        std::string val;
-        while (std::getline(fline, val))
-        {
-            vec.push_back(stod(val)); // push_back is fine since this file is much smaller
-        }
-    }
-
-    if (vec.size() == 0)
-        throw std::logic_error("The size of the vector should not be zero!");
-
-}
-
-void Utils::read_vector_double(vector<double> &vec, const string &path) {
-
-    /*
-     * Reads a 1 dimensional vector file at path path to reference vec.
+     * Reads a 1 dimensional vector file at path to the reference vec.
      * Throws std::logic_error
      * */
 
@@ -234,3 +211,6 @@ map<u_int, int> Utils::map_diff(map<u_int, int> a, map<u_int, int> b) {
 
     return difference;
 }
+
+template void Utils::read_vector(vector<int> &vec, const string &path);
+template void Utils::read_vector(vector<double> &vec, const string &path);
