@@ -215,12 +215,13 @@ bool Inference::apply_prune_reattach(const vector<vector<double>> &D, const vect
 void Inference::compute_t_table(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes) {
     // If D is cluster by region, we iterate over each cluster and compute the sum of each cluster's
     // score weighted by its size
+    this->t_sums.clear();
 
     double currentMax = -DBL_MAX;
     std::pair<int, double> currentMax_node;
 
     int j = static_cast<int>(D.size());
-    double t_sum = 0;
+    double t_sum = 0.0;
     for (int i = 0; i < j; ++i)
     {
 
@@ -229,7 +230,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
 
         this->t_scores.push_back(scores_vec);
 
-        double aux = 0;
+        double aux = 0.0;
         if (max_scoring) {
           currentMax = -DBL_MAX;
           for (auto it = scores_vec.cbegin(); it != scores_vec.cend(); ++it ) {
@@ -257,6 +258,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
             aux = MathOp::log_sum(scores_vec);
           }
         t_sum = t_sum + aux * cluster_sizes[i];
+        this->t_sums.push_back(aux);
     }
 
     int m = D.size();
