@@ -1,0 +1,76 @@
+{
+    "output":"/cluster/work/bewi/members/pedrof/sc-dna/sims2020/results/",
+    "simulate":
+    {
+      "n_cells":400,
+      "n_nodes":10,
+      "n_bins":10000,
+      "n_reads":80000,
+      "nu":4.0,
+      "n_reps":40,
+      "prefix":"",
+      "bin":"/cluster/work/bewi/members/pedrof/sc-dna/build/simulation"
+    },
+    "bp_detection":
+    {
+      "window_size":20,
+      "threshold":2,
+      "bp_limit":300,
+      "verbosity":1,
+      "bin":"/cluster/work/bewi/members/pedrof/sc-dna/build/breakpoint_detection"
+    },
+    "inference":
+    {
+      "learn_nu":
+      {
+        "n_iters":2000,
+        "n_nodes":0,
+        "move_probs":[0,0,0,0,0,0,0,0,0,0,0,1,0]
+      },
+      "learn_nu_cluster_trees":
+      {
+        "n_iters":2000,
+        "move_probs":[0,0,0,0,0,0,0,0,0,0,0,1,0]
+      },
+      "cluster_trees":
+      {
+        "n_reps":10,
+        "n_iters":40000,
+        "n_nodes":0,
+        "move_probs":[0,1,0,1,0,10,0,1,0,1,0.4,1,0.01],
+      },
+      "full_trees":
+      {
+        "n_reps":10,
+        "n_iters":1000000,
+        "cluster_fraction":1.0,
+        "n_nodes": 0,
+        "move_probs": [0,1,0,1,0,10,0,1,0,1,0.4,0,0.01]
+      },
+      "ploidy":2,
+      "verbosity":0,
+      "copy_number_limit":6,
+      "seed":42,
+      "bin":"/cluster/work/bewi/members/pedrof/sc-dna/build/inference"
+    },
+    "phenograph":
+    {
+      "threads":1
+    },
+    "hmm_copy":
+    {
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time": "600",
+        "script":"/cluster/work/bewi/members/pedrof/cna_other_methods/HMMCopyInference.R"
+    },
+    "hclust":
+    {
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time": "600",
+        "script": "/cluster/work/bewi/members/pedrof/cna_other_methods/HierarchicalCopyInference.R"
+    }
+}
