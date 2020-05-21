@@ -10,6 +10,7 @@
 ## About
 
 Single-cell copy number calling and event history reconstruction.
+
 A statistical model and MCMC algorithm tailored to single-cell copy
 number profiling from shallow whole-genome DNA sequencing data. SCICoNE reconstructs the
 history of copy number events in the tumour and uses these evolutionary relationships to identify
@@ -18,13 +19,13 @@ the copy number profiles of the individual cells.
 ## Requirements
 
 * C++ compiler that supports C++14 standards (e.g. `gcc>=5.2.0`, `clang>=5.0.0)`)
-* CMake version >= 3.9
+* CMake >= 3.9
 * Boost >= 1.6.x
 * OpenMP >= 4.5
 * NLopt >= 2.6.2
 
 ## Installation
-
+Downloading and installing SCICoNE takes about 5 minutes. 
 ```bash
 git clone git@github.com:cbg-ethz/SCICoNE.git # Clone the repository
 cd SCICoNE
@@ -40,13 +41,40 @@ cd pyscicone
 pip install -e .
 ```
 
-## Example
+## Quick start
 An introductory notebook showcasing the SCICoNE workflow and API is available [here](https://github.com/cbg-ethz/SCICoNE/blob/master/notebooks/tutorial.ipynb).
 
-## Inference
-Finds the maximum likelihood tree given a cells by regions matrix.
+## C++ reference
+### Breakpoint detection
+Find the breakpoints defining copy number regions from a cells by bins matrix.
 
-#### Inference parameters
+| Parameter name | Description | Default value |
+| ---- | -------- | --- |
+| **d_matrix_file** | Path to the counts matrix file, delimiter: ' ', line separator: '\n'  | "" |
+| **n_cells** | Number of cells in the input matrix | - |
+| **n_bins** | Number of bins in the input matrix | - |
+| **min_cells** | Minimum number of cells to consider for a bin being a breakpoint | 4 |
+| **window_size** | Size of the window used in breakpoint detection | 10 |
+| **threshold** | Breakpoint calling sensitivity. If -1, stop after computing the LR | 3 |
+| **bp_limit** | Maximum number of breakpoints | 300 |
+| **compute_lr** | Boolean indicator of wether the per bin cell-wise breakpoint evidence should be computed | True |
+| **lr_file** | Path to a matrix containing the evidence for breakpoint at each bin in each cell | "" |
+| **sp_file** | Path to a vector containing the combined evidence for breakpoint at each bin across all cells | "" |
+| **compute_sp** | Boolean indicator of wether the per bin breakpoint evidence should be computed | True |
+| **evaluate_peaks** | Boolean indicator of wether to evaluate peaks and call breakpoints | True |
+| **input_breakpoints_file** | Path to file indicating bins which correspond to known breakpoints that must be included | ""|
+| **verbosity** | Verbosity of the programme, 0 is non-verbose setting, 1 creates the debug files, 2 writes the logs as well | 0 |
+| **postfix** | Postfix to be added to the output files, this is useful when you are running multiple simulations through a workflow management system | "" |
+| **print_precision** | The precision points of the score values to be printed | 16 |
+
+
+#### *Sample run* :
+```shell
+$ ./breakpoint_detection --d_matrix_file ./d_mat.txt --n_bins 1000 --n_cells 400 --window_size 10 --threshold 3.0 --bp_limit 300 --verbosity=1 --evaluate_peaks=True
+```
+
+### Inference
+Finds the maximum a posteriori tree given a cells by regions matrix.
 
 | Parameter name | Description | Default value |
 | ---- | -------- | --- |
@@ -69,13 +97,11 @@ Finds the maximum likelihood tree given a cells by regions matrix.
 
 #### *Sample run* :
 ```shell
-$ ./inference --n_cells 400 --n_regions 10 --n_iters 100 --n_nodes 10 --ploidy 2 --verbosity 2 --seed 42 --postfix d31 --d_matrix_file ./30_d_mat.txt --region_sizes_file ./30_region_sizes.txt
+$ ./inference --n_cells 400 --n_regions 10 --n_iters 100 --n_nodes 10 --ploidy 2 --verbosity 2 --seed 42 --d_matrix_file ./30_d_mat.txt --region_sizes_file ./30_region_sizes.txt
 ```
 
-## Simulation
+### Simulation
 Simulates the count matrix. Outputs the count matrix, region sizes, ground truth CNVs and the tree that generated the data.
-
-#### Simulation parameters
 
 | Parameter name | Description | Default value |
 | ---- | -------- | --- |
@@ -96,7 +122,7 @@ Simulates the count matrix. Outputs the count matrix, region sizes, ground truth
 $ ./simulation --n_cells 400 --n_bins 100 --n_regions 10 --n_nodes 10 --n_reads 100000 --ploidy 2 --verbosity 2  --seed 42 --print_precision 32
 ```
 
-## Test
+### Test
 Runs the validation tests and writes the results to the standard output and error streams.
 #### *Sample run* :
 ```shell
