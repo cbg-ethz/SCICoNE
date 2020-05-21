@@ -8,16 +8,12 @@
 
 
 ## About
-
 Single-cell copy number calling and event history reconstruction.
 
 A statistical model and MCMC algorithm tailored to single-cell copy
-number profiling from shallow whole-genome DNA sequencing data. SCICoNE reconstructs the
-history of copy number events in the tumour and uses these evolutionary relationships to identify
-the copy number profiles of the individual cells.
+number profiling from shallow whole-genome DNA sequencing data. SCICoNE reconstructs the history of copy number events in the tumour and uses these evolutionary relationships to identify the copy number profiles of the individual cells.
 
 ## Requirements
-
 * C++ compiler that supports C++14 standards (e.g. `gcc>=5.2.0`, `clang>=5.0.0)`)
 * CMake >= 3.9
 * Boost >= 1.6.x
@@ -25,7 +21,7 @@ the copy number profiles of the individual cells.
 * NLopt >= 2.6.2
 
 ## Installation
-Downloading and installing SCICoNE takes about 5 minutes. 
+Once the requirements are in place, downloading and installing SCICoNE takes about 5 minutes.
 ```bash
 git clone git@github.com:cbg-ethz/SCICoNE.git # Clone the repository
 cd SCICoNE
@@ -42,7 +38,7 @@ pip install -e .
 ```
 
 ## Quick start
-An introductory notebook showcasing the SCICoNE workflow and API is available [here](https://github.com/cbg-ethz/SCICoNE/blob/master/notebooks/tutorial.ipynb).
+SCICoNE takes a read counts matrix of cells by genomic bins and outputs the copy number profile of each cell and the underlying event history. An introductory notebook showcasing the SCICoNE workflow and API is available [here](https://github.com/cbg-ethz/SCICoNE/blob/master/notebooks/tutorial.ipynb).
 
 ## C++ reference
 ### Breakpoint detection
@@ -62,7 +58,7 @@ Find the breakpoints defining copy number regions from a cells by bins matrix.
 | **sp_file** | Path to a vector containing the combined evidence for breakpoint at each bin across all cells | "" |
 | **compute_sp** | Boolean indicator of wether the per bin breakpoint evidence should be computed | True |
 | **evaluate_peaks** | Boolean indicator of wether to evaluate peaks and call breakpoints | True |
-| **input_breakpoints_file** | Path to file indicating bins which correspond to known breakpoints that must be included | ""|
+| **input_breakpoints_file** | Path to file indicating bins which correspond to known breakpoints that must be included. These may be, for example, the chromosome bin coordinates. | ""|
 | **verbosity** | Verbosity of the programme, 0 is non-verbose setting, 1 creates the debug files, 2 writes the logs as well | 0 |
 | **postfix** | Postfix to be added to the output files, this is useful when you are running multiple simulations through a workflow management system | "" |
 | **print_precision** | The precision points of the score values to be printed | 16 |
