@@ -1,0 +1,13 @@
+{
+    "bin":"/Users/mtuncel/git_repos/sc-dna/cmake-build-debug/",
+    "params": 
+    {
+        "n_rep":100,
+        "n_bins": 1000,
+        "n_regions": 40,
+        "n_nodes": 10,
+        "n_reads": 10000,
+        "n_cells": 50,
+        "window_size": 10
+    }
+}
