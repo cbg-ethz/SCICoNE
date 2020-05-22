@@ -9,7 +9,14 @@ with open("requirements.txt") as f:
 
 test_requirements = [
     "pytest>=4.4",
-    "pytest-runner>=5.0"
+    "pytest-runner>=5.0",
+]
+
+notebook_requirements = [
+    "nbconvert>=5.4.0",
+    "nbformat>=4.4.0",
+    "jupyter>=1.0.0",
+    "ipython>=7.1.1",
 ]
 
 setup(
@@ -29,5 +36,6 @@ setup(
     include_package_data=True,
     test_suite="tests",
     tests_require=test_requirements,
-    extras_require={'test': test_requirements},
+    extras_require={'notebooks': notebook_requirements,
+                    'test': test_requirements},
 )
