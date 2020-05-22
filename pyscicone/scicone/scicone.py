@@ -396,7 +396,7 @@ class SCICoNE(object):
     processed using scgenpy, a generic package for pre, post-processing and
     visualization of single-cell copy number data.
     """
-    def __init__(self, binary_path=None, output_path='', persistence=False, postfix="PYSCICONETEMP", verbose=False, n_cells=0, n_bins=0):
+    def __init__(self, binary_path=None, output_path='', persistence=False, postfix="PYSCICONETEMP", verbose=False, n_cells=0, n_bins=0, n_omp_threads=4):
         """Create a SCICoNE object.
         binary_path : type
             Path to SCICoNE binaries.
@@ -448,6 +448,7 @@ class SCICoNE(object):
 
         self.n_cells = n_cells
         self.n_bins = n_bins
+        self.n_omp_threads = n_omp_threads
         self.clustering_score = 0.
         self.best_cluster_tree = None
         self.cluster_tree_robustness_score = 0.
@@ -570,7 +571,7 @@ class SCICoNE(object):
             # Write the data to a file to be read by the binary
             data_file = f"{postfix}_bp_detection.txt"
             np.savetxt(data_file, data, delimiter=',')
-
+            os.environ["OMP_NUM_THREADS"] = "4"
             cmd = [self.bp_binary, f"--d_matrix_file={data_file}", f"--n_bins={n_bins}",\
                 f"--n_cells={n_cells}", f"--window_size={window_size}", f"--threshold={threshold}",\
                 f"--bp_limit={bp_limit}", f"--compute_lr={compute_lr}", f"--lr_file={lr_file}",\
