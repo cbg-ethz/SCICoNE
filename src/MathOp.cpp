@@ -59,7 +59,7 @@ double MathOp::breakpoint_log_likelihood(std::vector<double> v, double lambda, d
 
 
 
-vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int window_size) {
+vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int window_size, vector<int> &known_breakpoints) {
     /*
      *
      * Computes the difference of the likelihood_break and likelihood_segment cases to tell whether to break or not
@@ -75,113 +75,120 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
     // the last breakpoint
     size_t bp_size = mat[0].size(); // bp_size = number of bins initially
 
-    //cout << bp_size << endl;
+    // For parallelization
+    size_t n_regions = known_breakpoints.size() - 1;
+
     size_t n_cells = mat.size();
 
     // u_int cell_no = 0;
     vector<vector<double>> lr_vec(bp_size, vector<double>(n_cells)); // LR of each bin for each cell
 
-    // Parallelize cells
-    #pragma omp parallel for
+    // Parallelize cells and known regions
+    #pragma omp parallel for collapse(2)
     for (unsigned j = 0; j < n_cells; ++j) {
-        for (unsigned i = 0; i < bp_size; ++i) {
-            int start = i - window_size;
-            int end = i + window_size;
+        for (unsigned r = 0; r < n_regions; ++r) {
+            if (verbosity > 0)
+              std::cout << "Computing LR of breakpoints for known region " << r << std::endl;
+            bp_size = known_breakpoints[r+1] - known_breakpoints[r];
+            for (unsigned i = known_breakpoints[r]; i < known_breakpoints[r+1]; ++i) {
+                int start = i - window_size;
+                int end = i + window_size;
 
-            // end cannot be equal to bp_size because cellranger DNA is puts 0 to the end
-            if (start < 0 || end >= static_cast<int>(bp_size)) {
-                continue;
+                // end cannot be equal to bp_size because cellranger DNA is puts 0 to the end
+                if (start < 0 || end >= static_cast<int>(bp_size)) {
+                    continue;
+                }
+
+                vector<double> lbins = vector<double>(mat[j].begin() + start, mat[j].begin() + i);
+                vector<double> rbins = vector<double>(mat[j].begin() + i, mat[j].begin() + end);
+                vector<double> all_bins = vector<double>(mat[j].begin() + start, mat[j].begin() + end);
+
+                size_t n_bins = all_bins.size();
+
+                vector<double> bin_positions(n_bins);
+                for (size_t l = 0; l < n_bins; ++l) {
+                    bin_positions[l] = l+1; // 1 indexed
+                }
+
+                // 1. Likelihood of null model, where mean of all bins in segment follows a linear model.
+                //   The mean across the bins in the window can change according to a linear model,
+                //   which includes the case where all the bins have the same min (if the slope is zero)
+                vector<double> lambdas_segment(n_bins);
+                vector<double> regression_parameters = compute_linear_regression_parameters(all_bins, window_size, nu);
+                double alpha = regression_parameters[0];
+                double beta = regression_parameters[1];
+
+                for (size_t k = 0; k < n_bins; ++k)
+                {
+                    lambdas_segment[k] = alpha + beta*bin_positions[k]; // prediction
+                    if (lambdas_segment[k] <= 0)
+                        lambdas_segment[k] = 0.0001;
+                }
+
+                double ll_segment = 0;
+                for (size_t m = 0; m < n_bins; ++m) {
+                    ll_segment += breakpoint_log_likelihood(vector<double>(all_bins.begin()+m, all_bins.begin()+m+1), lambdas_segment[m], nu);
+                }
+
+                // 2. Likelihood of breakpoint model, where left and right bin segments have different means
+                //    This means that if there is a breakpoint there is a step change between the two semi segments
+                double lambda_r = robust_mean(rbins);
+                double lambda_l = robust_mean(lbins);
+                double lambda_all = vec_avg(all_bins);
+
+                // make sure lambda_all is between the left and right bounds
+                lambda_all = std::max(lambda_all, std::min(lambda_r, lambda_l));
+                lambda_all = std::min(lambda_all, std::max(lambda_r, lambda_l));
+
+                 // The distance between the left and right segments must be > lambda_all/4, so we update the
+                 // segments accordingly
+                if (lambda_r > lambda_l) {
+                  double gap = lambda_r - lambda_l;
+                  double gap_thres = lambda_all/4.0;
+                  double scaling = std::max(lambda_all/(4.0*gap), 1.0);
+                  if (gap < gap_thres) {
+                    lambda_r = lambda_all + scaling*(lambda_r-lambda_all);
+                    lambda_l = lambda_all - scaling*(lambda_all-lambda_l);
+                  }
+                  // double ratio = lambda_r/lambda_l;
+                  // double ratio_thres = 4./3.;
+                  // std::cout << ratio << ", " << ratio_thres << std::endl;
+                  // if (ratio < ratio_thres) {
+                  //   std::cout << "Increasing gap 1" << std::endl;
+                  //   double chi = sqrt(4./3. * lambda_l/lambda_r);
+                  //   lambda_r = lambda_r * chi;
+                  //   lambda_l = lambda_l / chi;
+                  // }
+
+                } else if (lambda_r < lambda_l) {
+                  double gap = lambda_l - lambda_r;
+                  double gap_thres = lambda_all/4.0;
+                  double scaling = std::max(lambda_all/(4.0*gap), 1.0);
+                  if (gap < gap_thres) {
+                    lambda_l = lambda_all + scaling*(lambda_l-lambda_all);
+                    lambda_r = lambda_all - scaling*(lambda_all-lambda_r);
+                  }
+                  // double ratio = lambda_l/lambda_r;
+                  // double ratio_thres = 4./3.;
+                  // std::cout << ratio << ", " << ratio_thres << std::endl;
+                  // if (ratio < ratio_thres) {
+                  //   std::cout << "Increasing gap 2" << std::endl;
+                  //   double chi = sqrt(4./3. * lambda_r/lambda_l);
+                  //   lambda_l = lambda_l * chi;
+                  //   lambda_r = lambda_r / chi;
+                  // }
+                }
+                if (lambda_r == 0)
+                    lambda_r = 0.0001;
+                if (lambda_l == 0)
+                    lambda_l = 0.0001;
+
+                double ll_break = breakpoint_log_likelihood(lbins, lambda_l, nu) +
+                                  breakpoint_log_likelihood(rbins, lambda_r, nu);
+
+                // 3. Output the difference between the two models' likelihoods
+                lr_vec[i][j] = 2*(ll_break - ll_segment);
             }
-
-            vector<double> lbins = vector<double>(mat[j].begin() + start, mat[j].begin() + i);
-            vector<double> rbins = vector<double>(mat[j].begin() + i, mat[j].begin() + end);
-            vector<double> all_bins = vector<double>(mat[j].begin() + start, mat[j].begin() + end);
-
-            size_t n_bins = all_bins.size();
-
-            vector<double> bin_positions(n_bins);
-            for (size_t l = 0; l < n_bins; ++l) {
-                bin_positions[l] = l+1; // 1 indexed
-            }
-
-            // 1. Likelihood of null model, where mean of all bins in segment follows a linear model.
-            //   The mean across the bins in the window can change according to a linear model,
-            //   which includes the case where all the bins have the same min (if the slope is zero)
-            vector<double> lambdas_segment(n_bins);
-            vector<double> regression_parameters = compute_linear_regression_parameters(all_bins, window_size, nu);
-            double alpha = regression_parameters[0];
-            double beta = regression_parameters[1];
-
-            for (size_t k = 0; k < n_bins; ++k)
-            {
-                lambdas_segment[k] = alpha + beta*bin_positions[k]; // prediction
-                if (lambdas_segment[k] <= 0)
-                    lambdas_segment[k] = 0.0001;
-            }
-
-            double ll_segment = 0;
-            for (size_t m = 0; m < n_bins; ++m) {
-                ll_segment += breakpoint_log_likelihood(vector<double>(all_bins.begin()+m, all_bins.begin()+m+1), lambdas_segment[m], nu);
-            }
-
-            // 2. Likelihood of breakpoint model, where left and right bin segments have different means
-            //    This means that if there is a breakpoint there is a step change between the two semi segments
-            double lambda_r = robust_mean(rbins);
-            double lambda_l = robust_mean(lbins);
-            double lambda_all = vec_avg(all_bins);
-
-            // make sure lambda_all is between the left and right bounds
-            lambda_all = std::max(lambda_all, std::min(lambda_r, lambda_l));
-            lambda_all = std::min(lambda_all, std::max(lambda_r, lambda_l));
-
-             // The distance between the left and right segments must be > lambda_all/4, so we update the
-             // segments accordingly
-            if (lambda_r > lambda_l) {
-              double gap = lambda_r - lambda_l;
-              double gap_thres = lambda_all/4.0;
-              double scaling = std::max(lambda_all/(4.0*gap), 1.0);
-              if (gap < gap_thres) {
-                lambda_r = lambda_all + scaling*(lambda_r-lambda_all);
-                lambda_l = lambda_all - scaling*(lambda_all-lambda_l);
-              }
-              // double ratio = lambda_r/lambda_l;
-              // double ratio_thres = 4./3.;
-              // std::cout << ratio << ", " << ratio_thres << std::endl;
-              // if (ratio < ratio_thres) {
-              //   std::cout << "Increasing gap 1" << std::endl;
-              //   double chi = sqrt(4./3. * lambda_l/lambda_r);
-              //   lambda_r = lambda_r * chi;
-              //   lambda_l = lambda_l / chi;
-              // }
-
-            } else if (lambda_r < lambda_l) {
-              double gap = lambda_l - lambda_r;
-              double gap_thres = lambda_all/4.0;
-              double scaling = std::max(lambda_all/(4.0*gap), 1.0);
-              if (gap < gap_thres) {
-                lambda_l = lambda_all + scaling*(lambda_l-lambda_all);
-                lambda_r = lambda_all - scaling*(lambda_all-lambda_r);
-              }
-              // double ratio = lambda_l/lambda_r;
-              // double ratio_thres = 4./3.;
-              // std::cout << ratio << ", " << ratio_thres << std::endl;
-              // if (ratio < ratio_thres) {
-              //   std::cout << "Increasing gap 2" << std::endl;
-              //   double chi = sqrt(4./3. * lambda_r/lambda_l);
-              //   lambda_l = lambda_l * chi;
-              //   lambda_r = lambda_r / chi;
-              // }
-            }
-            if (lambda_r == 0)
-                lambda_r = 0.0001;
-            if (lambda_l == 0)
-                lambda_l = 0.0001;
-
-            double ll_break = breakpoint_log_likelihood(lbins, lambda_l, nu) +
-                              breakpoint_log_likelihood(rbins, lambda_r, nu);
-
-            // 3. Output the difference between the two models' likelihoods
-            lr_vec[i][j] = 2*(ll_break - ll_segment);
         }
     }
     return lr_vec;
