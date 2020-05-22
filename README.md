@@ -34,7 +34,7 @@ make                                          # Build the executables
 We also provide a Python 3 wrapper to facilitate plotting and easily integrate SCICoNE with other data analysis tools. This interface runs the C++ binaries and reads the outputs into `numpy` arrays.
 ```bash
 cd pyscicone
-pip install -e .
+pip install .
 ```
 
 ## Quick start
