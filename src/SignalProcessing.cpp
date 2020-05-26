@@ -317,7 +317,6 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
     }
 
     size_t n_breakpoints = lr_vec.size();
-    cout <<"n_breakpoints: " << n_breakpoints << " n_cells: " << n_cells <<endl;
 
     std::cout << "Combining scores..." << std::endl;
     vector<vector<double>> sigma(n_breakpoints,vector<double>(n_cells+1)); // +1 because combine scores considers

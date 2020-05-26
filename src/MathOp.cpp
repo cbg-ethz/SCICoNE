@@ -73,29 +73,26 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
 
     //MathOp mo = MathOp();
     // the last breakpoint
-    size_t bp_size = mat[0].size(); // bp_size = number of bins initially
+    size_t n_bins = mat[0].size();
 
     // For parallelization
-    size_t n_regions = known_breakpoints.size() - 1;
-
+    size_t n_regions = known_breakpoints.size() - 1; // must include first and last bin
+    std::cout << "n_regions: " << n_regions << std::endl;
     size_t n_cells = mat.size();
 
     // u_int cell_no = 0;
-    vector<vector<double>> lr_vec(bp_size, vector<double>(n_cells)); // LR of each bin for each cell
+    vector<vector<double>> lr_vec(n_bins, vector<double>(n_cells)); // LR of each bin for each cell
 
     // Parallelize cells and known regions
     #pragma omp parallel for collapse(2)
-    for (unsigned j = 0; j < n_cells; ++j) {
-        for (unsigned r = 0; r < n_regions; ++r) {
-            if (verbosity > 0)
-              std::cout << "Computing LR of breakpoints for known region " << r << std::endl;
-            bp_size = known_breakpoints[r+1] - known_breakpoints[r];
-            for (unsigned i = known_breakpoints[r]; i < known_breakpoints[r+1]; ++i) {
+    for (size_t r = 0; r < n_regions; ++r) {
+        for (size_t j = 0; j < n_cells; ++j) {        
+            for (size_t i = known_breakpoints[r]; i < known_breakpoints[r+1]; ++i) {
                 int start = i - window_size;
                 int end = i + window_size;
 
-                // end cannot be equal to bp_size because cellranger DNA is puts 0 to the end
-                if (start < 0 || end >= static_cast<int>(bp_size)) {
+                // end cannot be equal to n_bins because cellranger DNA is puts 0 to the end
+                if (start < 0 || end >= static_cast<int>(n_bins)) {
                     continue;
                 }
 
@@ -150,16 +147,6 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
                     lambda_r = lambda_all + scaling*(lambda_r-lambda_all);
                     lambda_l = lambda_all - scaling*(lambda_all-lambda_l);
                   }
-                  // double ratio = lambda_r/lambda_l;
-                  // double ratio_thres = 4./3.;
-                  // std::cout << ratio << ", " << ratio_thres << std::endl;
-                  // if (ratio < ratio_thres) {
-                  //   std::cout << "Increasing gap 1" << std::endl;
-                  //   double chi = sqrt(4./3. * lambda_l/lambda_r);
-                  //   lambda_r = lambda_r * chi;
-                  //   lambda_l = lambda_l / chi;
-                  // }
-
                 } else if (lambda_r < lambda_l) {
                   double gap = lambda_l - lambda_r;
                   double gap_thres = lambda_all/4.0;
@@ -168,15 +155,6 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
                     lambda_l = lambda_all + scaling*(lambda_l-lambda_all);
                     lambda_r = lambda_all - scaling*(lambda_all-lambda_r);
                   }
-                  // double ratio = lambda_l/lambda_r;
-                  // double ratio_thres = 4./3.;
-                  // std::cout << ratio << ", " << ratio_thres << std::endl;
-                  // if (ratio < ratio_thres) {
-                  //   std::cout << "Increasing gap 2" << std::endl;
-                  //   double chi = sqrt(4./3. * lambda_r/lambda_l);
-                  //   lambda_l = lambda_l * chi;
-                  //   lambda_r = lambda_r / chi;
-                  // }
                 }
                 if (lambda_r == 0)
                     lambda_r = 0.0001;

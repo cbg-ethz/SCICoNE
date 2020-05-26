@@ -154,9 +154,13 @@ int main( int argc, char* argv[]) {
 
     if (add_input_breakpoints) {
       // Prioritize the known breakpoints by setting their Sp to be larger than the maximum
+      std::cout << "Adding in known breakpoints..." << std::endl;
       double max = MathOp::vec_max(s_p);
-      for (auto const &b: input_breakpoints)
-        s_p[b] = 2 * max;
+      for (auto const &b: input_breakpoints) {
+        if (b != n_bins)
+          s_p[b] = 2 * max;
+      }
+      std::cout << "Done." << std::endl;
     }
 
     vector<double> sp_cropped = dsp.crop(s_p, window_size);
