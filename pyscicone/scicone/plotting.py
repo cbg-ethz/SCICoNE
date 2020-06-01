@@ -59,7 +59,7 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
             orientation="vertical",
         )
         cb.outline.set_visible(False)
-        cb.ax.set_ylabel("Clones", fontsize=tickfontsize)
+        cb.ax.set_ylabel("Clones", fontsize=textfontsize)
         ax.yaxis.set_label_position("left")
         for j, lab in enumerate(ticks.keys()):
             cb.ax.text(
