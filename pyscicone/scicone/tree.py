@@ -279,7 +279,6 @@ class Tree(object):
         self.outputs['region_sizes'] = segmented_region_sizes
         if region_neutral_states is not None:
             self.outputs['region_neutral_states'] = region_neutral_states
-            os.remove(region_neutral_states_file)
         else:
             self.outputs['region_neutral_states'] = np.ones((n_regions,)) * ploidy
 
