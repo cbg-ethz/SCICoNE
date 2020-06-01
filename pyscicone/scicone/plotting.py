@@ -1,18 +1,21 @@
+from scicone.constants import *
+from scicone.utils import cluster_clones
 import numpy as np
+import string
 from copy import deepcopy
 import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.gridspec import GridSpec
 import seaborn as sns
 
 sns.set_style("ticks", {"axes.grid": True})
 
-colors = ["#2040C8", "white", "#EE241D"]
-datacmap = matplotlib.colors.LinearSegmentedColormap.from_list("cmap", colors)
-cnvcmap = matplotlib.colors.LinearSegmentedColormap.from_list("cnvcmap", colors, 5)
+datacmap = matplotlib.colors.LinearSegmentedColormap.from_list("cmap", BLUE_WHITE_RED)
+cnvcmap = matplotlib.colors.LinearSegmentedColormap.from_list("cnvcmap", BLUE_WHITE_RED, 5)
 
 def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
-                textfontsize=24, tickfontsize=22, bps=None,
+                labels=None, textfontsize=24, tickfontsize=22, bps=None,
                 figsize=(24,8), dpi=100, vmax=None, output_path=None):
     if mode == 'data':
         cmap = datacmap
@@ -21,8 +24,60 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
     else:
         raise AttributeError('mode argument must be one of \'data\' or \'cnv\'')
 
+    data_ = np.array(data, copy=True)
+
     fig = plt.figure(figsize=figsize, dpi=dpi)
-    im = plt.pcolormesh(data, cmap=cmap, rasterized=True)
+    if labels is not None:
+        labels = np.array(labels).ravel()
+        labels_ = np.array(labels, copy=True)
+
+        if mode == 'cnv':
+            data_, labels_ = cluster_clones(data_, labels_, within_clone=False)
+        else:
+            data_, labels_ = cluster_clones(data_, labels_, within_clone=True)
+
+        ticks = dict()
+        unique_labels = np.unique(labels_)
+        n_unique_labels = len(unique_labels)
+        for label in unique_labels: # sorted
+            # Get last pos
+            t = np.where(labels_ == label)[0]
+            if len(t) > 1:
+                t = t[-1]
+            ticks[label] = t
+        gs = GridSpec(1, 2, wspace=0.05, width_ratios=[1, 40])
+        ax = fig.add_subplot(gs[0])
+        bounds = [0] + list(ticks.values())
+        subnorm = matplotlib.colors.BoundaryNorm(bounds, n_unique_labels)
+        clonecmap = matplotlib.colors.ListedColormap(list(LABEL_COLORS_DICT.values())[:n_unique_labels])
+        cb = matplotlib.colorbar.ColorbarBase(
+            ax,
+            cmap=clonecmap,
+            norm=subnorm,
+            boundaries=bounds,
+            spacing="proportional",
+            orientation="vertical",
+        )
+        cb.outline.set_visible(False)
+        cb.ax.set_ylabel("Clones", fontsize=tickfontsize)
+        ax.yaxis.set_label_position("left")
+        for j, lab in enumerate(ticks.keys()):
+            cb.ax.text(
+                0.5,
+                ((bounds[j + 1] + bounds[j]) / 2) / bounds[-1],
+                lab,
+                ha="center",
+                va="center",
+                rotation=90,
+                color="w",
+                fontsize=tickfontsize,
+            )
+        cb.set_ticks([])
+
+        ax = fig.add_subplot(gs[1])
+    else:
+        ax = plt.gca()
+    im = plt.pcolormesh(data_, cmap=cmap, rasterized=True)
     ax = plt.gca()
     plt.ylabel('Cells', fontsize=textfontsize)
     plt.xlabel('Bins', fontsize=textfontsize)
@@ -49,6 +104,8 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
         tick.label.set_fontsize(tickfontsize)
     for tick in ax.yaxis.get_major_ticks():
         tick.label.set_fontsize(tickfontsize)
+    if labels is not None:
+        plt.yticks([])
 
     axins = inset_axes(
             ax,
