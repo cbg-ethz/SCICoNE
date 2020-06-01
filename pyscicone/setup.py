@@ -23,7 +23,7 @@ setup(
     name="scicone",
     version="1.0",
     description="Single-cell copy number calling and event history reconstruction.",
-    author=["Pedro Falé Ferreira", "Mustafa Anil Tuncel", ],
+    author=["Pedro Falé Ferreira", "Mustafa Anil Tuncel"],
     author_email=["pedro.ferreira@bsse.ethz.ch", "tuncel.manil@gmail.com"],
     packages=find_packages(),
     install_requires=requirements,
@@ -31,7 +31,7 @@ setup(
         "git+git://github.com/anilbey/PhenoGraph.git@7ef72746688217b2feed2f3f8226da2f304c532c#egg=Phenograph"
     ],
     package_data={
-        '': ['bin/*tests*', 'bin/*inference*', 'bin/*breakpoint_detection*', 'bin/*simulation*']
+        '': ['bin/*tests*', 'bin/*inference*', 'bin/*breakpoint_detection*', 'bin/*simulation*', 'data/*']
     },
     include_package_data=True,
     test_suite="tests",
