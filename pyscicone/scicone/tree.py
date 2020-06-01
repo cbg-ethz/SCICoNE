@@ -304,12 +304,14 @@ class Tree(object):
 
                     if not self.persistence:
                         os.remove(fn)
-                elif postfix in fn and "tree_inferred.txt" in fn: # Parse tree structure, score and nu
+            # Read tree after everything else is read
+            for fn in os.listdir(cwd):
+                if postfix in fn and "tree_inferred.txt" in fn: # Parse tree structure, score and nu
                     self.read_from_file(fn)
                     if not self.persistence:
                         os.remove(fn)
         except Exception as e:
-            print('Could not load {}'.format(fn))
+            print(f'Could not load {fn}: {e}')
             # print("OSError: ", e.output, e.stdout, e.stderr)
 
         return cmd_output
