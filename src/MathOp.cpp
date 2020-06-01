@@ -75,7 +75,6 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
     // the last breakpoint
     size_t n_bins = mat[0].size();
 
-    // For parallelization
     size_t n_regions = known_breakpoints.size() - 1; // must include first and last bin
     std::cout << "n_regions: " << n_regions << std::endl;
     size_t n_cells = mat.size();
@@ -84,9 +83,9 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
     vector<vector<double>> lr_vec(n_bins, vector<double>(n_cells)); // LR of each bin for each cell
 
     // Parallelize cells and known regions
-    #pragma omp parallel for collapse(2)
-    for (size_t r = 0; r < n_regions; ++r) {
-        for (size_t j = 0; j < n_cells; ++j) {        
+    #pragma omp parallel for
+    for (size_t j = 0; j < n_cells; ++j) {
+        for (size_t r = 0; r < n_regions; ++r) {
             for (size_t i = known_breakpoints[r]; i < known_breakpoints[r+1]; ++i) {
                 int start = i - window_size;
                 int end = i + window_size;
