@@ -318,6 +318,8 @@ class SCICoNE(object):
             condensed_avg_segmented_counts[id] = avg_segmented_counts[np.where(communities==id)[0][0],:]
             cluster_sizes[id] = np.where(communities==id)[0].shape[0]
 
+        self.cluster_assignments = communities
+
         return condensed_avg_segmented_counts, cluster_sizes, communities, Q
 
     def learn_single_tree(self, segmented_data, segmented_region_sizes, **tree_kwargs):
