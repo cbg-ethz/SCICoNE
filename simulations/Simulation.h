@@ -220,9 +220,27 @@ public:
         }
         assert(validation_sum == D_regions[0][1]);
 
+        // write the cell attachments
+        std::ofstream cell_node_ids_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_posfix+"_cell_node_ids.tsv");
+
+        // create a hashmap of nodes for constant access by id
+        unordered_map<uint64_t , Node*> hash_map;
+        for (unsigned i=0; i < mcmc.t.all_nodes_vec.size(); i++)
+        {
+            hash_map[mcmc.t.all_nodes_vec[i]->id] = mcmc.t.all_nodes_vec[i];
+        }
+        for (size_t j = 0; j < n_cells; ++j) {
+            // t_scores[i] is the map
+            pair<const int, double> max_pair = *max_element(mcmc.t_scores[j].begin(), mcmc.t_scores[j].end(), [] (const pair<const int, double>& p1, const pair<const int, double>& p2)
+            {
+                return p1.second < p2.second;
+            }) ;
+            cell_node_ids_file << j << '\t' << max_pair.first << '\n';
+        }
+
     }
 
-    void write_output(const string& f_name_postfix)
+    void write_output()
     {
         /*
          * Writes the simulation outputs to text files.
@@ -230,11 +248,11 @@ public:
          * */
 
         // write the region sizes
-        std::ofstream region_sizes_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_region_sizes.txt");
+        std::ofstream region_sizes_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_posfix+"_region_sizes.txt");
         for (const auto &e : this->region_sizes) region_sizes_file << e << "\n";
 
         // write the ground truth
-        std::ofstream ground_truth_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_ground_truth.csv");
+        std::ofstream ground_truth_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_posfix+"_ground_truth.csv");
         for (auto const &v1: this->ground_truth_bins) {
             for (size_t i = 0; i < v1.size(); i++)
             {
@@ -247,7 +265,7 @@ public:
         }
 
         // write the D matrix
-        std::ofstream D_mat_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_d_mat.csv");
+        std::ofstream D_mat_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_posfix+"_d_mat.csv");
         for (auto const &v1: this->D) {
             for (size_t i = 0; i < v1.size(); i++)
             {
@@ -260,7 +278,7 @@ public:
         }
 
         // write the tree that generated the data
-        std::ofstream tree_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_postfix+"_tree.txt");
+        std::ofstream tree_file("./"+ to_string(n_nodes)+ "nodes_" + to_string(n_regions) + "regions_" + to_string(n_reads) + "reads_"+f_name_posfix+"_tree.txt");
         tree_file << this->tree;
 
     }

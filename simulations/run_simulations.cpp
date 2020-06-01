@@ -50,7 +50,6 @@ int main(int argc, char* argv[]) {
 
     // minimum region size should be bigger than window_size
     unsigned min_region_size = 10;
-    string f_name_postfix = "";
 
     print_precision = 15;
 
@@ -67,7 +66,7 @@ int main(int argc, char* argv[]) {
             ("ploidy", "The ploidy information", cxxopts::value(ploidy))
             ("verbosity", "verbosity of the program", cxxopts::value(verbosity))
             ("seed", "Seed", cxxopts::value(seed))
-            ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_postfix))
+            ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_posfix))
             ("print_precision", "The precision points of the score values to be printed", cxxopts::value(print_precision))
             ("copy_number_limit", "the maximum copy number profile one bin or region can have", cxxopts::value(copy_number_limit))
             ("min_reg_size", "the minimum size that a region can have", cxxopts::value(min_region_size))
@@ -130,7 +129,7 @@ int main(int argc, char* argv[]) {
     sim.simulate_count_matrix(false, nu);
     std::cout << "Done sampling counts" << std::endl;
 
-    sim.write_output(f_name_postfix);
+    sim.write_output();
 
     std::cout<<"Successfully simulated." << std::endl;
 
