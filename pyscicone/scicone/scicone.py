@@ -78,6 +78,7 @@ class SCICoNE(object):
         self.clustering_score = 0.
         self.best_cluster_tree = None
         self.cluster_tree_robustness_score = 0.
+        self.cluster_tree_list = []
         self.best_full_tree = None
         self.full_tree_robustness_score = 0.
         self.tree_list = []
@@ -440,6 +441,7 @@ class SCICoNE(object):
             self.best_cluster_tree = tree
             self.cluster_tree_robustness_score = robustness_score
             self.clustering_score = Q
+            self.cluster_tree_list = trees
 
             if self.region_gene_map is not None:
                 self.best_cluster_tree.set_gene_event_dicts(self.region_gene_map)
