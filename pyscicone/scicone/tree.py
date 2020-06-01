@@ -182,7 +182,7 @@ class Tree(object):
         node_sizes = dict(zip(nodes.astype(int).astype(str), counts))
         i = 0
         for node in node_ids:
-            self.node_dict[node]['label'] = None
+            self.node_dict[node]['label'] = ""
             try: # only add label if node has cells attached
                 if node_sizes[node] > 0:
                     self.node_dict[node]['label'] = list(string.ascii_uppercase)[i]
@@ -320,7 +320,8 @@ class Tree(object):
             if node != '0':
                 for region in self.node_dict[node]['region_event_dict']:
                     for gene in region_gene_map[int(region)]:
-                        self.node_dict[node]['gene_event_dict'][gene] = self.node_dict[node]['region_event_dict'][region]
+                        if gene != "":
+                            self.node_dict[node]['gene_event_dict'][gene] = self.node_dict[node]['region_event_dict'][region]
 
     def set_graphviz_str(self, root_label='Neutral', node_sizes=True, node_labels=True, color="#E6E6FA", event_fontsize=14, nodesize_fontsize=14,
                                 nodelabel_fontsize=14, gene_labels=False, gene_list=None):
