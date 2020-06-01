@@ -48,7 +48,7 @@ public:
     static double log_replace_sum(const double &sum, const vector<double> &to_subtract, const vector<double> &to_add,
                                      const map<int, double> &unchanged_vals);
     static vector<double> combine_scores(vector<double> aic_vec);
-    static vector<vector<double>> likelihood_ratio(vector<vector<double>> &mat, int window_size);
+    static vector<vector<double>> likelihood_ratio(vector<vector<double>> &mat, int window_size, vector<int> &known_breakpoints);
     static double breakpoint_log_prior(int k, int m, double mu);
     static double compute_linear_regression_slope(const vector<double>& x, const vector<double>& y);
     static double log_n_choose_k(unsigned long n, unsigned long k);

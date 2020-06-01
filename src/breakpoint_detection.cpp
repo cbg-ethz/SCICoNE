@@ -105,6 +105,10 @@ int main( int argc, char* argv[]) {
         Utils::read_vector(input_breakpoints, input_breakpoints_file);
         std::cout << "Done." << std::endl;
         add_input_breakpoints = true;
+      } else {
+        input_breakpoints.push_back(0);
+        input_breakpoints.push_back(n_bins-1);
+        add_input_breakpoints = false;
       }
     }
 
@@ -135,9 +139,9 @@ int main( int argc, char* argv[]) {
     if (compute_sp) {
       std::cout<<"Computing the probability of a region being a breakpoint..."<<std::endl;
       if (compute_lr)
-        s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells);
+        s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells, input_breakpoints);
       else
-        s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells, lr_vec, compute_lr);
+        s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells, input_breakpoints, lr_vec, compute_lr);
       std::cout<<"Computed probabilities for all regions."<<std::endl;
     }
 
@@ -150,9 +154,13 @@ int main( int argc, char* argv[]) {
 
     if (add_input_breakpoints) {
       // Prioritize the known breakpoints by setting their Sp to be larger than the maximum
+      std::cout << "Adding in known breakpoints..." << std::endl;
       double max = MathOp::vec_max(s_p);
-      for (auto const &b: input_breakpoints)
-        s_p[b] = 2 * max;
+      for (auto const &b: input_breakpoints) {
+        if (b != n_bins)
+          s_p[b] = 2 * max;
+      }
+      std::cout << "Done." << std::endl;
     }
 
     vector<double> sp_cropped = dsp.crop(s_p, window_size);

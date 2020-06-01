@@ -56,11 +56,14 @@ void test_breakpoint_detection()
     std::string d_matrix_file = "../tests/bp_detection/10nodes_40regions_100000reads_sim_tiny_1000bins_d_mat.csv";
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
     Utils::read_counts(d_bins, d_matrix_file);
+    vector<int> input_breakpoints;
+    input_breakpoints.push_back(0);
+    input_breakpoints.push_back(n_bins-1);
 
     std::cout<<"Input matrix is read."<<std::endl;
 
     SignalProcessing dsp;
-    vector<double> s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells);
+    vector<double> s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells, input_breakpoints);
 
     double sum_sp = std::accumulate(s_p.begin(), s_p.end(), 0.0);
 
