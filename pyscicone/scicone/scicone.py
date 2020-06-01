@@ -1,7 +1,7 @@
 from scicone.tree import Tree
 from scicone import utils_10x, utils
 
-import os, shutil, subprocess
+import sys, os, shutil, subprocess
 import multiprocessing
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
