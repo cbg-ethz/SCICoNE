@@ -363,6 +363,7 @@ class SCICoNE(object):
             data = self.data['filtered_counts']
 
         if data.shape[1] != segmented_region_sizes.shape[0]:
+            print('Segmenting data...')
             segmented_data = self.condense_regions(data, segmented_region_sizes)
         else:
             segmented_data = data
