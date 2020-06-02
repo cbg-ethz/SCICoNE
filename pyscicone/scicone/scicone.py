@@ -259,6 +259,7 @@ class SCICoNE(object):
 
         self.bps = output
         if 'unfiltered_chromosome_stops' in self.data.keys():
+            print('Mapping to genes...')
             self.region_gene_map = utils.get_region_gene_map(self.data['bin_size'], self.data['unfiltered_chromosome_stops'],
                                     self.bps['segmented_regions'], self.data['excluded_bins'])
 
