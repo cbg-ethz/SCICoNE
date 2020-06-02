@@ -44,11 +44,14 @@ def set_region_neutral_states(all_region_stops, known_region_stops, known_region
     known_region_neutral_states = np.array(known_region_neutral_states).ravel().astype(int)
     all_region_neutral_states = np.zeros(all_region_stops.shape).astype(int)
 
-    start_idx = 0
-    for i, known_stop in enumerate(known_region_stops):
-        end_idx = np.where(all_region_stops==known_stop)[0][0].astype(int)
-        all_region_neutral_states[start_idx:end_idx+1] = known_region_neutral_states[i]
-        start_idx = end_idx
+    start_region = 0
+    for i, known_stop in enumerate(known_region_stops): # known stops
+        # Region with breakpoint matching the known stop
+        end_region = np.where(all_region_stops==known_stop)[0][0].astype(int)
+
+        # Set all the regions between the last known stop and the current stop to the known neutral state
+        all_region_neutral_states[start_region:end_region+1] = known_region_neutral_states[i]
+        start_region = end_region + 1
 
     return all_region_neutral_states
 
@@ -58,7 +61,7 @@ def cluster_clones(data, labels, within_clone=True):
     labels_ = np.array(labels, copy=True)
 
     unique_labels = np.unique(labels_)
-    
+
     # Cluster data by label
     start = 0
     for label in unique_labels:
