@@ -200,9 +200,11 @@ double Node::compute_event_prior(u_int n_regions) const {
         {
             parent_state = this->parent->c.at(event_it.first);
             int c_change_val = event_it.second;
+            if (signbit(c_change_val) != signbit(parent_state)) {
+                if (static_cast<int>(event_it.first) - 1 != i_prev) // if the region is not adjacent to its previous
+                  repetition_count++;
+            }
 
-            if (signbit(c_change_val) != signbit(parent_state))
-                repetition_count++;
         }
         catch (const std::out_of_range& e)
         {
