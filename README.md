@@ -88,8 +88,6 @@ Finds the maximum a posteriori tree given a cells by regions matrix.
 | **n_nodes** | the number of nodes in the random initialised tree | 50 |
 | **lambda_r** | lambda param for the poisson that generates the number of regions | 0.1 |
 | **lambda_c** | lambda param for the poisson that generates the copy number state of a region | 0.2 |
-| **max_region_size** | the maximum size that a region can have | 10 |
-
 
 #### *Sample run* :
 ```shell
