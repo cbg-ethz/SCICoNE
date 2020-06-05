@@ -262,6 +262,7 @@ class SCICoNE(object):
             print('Mapping to genes...')
             self.region_gene_map = utils.get_region_gene_map(self.data['bin_size'], self.data['unfiltered_chromosome_stops'],
                                     self.bps['segmented_regions'], self.data['excluded_bins'])
+            print('Done.')
 
         return output
 
@@ -364,8 +365,9 @@ class SCICoNE(object):
             data = self.data['filtered_counts']
 
         if data.shape[1] != segmented_region_sizes.shape[0]:
-            print('Segmenting data...')
+            print('Condensing regions...')
             segmented_data = self.condense_regions(data, segmented_region_sizes)
+            print('Done.')
         else:
             segmented_data = data
 
@@ -388,6 +390,8 @@ class SCICoNE(object):
                 kwargs['region_neutral_states'] = region_neutral_states
 
         if cluster:
+            print('Learning cluster tree...')
+
             # Get the average read counts
             clustered_segmented_data, cluster_sizes, cluster_assignments, Q = self.condense_segmented_clusters(segmented_data)
 
@@ -416,7 +420,6 @@ class SCICoNE(object):
             # Update tree data to cell-level instead of cluster-level
             tree.outputs['inferred_cnvs'] = cell_bin_genotypes
             tree.outputs['cell_node_ids'] = cell_node_ids
-            tree.read_tree_str(tree.tree_str)
 
             # Add back regions with neutral state = 0
             if "region_neutral_states" in kwargs:
@@ -440,6 +443,8 @@ class SCICoNE(object):
 
                     tree.outputs['inferred_cnvs'] = rec_cell_bin_genotypes
 
+            tree.read_tree_str(tree.tree_str)
+
             self.best_cluster_tree = tree
             self.cluster_tree_robustness_score = robustness_score
             self.clustering_score = Q
@@ -457,7 +462,7 @@ class SCICoNE(object):
                 nu = tree.nu
                 tree = self.learn_single_tree(segmented_data, segmented_region_sizes, nu=nu, initial_tree=tree, n_iters=nu_tree_n_iters, move_probs=[0,0,0,0,0,0,0,0,0,0,0,1,0], postfix=f"nu_tree_{self.postfix}", verbose=self.verbose, **kwargs)
                 print('Done. Will start from nu={}'.format(tree.nu))
-
+                print('Learning full tree...')
                 cnt = 0
                 robustness_score = 0.
                 while robustness_score < robustness_thr:
