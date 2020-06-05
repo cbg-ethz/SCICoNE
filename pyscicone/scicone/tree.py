@@ -208,7 +208,7 @@ class Tree(object):
 
     def learn_tree(self, segmented_data, segmented_region_sizes, n_iters=1000, move_probs=[0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.01],
                     n_nodes=3,  seed=42, postfix="", initial_tree=None, nu=1.0, cluster_sizes=None, region_neutral_states=None, alpha=0., max_scoring=True, copy_number_limit=2,
-                    c_penalise=10.0, ploidy=2, verbosity=1, verbose=False):
+                    c_penalise=10.0, lambda_r=0.2, lambda_c=0.1, ploidy=2, verbosity=1, verbose=False):
         if postfix == "":
             postfix = self.postfix
 
@@ -246,7 +246,8 @@ class Tree(object):
                     f"--copy_number_limit={copy_number_limit}", f"--n_iters={n_iters}", f"--n_nodes={n_nodes}",\
                     f"--move_probs={move_probs_str}", f"--seed={seed}", f"--region_sizes_file={temp_segmented_region_sizes_file}",\
                     f"--tree_file={temp_tree_file}", f"--nu={nu}", f"--cluster_sizes_file={temp_cluster_sizes_file}", f"--alpha={alpha}",\
-                    f"--max_scoring={max_scoring}", f"--c_penalise={c_penalise}", f"--region_neutral_states_file={temp_region_neutral_states_file}"]
+                    f"--max_scoring={max_scoring}", f"--c_penalise={c_penalise}", f"--lambda_r={lambda_r}",
+                    f"--lambda_c={lambda_c}", f"--region_neutral_states_file={temp_region_neutral_states_file}"]
                 if verbose:
                     print(' '.join(cmd))
                 cmd_output = subprocess.run(cmd)
@@ -265,7 +266,8 @@ class Tree(object):
                     f"--copy_number_limit={copy_number_limit}", f"--n_iters={n_iters}", f"--n_nodes={n_nodes}",\
                     f"--move_probs={move_probs_str}", f"--seed={seed}", f"--region_sizes_file={temp_segmented_region_sizes_file}",\
                     f"--nu={nu}", f"--cluster_sizes_file={temp_cluster_sizes_file}", f"--alpha={alpha}", f"--max_scoring={max_scoring}",\
-                    f"--c_penalise={c_penalise}", f"--region_neutral_states_file={temp_region_neutral_states_file}"]
+                    f"--c_penalise={c_penalise}", f"--lambda_r={lambda_r}", f"--lambda_c={lambda_c}",
+                    f"--region_neutral_states_file={temp_region_neutral_states_file}"]
                 if verbose:
                     print(' '.join(cmd))
                 cmd_output = subprocess.run(cmd)
@@ -326,12 +328,14 @@ class Tree(object):
                             self.node_dict[node]['gene_event_dict'][gene] = self.node_dict[node]['region_event_dict'][region]
 
     def set_graphviz_str(self, root_label='Neutral', node_sizes=True, node_labels=True, color="#E6E6FA", event_fontsize=14, nodesize_fontsize=14,
-                                nodelabel_fontsize=14, gene_labels=False, gene_list=None):
+                                nodelabel_fontsize=14, gene_labels=False, gene_list=None, tumor_type=None):
         if gene_labels is True and gene_list is None:
             # Load COSMIC gene list
             bpath = os.path.join(os.path.dirname(__file__), 'data')
-            gene_list = pd.read_csv(os.path.join(bpath, 'cancer_gene_census.csv'))
-            gene_list = gene_list['Gene Symbol'].tolist()
+            df = pd.read_csv(os.path.join(bpath, 'cancer_gene_census.csv'))
+            gene_list = df['Gene Symbol'].tolist()
+            if tumor_type is not None:
+                gene_list = df.loc[np.where(np.array([tumor_type in val for val in df['Tumour Types(Somatic)'].values.astype(str)]))[0], 'Gene Symbol'].tolist()
 
         if node_sizes:
             nodes, counts = np.unique(self.outputs['cell_node_ids'][:,-1], return_counts=True)
@@ -355,6 +359,8 @@ class Tree(object):
             p_id = self.node_dict[key]['parent_id']
             if node_id == '0':
                 str_merged_labels = root_label
+            elif node_id == '-100':
+                str_merged_labels = 'Whole-genome duplication'
             else:
                 merged_labels = []
 
@@ -429,8 +435,10 @@ class Tree(object):
                             if ''.join(list(merged_genes)[-len('<br/>'):]) == '<br/>':
                                 merged_genes = ''.join(list(merged_genes)[:-len('<br/>')])
 
-                            event_str = f'<font point-size="{event_fontsize}" color="{color}">{event:+}</font>: ' + merged_genes + '<br/><br/>'
-                            merged_labels.append(event_str)
+                            event_str = ''
+                            if len(genes) != 0:
+                                event_str = f'<font point-size="{event_fontsize}" color="{color}">{event:+}</font>: ' + merged_genes + '<br/><br/>'
+                                merged_labels.append(event_str)
 
                             str_merged_labels = ''.join(merged_labels)
 
@@ -487,12 +495,57 @@ class Tree(object):
         self.graphviz_str = '\n'.join(graphviz_header + graphviz_labels + graphviz_links + ["}"])
 
     def plot_tree(self, root_label='Neutral', node_sizes=True, node_labels=True, color="#E6E6FA", event_fontsize=14, nodesize_fontsize=14, nodelabel_fontsize=14,
-                    gene_labels=False, gene_list=None):
+                    gene_labels=False, gene_list=None, tumor_type=None):
 
         self.set_graphviz_str(root_label=root_label, node_sizes=node_sizes, node_labels=node_labels, color=color,
                                 event_fontsize=event_fontsize, nodesize_fontsize=nodesize_fontsize,
                                 nodelabel_fontsize=nodelabel_fontsize,
-                                gene_labels=gene_labels, gene_list=gene_list)
+                                gene_labels=gene_labels, gene_list=gene_list, tumor_type=tumor_type)
 
         s = Source(self.graphviz_str)
         return s
+
+
+    def adjust_to_wgd(self, threshold=0.98):
+        # if data is None and self.data is not None:
+        #     data = self.data['filtered_counts']
+
+        turned_diploid = False
+        # Get the cells with tetraploid genome
+        cells = np.where(np.sum(self.outputs['inferred_cnvs'] == 4, axis=1)/self.outputs['inferred_cnvs'].shape[1] > threshold)[0]
+        #
+        # smaller_lib_size = True if np.median(np.sum(data[cells], axis=1)) < np.median(np.sum(data[~cells], axis=1)) else False
+        # smaller_variance = True if np.median(np.var(data[cells], axis=1)) < np.median(np.var(data[~cells], axis=1)) else False
+        tetraploid_nodes = np.unique(self.outputs['cell_node_ids'][cells]).astype(int).astype(str)
+        # if smaller_lib_size and smaller_variance: # They are diploid
+        if len(cells) > 0:
+            self.outputs['inferred_cnvs'][cells] = (self.outputs['inferred_cnvs'][cells]/2).astype(int)
+            # Re-assign to root
+            self.outputs['cell_node_ids'][cells] = 0
+            self.node_dict['0']['cnv'] = (self.node_dict['0']['cnv']/2).astype(int)
+            turned_diploid = True
+
+        # Add WGD
+        if turned_diploid:
+            # Remove the diploid nodes
+            for c in tetraploid_nodes:
+                if str(int(c)) != '0':
+                    parent = self.node_dict[str(int(c))]['parent_id']
+
+                    # Get children
+                    for node_id in self.node_dict:
+                        if self.node_dict[node_id]['parent_id'] == str(int(c)):
+                            # Update parent
+                            self.node_dict[node_id]['parent_id'] = parent
+
+                    # Remove node
+                    del self.node_dict[str(int(c))]
+
+            # Add a WGD node below the root
+            self.node_dict['-100'] = dict()
+            self.node_dict['-100']['parent_id'] = '0'
+            self.node_dict['-100']['label'] = ""
+            for node_id in self.node_dict:
+                if node_id != '-100' and node_id != '0':
+                    if self.node_dict[node_id]['parent_id'] == '0':
+                        self.node_dict[node_id]['parent_id'] = '-100'
