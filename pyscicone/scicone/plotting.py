@@ -1,10 +1,13 @@
 from scicone.constants import *
 from scicone.utils import cluster_clones
+from scipy.cluster.hierarchy import ward, leaves_list
+from scipy.spatial.distance import pdist
 import numpy as np
 import string
 from copy import deepcopy
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.gridspec import GridSpec
 import seaborn as sns
@@ -12,15 +15,33 @@ import seaborn as sns
 sns.set_style("ticks", {"axes.grid": True})
 
 datacmap = matplotlib.colors.LinearSegmentedColormap.from_list("cmap", BLUE_WHITE_RED)
-cnvcmap = matplotlib.colors.LinearSegmentedColormap.from_list("cnvcmap", BLUE_WHITE_RED, 5)
+
+def get_cnv_cmap(vmax):
+    if vmax == 4:
+        cmap = matplotlib.colors.LinearSegmentedColormap.from_list("cnvcmap", BLUE_WHITE_RED, vmax+1)
+    else:
+        # Extend amplification colors beyond 4
+        cmap = matplotlib.colors.LinearSegmentedColormap.from_list("cnvcmap", BLUE_WHITE_RED, 4+1)
+        l = []
+        for i in range(2): # deletions: 0 and 1
+            rgb = cmap(i)[:3]
+            l.append(matplotlib.colors.rgb2hex(rgb))
+        cmap = matplotlib.colors.LinearSegmentedColormap.from_list("cnvcmap", BLUE_WHITE_RED[1:], (vmax-2)+1)
+        for i in range(cmap.N):
+            rgb = cmap(i)[:3]
+            l.append(matplotlib.colors.rgb2hex(rgb))
+        cmap = matplotlib.colors.ListedColormap(l)
+    return cmap
 
 def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
-                labels=None, textfontsize=24, tickfontsize=22, bps=None,
-                figsize=(24,8), dpi=100, vmax=None, output_path=None):
+                labels=None, cluster=False, textfontsize=24, tickfontsize=22,
+                bps=None, figsize=(24,8), dpi=100, vmax=None, output_path=None):
     if mode == 'data':
         cmap = datacmap
     elif mode == 'cnv':
-        cmap = cnvcmap
+        if vmax is None or vmax < 4:
+            vmax = 4
+        cmap = get_cnv_cmap(vmax)
     else:
         raise AttributeError('mode argument must be one of \'data\' or \'cnv\'')
 
@@ -77,6 +98,11 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
         ax = fig.add_subplot(gs[1])
     else:
         ax = plt.gca()
+
+    if labels is None and cluster is True:
+        Z = ward(pdist(data_))
+        hclust_index = leaves_list(Z)
+        data_ = data_[hclust_index]
     im = plt.pcolormesh(data_, cmap=cmap, rasterized=True)
     ax = plt.gca()
     plt.ylabel('Cells', fontsize=textfontsize)
@@ -124,10 +150,13 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
     cb.ax.set_title(cbar_title, y=1.05, fontsize=textfontsize)
 
     if mode == 'cnv':
-        if vmax is None or vmax == 4 :
-            im.set_clim(vmin=0, vmax=4)
-            cb.set_ticks([0.4, 1.2, 2, 2.8, 3.6])
-            cb.set_ticklabels(["0", "1", "2", "3", "4+"])
+        im.set_clim(vmin=0, vmax=vmax)
+        tick_locs = (np.arange(vmax+1) + 0.5)*(vmax)/(vmax+1)
+        cb.set_ticks(tick_locs)
+        # cb.set_ticks([0.4, 1.2, 2, 2.8, 3.6])
+        ticklabels = np.arange(0, vmax+1).astype(int).astype(str)
+        ticklabels[-1] = f"{ticklabels[-1]}+"
+        cb.set_ticklabels(ticklabels)
 
     if output_path is not None:
         print("Creating {}...".format(output_path))
