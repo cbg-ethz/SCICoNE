@@ -60,6 +60,7 @@ class SCICoNE(object):
             self.score_binary = os.path.join(bpath, score_binary)
             self.tests_binary = os.path.join(bpath, tests_binary)
         else:
+            print(f'Using binaries at {binary_path}')
             self.binary_path = binary_path
             self.simulation_binary = os.path.join(self.binary_path, 'simulation')
             self.bp_binary = os.path.join(self.binary_path, 'breakpoint_detection')
