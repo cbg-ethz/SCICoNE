@@ -406,9 +406,11 @@ class SCICoNE(object):
             # Don't use the outlier cluster
             filtered_clustered_segmented_data = clustered_segmented_data
             filtered_cluster_sizes = cluster_sizes
-            if '-1' in filtered_clustered_segmented_data.keys() and outlier_removal:
+            if '-1' in filtered_clustered_segmented_data.keys() and remove_cluster_outliers:
                 del filtered_clustered_segmented_data['-1']
                 del filtered_cluster_sizes['-1']
+            filtered_clustered_segmented_data = np.vstack(filtered_clustered_segmented_data.values())
+            filtered_cluster_sizes = np.concatenate(filtered_cluster_sizes.values())
 
             cnt = 0
             robustness_score = 0.
@@ -428,11 +430,19 @@ class SCICoNE(object):
 
             cell_bin_genotypes = np.empty((segmented_data.shape[0], cluster_bin_genotypes.shape[1]))
             cell_node_ids = np.empty((segmented_data.shape[0], 1))
-            for id in np.unique(cluster_assignments):
-                if id == -1 and remove_cluster_outliers:
-                    cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = np.nan
-                    cell_node_ids[np.where(cluster_assignments==id)[0],0] = 'NA'
-                else:
+            unique_cluster_assignments = np.unique(cluster_assignments)
+            if np.any(cluster_assignments == -1):
+                cluster_assignments = cluster_assignments + 1
+                unique_cluster_assignments = np.unique(cluster_assignments)
+                for id in unique_cluster_assignments:
+                    if remove_cluster_outliers and id == 0:
+                        cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = np.nan
+                        cell_node_ids[np.where(cluster_assignments==id)[0],0] = 'NA'
+                    else:
+                        cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = cluster_bin_genotypes[id]
+                        cell_node_ids[np.where(cluster_assignments==id)[0],0] = cluster_node_ids[id,1]
+            else:
+                for id in unique_cluster_assignments:
                     cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = cluster_bin_genotypes[id]
                     cell_node_ids[np.where(cluster_assignments==id)[0],0] = cluster_node_ids[id,1]
 
