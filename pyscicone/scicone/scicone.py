@@ -301,6 +301,18 @@ class SCICoNE(object):
         # Cluster the normalised segmented data
         normalised_segmented_data = segmented_data/np.sum(segmented_data, axis=1)[:,np.newaxis]
         communities, graph, Q = phenograph.cluster(data=normalised_segmented_data, k=n_neighbours, n_jobs=1, jaccard=True)
+        # is_outlier = np.array([True if c==-1 else False for c in communities])
+        # n_outliers = np.count_nonzero(is_outlier)
+        # if remove_cluster_outliers:
+        #     # Filter outliers
+        #     communities = communities[~is_outlier]
+        #     segmented_data = segmented_data[~is_outlier]
+        #     print(f"Filtered out {n_outliers} outliers.")
+        # else:
+        #     # Offset -1 if there is one
+        #     communities = np.array(communities) + 1
+        #     community_ids = np.array(community_ids) + 1
+
         communities_df = pd.DataFrame(communities, columns=["cluster"])
         communities_df["cell_barcode"] = communities_df.index
         communities_df = communities_df[["cell_barcode", "cluster"]]
@@ -309,18 +321,13 @@ class SCICoNE(object):
 
         # Compute (unnormalised) average counts of each cluster
         avg_segmented_counts = np.empty(segmented_data.shape)
-        condensed_avg_segmented_counts = np.empty((len(community_ids), n_regions))
-        cluster_sizes = np.zeros((len(community_ids),))
-
-        # Offset -1 if there is one
-        if np.min(community_ids) == -1:
-            communities = np.array(communities) + 1
-            community_ids = np.array(community_ids) + 1
+        condensed_avg_segmented_counts = dict()
+        cluster_sizes = dict()
 
         for id in community_ids:
-            avg_segmented_counts[np.where(communities==id)[0]] = np.mean(segmented_data[np.where(communities==id)[0], :], axis=0)
-            condensed_avg_segmented_counts[id] = avg_segmented_counts[np.where(communities==id)[0][0],:]
-            cluster_sizes[id] = np.where(communities==id)[0].shape[0]
+            avg_segmented_counts[np.where(communities==id)[0]] = np.mean([np.where(communities==id)[0], :], axis=0)
+            condensed_avg_segmented_counts[str(id)] = avg_segmented_counts[np.where(communities==id)[0][0],:]
+            cluster_sizes[str(id)] = np.where(communities==id)[0].shape[0]
 
         self.cluster_assignments = communities
 
@@ -359,7 +366,7 @@ class SCICoNE(object):
 
         return best_tree, robustness_score, trees
 
-    def learn_tree(self, data=None, segmented_region_sizes=None, n_reps=10, cluster=True, full=True, cluster_tree_n_iters=4000, nu_tree_n_iters=4000, full_tree_n_iters=4000, max_tries=2, robustness_thr=0.5, **kwargs):
+    def learn_tree(self, data=None, segmented_region_sizes=None, n_reps=10, cluster=True, remove_cluster_outliers=True, full=True, cluster_tree_n_iters=4000, nu_tree_n_iters=4000, full_tree_n_iters=4000, max_tries=2, robustness_thr=0.5, **kwargs):
         if segmented_region_sizes is None:
             segmented_region_sizes = self.bps['segmented_region_sizes']
         if data is None:
@@ -394,7 +401,14 @@ class SCICoNE(object):
             print('Learning cluster tree...')
 
             # Get the average read counts
-            clustered_segmented_data, cluster_sizes, cluster_assignments, Q = self.condense_segmented_clusters(segmented_data)
+            clustered_segmented_data, cluster_sizes, cluster_assignments, Q = self.condense_segmented_clusters(segmented_data, remove_cluster_outliers=remove_cluster_outliers)
+
+            # Don't use the outlier cluster
+            filtered_clustered_segmented_data = clustered_segmented_data
+            filtered_cluster_sizes = cluster_sizes
+            if '-1' in filtered_clustered_segmented_data.keys() and outlier_removal:
+                del filtered_clustered_segmented_data['-1']
+                del filtered_cluster_sizes['-1']
 
             cnt = 0
             robustness_score = 0.
@@ -403,7 +417,7 @@ class SCICoNE(object):
                 if cnt >= max_tries:
                     break
                 nu = tree.nu if tree is not None else 1.0
-                tree, robustness_score, trees = self.learn_tree_parallel(clustered_segmented_data, segmented_region_sizes, n_reps=n_reps, nu=nu, cluster_sizes=cluster_sizes, initial_tree=tree, n_iters=cluster_tree_n_iters, verbose=self.verbose, **kwargs)
+                tree, robustness_score, trees = self.learn_tree_parallel(filtered_clustered_segmented_data, segmented_region_sizes, n_reps=n_reps, nu=nu, cluster_sizes=filtered_cluster_sizes, initial_tree=tree, n_iters=cluster_tree_n_iters, verbose=self.verbose, **kwargs)
                 cnt += 1
 
             print(f"Cluster tree finished with a robustness score of {robustness_score} after {cnt} tries")
@@ -415,8 +429,12 @@ class SCICoNE(object):
             cell_bin_genotypes = np.empty((segmented_data.shape[0], cluster_bin_genotypes.shape[1]))
             cell_node_ids = np.empty((segmented_data.shape[0], 1))
             for id in np.unique(cluster_assignments):
-                cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = cluster_bin_genotypes[id]
-                cell_node_ids[np.where(cluster_assignments==id)[0],0] = cluster_node_ids[id,1]
+                if id == -1 and remove_cluster_outliers:
+                    cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = np.nan
+                    cell_node_ids[np.where(cluster_assignments==id)[0],0] = 'NA'
+                else:
+                    cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = cluster_bin_genotypes[id]
+                    cell_node_ids[np.where(cluster_assignments==id)[0],0] = cluster_node_ids[id,1]
 
             # Update tree data to cell-level instead of cluster-level
             tree.outputs['inferred_cnvs'] = cell_bin_genotypes
