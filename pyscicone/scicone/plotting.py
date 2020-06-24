@@ -44,6 +44,7 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
         cmap = get_cnv_cmap(vmax)
     else:
         raise AttributeError('mode argument must be one of \'data\' or \'cnv\'')
+    cmap.set_bad(color='black') # for NaN
 
     data_ = np.array(data, copy=True)
 
