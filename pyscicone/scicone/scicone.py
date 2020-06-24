@@ -437,7 +437,7 @@ class SCICoNE(object):
                 for id in unique_cluster_assignments:
                     if remove_cluster_outliers and id == 0:
                         cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = np.nan
-                        cell_node_ids[np.where(cluster_assignments==id)[0],0] = 'NA'
+                        cell_node_ids[np.where(cluster_assignments==id)[0],0] = np.nan
                     else:
                         cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = cluster_bin_genotypes[id]
                         cell_node_ids[np.where(cluster_assignments==id)[0],0] = cluster_node_ids[id,1]
