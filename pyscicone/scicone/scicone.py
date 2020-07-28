@@ -325,7 +325,7 @@ class SCICoNE(object):
         cluster_sizes = dict()
 
         for id in community_ids:
-            avg_segmented_counts[np.where(communities==id)[0]] = np.mean([np.where(communities==id)[0], :], axis=0)
+            avg_segmented_counts[np.where(communities==id)[0]] = np.mean(segmented_data[np.where(communities==id)[0], :], axis=0)
             condensed_avg_segmented_counts[str(id)] = avg_segmented_counts[np.where(communities==id)[0][0],:]
             cluster_sizes[str(id)] = np.where(communities==id)[0].shape[0]
 
