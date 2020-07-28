@@ -292,15 +292,20 @@ class SCICoNE(object):
 
         return condensed_mat
 
-    def condense_segmented_clusters(self, segmented_data):
+    def condense_segmented_clusters(self, segmented_data, min_cluster_size=1):
         # Cluster the segmented counts
         n_cells = segmented_data.shape[0]
         n_regions = segmented_data.shape[1]
         n_neighbours = max(int(n_cells / 10), 2) # avoid errors
         print(f"n_neighbours to be used: {str(n_neighbours)}")
+        if min_cluster_size < 1 and min_cluster_size > 0:
+            min_cluster_size = min_cluster_size * n_cells
+        min_cluster_size = int(min_cluster_size)
+        print(f"Setting min_cluster_size to {min_cluster_size}")
+
         # Cluster the normalised segmented data
         normalised_segmented_data = segmented_data/np.sum(segmented_data, axis=1)[:,np.newaxis]
-        communities, graph, Q = phenograph.cluster(data=normalised_segmented_data, k=n_neighbours, n_jobs=1, jaccard=True)
+        communities, graph, Q = phenograph.cluster(data=normalised_segmented_data, k=n_neighbours, n_jobs=1, jaccard=True, min_cluster_size=min_cluster_size)
         communities_df = pd.DataFrame(communities, columns=["cluster"])
         communities_df["cell_barcode"] = communities_df.index
         communities_df = communities_df[["cell_barcode", "cluster"]]
@@ -359,7 +364,7 @@ class SCICoNE(object):
 
         return best_tree, robustness_score, trees
 
-    def learn_tree(self, data=None, segmented_region_sizes=None, n_reps=10, cluster=True, full=True, cluster_tree_n_iters=4000, nu_tree_n_iters=4000, full_tree_n_iters=4000, max_tries=2, robustness_thr=0.5, **kwargs):
+    def learn_tree(self, data=None, segmented_region_sizes=None, n_reps=10, cluster=True, full=True, cluster_tree_n_iters=4000, nu_tree_n_iters=4000, full_tree_n_iters=4000, max_tries=2, robustness_thr=0.5, min_cluster_size=1, **kwargs):
         if segmented_region_sizes is None:
             segmented_region_sizes = self.bps['segmented_region_sizes']
         if data is None:
@@ -394,7 +399,7 @@ class SCICoNE(object):
             print('Learning cluster tree...')
 
             # Get the average read counts
-            clustered_segmented_data, cluster_sizes, cluster_assignments, Q = self.condense_segmented_clusters(segmented_data)
+            clustered_segmented_data, cluster_sizes, cluster_assignments, Q = self.condense_segmented_clusters(segmented_data, min_cluster_size=min_cluster_size)
 
             cnt = 0
             robustness_score = 0.
