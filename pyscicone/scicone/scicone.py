@@ -401,7 +401,7 @@ class SCICoNE(object):
             print('Learning cluster tree...')
 
             # Get the average read counts
-            clustered_segmented_data, cluster_sizes, cluster_assignments, Q = self.condense_segmented_clusters(segmented_data, remove_cluster_outliers=remove_cluster_outliers)
+            clustered_segmented_data, cluster_sizes, cluster_assignments, Q = self.condense_segmented_clusters(segmented_data)
 
             # Don't use the outlier cluster
             filtered_clustered_segmented_data = clustered_segmented_data
