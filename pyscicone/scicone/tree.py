@@ -284,8 +284,15 @@ class Tree(object):
         else:
             self.outputs['region_neutral_states'] = np.ones((n_regions,)) * ploidy
 
-        os.remove(temp_segmented_data_file)
-        os.remove(temp_segmented_region_sizes_file)
+        try:
+            os.remove(temp_segmented_data_file)
+        except Exception as e:
+            print(f'Could not delete {temp_segmented_data_file}: {e}')
+        try:
+            os.remove(temp_segmented_region_sizes_file)
+        except Exception as e:
+            print(f'Could not delete {temp_segmented_data_file}: {e}')
+
         if cluster_sizes is not None:
             os.remove(temp_cluster_sizes_file)
         if region_neutral_states is not None:

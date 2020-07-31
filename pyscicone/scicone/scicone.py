@@ -314,13 +314,21 @@ class SCICoNE(object):
 
         # Compute (unnormalised) average counts of each cluster
         avg_segmented_counts = np.empty(segmented_data.shape)
-        condensed_avg_segmented_counts = dict()
-        cluster_sizes = dict()
+        condensed_avg_segmented_counts = np.empty((len(community_ids), n_regions))
+        cluster_sizes = np.zeros((len(community_ids),))
+
+        # Offset -1 if there is one
+        if np.min(community_ids) == -1:
+            communities = np.array(communities) + 1
+            community_ids = np.array(community_ids) + 1
 
         for id in community_ids:
             avg_segmented_counts[np.where(communities==id)[0]] = np.mean(segmented_data[np.where(communities==id)[0], :], axis=0)
-            condensed_avg_segmented_counts[str(id)] = avg_segmented_counts[np.where(communities==id)[0][0],:]
-            cluster_sizes[str(id)] = np.where(communities==id)[0].shape[0]
+            condensed_avg_segmented_counts[id] = avg_segmented_counts[np.where(communities==id)[0][0],:]
+            cluster_sizes[id] = np.where(communities==id)[0].shape[0]
+
+        print(f"Found {len(community_ids)} clusters.")
+        print(f"Cluster sizes: {cluster_sizes}")
 
         self.cluster_assignments = communities
 
@@ -396,15 +404,6 @@ class SCICoNE(object):
             # Get the average read counts
             clustered_segmented_data, cluster_sizes, cluster_assignments, Q = self.condense_segmented_clusters(segmented_data, min_cluster_size=min_cluster_size)
 
-            # Don't use the outlier cluster
-            filtered_clustered_segmented_data = clustered_segmented_data
-            filtered_cluster_sizes = cluster_sizes
-            if '-1' in filtered_clustered_segmented_data.keys() and remove_cluster_outliers:
-                del filtered_clustered_segmented_data['-1']
-                del filtered_cluster_sizes['-1']
-            filtered_clustered_segmented_data = np.vstack(filtered_clustered_segmented_data.values())
-            filtered_cluster_sizes = np.concatenate(filtered_cluster_sizes.values())
-
             cnt = 0
             robustness_score = 0.
             tree = None
@@ -412,60 +411,48 @@ class SCICoNE(object):
                 if cnt >= max_tries:
                     break
                 nu = tree.nu if tree is not None else 1.0
-                tree, robustness_score, trees = self.learn_tree_parallel(filtered_clustered_segmented_data, segmented_region_sizes, n_reps=n_reps, nu=nu, cluster_sizes=filtered_cluster_sizes, initial_tree=tree, n_iters=cluster_tree_n_iters, verbose=self.verbose, **kwargs)
+                tree, robustness_score, trees = self.learn_tree_parallel(clustered_segmented_data, segmented_region_sizes, n_reps=n_reps, nu=nu, cluster_sizes=cluster_sizes, initial_tree=tree, n_iters=cluster_tree_n_iters, verbose=self.verbose, **kwargs)
                 cnt += 1
 
-            print(f"Cluster tree finished with a robustness score of {robustness_score} after {cnt} tries")
+                print(f"Cluster tree finished with a robustness score of {robustness_score} after {cnt} tries")
 
-            # Expand clusters back into cells to get the cell per bin genotype
-            cluster_bin_genotypes = tree.outputs['inferred_cnvs']
-            cluster_node_ids = tree.outputs['cell_node_ids']
+                # Expand clusters back into cells to get the cell per bin genotype
+                cluster_bin_genotypes = tree.outputs['inferred_cnvs']
+                cluster_node_ids = tree.outputs['cell_node_ids']
 
-            cell_bin_genotypes = np.empty((segmented_data.shape[0], cluster_bin_genotypes.shape[1]))
-            cell_node_ids = np.empty((segmented_data.shape[0], 1))
-            unique_cluster_assignments = np.unique(cluster_assignments)
-            if np.any(cluster_assignments == -1):
-                cluster_assignments = cluster_assignments + 1
-                unique_cluster_assignments = np.unique(cluster_assignments)
-                for id in unique_cluster_assignments:
-                    if remove_cluster_outliers and id == 0:
-                        cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = np.nan
-                        cell_node_ids[np.where(cluster_assignments==id)[0],0] = np.nan
-                    else:
-                        cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = cluster_bin_genotypes[id]
-                        cell_node_ids[np.where(cluster_assignments==id)[0],0] = cluster_node_ids[id,1]
-            else:
-                for id in unique_cluster_assignments:
+                cell_bin_genotypes = np.empty((segmented_data.shape[0], cluster_bin_genotypes.shape[1]))
+                cell_node_ids = np.empty((segmented_data.shape[0], 1))
+                for id in np.unique(cluster_assignments):
                     cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = cluster_bin_genotypes[id]
                     cell_node_ids[np.where(cluster_assignments==id)[0],0] = cluster_node_ids[id,1]
 
-            # Update tree data to cell-level instead of cluster-level
-            tree.outputs['inferred_cnvs'] = cell_bin_genotypes
-            tree.outputs['cell_node_ids'] = cell_node_ids
+                # Update tree data to cell-level instead of cluster-level
+                tree.outputs['inferred_cnvs'] = cell_bin_genotypes
+                tree.outputs['cell_node_ids'] = cell_node_ids
 
-            # Add back regions with neutral state = 0
-            if "region_neutral_states" in kwargs:
-                if len(zero_neutral_regions) > 0:
-                    rec_cell_bin_genotypes = np.zeros((cell_bin_genotypes.shape[0], np.sum(full_segmented_region_sizes)))
-                    new_start = 0
-                    start = 0
-                    for region in range(len(full_region_neutral_states)):
-                        new_region_size = full_segmented_region_sizes[region]
+                # Add back regions with neutral state = 0
+                if "region_neutral_states" in kwargs:
+                    if len(zero_neutral_regions) > 0:
+                        rec_cell_bin_genotypes = np.zeros((cell_bin_genotypes.shape[0], np.sum(full_segmented_region_sizes)))
+                        new_start = 0
+                        start = 0
+                        for region in range(len(full_region_neutral_states)):
+                            new_region_size = full_segmented_region_sizes[region]
 
-                        new_end = new_start+new_region_size
-                        if full_region_neutral_states[region] == 0:
-                            rec_cell_bin_genotypes[:, new_start:new_end] = 0
+                            new_end = new_start+new_region_size
+                            if full_region_neutral_states[region] == 0:
+                                rec_cell_bin_genotypes[:, new_start:new_end] = 0
+                                new_start = new_end
+                            else:
+                                end = start+new_region_size
+                                rec_cell_bin_genotypes[:, new_start:new_end] = cell_bin_genotypes[:, start:end]
+                                start = end
+
                             new_start = new_end
-                        else:
-                            end = start+new_region_size
-                            rec_cell_bin_genotypes[:, new_start:new_end] = cell_bin_genotypes[:, start:end]
-                            start = end
 
-                        new_start = new_end
+                        tree.outputs['inferred_cnvs'] = rec_cell_bin_genotypes
 
-                    tree.outputs['inferred_cnvs'] = rec_cell_bin_genotypes
-
-            tree.read_tree_str(tree.tree_str)
+                tree.read_tree_str(tree.tree_str)
 
             self.best_cluster_tree = tree
             self.cluster_tree_robustness_score = robustness_score

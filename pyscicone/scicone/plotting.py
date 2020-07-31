@@ -71,7 +71,11 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
         ax = fig.add_subplot(gs[0])
         bounds = [0] + list(ticks.values())
         subnorm = matplotlib.colors.BoundaryNorm(bounds, n_unique_labels)
-        clonecmap = matplotlib.colors.ListedColormap(list(LABEL_COLORS_DICT.values())[:n_unique_labels])
+        clone_colors = list(LABEL_COLORS_DICT.values())[:n_unique_labels]
+        if '-' in unique_labels:
+            clone_colors = ['black'] + clone_colors
+        clonecmap = matplotlib.colors.ListedColormap(clone_colors)
+
         cb = matplotlib.colorbar.ColorbarBase(
             ax,
             cmap=clonecmap,
@@ -81,7 +85,7 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
             orientation="vertical",
         )
         cb.outline.set_visible(False)
-        cb.ax.set_ylabel("Clones", fontsize=textfontsize)
+        cb.ax.set_ylabel("Subclones", fontsize=textfontsize)
         ax.yaxis.set_label_position("left")
         for j, lab in enumerate(ticks.keys()):
             cb.ax.text(
