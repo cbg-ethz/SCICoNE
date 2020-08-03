@@ -158,7 +158,7 @@ int main( int argc, char* argv[]) {
       double max = MathOp::vec_max(s_p);
       for (auto const &b: input_breakpoints) {
         if (b != n_bins)
-          s_p[b] = 2 * max;
+          s_p[b] = 10 * max;
       }
       std::cout << "Done." << std::endl;
     }
