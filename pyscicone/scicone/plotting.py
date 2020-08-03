@@ -66,7 +66,7 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
             t = np.where(labels_ == label)[0]
             if len(t) > 1:
                 t = t[-1]
-            ticks[label] = t
+            ticks[label] = t + 1
         gs = GridSpec(1, 2, wspace=0.05, width_ratios=[1, 40])
         ax = fig.add_subplot(gs[0])
         bounds = [0] + list(ticks.values())
