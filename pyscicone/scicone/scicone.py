@@ -2,6 +2,7 @@ from scicone.tree import Tree
 from scicone import utils_10x, utils
 
 import sys, os, shutil, subprocess
+from subprocess import PIPE
 import multiprocessing
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
@@ -232,7 +233,10 @@ class SCICoNE(object):
                 f"--input_breakpoints_file={input_breakpoints_file}"]
             if self.verbose:
                 print(' '.join(cmd))
-            cmd_output = subprocess.run(cmd)
+            if verbosity > 1:
+                cmd_output = subprocess.run(cmd, stdout=PIPE, stderr=PIPE)
+            else:
+                cmd_output = subprocess.run(cmd)
 
             # Delete the data file
             os.remove(data_file)
@@ -246,6 +250,7 @@ class SCICoNE(object):
             print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
 
         output = dict()
+        output['cmd_output'] = cmd_output
 
         try:
             cwd = os.getcwd()
