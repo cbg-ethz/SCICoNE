@@ -35,7 +35,8 @@ def get_cnv_cmap(vmax):
 
 def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
                 labels=None, cluster=False, textfontsize=24, tickfontsize=22,
-                bps=None, figsize=(24,8), dpi=100, vmax=None, output_path=None):
+                bps=None, figsize=(24,8), dpi=100, vmax=None, bbox_to_anchor=(1.05, 0.0, 1, 1),
+                output_path=None):
     if mode == 'data':
         cmap = datacmap
     elif mode == 'cnv':
@@ -56,7 +57,7 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
         if mode == 'cnv':
             data_, labels_ = cluster_clones(data_, labels_, within_clone=False)
         else:
-            data_, labels_ = cluster_clones(data_, labels_, within_clone=True)
+            data_, labels_ = cluster_clones(data_, labels_, within_clone=cluster)
 
         ticks = dict()
         unique_labels = np.unique(labels_)
@@ -143,7 +144,7 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
             width="2%",  # width = 5% of parent_bbox width
             height="85%",
             loc="lower left",
-            bbox_to_anchor=(1.045, 0.0, 1, 1),
+            bbox_to_anchor=bbox_to_anchor,
             bbox_transform=ax.transAxes,
             borderpad=0,
         )
@@ -162,6 +163,10 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
         ticklabels = np.arange(0, vmax+1).astype(int).astype(str)
         ticklabels[-1] = f"{ticklabels[-1]}+"
         cb.set_ticklabels(ticklabels)
+    elif mode == 'data':
+        if vmax == 2:
+            cb.set_ticks([0, 1, 2])
+            cb.set_ticklabels(["0", "1", "2+"])
 
     if output_path is not None:
         print("Creating {}...".format(output_path))
