@@ -2,6 +2,7 @@ from scicone.tree import Tree
 from scicone import utils_10x, utils
 
 import sys, os, shutil, subprocess
+from subprocess import PIPE
 import multiprocessing
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
@@ -232,7 +233,10 @@ class SCICoNE(object):
                 f"--input_breakpoints_file={input_breakpoints_file}"]
             if self.verbose:
                 print(' '.join(cmd))
-            cmd_output = subprocess.run(cmd)
+            if verbosity > 1:
+                cmd_output = subprocess.run(cmd, stdout=PIPE, stderr=PIPE)
+            else:
+                cmd_output = subprocess.run(cmd)
 
             # Delete the data file
             os.remove(data_file)
@@ -246,6 +250,7 @@ class SCICoNE(object):
             print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
 
         output = dict()
+        output['cmd_output'] = cmd_output
 
         try:
             cwd = os.getcwd()
@@ -326,6 +331,9 @@ class SCICoNE(object):
             avg_segmented_counts[np.where(communities==id)[0]] = np.mean(segmented_data[np.where(communities==id)[0], :], axis=0)
             condensed_avg_segmented_counts[id] = avg_segmented_counts[np.where(communities==id)[0][0],:]
             cluster_sizes[id] = np.where(communities==id)[0].shape[0]
+
+        print(f"Found {len(community_ids)} clusters.")
+        print(f"Cluster sizes: {cluster_sizes}")
 
         self.cluster_assignments = communities
 
@@ -411,45 +419,45 @@ class SCICoNE(object):
                 tree, robustness_score, trees = self.learn_tree_parallel(clustered_segmented_data, segmented_region_sizes, n_reps=n_reps, nu=nu, cluster_sizes=cluster_sizes, initial_tree=tree, n_iters=cluster_tree_n_iters, verbose=self.verbose, **kwargs)
                 cnt += 1
 
-            print(f"Cluster tree finished with a robustness score of {robustness_score} after {cnt} tries")
+                print(f"Cluster tree finished with a robustness score of {robustness_score} after {cnt} tries")
 
-            # Expand clusters back into cells to get the cell per bin genotype
-            cluster_bin_genotypes = tree.outputs['inferred_cnvs']
-            cluster_node_ids = tree.outputs['cell_node_ids']
+                # Expand clusters back into cells to get the cell per bin genotype
+                cluster_bin_genotypes = tree.outputs['inferred_cnvs']
+                cluster_node_ids = tree.outputs['cell_node_ids']
 
-            cell_bin_genotypes = np.empty((segmented_data.shape[0], cluster_bin_genotypes.shape[1]))
-            cell_node_ids = np.empty((segmented_data.shape[0], 1))
-            for id in np.unique(cluster_assignments):
-                cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = cluster_bin_genotypes[id]
-                cell_node_ids[np.where(cluster_assignments==id)[0],0] = cluster_node_ids[id,1]
+                cell_bin_genotypes = np.empty((segmented_data.shape[0], cluster_bin_genotypes.shape[1]))
+                cell_node_ids = np.empty((segmented_data.shape[0], 1))
+                for id in np.unique(cluster_assignments):
+                    cell_bin_genotypes[np.where(cluster_assignments==id)[0]] = cluster_bin_genotypes[id]
+                    cell_node_ids[np.where(cluster_assignments==id)[0],0] = cluster_node_ids[id,1]
 
-            # Update tree data to cell-level instead of cluster-level
-            tree.outputs['inferred_cnvs'] = cell_bin_genotypes
-            tree.outputs['cell_node_ids'] = cell_node_ids
+                # Update tree data to cell-level instead of cluster-level
+                tree.outputs['inferred_cnvs'] = cell_bin_genotypes
+                tree.outputs['cell_node_ids'] = cell_node_ids
 
-            # Add back regions with neutral state = 0
-            if "region_neutral_states" in kwargs:
-                if len(zero_neutral_regions) > 0:
-                    rec_cell_bin_genotypes = np.zeros((cell_bin_genotypes.shape[0], np.sum(full_segmented_region_sizes)))
-                    new_start = 0
-                    start = 0
-                    for region in range(len(full_region_neutral_states)):
-                        new_region_size = full_segmented_region_sizes[region]
+                # Add back regions with neutral state = 0
+                if "region_neutral_states" in kwargs:
+                    if len(zero_neutral_regions) > 0:
+                        rec_cell_bin_genotypes = np.zeros((cell_bin_genotypes.shape[0], np.sum(full_segmented_region_sizes)))
+                        new_start = 0
+                        start = 0
+                        for region in range(len(full_region_neutral_states)):
+                            new_region_size = full_segmented_region_sizes[region]
 
-                        new_end = new_start+new_region_size
-                        if full_region_neutral_states[region] == 0:
-                            rec_cell_bin_genotypes[:, new_start:new_end] = 0
+                            new_end = new_start+new_region_size
+                            if full_region_neutral_states[region] == 0:
+                                rec_cell_bin_genotypes[:, new_start:new_end] = 0
+                                new_start = new_end
+                            else:
+                                end = start+new_region_size
+                                rec_cell_bin_genotypes[:, new_start:new_end] = cell_bin_genotypes[:, start:end]
+                                start = end
+
                             new_start = new_end
-                        else:
-                            end = start+new_region_size
-                            rec_cell_bin_genotypes[:, new_start:new_end] = cell_bin_genotypes[:, start:end]
-                            start = end
 
-                        new_start = new_end
+                        tree.outputs['inferred_cnvs'] = rec_cell_bin_genotypes
 
-                    tree.outputs['inferred_cnvs'] = rec_cell_bin_genotypes
-
-            tree.read_tree_str(tree.tree_str)
+                tree.read_tree_str(tree.tree_str)
 
             self.best_cluster_tree = tree
             self.cluster_tree_robustness_score = robustness_score

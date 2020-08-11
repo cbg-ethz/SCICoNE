@@ -35,7 +35,8 @@ def get_cnv_cmap(vmax):
 
 def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
                 labels=None, cluster=False, textfontsize=24, tickfontsize=22,
-                bps=None, figsize=(24,8), dpi=100, vmax=None, output_path=None):
+                bps=None, figsize=(24,8), dpi=100, vmax=None, bbox_to_anchor=(1.05, 0.0, 1, 1),
+                output_path=None):
     if mode == 'data':
         cmap = datacmap
     elif mode == 'cnv':
@@ -44,6 +45,7 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
         cmap = get_cnv_cmap(vmax)
     else:
         raise AttributeError('mode argument must be one of \'data\' or \'cnv\'')
+    cmap.set_bad(color='black') # for NaN
 
     data_ = np.array(data, copy=True)
 
@@ -55,7 +57,7 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
         if mode == 'cnv':
             data_, labels_ = cluster_clones(data_, labels_, within_clone=False)
         else:
-            data_, labels_ = cluster_clones(data_, labels_, within_clone=True)
+            data_, labels_ = cluster_clones(data_, labels_, within_clone=cluster)
 
         ticks = dict()
         unique_labels = np.unique(labels_)
@@ -65,12 +67,16 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
             t = np.where(labels_ == label)[0]
             if len(t) > 1:
                 t = t[-1]
-            ticks[label] = t
+            ticks[label] = t + 1
         gs = GridSpec(1, 2, wspace=0.05, width_ratios=[1, 40])
         ax = fig.add_subplot(gs[0])
         bounds = [0] + list(ticks.values())
         subnorm = matplotlib.colors.BoundaryNorm(bounds, n_unique_labels)
-        clonecmap = matplotlib.colors.ListedColormap(list(LABEL_COLORS_DICT.values())[:n_unique_labels])
+        clone_colors = list(LABEL_COLORS_DICT.values())[:n_unique_labels]
+        if '-' in unique_labels:
+            clone_colors = ['black'] + clone_colors
+        clonecmap = matplotlib.colors.ListedColormap(clone_colors)
+
         cb = matplotlib.colorbar.ColorbarBase(
             ax,
             cmap=clonecmap,
@@ -80,7 +86,7 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
             orientation="vertical",
         )
         cb.outline.set_visible(False)
-        cb.ax.set_ylabel("Clones", fontsize=textfontsize)
+        cb.ax.set_ylabel("Subclones", fontsize=textfontsize)
         ax.yaxis.set_label_position("left")
         for j, lab in enumerate(ticks.keys()):
             cb.ax.text(
@@ -138,7 +144,7 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
             width="2%",  # width = 5% of parent_bbox width
             height="85%",
             loc="lower left",
-            bbox_to_anchor=(1.045, 0.0, 1, 1),
+            bbox_to_anchor=bbox_to_anchor,
             bbox_transform=ax.transAxes,
             borderpad=0,
         )
@@ -157,6 +163,10 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
         ticklabels = np.arange(0, vmax+1).astype(int).astype(str)
         ticklabels[-1] = f"{ticklabels[-1]}+"
         cb.set_ticklabels(ticklabels)
+    elif mode == 'data':
+        if vmax == 2:
+            cb.set_ticks([0, 1, 2])
+            cb.set_ticklabels(["0", "1", "2+"])
 
     if output_path is not None:
         print("Creating {}...".format(output_path))

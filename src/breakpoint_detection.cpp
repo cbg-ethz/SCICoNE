@@ -156,9 +156,11 @@ int main( int argc, char* argv[]) {
       // Prioritize the known breakpoints by setting their Sp to be larger than the maximum
       std::cout << "Adding in known breakpoints..." << std::endl;
       double max = MathOp::vec_max(s_p);
+      std::cout << "Max sp: " << max << std::endl;
       for (auto const &b: input_breakpoints) {
         if (b != n_bins)
-          s_p[b] = 2 * max;
+          s_p[b] = 100 * max;
+          std::cout << "Adding " << b << ": " << s_p[b] << std::endl;
       }
       std::cout << "Done." << std::endl;
     }

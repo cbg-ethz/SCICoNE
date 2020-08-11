@@ -126,7 +126,7 @@ class Tree(object):
 
         return tree_str
 
-    def read_tree_str(self, tree_str):
+    def read_tree_str(self, tree_str, num_labels=False):
         self.tree_str = tree_str
 
         list_tree_file = tree_str.split('\n')
@@ -175,7 +175,7 @@ class Tree(object):
         #                         ['depth', 'mal'], ascending=[True, True]).index.tolist()
 
 
-        # Label the non-empty nodes alphabetically
+        # Label the non-empty nodes
         node_ids = np.array(list(self.node_dict.keys())).astype(int)
         node_ids = list(node_ids.astype(str))
         nodes, counts = np.unique(self.outputs['cell_node_ids'][:,-1], return_counts=True)
@@ -183,9 +183,14 @@ class Tree(object):
         i = 0
         for node in node_ids:
             self.node_dict[node]['label'] = ""
+            self.node_dict[node]['size'] = 0
             try: # only add label if node has cells attached
                 if node_sizes[node] > 0:
-                    self.node_dict[node]['label'] = list(string.ascii_uppercase)[i]
+                    self.node_dict[node]['size'] = int(node_sizes[node])
+                    if num_labels:
+                        self.node_dict[node]['label'] = str(i)
+                    else:
+                        self.node_dict[node]['label'] = list(string.ascii_uppercase)[i]
                     i += 1
             except KeyError:
                 pass
@@ -195,7 +200,7 @@ class Tree(object):
 
         self.num_nodes = len(list(self.node_dict.keys()))
 
-    def read_from_file(self, file):
+    def read_from_file(self, file, num_labels=False):
         """
             reads the file containing a tree and converts it to graphviz format
             :param file: path to the tree file.
@@ -204,11 +209,11 @@ class Tree(object):
             list_tree_file = list(f)
 
         self.tree_str = ''.join(list_tree_file)
-        self.read_tree_str(self.tree_str)
+        self.read_tree_str(self.tree_str, num_labels=num_labels)
 
     def learn_tree(self, segmented_data, segmented_region_sizes, n_iters=1000, move_probs=[0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.01],
                     n_nodes=3,  seed=42, postfix="", initial_tree=None, nu=1.0, cluster_sizes=None, region_neutral_states=None, alpha=0., max_scoring=True, copy_number_limit=2,
-                    c_penalise=10.0, lambda_r=0.2, lambda_c=0.1, ploidy=2, verbosity=1, verbose=False):
+                    c_penalise=10.0, lambda_r=0.2, lambda_c=0.1, ploidy=2, verbosity=1, verbose=False, num_labels=False):
         if postfix == "":
             postfix = self.postfix
 
@@ -284,8 +289,15 @@ class Tree(object):
         else:
             self.outputs['region_neutral_states'] = np.ones((n_regions,)) * ploidy
 
-        os.remove(temp_segmented_data_file)
-        os.remove(temp_segmented_region_sizes_file)
+        try:
+            os.remove(temp_segmented_data_file)
+        except Exception as e:
+            print(f'Could not delete {temp_segmented_data_file}: {e}')
+        try:
+            os.remove(temp_segmented_region_sizes_file)
+        except Exception as e:
+            print(f'Could not delete {temp_segmented_data_file}: {e}')
+
         if cluster_sizes is not None:
             os.remove(temp_cluster_sizes_file)
         if region_neutral_states is not None:
@@ -309,7 +321,7 @@ class Tree(object):
             # Read tree after everything else is read
             for fn in os.listdir(cwd):
                 if postfix in fn and "tree_inferred.txt" in fn: # Parse tree structure, score and nu
-                    self.read_from_file(fn)
+                    self.read_from_file(fn, num_labels=num_labels)
                     if not self.persistence:
                         os.remove(fn)
         except Exception as e:
