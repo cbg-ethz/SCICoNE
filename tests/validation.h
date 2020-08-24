@@ -657,7 +657,6 @@ void test_event_prior()
     assert(abs(event_prior - event_prior_gt)  <= epsilon);
 
     std::cout<<"Event prior computation test passed!"<<std::endl;
-
 }
 
 void test_tree_attachment()
@@ -1163,15 +1162,14 @@ void test_genotype_preserving_move_scores()
     std::transform( prune_attach_indices.begin(), prune_attach_indices.end(), all_possible_scores.begin(),
            std::inserter(score_map, score_map.end() ), std::make_pair<std::pair<int,int> const&,double const&> );
 
-
-    assert(abs(score_map[std::make_pair(2,5)] - (-12.303)) <= epsilon);
+    assert(abs(score_map[std::make_pair(2,5)] - (-2.303)) <= epsilon);
     assert(abs(score_map[std::make_pair(3,4)] - (-12.303)) <= epsilon);
-    assert(abs(score_map[std::make_pair(3,5)] - (-4.605)) <= epsilon);
-    assert(abs(score_map[std::make_pair(4,5)] - (-14.605)) <= epsilon);
+    assert(abs(score_map[std::make_pair(3,5)] - (5.395)) <= epsilon);
+    assert(abs(score_map[std::make_pair(4,5)] - (-4.605)) <= epsilon);
     assert(abs(score_map[std::make_pair(4,3)] - (-2.302)) <= epsilon);
-    assert(abs(score_map[std::make_pair(5,2)] - (-22.303)) <= epsilon);
-    assert(abs(score_map[std::make_pair(5,3)] - (-24.605)) <= epsilon);
-    assert(abs(score_map[std::make_pair(5,4)] - (-34.605)) <= epsilon);
+    assert(abs(score_map[std::make_pair(5,2)] - (-12.303)) <= epsilon);
+    assert(abs(score_map[std::make_pair(5,3)] - (-14.605)) <= epsilon);
+    assert(abs(score_map[std::make_pair(5,4)] - (-24.605)) <= epsilon);
 
     std::cout << "Genotype preserving move gibbs sampling scores distribution test passed!" << std::endl;
 }
