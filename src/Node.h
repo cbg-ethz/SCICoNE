@@ -186,30 +186,21 @@ double Node::compute_event_prior(u_int n_regions) const {
     double c_penalisation = c_penalise; // the penalisation coefficient, global var
 
     const map<u_int,int>& c_change = this->c_change;
+
     int v = 0;
     int v_prev = 0; // the first region is zero
     int i_prev = -1; // the initial index is -1, it'll be updated later
+
+    int repetition_count_prev = 0; // the first region is zero
+    int repetition_count_i_prev = -1;
 
     auto last_elem_id = c_change.rbegin()->first;
 
     for (auto const &event_it : c_change)
     {
-        // penalisation for repetition
-        int parent_state = 0;
-        try
-        {
-            parent_state = this->parent->c.at(event_it.first);
-            int c_change_val = event_it.second;
-            if (signbit(c_change_val) != signbit(parent_state)) {
-                if (static_cast<int>(event_it.first) - 1 != i_prev) // if the region is not adjacent to its previous
-                  repetition_count++;
-            }
+        // std::cout << event_it.first+1 << " " << event_it.second << std::endl;
 
-        }
-        catch (const std::out_of_range& e)
-        {
-            // pass
-        }
+        // Count the number of blocks
         int diff;
         if (static_cast<int>(event_it.first) - 1 != i_prev) // if the region is adjacent to its previous
         {
@@ -233,6 +224,52 @@ double Node::compute_event_prior(u_int n_regions) const {
                 v += diff_last;
                 assert(v>0);
             }
+        }
+
+        // Count the number of undoing blocks
+        int parent_state = 0;
+        try
+        {
+            parent_state = this->parent->c.at(event_it.first);
+            int c_change_val = event_it.second;
+            // if (signbit(c_change_val) == signbit(parent_state)) {
+            //   c_change_undoing[event_it.first] = 0; // is not undoing
+            // }
+
+            // if (signbit(c_change_val) != signbit(parent_state)) {
+            //     if (static_cast<int>(event_it.first) - 1 != i_prev) // if the region is not adjacent to its previous
+            //       repetition_count++;
+            // }
+            if (signbit(c_change_val) != signbit(parent_state)) {
+              int diff;
+              if (static_cast<int>(event_it.first) - 1 != repetition_count_i_prev) // if the region is adjacent to its previous
+              {
+                  int diff_right = 0 - repetition_count_prev; // the right hand side change at the end of the last consecutive region
+                  if (diff_right > 0)
+                      repetition_count += diff_right;
+                  repetition_count_prev = 0;
+              }
+              diff = event_it.second - repetition_count_prev;
+              if (diff > 0)
+                  repetition_count += diff;
+              repetition_count_prev = event_it.second;
+              repetition_count_i_prev = event_it.first;
+
+              if (event_it.first == last_elem_id)
+              {
+                  int diff_last = 0 - repetition_count_prev;
+
+                  if (diff_last > 0)
+                  {
+                      repetition_count += diff_last;
+                      assert(repetition_count>0);
+                  }
+              }
+            }
+        }
+        catch (const std::out_of_range& e)
+        {
+            // pass
         }
     }
 
