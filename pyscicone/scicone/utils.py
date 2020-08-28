@@ -4,6 +4,29 @@ from scipy.cluster.hierarchy import ward, leaves_list
 from scipy.spatial.distance import pdist
 from copy import deepcopy
 from pybiomart import Server
+import subprocess
+
+def plot_tree_graphviz(tree_graphviz_path, output_path):
+    try:
+        format = output_path.split(".")[-1]
+    except:
+        format = "png"
+
+    try:
+        cmd_output = subprocess.run(
+            [
+                "dot",
+                f"-T{format}:cairo",
+                f"{tree_graphviz_path}",
+                "-o",
+                f"{output_path}",
+            ]
+        )
+    except subprocess.SubprocessError as e:
+        print("Status : FAIL", e.returncode, e.output, e.stdout, e.stderr)
+    else:
+        print(f"subprocess out: {cmd_output}")
+        print(f"stdout: {cmd_output.stdout}\n stderr: {cmd_output.stderr}")
 
 def gini(array):
     """Calculate the Gini coefficient of a numpy array.
