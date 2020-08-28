@@ -12,37 +12,43 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.gridspec import GridSpec
 import seaborn as sns
 
-sns.set_style("ticks", {"axes.grid": True})
+# sns.set_style("ticks", {"axes.grid": True})
+sns.set_style("white")
 
 datacmap = matplotlib.colors.LinearSegmentedColormap.from_list("cmap", BLUE_WHITE_RED)
 
-def get_cnv_cmap(vmax):
-    if vmax == 4:
-        cmap = matplotlib.colors.LinearSegmentedColormap.from_list("cnvcmap", BLUE_WHITE_RED, vmax+1)
-    else:
-        # Extend amplification colors beyond 4
-        cmap = matplotlib.colors.LinearSegmentedColormap.from_list("cnvcmap", BLUE_WHITE_RED, 4+1)
-        l = []
-        for i in range(2): # deletions: 0 and 1
-            rgb = cmap(i)[:3]
-            l.append(matplotlib.colors.rgb2hex(rgb))
-        cmap = matplotlib.colors.LinearSegmentedColormap.from_list("cnvcmap", BLUE_WHITE_RED[1:], (vmax-2)+1)
-        for i in range(cmap.N):
-            rgb = cmap(i)[:3]
-            l.append(matplotlib.colors.rgb2hex(rgb))
-        cmap = matplotlib.colors.ListedColormap(l)
+def get_cnv_cmap(vmax=4, vmid=2):
+    # Extend amplification colors beyond 4
+    cmap = matplotlib.colors.LinearSegmentedColormap.from_list("cnvcmap", BLUE_WHITE_RED[:2], vmid+1)
+
+    l = []
+    # Deletions
+    for i in range(vmid): # deletions
+        rgb = cmap(i)
+        l.append(matplotlib.colors.rgb2hex(rgb))
+    cmap = matplotlib.colors.LinearSegmentedColormap.from_list("cnvcmap", BLUE_WHITE_RED[1:], (vmax-vmid)+1)
+
+    # Amplifications
+    for i in range(0, cmap.N):
+        rgb = cmap(i)
+        l.append(matplotlib.colors.rgb2hex(rgb))
+    cmap = matplotlib.colors.ListedColormap(l)
+
     return cmap
 
 def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
                 labels=None, cluster=False, textfontsize=24, tickfontsize=22,
-                bps=None, figsize=(24,8), dpi=100, vmax=None, bbox_to_anchor=(1.05, 0.0, 1, 1),
+                bps=None, figsize=(24,8), dpi=100, vmax=None, vmid=2, bbox_to_anchor=(1.065, 0.0, 1, 1),
                 output_path=None):
     if mode == 'data':
         cmap = datacmap
     elif mode == 'cnv':
         if vmax is None or vmax < 4:
             vmax = 4
-        cmap = get_cnv_cmap(vmax)
+        vmid = min(vmid, vmax - 1)
+        vmax = int(vmax)
+        vmid = int(vmid)
+        cmap = get_cnv_cmap(vmax=vmax, vmid=vmid)
     else:
         raise AttributeError('mode argument must be one of \'data\' or \'cnv\'')
     cmap.set_bad(color='black') # for NaN
@@ -151,9 +157,6 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
     cb = plt.colorbar(im, cax=axins)
     if vmax is not None:
         im.set_clim(vmin=0, vmax=vmax)
-    cb.ax.tick_params(labelsize=tickfontsize)
-    cb.outline.set_visible(False)
-    cb.ax.set_title(cbar_title, y=1.05, fontsize=textfontsize)
 
     if mode == 'cnv':
         im.set_clim(vmin=0, vmax=vmax)
@@ -168,9 +171,13 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
             cb.set_ticks([0, 1, 2])
             cb.set_ticklabels(["0", "1", "2+"])
 
+    cb.ax.tick_params(labelsize=tickfontsize)
+    cb.outline.set_visible(False)
+    cb.ax.set_title(cbar_title, y=1.01, fontsize=textfontsize)
+
     if output_path is not None:
         print("Creating {}...".format(output_path))
-        plt.savefig(output_path, bbox_inches="tight")
+        plt.savefig(output_path, bbox_inches="tight", transparent=True)
         plt.close()
         print("Done.")
     else:
