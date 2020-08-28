@@ -473,8 +473,12 @@ class Tree(object):
             # Add node label at the top
             if node_labels:
                 if self.node_dict[node_id]['label'] != "":
+                    try:
+                        labcolor = LABEL_COLORS_DICT[self.node_dict[node_id]["label"]]
+                    except KeyError:
+                        labcolor = LABEL_COLORS_DICT_NUM[self.node_dict[node_id]["label"]]
                     node_label = (
-                        f'<font point-size="{nodelabel_fontsize}" color="{LABEL_COLORS_DICT[self.node_dict[node_id]["label"]]}"><b>'
+                        f'<font point-size="{nodelabel_fontsize}" color="{labcolor}"><b>'
                         + str(self.node_dict[node_id]['label'])
                         + "</b></font>"
                     )
