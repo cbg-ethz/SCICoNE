@@ -101,7 +101,7 @@ def extract_corrected_counts_matrix(h5f, bins_to_exclude=None, downsampling_fact
             excluded_bins = np.unique(np.concatenate((excluded_bins, bins_to_exclude),0))
             is_excluded[excluded_bins] = True
 
-        filtered_counts = unfiltered_counts[:, ~is_excluded]
+        filtered_counts = filtered_counts[:, ~is_excluded]
 
         return dict(filtered_counts=filtered_counts, excluded_bins=excluded_bins)
     else:
@@ -167,7 +167,7 @@ def extract_cnvs(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True, 
             excluded_bins = np.unique(np.concatenate((excluded_bins, bins_to_exclude),0))
             is_excluded[excluded_bins] = True
 
-        filtered_cnvs = unfiltered_cnvs[:, ~is_excluded]
+        filtered_cnvs = filtered_cnvs[:, ~is_excluded]
 
         return dict(filtered_cnvs=filtered_cnvs, excluded_bins=excluded_bins)
     else:
