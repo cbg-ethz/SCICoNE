@@ -39,6 +39,7 @@ def get_cnv_cmap(vmax=4, vmid=2):
 def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
                 labels=None, cluster=False, textfontsize=24, tickfontsize=22,
                 bps=None, figsize=(24,8), dpi=100, vmax=None, vmid=2, bbox_to_anchor=(1.065, 0.0, 1, 1),
+                labels_title='Subclones',
                 output_path=None):
     if mode == 'data':
         cmap = datacmap
@@ -92,7 +93,7 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
             orientation="vertical",
         )
         cb.outline.set_visible(False)
-        cb.ax.set_ylabel("Subclones", fontsize=textfontsize)
+        cb.ax.set_ylabel(labels_title, fontsize=textfontsize)
         ax.yaxis.set_label_position("left")
         for j, lab in enumerate(ticks.keys()):
             cb.ax.text(
@@ -177,7 +178,7 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
 
     if output_path is not None:
         print("Creating {}...".format(output_path))
-        plt.savefig(output_path, bbox_inches="tight", transparent=True)
+        plt.savefig(output_path, bbox_inches="tight", transparent=False)
         plt.close()
         print("Done.")
     else:
