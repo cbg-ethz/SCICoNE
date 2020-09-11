@@ -103,6 +103,11 @@ def extract_corrected_counts_matrix(h5f, bins_to_exclude=None, downsampling_fact
 
         filtered_counts = filtered_counts[:, ~is_excluded]
 
+        # Exclude noisy bins
+        filtered_counts, noisy_bins = utils.filter_bins(filtered_counts, thres=3)
+        excluded_bins = np.concatenate([excluded_bins, noisy_bins])
+        excluded_bins = np.unique(excluded_bins)
+
         return dict(filtered_counts=filtered_counts, excluded_bins=excluded_bins)
     else:
         return dict(unfiltered_counts=filtered_counts)
