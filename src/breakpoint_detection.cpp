@@ -43,19 +43,19 @@ int main( int argc, char* argv[]) {
     cxxopts::Options options("Breakpoint detection executable", "detects the breakpoints in the genome across all cells.");
     options.add_options()
             ("d_matrix_file", "Path to the counts matrix file, delimiter: ',', line separator: '\n' ", cxxopts::value(d_matrix_file))
-            ("min_cells", "Minimum number of cells to consider for a bin being a breakpoint", cxxopts::value(evidence_min_cells))
+            ("min_cells", "Minimum number of cells to consider for a bin being a breakpoint", cxxopts::value(evidence_min_cells)->default_value(to_string(evidence_min_cells)))
             ("n_bins", "Number of bins in the input matrix", cxxopts::value(n_bins))
             ("n_cells", "Number of cells in the input matrix", cxxopts::value(n_cells))
-            ("window_size", "the size of the window used in breakpoint detection", cxxopts::value(window_size))
-            ("threshold", "the coefficient of the breakpoint threshold. If -1, stop after computing the LR.", cxxopts::value(threshold_coefficient))
+            ("window_size", "the size of the window used in breakpoint detection", cxxopts::value(window_size)->default_value(to_string(window_size)))
+            ("threshold", "the coefficient of the breakpoint threshold. If -1, stop after computing the LR.", cxxopts::value(threshold_coefficient)->default_value(to_string(threshold_coefficient)))
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_posfix))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
-            ("bp_limit","the maximum number of breakpoints to be returned. The breakpoints get sorted and the top ones are returned",cxxopts::value(breakpoints_limit))
-            ("compute_lr","Boolean indicator of wether the per bin cell-wise breakpoint evidence should be computed (true) or if a file is passed (false)",cxxopts::value<bool>(compute_lr))
+            ("bp_limit","the maximum number of breakpoints to be returned. The breakpoints get sorted and the top ones are returned",cxxopts::value(breakpoints_limit)->default_value(to_string(breakpoints_limit)))
+            ("compute_lr","Boolean indicator of wether the per bin cell-wise breakpoint evidence should be computed (true) or if a file is passed (false)",cxxopts::value<bool>(compute_lr)->default_value(to_string(compute_lr)))
             ("lr_file","Path to a matrix containing the evidence for breakpoint at each bin in each cell.",cxxopts::value(lr_file))
             ("sp_file","Path to a vector containing the combined evidence for breakpoint at each bin across all cells.",cxxopts::value(sp_file))
-            ("compute_sp","Boolean indicator of wether the per bin breakpoint evidence should be computed (true) or if a file is passed (false)",cxxopts::value<bool>(compute_sp))
-            ("evaluate_peaks","Boolean indicator of wether to evaluate peaks and call breakpoints.",cxxopts::value<bool>(evaluate_peaks))
+            ("compute_sp","Boolean indicator of wether the per bin breakpoint evidence should be computed (true) or if a file is passed (false)",cxxopts::value<bool>(compute_sp)->default_value(to_string(compute_sp)))
+            ("evaluate_peaks","Boolean indicator of wether to evaluate peaks and call breakpoints.",cxxopts::value<bool>(evaluate_peaks)->default_value(to_string(evaluate_peaks)))
             ("input_breakpoints_file","Path to file indicating bins which correspond to known breakpoints that must be included.",cxxopts::value(input_breakpoints_file))
             ;
 
@@ -110,6 +110,10 @@ int main( int argc, char* argv[]) {
         input_breakpoints.push_back(n_bins-1);
         add_input_breakpoints = false;
       }
+    } else {
+      input_breakpoints.push_back(0);
+      input_breakpoints.push_back(n_bins-1);
+      add_input_breakpoints = false;
     }
 
     std::cout<<"Reading the input matrix: " << d_matrix_file <<std::endl;
