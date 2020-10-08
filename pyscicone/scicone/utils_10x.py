@@ -4,16 +4,16 @@ import numpy as np
 
 DEFAULT_BIN_SIZE_KB=20 # the 10x Genomics setting
 
-def read_hdf5(h5f_path, bins_to_exclude=None, downsampling_factor=1):
+def read_hdf5(h5f_path, bins_to_exclude=None, downsampling_factor=1, remove_noisy_cells=True):
     extracted_data = dict()
     with h5py.File(h5f_path, 'r') as h5f:
-        res = extract_corrected_counts_matrix(h5f, downsampling_factor=downsampling_factor, filter=False)
+        res = extract_corrected_counts_matrix(h5f, downsampling_factor=downsampling_factor, filter=False, remove_noisy_cells=remove_noisy_cells)
         extracted_data['unfiltered_counts'] = res['unfiltered_counts']
         extracted_data['unfiltered_chromosome_stops'] = extract_chromosome_stops(h5f, downsampling_factor=downsampling_factor)
-        filtered_res = extract_corrected_counts_matrix(h5f, bins_to_exclude=bins_to_exclude, downsampling_factor=downsampling_factor, filter=True)
+        filtered_res = extract_corrected_counts_matrix(h5f, bins_to_exclude=bins_to_exclude, downsampling_factor=downsampling_factor, filter=True, remove_noisy_cells=remove_noisy_cells)
         extracted_data['filtered_counts'] = filtered_res['filtered_counts']
         extracted_data['excluded_bins'] = filtered_res['excluded_bins']
-        res = extract_cnvs(h5f, bins_to_exclude=bins_to_exclude, downsampling_factor=downsampling_factor, filter=True)
+        res = extract_cnvs(h5f, bins_to_exclude=bins_to_exclude, downsampling_factor=downsampling_factor, filter=True, remove_noisy_cells=remove_noisy_cells)
         extracted_data['filtered_cnvs'] = res['filtered_cnvs']
         extracted_data['filtered_chromosome_stops'] = extract_chromosome_stops(h5f, bins_to_exclude=extracted_data['excluded_bins'], downsampling_factor=downsampling_factor)
         extracted_data['bin_size'] = DEFAULT_BIN_SIZE_KB*downsampling_factor*10**3
@@ -61,7 +61,7 @@ def merge_data_by_chromosome(h5f, key="normalized_counts", downsampling_factor=1
     return merged_matrix
 
 
-def extract_corrected_counts_matrix(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True):
+def extract_corrected_counts_matrix(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True, remove_noisy_cells=True):
     downsampling_factor = np.max([1, downsampling_factor])
     unfiltered_counts = merge_data_by_chromosome(h5f, key='normalized_counts', downsampling_factor=downsampling_factor, method='sum')
     sorted_chromosomes = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str))
@@ -69,6 +69,9 @@ def extract_corrected_counts_matrix(h5f, bins_to_exclude=None, downsampling_fact
     # Keep only single cells
     n_cells = h5f["cell_barcodes"].shape[0]
     filtered_counts = unfiltered_counts[:n_cells,:]
+    if remove_noisy_cells:
+        is_high_dimapd = np.array(h5f["per_cell_summary_metrics"]["is_high_dimapd"][()]).astype(bool)
+        filtered_counts = filtered_counts[~is_high_dimapd,:]
 
     if filter:
         # Exclude unmappable bins
@@ -98,7 +101,12 @@ def extract_corrected_counts_matrix(h5f, bins_to_exclude=None, downsampling_fact
             excluded_bins = np.unique(np.concatenate((excluded_bins, bins_to_exclude),0))
             is_excluded[excluded_bins] = True
 
-        filtered_counts = unfiltered_counts[:, ~is_excluded]
+        filtered_counts = filtered_counts[:, ~is_excluded]
+
+        # Exclude noisy bins
+        filtered_counts, noisy_bins = utils.filter_bins(filtered_counts, thres=3)
+        excluded_bins = np.concatenate([excluded_bins, noisy_bins])
+        excluded_bins = np.unique(excluded_bins)
 
         return dict(filtered_counts=filtered_counts, excluded_bins=excluded_bins)
     else:
@@ -124,7 +132,7 @@ def extract_chromosome_stops(h5f, bins_to_exclude=None, downsampling_factor=1):
 
     return chr_stops
 
-def extract_cnvs(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True):
+def extract_cnvs(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True, remove_noisy_cells=True):
     downsampling_factor = np.max([1, downsampling_factor])
     unfiltered_cnvs = merge_data_by_chromosome(h5f, key='cnvs', downsampling_factor=downsampling_factor, method='median')
     sorted_chromosomes = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str))
@@ -132,6 +140,9 @@ def extract_cnvs(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True):
     # Keep only single cells
     n_cells = h5f["cell_barcodes"].shape[0]
     filtered_cnvs = unfiltered_cnvs[:n_cells,:]
+    if remove_noisy_cells:
+        is_high_dimapd = np.array(h5f["per_cell_summary_metrics"]["is_high_dimapd"][()]).astype(bool)
+        filtered_cnvs = filtered_cnvs[~is_high_dimapd,:]
 
     if filter:
         # Exclude unmappable bins
@@ -161,7 +172,7 @@ def extract_cnvs(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True):
             excluded_bins = np.unique(np.concatenate((excluded_bins, bins_to_exclude),0))
             is_excluded[excluded_bins] = True
 
-        filtered_cnvs = unfiltered_cnvs[:, ~is_excluded]
+        filtered_cnvs = filtered_cnvs[:, ~is_excluded]
 
         return dict(filtered_cnvs=filtered_cnvs, excluded_bins=excluded_bins)
     else:
