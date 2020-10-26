@@ -34,8 +34,8 @@ int main(int argc, char* argv[]) {
     lambda_c = 0.4;
     cf = 0.0;
     c_penalise = 1.0;
-    int n_cells = 500;
-    int n_bins = 10000;
+    int n_cells = 400;
+    int n_bins = 1000;
     int n_reads = 10000;
     int n_iters = 5000;
     int max_region_size = 25;
