@@ -115,7 +115,7 @@ Simulates the count matrix. Outputs the count matrix, region sizes, ground truth
 
 #### *Sample run* :
 ```shell
-$ ./simulation --n_cells 400 --n_bins 100 --n_regions 10 --n_nodes 10 --n_reads 100000 --ploidy 2 --verbosity 2  --seed 42 --print_precision 32
+$ ./simulation --n_cells 400 --n_bins 1000 --n_regions 10 --n_nodes 10 --n_reads 100000 --ploidy 2 --verbosity 2  --seed 42 --print_precision 32
 ```
 
 ### Test
