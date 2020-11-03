@@ -101,8 +101,8 @@ Simulates the count matrix. Outputs the count matrix, region sizes, ground truth
 
 | Parameter name | Description | Default value |
 | ---- | -------- | --- |
-| **n_bins** | Number of bins of the input matrix | 10000 |
-| **n_cells** | Number of cells | 500 |
+| **n_bins** | Number of bins of the input matrix | 1000 |
+| **n_cells** | Number of cells | 400 |
 | **n_nodes** | Number of nodes of the tree | 50 |
 | **n_regions** | Number of regions | 50 |
 | **n_iters** | Number of iterations | 10000 |
@@ -115,7 +115,7 @@ Simulates the count matrix. Outputs the count matrix, region sizes, ground truth
 
 #### *Sample run* :
 ```shell
-$ ./simulation --n_cells 400 --n_bins 100 --n_regions 10 --n_nodes 10 --n_reads 100000 --ploidy 2 --verbosity 2  --seed 42 --print_precision 32
+$ ./simulation --n_cells 400 --n_bins 1000 --n_regions 10 --n_nodes 10 --n_reads 100000 --ploidy 2 --verbosity 2  --seed 42 --print_precision 32
 ```
 
 ### Test
