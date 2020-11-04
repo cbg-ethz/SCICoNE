@@ -77,7 +77,7 @@ Finds the maximum a posteriori tree given a cells by regions matrix.
 | Parameter name | Description | Default value |
 | ---- | -------- | --- |
 | **region_sizes_file** | Path to the file containing the region sizes, each line contains one region size. Segmentation is performed if the region sizes file is not specified | "" |
-| **d_matrix_file** | Path to the counts matrix file, delimiter: ' ', line separator: '\n'  | "" |
+| **d_matrix_file** | Path to the cells by regions counts matrix file, delimiter: ' ', line separator: '\n'  | "" |
 | **n_iters** | Number of iterations | 10000 |
 | **n_cells** | Number of cells in the input matrix | - |
 | **n_regions** | Number of regions in the input matrix | - |
