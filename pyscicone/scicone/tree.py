@@ -528,7 +528,8 @@ class Tree(object):
 
         turned_diploid = False
         # Get the cells with tetraploid genome
-        cells = np.where(np.sum(self.outputs['inferred_cnvs'] == 4, axis=1)/self.outputs['inferred_cnvs'].shape[1] > threshold)[0]
+        tetra_closeness = np.sum(self.outputs['inferred_cnvs'] == self.node_dict['0']['cnv'], axis=1)/self.outputs['inferred_cnvs'].shape[1]
+        cells = np.where(tetra_closeness > threshold)[0]
         #
         # smaller_lib_size = True if np.median(np.sum(data[cells], axis=1)) < np.median(np.sum(data[~cells], axis=1)) else False
         # smaller_variance = True if np.median(np.var(data[cells], axis=1)) < np.median(np.var(data[~cells], axis=1)) else False
@@ -561,6 +562,8 @@ class Tree(object):
             self.node_dict['-100'] = dict()
             self.node_dict['-100']['parent_id'] = '0'
             self.node_dict['-100']['label'] = ""
+            self.node_dict['-100']['region_event_dict'] = dict()
+            self.node_dict['-100']['size'] = 0
             for node_id in self.node_dict:
                 if node_id != '-100' and node_id != '0':
                     if self.node_dict[node_id]['parent_id'] == '0':
