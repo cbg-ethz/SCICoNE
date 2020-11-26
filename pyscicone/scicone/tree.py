@@ -527,9 +527,8 @@ class Tree(object):
         #     data = self.data['filtered_counts']
 
         turned_diploid = False
-        # Get the cells with tetraploid genome
-        tetra_closeness = np.sum(self.outputs['inferred_cnvs'] == self.node_dict['0']['cnv'], axis=1)/self.outputs['inferred_cnvs'].shape[1]
-        cells = np.where(tetra_closeness > threshold)[0]
+        # Get the cells assigned to tetraploid root
+        cells = np.where(self.outputs['cell_node_ids'] == '0')
         #
         # smaller_lib_size = True if np.median(np.sum(data[cells], axis=1)) < np.median(np.sum(data[~cells], axis=1)) else False
         # smaller_variance = True if np.median(np.var(data[cells], axis=1)) < np.median(np.var(data[~cells], axis=1)) else False
