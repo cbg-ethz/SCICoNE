@@ -567,3 +567,21 @@ class Tree(object):
                 if node_id != '-100' and node_id != '0':
                     if self.node_dict[node_id]['parent_id'] == '0':
                         self.node_dict[node_id]['parent_id'] = '-100'
+
+            # Reset labels
+            nodes, counts = np.unique(self.outputs['cell_node_ids'][:,-1], return_counts=True)
+            node_sizes = dict(zip(nodes.astype(int).astype(str), counts))
+            i = 0
+            for node in node_ids:
+                self.node_dict[node]['label'] = ""
+                self.node_dict[node]['size'] = 0
+                try: # only add label if node has cells attached
+                    if node_sizes[node] > 0:
+                        self.node_dict[node]['size'] = int(node_sizes[node])
+                        if num_labels:
+                            self.node_dict[node]['label'] = str(i)
+                        else:
+                            self.node_dict[node]['label'] = list(string.ascii_uppercase)[i]
+                        i += 1
+                except KeyError:
+                    pass
