@@ -39,6 +39,7 @@ class Tree(object):
                             # gamma_values=None, attachment_scores=None, markov_chain=None)
 
         self.cell_node_labels = []
+        self.num_labels = True
 
     def get_n_children_per_node(self):
         n_children = dict()
@@ -199,6 +200,8 @@ class Tree(object):
         self.cell_node_labels = [self.node_dict[str(int(node))]['label'] for node in self.outputs['cell_node_ids'][:,-1]]
 
         self.num_nodes = len(list(self.node_dict.keys()))
+
+        self.num_labels = num_labels
 
     def read_from_file(self, file, num_labels=False):
         """
@@ -578,7 +581,7 @@ class Tree(object):
                 try: # only add label if node has cells attached
                     if node_sizes[node] > 0:
                         self.node_dict[node]['size'] = int(node_sizes[node])
-                        if num_labels:
+                        if self.num_labels:
                             self.node_dict[node]['label'] = str(i)
                         else:
                             self.node_dict[node]['label'] = list(string.ascii_uppercase)[i]
