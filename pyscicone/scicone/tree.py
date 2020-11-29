@@ -572,7 +572,7 @@ class Tree(object):
             nodes, counts = np.unique(self.outputs['cell_node_ids'][:,-1], return_counts=True)
             node_sizes = dict(zip(nodes.astype(int).astype(str), counts))
             i = 0
-            for node in node_ids:
+            for node in self.node_dict:
                 self.node_dict[node]['label'] = ""
                 self.node_dict[node]['size'] = 0
                 try: # only add label if node has cells attached
