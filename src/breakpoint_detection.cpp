@@ -31,6 +31,7 @@ int main( int argc, char* argv[]) {
     string d_matrix_file;
     verbosity = 0;
     int evidence_min_cells = 4;
+    unsigned breakpoints_min_limit = 0;
     unsigned breakpoints_limit = 300;
     string lr_file;
     string sp_file;
@@ -51,6 +52,7 @@ int main( int argc, char* argv[]) {
             ("postfix", "Postfix to be added to the output files, this is useful when you are running multiple simulations through a work flow management system", cxxopts::value(f_name_posfix))
             ("verbosity", "verbosity", cxxopts::value(verbosity))
             ("bp_limit","the maximum number of breakpoints to be returned. The breakpoints get sorted and the top ones are returned",cxxopts::value(breakpoints_limit)->default_value(to_string(breakpoints_limit)))
+            ("bp_min","the minimum number of breakpoints to be returned.",cxxopts::value(breakpoints_min_limit)->default_value(to_string(breakpoints_min_limit)))
             ("compute_lr","Boolean indicator of wether the per bin cell-wise breakpoint evidence should be computed (true) or if a file is passed (false)",cxxopts::value<bool>(compute_lr)->default_value(to_string(compute_lr)))
             ("lr_file","Path to a matrix containing the evidence for breakpoint at each bin in each cell.",cxxopts::value(lr_file))
             ("sp_file","Path to a vector containing the combined evidence for breakpoint at each bin across all cells.",cxxopts::value(sp_file))
@@ -193,108 +195,118 @@ int main( int argc, char* argv[]) {
 
     int lb = 0;
     size_t ub = sp_cropped.size();
-
+    int n_breakpoints = 0;
     vector<int> all_max_ids;
-    map<double, pair<unsigned,unsigned>> q_map; // a map that serves as a queue
-    // use a map because you want the values to be always sorted
-    // start with the 0.0 value, it will be removed from the map before other values are inserted
-    q_map.emplace(0.0 , std::make_pair(lb,ub)); // initial boundaries
-
-    int smaller_window_size = static_cast<int>(window_size * 0.4);
-
-    while(!q_map.empty())
+    int try_num = 1;
+    while ((n_breakpoints < breakpoints_min_limit) && (try_num <= 2))
     {
-        pair<int,int> elem = q_map.rbegin()->second; // use the rbegin to get the largest val
-        q_map.erase(q_map.rbegin()->first); // remove the largest val by its key
+      all_max_ids.clear();
+      map<double, pair<unsigned,unsigned>> q_map; // a map that serves as a queue
+      // use a map because you want the values to be always sorted
+      // start with the 0.0 value, it will be removed from the map before other values are inserted
+      q_map.emplace(0.0 , std::make_pair(lb,ub)); // initial boundaries
 
-        if (elem.second - elem.first > smaller_window_size)
-        {
-            int max_idx = dsp.evaluate_peak(sp_cropped, sp_cropped_copy, elem.first, elem.second, threshold_coefficient,
-                                            window_size); // here the big window size otherwise the output ids would not match the effective_break_points (ground truth)
-            if (max_idx != -1) // -1 means rejected
-            {
+      int smaller_window_size = static_cast<int>(window_size * 0.4);
 
-                // replace the nearby bins by nan
-                int start_idx, stop_idx;
-                start_idx = max_idx - smaller_window_size;
-                stop_idx = max_idx + smaller_window_size + 1; // +1 because if max_id = 100 and window_size = 4, then 101,102,103,104 must be NaN
+      while(!q_map.empty())
+      {
+          pair<int,int> elem = q_map.rbegin()->second; // use the rbegin to get the largest val
+          q_map.erase(q_map.rbegin()->first); // remove the largest val by its key
 
-                // check the boundries
-                if (start_idx < 0)
-                    start_idx = 0;
-                if (stop_idx > sp_cropped.size())
-                    stop_idx = sp_cropped.size();
-                // set the nearby bins to nan
-                for (int i = start_idx; i < stop_idx; ++i) {
-                    sp_cropped_copy[i] = std::nan("");
-                }
+          if (elem.second - elem.first > smaller_window_size)
+          {
+              int max_idx = dsp.evaluate_peak(sp_cropped, sp_cropped_copy, elem.first, elem.second, threshold_coefficient,
+                                              window_size); // here the big window size otherwise the output ids would not match the effective_break_points (ground truth)
+              if (max_idx != -1) // -1 means rejected
+              {
 
-                if ((max_idx - smaller_window_size) - elem.first > smaller_window_size + 1) // +1 to make sure the size of vector is at least 2
-                {
-                    // compute the left median
-                    vector<double> left_vec(sp_cropped.begin() + elem.first, sp_cropped.begin() + max_idx - smaller_window_size);
+                  // replace the nearby bins by nan
+                  int start_idx, stop_idx;
+                  start_idx = max_idx - smaller_window_size;
+                  stop_idx = max_idx + smaller_window_size + 1; // +1 because if max_id = 100 and window_size = 4, then 101,102,103,104 must be NaN
 
-                    double median_left = MathOp::median(left_vec);
-                    // normalise bins on the left by left median
-                    for (int i = elem.first; i < max_idx - smaller_window_size; ++i) {
-                        sp_cropped[i] /= median_left;
-                    }
-                    try
-                    {
-                        int max_left_idx = dsp.find_highest_peak(sp_cropped, elem.first, max_idx - smaller_window_size);
-                        q_map.emplace(sp_cropped[max_left_idx] , std::make_pair(elem.first,max_idx - smaller_window_size));
-                    }
-                    catch (const std::runtime_error& e)
-                    {
-                        std::cerr << e.what() << std::endl;
-                    }
-                }
+                  // check the boundries
+                  if (start_idx < 0)
+                      start_idx = 0;
+                  if (stop_idx > sp_cropped.size())
+                      stop_idx = sp_cropped.size();
+                  // set the nearby bins to nan
+                  for (int i = start_idx; i < stop_idx; ++i) {
+                      sp_cropped_copy[i] = std::nan("");
+                  }
 
+                  if ((max_idx - smaller_window_size) - elem.first > smaller_window_size + 1) // +1 to make sure the size of vector is at least 2
+                  {
+                      // compute the left median
+                      vector<double> left_vec(sp_cropped.begin() + elem.first, sp_cropped.begin() + max_idx - smaller_window_size);
 
-                if (elem.second - (max_idx+1+smaller_window_size) > smaller_window_size + 1)
-                {
-                    // the right median
-                    vector<double> right_vec(sp_cropped.begin() + max_idx + 1  + smaller_window_size, sp_cropped.begin() + elem.second);
-                    double median_right = MathOp::median(right_vec);
-                    // normalise bins on the right by right median
-                    for (int j = max_idx + smaller_window_size; j < elem.second; ++j) {
-                        sp_cropped[j] /= median_right;
-                    }
-
-                    try
-                    {
-                        int max_right_idx = dsp.find_highest_peak(sp_cropped, max_idx + 1 + smaller_window_size, elem.second);
-                        q_map.emplace(sp_cropped[max_right_idx] , std::make_pair(max_idx + 1 + smaller_window_size,elem.second));
-                    }
-                    catch (const std::runtime_error& e)
-                    {
-                        std::cerr << e.what() << std::endl;
-                    }
-                }
+                      double median_left = MathOp::median(left_vec);
+                      // normalise bins on the left by left median
+                      for (int i = elem.first; i < max_idx - smaller_window_size; ++i) {
+                          sp_cropped[i] /= median_left;
+                      }
+                      try
+                      {
+                          int max_left_idx = dsp.find_highest_peak(sp_cropped, elem.first, max_idx - smaller_window_size);
+                          q_map.emplace(sp_cropped[max_left_idx] , std::make_pair(elem.first,max_idx - smaller_window_size));
+                      }
+                      catch (const std::runtime_error& e)
+                      {
+                          std::cerr << e.what() << std::endl;
+                      }
+                  }
 
 
-                all_max_ids.push_back(max_idx);
-                std::cout << "Index of the maximum " << max_idx << " is added to all_max_ids." << std::endl;
+                  if (elem.second - (max_idx+1+smaller_window_size) > smaller_window_size + 1)
+                  {
+                      // the right median
+                      vector<double> right_vec(sp_cropped.begin() + max_idx + 1  + smaller_window_size, sp_cropped.begin() + elem.second);
+                      double median_right = MathOp::median(right_vec);
+                      // normalise bins on the right by right median
+                      for (int j = max_idx + smaller_window_size; j < elem.second; ++j) {
+                          sp_cropped[j] /= median_right;
+                      }
 
-                if (all_max_ids.size() >= breakpoints_limit)
-                {
-                    std::cout<<"More than " << breakpoints_limit << " breakpoints are detected."
-                             << " Keeping only the top " << breakpoints_limit << " ones." << std::endl;
-                    break;
-                }
+                      try
+                      {
+                          int max_right_idx = dsp.find_highest_peak(sp_cropped, max_idx + 1 + smaller_window_size, elem.second);
+                          q_map.emplace(sp_cropped[max_right_idx] , std::make_pair(max_idx + 1 + smaller_window_size,elem.second));
+                      }
+                      catch (const std::runtime_error& e)
+                      {
+                          std::cerr << e.what() << std::endl;
+                      }
+                  }
 
 
-            }
-            else // max_idx = -1, empty the q_map
-            {
-                q_map.clear();
-            }
+                  all_max_ids.push_back(max_idx);
+                  std::cout << "Index of the maximum " << max_idx << " is added to all_max_ids." << std::endl;
 
-        }
+                  if (all_max_ids.size() >= breakpoints_limit)
+                  {
+                      std::cout<<"More than " << breakpoints_limit << " breakpoints are detected."
+                               << " Keeping only the top " << breakpoints_limit << " ones." << std::endl;
+                      break;
+                  }
+
+
+              }
+              else // max_idx = -1, empty the q_map
+              {
+                  q_map.clear();
+              }
+
+          }
+      }
+      n_breakpoints = all_max_ids.size();
+      threshold_coefficient = threshold_coefficient * 0.5;
+      try_num++;
     }
 
     if (all_max_ids.empty())
         throw std::logic_error("No breakpoints are detected. Perhaps change the configurations and try again.");
+
+    std::cout<<"Found " << all_max_ids.size() << " breakpoints at try number " << try_num-1 << " with threshold " << threshold_coefficient*2 << "." <<std::endl;
 
     std::cout<<"Sorting the all_max_ids..." <<std::endl;
     std::sort(all_max_ids.begin(), all_max_ids.end());
