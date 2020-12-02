@@ -54,6 +54,7 @@ Find the breakpoints defining copy number regions from a cells by bins matrix.
 | **min_cells** | Minimum number of cells to consider for a bin being a breakpoint | 4 |
 | **window_size** | Size of the window used in breakpoint detection | 10 |
 | **threshold** | Breakpoint calling sensitivity. If -1, stop after computing the LR | 3 |
+| **bp_min** | Minimum number of breakpoints | 0 |
 | **bp_limit** | Maximum number of breakpoints | 300 |
 | **compute_lr** | Boolean indicator of wether the per bin cell-wise breakpoint evidence should be computed | True |
 | **lr_file** | Path to a matrix containing the evidence for breakpoint at each bin in each cell | "" |
