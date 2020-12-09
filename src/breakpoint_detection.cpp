@@ -198,7 +198,7 @@ int main( int argc, char* argv[]) {
     int n_breakpoints = 0;
     vector<int> all_max_ids;
     int try_num = 1;
-    while ((n_breakpoints < breakpoints_min_limit) && (try_num <= 2))
+    while (((n_breakpoints < 1) || (n_breakpoints < breakpoints_min_limit)) && (try_num <= 2))
     {
       all_max_ids.clear();
       map<double, pair<unsigned,unsigned>> q_map; // a map that serves as a queue
