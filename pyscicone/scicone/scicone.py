@@ -12,8 +12,6 @@ import pandas as pd
 import phenograph
 from collections import Counter
 
-from statsmodels.robust.scale import huber
-
 class SCICoNE(object):
     """
     This class  provides an interface to interact with the outputs from the C++
