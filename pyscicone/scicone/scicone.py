@@ -12,6 +12,8 @@ import pandas as pd
 import phenograph
 from collections import Counter
 
+from statsmodels.robust.scale import huber
+
 class SCICoNE(object):
     """
     This class  provides an interface to interact with the outputs from the C++
@@ -181,7 +183,7 @@ class SCICoNE(object):
 
         return output
 
-    def detect_breakpoints(self, data=None, window_size=30, threshold=3.0, bp_limit=300, lr=None, sp=None,
+    def detect_breakpoints(self, data=None, window_size=30, threshold=3.0, bp_limit=300, bp_min=0, lr=None, sp=None,
                             evaluate_peaks=True, compute_lr=True, compute_sp=True, input_breakpoints=None, verbosity=1):
         if data is None:
             data = self.data['filtered_counts']
@@ -227,7 +229,7 @@ class SCICoNE(object):
             # os.environ["OMP_NUM_THREADS"] = "4"
             cmd = [self.bp_binary, f"--d_matrix_file={data_file}", f"--n_bins={n_bins}",\
                 f"--n_cells={n_cells}", f"--window_size={window_size}", f"--threshold={threshold}",\
-                f"--bp_limit={bp_limit}", f"--compute_lr={compute_lr}", f"--lr_file={lr_file}",\
+                f"--bp_limit={bp_limit}", f"--bp_min={bp_min}", f"--compute_lr={compute_lr}", f"--lr_file={lr_file}",\
                 f"--compute_sp={compute_sp}", f"--sp_file={sp_file}", f"--verbosity={verbosity}",\
                 f"--evaluate_peaks={evaluate_peaks}", f"--postfix={postfix}",\
                 f"--input_breakpoints_file={input_breakpoints_file}"]
@@ -328,6 +330,7 @@ class SCICoNE(object):
             community_ids = np.array(community_ids) + 1
 
         for id in community_ids:
+            # Use robust mean?
             avg_segmented_counts[np.where(communities==id)[0]] = np.mean(segmented_data[np.where(communities==id)[0], :], axis=0)
             condensed_avg_segmented_counts[id] = avg_segmented_counts[np.where(communities==id)[0][0],:]
             cluster_sizes[id] = np.where(communities==id)[0].shape[0]
