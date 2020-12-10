@@ -531,7 +531,8 @@ class Tree(object):
 
         turned_diploid = False
         # Get the cells assigned to tetraploid root
-        cells = np.where(self.outputs['cell_node_ids'] == '0')
+        cells = np.where(self.outputs['cell_node_ids'].astype(int).astype(str) == '0')[0]
+
         #
         # smaller_lib_size = True if np.median(np.sum(data[cells], axis=1)) < np.median(np.sum(data[~cells], axis=1)) else False
         # smaller_variance = True if np.median(np.var(data[cells], axis=1)) < np.median(np.var(data[~cells], axis=1)) else False
@@ -543,6 +544,7 @@ class Tree(object):
             self.outputs['cell_node_ids'][cells] = 0
             self.node_dict['0']['cnv'] = (self.node_dict['0']['cnv']/2).astype(int)
             turned_diploid = True
+            print(f"{len(cells)}/{len(self.outputs['cell_node_ids'])} tetraploid cells adjusted to diploid.")
 
         # Add WGD
         if turned_diploid:
