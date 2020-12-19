@@ -83,9 +83,9 @@ public:
     //validation of tree
     bool is_redundant() const;
     // Validation of subtrees
-    bool is_valid_subtree(Node* node) const;// TODO: can be a method of node instead
-    bool subtree_out_of_bound(Node *n) const;// TODO: can be a method of node instead
-    bool zero_ploidy_changes(Node* n) const;// TODO: can be a method of node instead
+    bool is_valid_subtree(Node* node) const;
+    bool subtree_out_of_bound(Node *n) const;
+    bool zero_ploidy_changes(Node* n) const;
     double cost();
 
     vector<double> omega_condense_split(double lambda_s, bool weighted, bool max_scoring);
