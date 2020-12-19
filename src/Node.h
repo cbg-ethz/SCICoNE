@@ -56,6 +56,7 @@ struct Node{
     inline vector<Node*> get_descendents(bool with_n=true) const;
     inline bool first_order_children_repeat_genotype() const;
     inline double compute_event_prior(u_int n_regions) const;
+    inline map<int, double> get_children_id_score() const;
 
     // copy constructor
     Node(Node& source_node): c(source_node.c), c_hash(source_node.c_hash), c_change(source_node.c_change)
@@ -281,6 +282,32 @@ double Node::compute_event_prior(u_int n_regions) const {
     pv_i -= c_penalisation*repetition_count; // penalise the repetitions
 
     return pv_i;
+}
+
+map<int, double> Node::get_children_id_score() const {
+/*
+ * Returns the ids and the log scores of the descendent nodes
+ * Throws std::logic_error
+ * */
+
+    map<int,double> id_score_pairs;
+
+    // stack based implementation
+    std::stack<Node*> stk;
+    stk.push(const_cast<Node*> (this));
+
+    while (!stk.empty()) {
+        Node* top = static_cast<Node*> (stk.top());
+        stk.pop();
+        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
+            stk.push(temp);
+        }
+        // make sure the id is not in the map before
+        if (id_score_pairs.find(top->id) != id_score_pairs.end())
+            throw std::logic_error("the id of the node should not be in the map already");
+        id_score_pairs[top->id] = top->attachment_score;
+    }
+    return id_score_pairs;
 }
 
 #endif //SC_DNA_NODE_H
