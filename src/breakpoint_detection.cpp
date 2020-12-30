@@ -157,21 +157,26 @@ int main( int argc, char* argv[]) {
         return EXIT_SUCCESS;
       }
     }
-
     if (add_input_breakpoints) {
       // Prioritize the known breakpoints by setting their Sp to be larger than the maximum
       std::cout << "Adding in known breakpoints..." << std::endl;
       double max = MathOp::vec_max(s_p);
       std::cout << "Max sp: " << max << std::endl;
       for (auto const &b: input_breakpoints) {
-        if (b != n_bins)
-          s_p[b] = 100 * max;
+        if (b != 0 && b != n_bins) {
+          s_p[b] = max * 100;
+	  for (int i = 1; i < window_size; ++i) {
+	  	  std::cout << b-i << ", " << b+i  << std::endl;
+		  s_p[b-i] = 1e-8;//s_p[b-window_size];
+		  s_p[b+i] = 1e-8;//s_p[b+window_size];
+	  }
           std::cout << "Adding " << b << ": " << s_p[b] << std::endl;
-      }
+        }
+       }
       std::cout << "Done." << std::endl;
     }
 
-    vector<double> sp_cropped = dsp.crop(s_p, window_size);
+    vector<double> sp_cropped = dsp.crop(s_p, window_size); // may remove some known breakpoints
 
     // median normalise sp_cropped
     dsp.median_normalise(sp_cropped);
@@ -198,7 +203,7 @@ int main( int argc, char* argv[]) {
     int n_breakpoints = 0;
     vector<int> all_max_ids;
     int try_num = 1;
-    while (((n_breakpoints < 1) || (n_breakpoints < breakpoints_min_limit)) && (try_num <= 2))
+    while ((n_breakpoints < breakpoints_min_limit) && (try_num <= 2))
     {
       all_max_ids.clear();
       map<double, pair<unsigned,unsigned>> q_map; // a map that serves as a queue
