@@ -562,31 +562,31 @@ class Tree(object):
                     # Remove node
                     del self.node_dict[str(int(c))]
 
-            # Add a WGD node below the root
-            self.node_dict['-100'] = dict()
-            self.node_dict['-100']['parent_id'] = '0'
-            self.node_dict['-100']['label'] = ""
-            self.node_dict['-100']['region_event_dict'] = dict()
-            self.node_dict['-100']['size'] = 0
-            for node_id in self.node_dict:
-                if node_id != '-100' and node_id != '0':
-                    if self.node_dict[node_id]['parent_id'] == '0':
-                        self.node_dict[node_id]['parent_id'] = '-100'
+        # Add a WGD node below the root
+        self.node_dict['-100'] = dict()
+        self.node_dict['-100']['parent_id'] = '0'
+        self.node_dict['-100']['label'] = ""
+        self.node_dict['-100']['region_event_dict'] = dict()
+        self.node_dict['-100']['size'] = 0
+        for node_id in self.node_dict:
+            if node_id != '-100' and node_id != '0':
+                if self.node_dict[node_id]['parent_id'] == '0':
+                    self.node_dict[node_id]['parent_id'] = '-100'
 
-            # Reset labels
-            nodes, counts = np.unique(self.outputs['cell_node_ids'][:,-1], return_counts=True)
-            node_sizes = dict(zip(nodes.astype(int).astype(str), counts))
-            i = 0
-            for node in self.node_dict:
-                self.node_dict[node]['label'] = ""
-                self.node_dict[node]['size'] = 0
-                try: # only add label if node has cells attached
-                    if node_sizes[node] > 0:
-                        self.node_dict[node]['size'] = int(node_sizes[node])
-                        if self.num_labels:
-                            self.node_dict[node]['label'] = str(i)
-                        else:
-                            self.node_dict[node]['label'] = list(string.ascii_uppercase)[i]
-                        i += 1
-                except KeyError:
-                    pass
+        # Reset labels
+        nodes, counts = np.unique(self.outputs['cell_node_ids'][:,-1], return_counts=True)
+        node_sizes = dict(zip(nodes.astype(int).astype(str), counts))
+        i = 0
+        for node in self.node_dict:
+            self.node_dict[node]['label'] = ""
+            self.node_dict[node]['size'] = 0
+            try: # only add label if node has cells attached
+                if node_sizes[node] > 0:
+                    self.node_dict[node]['size'] = int(node_sizes[node])
+                    if self.num_labels:
+                        self.node_dict[node]['label'] = str(i)
+                    else:
+                        self.node_dict[node]['label'] = list(string.ascii_uppercase)[i]
+                    i += 1
+            except KeyError:
+                pass
