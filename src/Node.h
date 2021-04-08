@@ -186,18 +186,31 @@ double Node::compute_event_prior(u_int n_regions) const {
     double c_penalisation = c_penalise; // the penalisation coefficient, global var
 
     const map<u_int,int>& c_change = this->c_change;
+    map<u_int,int> c_change_undoing(this->c_change);
 
     int v = 0;
     int v_prev = 0; // the first region is zero
     int i_prev = -1; // the initial index is -1, it'll be updated later
 
-    int repetition_count_prev = 0; // the first region is zero
-    int repetition_count_i_prev = -1;
-
     auto last_elem_id = c_change.rbegin()->first;
 
     for (auto const &event_it : c_change)
     {
+        int parent_state = 0;
+        try
+        {
+            parent_state = this->parent->c.at(event_it.first);
+            int c_change_val = event_it.second;
+
+            if (signbit(c_change_val) == signbit(parent_state)) {
+              c_change_undoing.erase(event_it.first);
+            }
+        }
+        catch (const std::out_of_range& e)
+        {
+              c_change_undoing.erase(event_it.first);
+                // pass
+        }
         // std::cout << event_it.first+1 << " " << event_it.second << std::endl;
 
         // Count the number of blocks
@@ -225,11 +238,17 @@ double Node::compute_event_prior(u_int n_regions) const {
                 assert(v>0);
             }
         }
-
-        // Count the number of undoing blocks
-        int parent_state = 0;
-        try
-        {
+      }
+      if (c_change_undoing.size() > 0) {
+        last_elem_id = c_change_undoing.rbegin()->first;
+      }
+      int prev_repetition_count = 0; // the repetition count to be used in the penalisation
+      int repetition_count_prev = 0; // the first region is zero
+      int repetition_count_i_prev = -1;
+      for (auto const &event_it : c_change_undoing)
+      {
+            // Count the number of undoing blocks
+            int parent_state = 0;
             parent_state = this->parent->c.at(event_it.first);
             int c_change_val = event_it.second;
             // if (signbit(c_change_val) == signbit(parent_state)) {
@@ -240,7 +259,6 @@ double Node::compute_event_prior(u_int n_regions) const {
             //     if (static_cast<int>(event_it.first) - 1 != i_prev) // if the region is not adjacent to its previous
             //       repetition_count++;
             // }
-            if (signbit(c_change_val) != signbit(parent_state)) {
               int diff;
               if (static_cast<int>(event_it.first) - 1 != repetition_count_i_prev) // if the region is adjacent to its previous
               {
@@ -265,12 +283,6 @@ double Node::compute_event_prior(u_int n_regions) const {
                       assert(repetition_count>0);
                   }
               }
-            }
-        }
-        catch (const std::out_of_range& e)
-        {
-            // pass
-        }
     }
 
     double pv_i = 0.0;
