@@ -54,6 +54,7 @@ jobs:
           command: 'cd debug && make VERBOSE=1'
       - run:
           name: Unit Tests (Debug)
+           no_output_timeout: 30m
           command: 'cd debug && ./tests'
       - run:
           name: Creating Release Build Folder
@@ -66,4 +67,5 @@ jobs:
           command: 'cd release && make VERBOSE=1'
       - run:
           name: Unit Tests (Release)
+          no_output_timeout: 30m
           command: 'cd debug && ./tests'
