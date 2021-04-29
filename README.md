@@ -77,13 +77,14 @@ Finds the maximum a posteriori tree given a cells by regions matrix.
 
 | Parameter name | Description | Default value |
 | ---- | -------- | --- |
-| **region_sizes_file** | Path to the file containing the region sizes, each line contains one region size. Segmentation is performed if the region sizes file is not specified | "" |
+| **region_sizes_file** | Path to the file containing the region sizes, each line contains one region size. | "" |
 | **d_matrix_file** | Path to the cells by regions counts matrix file, delimiter: ' ', line separator: '\n'  | "" |
 | **n_iters** | Number of iterations | 10000 |
 | **n_cells** | Number of cells in the input matrix | - |
 | **n_regions** | Number of regions in the input matrix | - |
 | **ploidy** | The ploidy information | 2 (diploid, human) |
-| **verbosity** | Verbosity of the programme, 0 is non-verbose setting, 1 creates the debug files, 2 writes the inference logs as well, 3 writes the tree logs on top | 0 |
+| **lambda_c** | lambda param for the poisson that generates the copy number state of a region | 0.2 |
+| **cluster_sizes_file** | Path to the file containing the cluster sizes, where each line contains one cluster size. This only applies if `d_matrix_file` is a clusters by regions matrix, where each cluster is a summary of its cells' read counts. | "" |
 | **seed** | Seed | - |
 | **postfix** | Postfix to be added to the output files, this is useful when you are running multiple simulations through a workflow management system | "" |
 | **print_precision** | The precision points of the score values to be printed | 16 |
@@ -91,6 +92,7 @@ Finds the maximum a posteriori tree given a cells by regions matrix.
 | **n_nodes** | the number of nodes in the random initialised tree | 50 |
 | **lambda_r** | lambda param for the poisson that generates the number of regions | 0.1 |
 | **lambda_c** | lambda param for the poisson that generates the copy number state of a region | 0.2 |
+
 
 #### *Sample run* :
 ```shell
