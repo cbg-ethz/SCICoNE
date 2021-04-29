@@ -165,11 +165,11 @@ int main( int argc, char* argv[]) {
       for (auto const &b: input_breakpoints) {
         if (b != 0 && b != n_bins) {
           s_p[b] = max * 100;
-	  for (int i = 1; i < window_size; ++i) {
-	  	  std::cout << b-i << ", " << b+i  << std::endl;
-		  s_p[b-i] = 1e-8;//s_p[b-window_size];
-		  s_p[b+i] = 1e-8;//s_p[b+window_size];
-	  }
+    	  for (int i = 1; i < window_size; ++i) {
+    	  	  std::cout << b-i << ", " << b+i  << std::endl;
+    		  s_p[b-i] = 1e-8;//s_p[b-window_size];
+    		  s_p[b+i] = 1e-8;//s_p[b+window_size];
+    	  }
           std::cout << "Adding " << b << ": " << s_p[b] << std::endl;
         }
        }
@@ -203,8 +203,9 @@ int main( int argc, char* argv[]) {
     int n_breakpoints = 0;
     vector<int> all_max_ids;
     int try_num = 1;
-    while ((n_breakpoints < breakpoints_min_limit) && (try_num <= 2))
+    while ((n_breakpoints <= breakpoints_min_limit) && (try_num <= 2))
     {
+      std::cout << "Try number " << try_num << std::endl;
       all_max_ids.clear();
       map<double, pair<unsigned,unsigned>> q_map; // a map that serves as a queue
       // use a map because you want the values to be always sorted
