@@ -226,7 +226,7 @@ void Inference::compute_t_table(const vector<vector<double>> &D, const vector<in
     {
 
         this->t.compute_tree(D[i], r);
-        std::map<int, double> scores_vec = this->t.get_children_id_score(this->t.root);
+        std::map<int, double> scores_vec = this->t.root->get_children_id_score();
 
         this->t_scores.push_back(scores_vec);
 
@@ -385,7 +385,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
             {
                 // find the node that is deleted
                 // use the get_id_score function since it returns a map having node id as a key
-                map<int,double> t_prime_scores = t_prime.get_children_id_score(t_prime.root);
+                map<int,double> t_prime_scores = t_prime.root->get_children_id_score();
                 Node* deleted = nullptr;
                 for (auto const &t_node : t.root->get_descendents(false)) // root won't be contained!
                     if (!t_prime_scores.count(t_node->id))
@@ -418,7 +418,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
             else // insert
             {
                 // find the node that is inserted in t_prime
-                map<int,double> t_scores = t.get_children_id_score(t.root);
+                map<int,double> t_scores = t.root->get_children_id_score();
 
                 Node* added = nullptr;
                 for (auto const &t_prime_node : t_prime.root->get_descendents(false)) // without root
@@ -987,12 +987,12 @@ void Inference::compute_t_prime_scores(Node *attached_node, const vector<vector<
         t_prime.compute_stack(attached_node, d, sum_d,r);
 
         if (is_empty_table)
-            t_prime_scores.push_back(t_prime.get_children_id_score(attached_node));
+            t_prime_scores.push_back(attached_node->get_children_id_score());
         else
         {
             // append the contents of second hashmap into the first
             // note that they cannot have overlapping keys
-            for (auto const& map_item : t_prime.get_children_id_score(attached_node)) // go to each child of the changed node and get its score
+            for (auto const& map_item : attached_node->get_children_id_score()) // go to each child of the changed node and get its score
             {
                 t_prime_scores[j][map_item.first] = map_item.second;
             }

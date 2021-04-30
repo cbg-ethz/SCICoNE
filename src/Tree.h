@@ -74,7 +74,6 @@ public:
     void random_insert(std::map<u_int, int>&&);
     void insert_at(u_int pos, std::map<u_int, int>&&); // uses all_nodes_vec pos
     void insert_child(Node *pos, std::map<u_int, int>&& labels);
-    map<int, double> get_children_id_score(Node *node); // TODO: can be a method of node instead
     void compute_tree(const vector<double> &D, const vector<int> &r);
     void compute_stack(Node *node, const vector<double> &D, double &sum_D, const vector<int> &r);
     void compute_weights();
@@ -84,9 +83,9 @@ public:
     //validation of tree
     bool is_redundant() const;
     // Validation of subtrees
-    bool is_valid_subtree(Node* node) const;// TODO: can be a method of node instead
-    bool subtree_out_of_bound(Node *n) const;// TODO: can be a method of node instead
-    bool zero_ploidy_changes(Node* n) const;// TODO: can be a method of node instead
+    bool is_valid_subtree(Node* node) const;
+    bool subtree_out_of_bound(Node *n) const;
+    bool zero_ploidy_changes(Node* n) const;
     double cost();
 
     vector<double> omega_condense_split(double lambda_s, bool weighted, bool max_scoring);
@@ -769,32 +768,6 @@ void Tree::load_from_file(string file) {
 
     compute_weights();
 
-}
-
-map<int, double> Tree::get_children_id_score(Node *node) { // TODO: make it a method of node instead
-/*
- * Returns the ids and the log scores of the descendent nodes
- * Throws std::logic_error
- * */
-
-    map<int,double> id_score_pairs;
-
-    // stack based implementation
-    std::stack<Node*> stk;
-    stk.push(node);
-
-    while (!stk.empty()) {
-        Node* top = static_cast<Node*> (stk.top());
-        stk.pop();
-        for (Node* temp = top->first_child; temp != nullptr; temp=temp->next) {
-            stk.push(temp);
-        }
-        // make sure the id is not in the map before
-        if (id_score_pairs.find(top->id) != id_score_pairs.end())
-            throw std::logic_error("the id of the node should not be in the map already");
-        id_score_pairs[top->id] = top->attachment_score;
-    }
-    return id_score_pairs;
 }
 
 void Tree::compute_weights() {

@@ -90,9 +90,9 @@ void test_ploidy_attachment_score()
     vector<double> counts = {10, 40, 80, 120, 500};
 
     t_two.compute_tree(counts, reg_sizes);
-    std::map<int, double> scores_vec = t_two.get_children_id_score(t_two.root);
+    std::map<int, double> scores_vec = t_two.root->get_children_id_score();
     t_three.compute_tree(counts, reg_sizes);
-    std::map<int, double> scores_vec_prime = t_three.get_children_id_score(t_three.root);
+    std::map<int, double> scores_vec_prime = t_three.root->get_children_id_score();
 
     assert(scores_vec[0]==scores_vec_prime[0]);
     cout<<"Cell attachment with different ploidies validation test passed!"<<endl;
@@ -339,7 +339,7 @@ void test_condense_split_weights()
     for (size_t i = 0; i < n_cells; ++i)
     {
         t_prime.compute_tree(D[i], r);
-        std::map<int, double> scores_vec_prime = t_prime.get_children_id_score(t_prime.root);
+        std::map<int, double> scores_vec_prime = t_prime.root->get_children_id_score();
         t_prime_scores.push_back(scores_vec_prime);
         t_prime_sums.push_back(MathOp::log_sum(scores_vec_prime));
     }
@@ -421,7 +421,7 @@ void test_condense_split_weights()
     for (size_t i = 0; i < n_cells; ++i)
     {
         t_max_prime.compute_tree(D[i], r);
-        std::map<int, double> scores_vec_prime_max = t_max_prime.get_children_id_score(t_max_prime.root);
+        std::map<int, double> scores_vec_prime_max = t_max_prime.root->get_children_id_score();
         t_max_prime_scores.push_back(scores_vec_prime_max);
 
         double currentMax = -DBL_MAX;
@@ -503,7 +503,7 @@ void test_insert_delete_weights()
     for (size_t i = 0; i < n_cells; ++i)
     {
         t.compute_tree(D[i], r);
-        std::map<int, double> scores_vec = t.get_children_id_score(t.root);
+        std::map<int, double> scores_vec = t.root->get_children_id_score();
 
         t_scores.push_back(scores_vec);
         t_sums.push_back(MathOp::log_sum(scores_vec));
@@ -567,7 +567,7 @@ void test_insert_delete_weights()
     for (size_t i = 0; i < n_cells; ++i)
     {
         t_max.compute_tree(D[i], r);
-        std::map<int, double> scores_vec = t_max.get_children_id_score(t_max.root);
+        std::map<int, double> scores_vec = t_max.root->get_children_id_score();
 
         t_max_scores.push_back(scores_vec);
 
