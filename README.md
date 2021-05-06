@@ -38,7 +38,33 @@ pip install .
 ```
 
 ## Quick start
-SCICoNE takes a read counts matrix of cells by genomic bins and outputs the copy number profile of each cell and the underlying event history. Two introductory notebooks showcasing the SCICoNE workflow and API are available:
+SCICoNE takes a read counts matrix of cells by genomic bins and outputs the copy number profile of each cell and the underlying event history.
+
+### Command line
+Here is an example run from the command line on simulated data (which is also readily available from `example_data/`). First we generate the data:
+```
+./build/simulation --n_cells=200 --n_nodes=5 --n_regions=10 --n_bins=1000 --n_reads=10000 --nu=10.0 --min_reg_size=10 --max_regions_per_node=1 --ploidy=2 --postfix=test --seed=42
+```
+
+Then we detect potential breakpoints from the cells by bins counts matrix:
+```
+./build/breakpoint_detection --d_matrix_file=5nodes_10regions_10000reads_test_d_mat.csv --n_bins=1000 --n_cells=200 --window_size=30 --threshold=6.0 --postfix=test
+```
+This command creates files containing the region stops and their sizes. To proceed with copy number calling and tree inference, we need to use these to produce a cells by regions counts matrix. We can use a utility script for this:
+```
+python ./pyscicone/scripts/segment_counts.py 5nodes_10regions_10000reads_test_d_mat.csv test_segmented_region_sizes.txt
+```
+
+We can now use the output file to infer a copy number event tree:
+```
+./build/inference --d_matrix_file=5nodes_10regions_10000reads_test_d_mat_segmented_counts.txt --n_regions=8 --n_cells=200 --ploidy=2 --verbosity=1 --copy_number_limit=2 --n_iters=4000 --seed=42 --region_sizes_file=test_segmented_region_sizes.txt
+```
+This will create a file containing the tree in an in-house format. To convert it to a format that allows plotting via `graphviz`, you can use the utility script at `pyscicone/scripts/convert_to_graphviz.py`.
+
+Please see section "C++ reference" for details on the arguments to the SCICoNE binaries.
+
+### Python
+If you prefer to use the Python package, two introductory notebooks showcasing the SCICoNE workflow and API are available:
 * [Tutorial](https://github.com/cbg-ethz/SCICoNE/blob/master/notebooks/tutorial.ipynb)
 * [Example run on 10X Genomics data](https://github.com/cbg-ethz/SCICoNE/blob/master/notebooks/10x_example.ipynb)
 

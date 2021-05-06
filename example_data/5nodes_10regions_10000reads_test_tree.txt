@@ -1,0 +1,13 @@
+Tree posterior: 22993.0694365653
+Tree prior: -365.518931722523
+Event prior: -19.766153110552
+Log likelihood: 23378.3545213984
+Root score: -4196995.22500791
+Tree score: -4174002.15557135
+Nu: 10
+node 0: p_id:NULL,[]
+node 3: p_id:0,[1:-1]
+node 2: p_id:0,[8:-1]
+node 4: p_id:2,[3:-1]
+node 1: p_id:0,[0:-1]
+node 5: p_id:1,[4:1]
