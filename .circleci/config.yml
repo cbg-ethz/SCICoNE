@@ -48,7 +48,7 @@ jobs:
           command: 'mkdir debug'
       - run:
           name: Running CMAKE
-          command: 'cd debug && cmake -DCMAKE_BUILD_TYPE=Debug ..'
+          command: 'cd debug && cmake -DCMAKE_BUILD_TYPE=Debug ../scicone/'
       - run:
           name: Running MAKE
           command: 'cd debug && make VERBOSE=1'
@@ -61,7 +61,7 @@ jobs:
           command: 'mkdir release'
       - run:
           name: Running CMAKE
-          command: 'cd release && cmake -DCMAKE_BUILD_TYPE=Release ..'
+          command: 'cd release && cmake -DCMAKE_BUILD_TYPE=Release ../scicone/'
       - run:
           name: Running MAKE
           command: 'cd release && make VERBOSE=1'
