@@ -18,6 +18,10 @@ set(CMAKE_CXX_FLAGS_DEBUG "-Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -gdwarf-3")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -gdwarf-3")
 
+# Include test data
+configure_file(Config.h.in ${CMAKE_BINARY_DIR}/Config.h)
+include_directories(${CMAKE_BINARY_DIR})
+
 # ----------------------------------------------------------------------------
 # Dependencies
 # ----------------------------------------------------------------------------

@@ -7,7 +7,7 @@
 #include "SingletonRandomGenerator.h"
 #include "globals.cpp"
 
-
+#include <Config.h>
 
 // globals
 int print_precision;
@@ -26,6 +26,10 @@ double eta;
 
 int main()
 {
+    std::cout << "Hey! " << SOURCE_DIR << std::endl;
+    std::string bp_detection_dir = std::string(SOURCE_DIR) + "/tests/bp_detection";
+    std::string trees_to_validate_dir = std::string(SOURCE_DIR) + "/tests/trees_to_validate";
+
     print_precision = 15;
     copy_number_limit = 5;
     lambda_s = 0.5;
@@ -42,7 +46,7 @@ int main()
     SingletonRandomGenerator::get_instance(42);
     test_mathop();
     test_xxhash();
-    test_breakpoint_detection();
+    test_breakpoint_detection(bp_detection_dir);
     test_tree_prior();
     test_event_prior();
     test_n_descendents_computation();
@@ -55,7 +59,7 @@ int main()
     test_add_remove_event();
     test_insert_delete_weights();
     test_condense_split_weights();
-    test_tree_validation();
+    test_tree_validation(trees_to_validate_dir);
     test_overdispersed_score();
     test_genotype_preserving_move_scores();
     test_apply_multiple_times();

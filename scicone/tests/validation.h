@@ -41,7 +41,7 @@ unsigned ploidy = 2;
 bool max_scoring = true;
 vector<int> region_neutral_states = std::vector<int>(r.size(), ploidy);
 
-void test_breakpoint_detection()
+void test_breakpoint_detection(const std::string& bp_detection_dir)
 {
     /*
      * Makes sure the breakpoint detection is producing the correct sp sum
@@ -53,7 +53,7 @@ void test_breakpoint_detection()
     int window_size = 10;
     int evidence_min_cells = 4;
     int evidence_max_cells = n_cells;
-    std::string d_matrix_file = "../../scicone/tests/bp_detection/10nodes_40regions_100000reads_sim_tiny_1000bins_d_mat.csv";
+    std::string d_matrix_file = bp_detection_dir + "/10nodes_40regions_100000reads_sim_tiny_1000bins_d_mat.csv";
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
     Utils::read_counts(d_bins, d_matrix_file);
     vector<int> input_breakpoints;
@@ -974,7 +974,7 @@ void test_add_remove_event()
     std::cout<<"Add / remove event validation test with maximum scoring passed!"<<std::endl;
 }
 
-void test_tree_validation()
+void test_tree_validation(const std::string& trees_to_validate_dir)
 {
     /*
      * Makes sure the valid trees are considered valid while invalid trees are detected
@@ -983,13 +983,13 @@ void test_tree_validation()
     u_int n_regions = 0;
     Tree* t = new Tree(ploidy, n_regions, region_neutral_states);
 
-    t->load_from_file("../../scicone/tests/trees_to_validate/valid_tree_1.txt");
+    t->load_from_file(trees_to_validate_dir + "/valid_tree_1.txt");
     assert(t->is_valid_subtree(t->root));
     assert(not t->is_redundant());
     delete t;
 
     t = new Tree(ploidy, n_regions, region_neutral_states);
-    t->load_from_file("../../scicone/tests/trees_to_validate/valid_tree_2.txt");
+    t->load_from_file(trees_to_validate_dir + "/valid_tree_2.txt");
     assert(t->is_valid_subtree(t->root));
     assert(not t->is_redundant());
     delete t;
@@ -997,7 +997,7 @@ void test_tree_validation()
     t = new Tree(ploidy, n_regions, region_neutral_states);
     try
     {
-        t->load_from_file("../../scicone/tests/trees_to_validate/invalid_tree_2.txt");
+        t->load_from_file(trees_to_validate_dir + "/invalid_tree_2.txt");
     }
     catch (InvalidTree& e)
     {
@@ -1010,7 +1010,7 @@ void test_tree_validation()
     t = new Tree(ploidy, n_regions, region_neutral_states);
     try
     {
-        t->load_from_file("../../scicone/tests/trees_to_validate/invalid_tree_3.txt");
+        t->load_from_file(trees_to_validate_dir + "/invalid_tree_3.txt");
     }
     catch (InvalidTree& e)
     {
@@ -1023,7 +1023,7 @@ void test_tree_validation()
     t = new Tree(ploidy, n_regions, region_neutral_states);
     try
     {
-        t->load_from_file("../../scicone/tests/trees_to_validate/invalid_tree_4.txt");
+        t->load_from_file(trees_to_validate_dir + "/invalid_tree_4.txt");
     }
     catch (InvalidTree& e)
     {
