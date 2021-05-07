@@ -285,12 +285,12 @@ int main( int argc, char* argv[]) {
     std::vector<std::map<int, double>> attachment_scores = mcmc.t_scores; // cell-by-node score matrix
 
     // write the inferred(best) tree
-    std::ofstream tree_output_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_tree_inferred" + ".txt");
+    std::ofstream tree_output_file("./" + f_name_posfix + "_tree_inferred" + ".txt");
     tree_output_file << mcmc.best_tree;
 
 
     // write the inferred CNVs
-    std::ofstream inferred_cnvs_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_inferred_cnvs" + ".csv");
+    std::ofstream inferred_cnvs_file("./" + f_name_posfix + "_inferred_cnvs" + ".csv");
     for (auto const &v1: inferred_cnvs_bins) {
         for (size_t i = 0; i < v1.size(); i++)
         {
@@ -305,7 +305,7 @@ int main( int argc, char* argv[]) {
     if (verbosity > 0)
     {
       // write score matrix
-      std::ofstream attachment_scores_file("./" + to_string(n_nodes) + "nodes_" + to_string(n_regions) + "regions_" + f_name_posfix + "_attachment_scores" + ".csv");
+      std::ofstream attachment_scores_file("./" + f_name_posfix + "_attachment_scores" + ".csv");
       for (int j=0;j<n_cells;j++) {
         map<int,double>::const_iterator map_iter;
         int i = 0;

@@ -1,0 +1,14 @@
+digraph {
+node [style=filled,color="#E6E6FA",fontsize=14,margin=0,shape=oval]edge [arrowhead=none, color="#E6E6FA"]
+0[label=<Neutral>]
+9[label=<-1R6>]
+5[label=<-1R3>]
+6[label=<-1R0>]
+3[label=<+1R4>]
+8[label=<-1R1>]
+0 -> 9
+9 -> 5
+0 -> 6
+6 -> 3
+0 -> 8
+}
