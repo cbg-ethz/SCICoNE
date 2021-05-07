@@ -40,5 +40,5 @@ pip install pyscicone/
 ## Quick start
 SCICoNE takes a read counts matrix of cells by genomic bins and outputs the copy number profile of each cell and the underlying event history.
 * [Command line interface tutorial](https://github.com/cbg-ethz/SCICoNE/blob/master/docs/tutorial.md)
-* [Python package tutorial](https://github.com/cbg-ethz/SCICoNE/blob/master/notebooks/tutorial.ipynb)
-* [Example run on 10X Genomics data using the Python package](https://github.com/cbg-ethz/SCICoNE/blob/master/notebooks/10X_example.ipynb)
+* [Python package tutorial](https://github.com/cbg-ethz/SCICoNE/blob/master/docs/notebooks/tutorial.ipynb)
+* [Example run on 10X Genomics data using the Python package](https://github.com/cbg-ethz/SCICoNE/blob/master/docs/notebooks/10X_example.ipynb)
