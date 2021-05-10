@@ -68,6 +68,7 @@ public:
                               bool validation_test_mode);
     bool apply_genotype_preserving_pr(double gamma);
     bool apply_delete_leaf(const vector<vector<double>> &D, const vector<int> &r);
+    bool apply_add_common_ancestor(const vector<vector<double>> &D, const vector<int> &r);
     bool apply_add_remove_events(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                                  bool validation_test_mode);
     bool apply_insert_delete_node(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
@@ -772,6 +773,22 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
+            case 13:
+            {
+                // add common ancestor move
+                if (verbosity > 1)
+                    cout << "Add common ancestor" << endl;
+
+                auto func = std::bind(&Inference::apply_add_common_ancestor, this, _1, _2);
+                bool add_common_ancestor_success = apply_multiple_times(n_apply_move, func, D, r);
+
+                if (not add_common_ancestor_success) {
+                    rejected_before_comparison = true;
+                    if (verbosity > 1)
+                        cout << "Add common ancestor move is rejected before comparison" << endl;
+                }
+                break;
+            }
             default:
                 throw std::logic_error("undefined move index");
         } // end of switch
@@ -1431,6 +1448,22 @@ bool Inference::apply_delete_leaf(const vector<vector<double>> &D, const vector<
     Node* tobe_computed;
 
     tobe_computed = t_prime.delete_leaf();
+
+    compute_t_prime_scores(tobe_computed, D, r);
+    compute_t_prime_sums(D);
+
+    return true;
+
+}
+
+bool Inference::apply_add_common_ancestor(const vector<vector<double>> &D, const vector<int> &r) {
+    /*
+     * Applies the delete leaf move on t_prime.
+     * */
+
+    Node* tobe_computed;
+
+    tobe_computed = t_prime.add_common_ancestor();
 
     compute_t_prime_scores(tobe_computed, D, r);
     compute_t_prime_sums(D);
