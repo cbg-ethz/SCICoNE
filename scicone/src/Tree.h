@@ -61,12 +61,16 @@ public:
     Node *prune_reattach(bool weighted, bool validation_test_mode=false);
     void genotype_preserving_prune_reattach(double gamma);
     Node* delete_leaf();
+    Node* select_node_for_common_ancestor();
+    Node* create_common_ancestor(Node* parent_node);
+    Node* add_common_ancestor();
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node *add_remove_events(bool weighted, bool validation_test_mode=false);
     Node *insert_delete_node(unsigned int size_limit, bool weighted, bool max_scoring);
     Node *condense_split_node(unsigned int size_limit, bool weighted, bool max_scoring);
     std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
 
+    map<u_int, int> get_event_intersection(std::vector<Node*> nodes);
     Node* delete_node(Node* node);
     Node* find_node(int id);
     Node* uniform_sample(bool with_root=true) const;
@@ -1393,6 +1397,135 @@ Node *Tree::condense_split_node(unsigned int size_limit, bool weighted, bool max
     // recompute the weights after the tree structure is changed
     this->compute_weights();
     return return_node;
+}
+
+Node* Tree::select_node_for_common_ancestor() {
+      if (all_nodes_vec.size() <= 1)
+          throw InvalidMove("add common ancestor does not make sense when there is 1 node or less. ");
+
+      Node* parent_node = nullptr;
+
+      parent_node = uniform_sample(true); // choose any node
+
+      // Get all children
+      int n_children = 0;
+      std::vector<Node*> siblings;
+      std::vector<int> sib_idx;
+      for (Node* temp = parent_node->first_child; temp != nullptr; temp=temp->next) {
+          sib_idx.push_back(n_children);
+          siblings.push_back(temp);
+          n_children++;
+      }
+
+      if (n_children < 2)
+        throw std::logic_error("Can not create common ancestor from less than 2 siblings.");
+
+      return parent_node;
+}
+
+Node* Tree::create_common_ancestor(Node* parent_node) {
+    /*
+     * Picks two siblings and extracts their intersection into a new common ancestor node
+     * Throws std::logic_error, InvalidMove
+     * */
+
+    // Get all children
+    int n_children = 0;
+    std::vector<Node*> siblings;
+    std::vector<int> sib_idx;
+    for (Node* temp = parent_node->first_child; temp != nullptr; temp=temp->next) {
+        sib_idx.push_back(n_children);
+        siblings.push_back(temp);
+        n_children++;
+    }
+
+    if (n_children < 2)
+      throw std::logic_error("Can not create common ancestor from less than 2 siblings.");
+
+    // Choose a pair of siblings
+    std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
+    generator.seed(static_cast<unsigned int>(std::time(0)));
+    boost::random::discrete_distribution<>* dd = new boost::random::discrete_distribution<>(sib_idx.begin(), sib_idx.end());
+    int nodeA_idx = (*dd)(generator); // this is the index of one the siblings
+    sib_idx.erase(sib_idx.begin() + nodeA_idx);
+    boost::random::discrete_distribution<>* ddd = new boost::random::discrete_distribution<>(sib_idx.begin(), sib_idx.end());
+    int nodeB_idx = (*ddd)(generator); // this is the index of another sibling
+    while (nodeA_idx == nodeB_idx) {
+      // std::cout << nodeA_idx << ", " << nodeB_idx << std::endl;
+      nodeB_idx = (*ddd)(generator);
+    }
+    std::cout << nodeA_idx << ", " << nodeB_idx << std::endl;
+    delete dd;
+    delete ddd;
+
+    std::vector<Node*> node_pair;
+    node_pair.push_back(siblings[nodeA_idx]);
+    node_pair.push_back(siblings[nodeB_idx]);
+
+    // Get the intersection of the events in node_pair
+    std::map<u_int, int> intersection = get_event_intersection(node_pair);
+
+    // Remove intersection from nodes in node_pair
+    for (auto const& x : intersection)
+      for (Node* node : node_pair) {
+        node->c_change[x.first] = node->c_change[x.first] - x.second;
+        if (node->c_change.at(x.first) == 0)
+            node->c_change.erase(x.first);
+      }
+
+    // Add node below parent_node
+    this->insert_child(parent_node, static_cast<map<u_int,int>&&>(intersection));
+    Node* common_ancestor = all_nodes_vec.back(); // the last inserted elem, e.g. new node
+
+    // and set it as new parent of nodes in node_pair
+    for (Node* child : siblings) {
+      Node* pruned_child = prune(child); // prune from the old parent
+      insert_child(common_ancestor, pruned_child); // insert into new common ancestor
+    }
+
+    return common_ancestor;
+}
+
+Node* Tree::add_common_ancestor() {
+  Node* parent_node = select_node_for_common_ancestor();
+  Node* common_ancestor = create_common_ancestor(parent_node);
+  return common_ancestor;
+}
+
+map<u_int, int> Tree::get_event_intersection(std::vector<Node*> nodes) {
+    map<u_int,int> intersection;
+    Node* anchor_node = nodes[0];
+    std::vector<Node*> other_nodes = std::vector<Node*>(nodes.begin() + 1, nodes.end());
+
+    for (auto const& x : anchor_node->c_change) {
+      int direction = signbit(x.second);
+      int minimum = abs(x.second);
+      bool has_intersection = true;
+      for (Node* node : other_nodes) {
+        if (node->c_change.count(x.first) > 0) {
+          if (signbit(node->c_change[x.first]) == direction) {
+            if (abs(node->c_change[x.first]) < minimum) {
+              minimum = abs(node->c_change[x.first]);
+            }
+          } else {
+            has_intersection = false;
+            break;
+          }
+        } else {
+          has_intersection = false;
+          break;
+        }
+      }
+
+      if (has_intersection) {
+        direction = -1;
+        if (signbit(x.second) == 0)
+          direction = 1;
+        intersection[x.first] = direction * minimum;
+      }
+    }
+
+    return intersection;
 }
 
 Node* Tree::delete_node(Node *node) {

@@ -65,6 +65,8 @@ int main()
     test_apply_multiple_times();
     test_reproducibility();
     test_cluster_scoring();
+    test_get_event_intersection();
+    test_add_common_ancestor();
 
     return EXIT_SUCCESS;
 

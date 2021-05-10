@@ -1292,4 +1292,41 @@ void test_print_scores()
 
 }
 
+void test_get_event_intersection()
+{
+  Tree t_prime(ploidy, r.size(), region_neutral_states);
+  t_prime.random_insert({{0, 1}}); // 1
+  t_prime.insert_at(1,{{1, 1}, {2, 1}, {3, -2}, {4, -2}}); // 2
+  t_prime.insert_at(1,{{1, 1}, {2, -1}, {3, -1}}); // 3
+
+  std::cout << t_prime << std::endl;
+
+  std::vector<Node*> nodes;
+  nodes.push_back(t_prime.all_nodes_vec[2]);
+  nodes.push_back(t_prime.all_nodes_vec[3]);
+
+  std::map<u_int, int> intersection = t_prime.get_event_intersection(nodes);
+
+  for (auto const& x : intersection) {
+      std::cout << "" << x.first << ": " << x.second << std::endl;
+  }
+
+}
+
+void test_add_common_ancestor()
+{
+  Tree t_prime(ploidy, r.size(), region_neutral_states);
+  t_prime.random_insert({{0, 1}}); // 1
+  t_prime.insert_at(1,{{1, 1}, {2, 1}, {3, -2}, {4, -2}}); // 2
+  t_prime.insert_at(1,{{1, 1}, {2, -1}, {3, -1}}); // 3
+
+  std::cout << "Before" << std::endl;
+  std::cout << t_prime << std::endl;
+  std::cout << t_prime.all_nodes_vec[1]->id << std::endl;
+  t_prime.create_common_ancestor(t_prime.all_nodes_vec[1]);
+
+  std::cout << "After" << std::endl;
+  std::cout << t_prime << std::endl;
+}
+
 #endif //SC_DNA_VALIDATION_H
