@@ -41,6 +41,7 @@ Finds the maximum a posteriori tree given a cells by regions matrix.
 | **ploidy** | The ploidy information | 2 (diploid, human) |
 | **lambda_c** | lambda param for the poisson that generates the copy number state of a region | 0.2 |
 | **cluster_sizes_file** | Path to the file containing the cluster sizes, where each line contains one cluster size. This only applies if `d_matrix_file` is a clusters by regions matrix, where each cluster is a summary of its cells' read counts. | "" |
+| **max_scoring** | Wether to use max scoring (true/false). | "true" |
 | **seed** | Seed | - |
 | **postfix** | Postfix to be added to the output files, this is useful when you are running multiple simulations through a workflow management system | "" |
 | **print_precision** | The precision points of the score values to be printed | 16 |
