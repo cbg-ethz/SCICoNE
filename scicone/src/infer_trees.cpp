@@ -189,6 +189,9 @@ int main( int argc, char* argv[]) {
     }
 
     std::cout << "max_scoring: " << max_scoring << std::endl;
+    if (not result.count("max_scoring"))
+	max_scoring = true;
+
     if (max_scoring) {
         std::cout << "Will perform maximum scoring." << std::endl;
         move_probs.back() = 0.0f; // no need to prune tree
