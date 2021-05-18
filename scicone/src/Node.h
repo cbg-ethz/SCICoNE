@@ -20,6 +20,7 @@ struct Node{
     std::map<u_int,int> c = {};
     uint64_t  c_hash = 0;
     std::map<u_int,int> c_change= {};
+    std::vector<std::pair<int,int>> event_blocks;
     double attachment_score = 0.0;
     int z = 0;
     unsigned n_descendents = 1; // including itself
@@ -57,6 +58,7 @@ struct Node{
     inline bool first_order_children_repeat_genotype() const;
     inline double compute_event_prior(u_int n_regions) const;
     inline map<int, double> get_children_id_score() const;
+    inline bool expand_shrink_block() const;
 
     // copy constructor
     Node(Node& source_node): c(source_node.c), c_hash(source_node.c_hash), c_change(source_node.c_change)
@@ -240,6 +242,8 @@ double Node::compute_event_prior(u_int n_regions) const {
             }
 
         }
+        // Populate the event_blocks map
+        event_blocks.push_back(std::make_pair(event_it.first, event_it.second));
       }
       if (c_change_undoing.size() > 0) {
         last_elem_id = c_change_undoing.rbegin()->first;
@@ -314,5 +318,55 @@ map<int, double> Node::get_children_id_score() const {
     }
     return id_score_pairs;
 }
+
+
+bool Node::expand_shrink_block(int block_id, bool expand, bool from_end) const {
+/*
+ * Expands/shrinks event block from end or from start
+ * Throws std::logic_error
+ * */
+    int block_start = node->event_blocks[block_id].first;
+    int block_end = node->event_blocks[block_id].second;
+
+    int n_regions = this->c.size();
+    if (expand) {
+       if (from_end && block_end == n_regions)
+         throw std::logic_error("Can not expand beyond the final region");
+
+       if (from_end && node->event_blocks[block_id+1].first == block_end)
+         throw std::logic_error("Can not expand onto the next block");
+       else {
+         node->c_change[block_end+1] = node->c_change[block_end];
+         node->event_blocks[block_id].second = block_end+1;
+       }
+
+       if (from_start && block_start == 0)
+         throw std::logic_error("Can not expand backwards beyond the first region");
+
+       if (from_start && node->event_blocks[block_id-1].second == block_start)
+         throw std::logic_error("Can not expand onto the previous block");
+       else {
+         node->c_change[block_start-1] = node->c_change[block_start];
+         node->event_blocks[block_id].first = block_start-1;
+       }
+    } else {
+       // Else:
+       //    Set sampled region to have no event
+       if (from_end) {
+         node->c_change.erase(block_end); //erase the zero instead of storing it
+         if (block_end > block_start)
+           node->event_blocks[block_id].second = block_end-1;
+         else
+           node->event_blocks.erase(block_id); // block was of size 1
+       } else {
+         node->c_change.erase(block_start); //erase the zero instead of storing it
+         if (block_end > block_start)
+           node->event_blocks[block_id].first = block_start+1;
+         else
+           node->event_blocks.erase(block_id); // block was of size 1
+       }
+    }
+}
+
 
 #endif //SC_DNA_NODE_H
