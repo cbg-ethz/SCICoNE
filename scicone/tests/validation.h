@@ -1296,17 +1296,48 @@ void test_expand_shrink_blocks()
 {
   Tree t_prime(ploidy, r.size(), region_neutral_states);
   t_prime.random_insert({{0, 1}}); // 1
-  t_prime.insert_at(1,{{1, 1}, {2, 1}, {3, -2}, {4, -2}}); // 2
-  t_prime.insert_at(1,{{1, 1}, {2, -1}, {3, -1}}); // 3
+  t_prime.insert_at(1,{{2, 1}, {3, 2}, {4, 2}, {5, 1}, {7, -2}, {9, 1}, {10, 2}}); // 2
+  // t_prime.insert_at(1,{{2, 1}, {3, -1}, {4, 1}}); // 3
   t_prime.event_prior(); // to generate event_blocks
 
   std::cout << "Before" << std::endl;
-  std::cout << t_prime.event_blocks << std::endl;
+  for (auto const &event_it : t_prime.all_nodes_vec[2]->event_blocks)
+  {
+    std::cout << "Block " << event_it.first << ": (" << event_it.second.first << ", " << event_it.second.second << ")" << std::endl;
+  }
 
-  // t_prime.all_nodes_vec[1]->expand_shrink_block(1, true, true);
-  //
-  // std::cout << "After" << std::endl;
-  // std::cout << t_prime.event_blocks << std::endl;
+  t_prime.all_nodes_vec[2]->expand_shrink_block(0, true, true); // [3,4] -> [3,5]
+  t_prime.event_prior();
+  std::cout << "After" << std::endl;
+  for (auto const &event_it : t_prime.all_nodes_vec[2]->c_change)
+  {
+    std::cout << event_it.first << ": " << event_it.second << std::endl;
+  }
+
+  t_prime.all_nodes_vec[2]->expand_shrink_block(1, true, true); // [3,4] -> [3,5]
+  t_prime.event_prior();
+  std::cout << "After" << std::endl;
+  for (auto const &event_it : t_prime.all_nodes_vec[2]->c_change)
+  {
+    std::cout << event_it.first << ": " << event_it.second << std::endl;
+  }
+
+  t_prime.all_nodes_vec[2]->expand_shrink_block(2, true, true); // [3,4] -> [3,5]
+  t_prime.event_prior();
+  std::cout << "After" << std::endl;
+  for (auto const &event_it : t_prime.all_nodes_vec[2]->c_change)
+  {
+    std::cout << event_it.first << ": " << event_it.second << std::endl;
+  }
+
+  t_prime.all_nodes_vec[2]->expand_shrink_block(2, true, true); // [3,4] -> [3,5]
+  t_prime.event_prior();
+  std::cout << "After" << std::endl;
+  for (auto const &event_it : t_prime.all_nodes_vec[2]->c_change)
+  {
+    std::cout << event_it.first << ": " << event_it.second << std::endl;
+  }
+
 }
 
 #endif //SC_DNA_VALIDATION_H
