@@ -61,7 +61,7 @@ struct Node{
     inline bool expand_shrink_block(int block_id, bool expand, bool from_end) const;
 
     // copy constructor
-    Node(Node& source_node): c(source_node.c), c_hash(source_node.c_hash), c_change(source_node.c_change)
+    Node(Node& source_node): c(source_node.c), c_hash(source_node.c_hash), c_change(source_node.c_change), event_blocks(source_node.event_blocks)
     {
         id = source_node.id;
         // log scores are not copied since they rely on cells

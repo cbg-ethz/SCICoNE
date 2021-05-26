@@ -1080,23 +1080,19 @@ Node* Tree::expand_shrink_blocks(bool weighted) {
     else
         node = uniform_sample(false); //without the root
 
-    // Get all blocks' start/stop positions from the node
-    map<u_int, int> = node->event_blocks;
+    std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
     // Sample a block to expand/shrink
-    int block_to_choose = uniform(node->event_blocks.keys());
-    int block_start = node->event_blocks[block_to_choose].first;
-    int block_end = node->event_blocks[block_to_choose].second;
+    int block_to_choose = MathOp::random_uniform(0, node->event_blocks.size()-1);
 
+    boost::random::bernoulli_distribution<double> bern_from_end(0.5);
     // Sample the start or end region of the block
-    int from_end = bernoulli(0.5);
+    bool from_end = bern_from_end(generator);
 
+    boost::random::bernoulli_distribution<double> bern_expand(0.5);
     // Sample whether to expand or shrink the block
-    int to_expand = bernoulli(0.5);
+    bool to_expand = bern_expand(generator);
 
-    // If expand:
-    //    If sampled region is contiguous to another region or is the last possible region, throw error
-    //    Else, set next region (either the next or the previous, depending on whether we are the stop or start) to have an event equal to the block
     bool result = node->expand_shrink_block(block_to_choose, to_expand, from_end);
 
     if (Utils::is_empty_map(node->c_change))

@@ -65,7 +65,8 @@ int main()
     test_apply_multiple_times();
     test_reproducibility();
     test_cluster_scoring();
-
+    test_expand_shrink_block_operation();
+    test_expand_shrink_block();
     return EXIT_SUCCESS;
 
 }

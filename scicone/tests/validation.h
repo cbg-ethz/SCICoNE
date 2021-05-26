@@ -160,8 +160,8 @@ void test_reproducibility()
     mcmc.update_t_prime(); // set t_prime to t
 
     // move probabilities
-    vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.01f};
-    //---------------------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od----dl---
+    vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.01f};
+    //---------------------------pr--w-pr--sw--w-sw---ar---w-ar---es---w-es---id---w-id---cs---w-cs--geno---od----dl---
 
     unsigned size_limit = std::numeric_limits<unsigned>::max();
 
@@ -170,6 +170,7 @@ void test_reproducibility()
 
     cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << std::endl;
     std::cout<<"Epsilon: " << epsilon << std::endl;
+    std::cout<< mcmc.best_tree << std::endl;
     assert(abs(mcmc.best_tree.posterior_score - 34.165) <= epsilon);
     std::cout<<"Reproducibility test is passed!"<<std::endl;
 
@@ -1292,7 +1293,7 @@ void test_print_scores()
 
 }
 
-void test_expand_shrink_blocks()
+void test_expand_shrink_block_operation()
 {
   Tree t_prime(ploidy, r.size(), region_neutral_states);
   t_prime.random_insert({{0, 1}}); // 1
@@ -1338,6 +1339,144 @@ void test_expand_shrink_blocks()
     std::cout << event_it.first << ": " << event_it.second << std::endl;
   }
 
+}
+
+
+void test_expand_shrink_block()
+{
+  /*
+   * Tests the add remove event move
+   * */
+
+  bool local_max_scoring = false;
+  Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
+  mcmc.initialize_worked_example();
+  mcmc.compute_t_table(D,r,cluster_sizes); // assignment operator changes the order
+  std::cout << "Events" << std::endl;
+  for (auto const &event_it : mcmc.t.all_nodes_vec[2]->c_change)
+  {
+    std::cout << event_it.first << ": " << event_it.second << std::endl;
+  }
+  std::cout << "Blocks" << std::endl;
+  for (auto const &event_it : mcmc.t.all_nodes_vec[2]->event_blocks)
+  {
+    std::cout << event_it.first << ": " << event_it.second.first << std::endl;
+  }
+
+  mcmc.update_t_prime(); // set t_prime to t
+
+  // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+  std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
+  // mcmc.t_prime.event_prior(); // blocks aren't copied in update_t_prime for some reason
+  std::cout << mcmc.t_prime.all_nodes_vec[2]->event_blocks.size() << std::endl;
+  std::cout << "Events" << std::endl;
+  for (auto const &event_it : mcmc.t_prime.all_nodes_vec[2]->c_change)
+  {
+    std::cout << event_it.first << ": " << event_it.second << std::endl;
+  }
+  std::cout << "Blocks" << std::endl;
+  for (auto const &event_it : mcmc.t_prime.all_nodes_vec[2]->event_blocks)
+  {
+    std::cout << event_it.first << ": " << event_it.second.first << std::endl;
+  }
+
+  std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+  mcmc.apply_expand_shrink_blocks(D, r, false, true);
+  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+  std::cout << "Marginalized time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+
+  double event_prior = mcmc.t_prime.event_prior();
+  double event_prior_tp_gt = -28.603;
+  // assert(abs(event_prior - event_prior_tp_gt) <= epsilon);
+  //
+  // assert(abs(mcmc.t_prime_scores[0][5] - (-427.753)) <= epsilon);
+  // assert(abs(mcmc.t_prime_scores[1][5] - (-411.611)) <= epsilon);
+  // assert(abs(mcmc.t_prime_scores[2][5] - (-251.846)) <= epsilon);
+  // assert(abs(mcmc.t_prime_scores[3][5] - (-387.5)) <= epsilon);
+  // assert(abs(mcmc.t_prime_scores[4][5] - (-313.559)) <= epsilon);
+  //
+  // assert(abs(mcmc.t_prime_sums[0] - 4.364)  <= epsilon);
+  // assert(abs(mcmc.t_prime_sums[1] - 3.668)  <= epsilon);
+  // assert(abs(mcmc.t_prime_sums[2] - 29.222)  <= epsilon);
+  // assert(abs(mcmc.t_prime_sums[3] - 7.017)  <= epsilon);
+  // assert(abs(mcmc.t_prime_sums[4] - 7.069)  <= epsilon);
+
+  // compute the root score
+  size_t n_cells = D.size();
+  double sum_root_score = 0.0;
+  for (u_int i = 0; i < n_cells; ++i) {
+      double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+      double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
+      sum_root_score += root_score;
+  }
+
+  double sum_root_score_gt = -1510.724;
+  // assert(abs(sum_root_score - sum_root_score_gt) <= epsilon);
+
+  double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
+  double log_post_t_prime = mcmc.log_tree_posterior(t_prime_sum, m, mcmc.t_prime);
+  mcmc.t_prime.posterior_score = log_post_t_prime;
+
+  // total score
+  double total_score_gt = -1504.112;
+  double total_score = mcmc.t_prime.posterior_score + sum_root_score;
+  // assert(abs(total_score - total_score_gt) <= epsilon);
+
+  std::cout<<"Expand / shrink block validation test passed!"<<std::endl;
+
+  local_max_scoring = true;
+  Inference mcmc_max(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
+  mcmc_max.initialize_worked_example();
+  mcmc_max.compute_t_table(D,r,cluster_sizes); // assignment operator changes the order
+  mcmc_max.update_t_prime(); // set t_prime to t
+
+  // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+  std::sort(mcmc_max.t_prime.all_nodes_vec.begin(),mcmc_max.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
+  mcmc_max.t_prime.event_prior(); // blocks aren't copied in update_t_prime for some reason
+
+  begin = std::chrono::steady_clock::now();
+  mcmc_max.apply_expand_shrink_blocks(D, r, false, true);
+  end = std::chrono::steady_clock::now();
+  std::cout << "Maximized time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+
+  event_prior = mcmc_max.t_prime.event_prior();
+  event_prior_tp_gt = -28.603;
+  // assert(abs(event_prior - event_prior_tp_gt) <= epsilon);
+  //
+  // assert(abs(mcmc_max.t_prime_scores[0][5] - (-427.753)) <= epsilon);
+  // assert(abs(mcmc_max.t_prime_scores[1][5] - (-411.611)) <= epsilon);
+  // assert(abs(mcmc_max.t_prime_scores[2][5] - (-251.846)) <= epsilon);
+  // assert(abs(mcmc_max.t_prime_scores[3][5] - (-387.5)) <= epsilon);
+  // assert(abs(mcmc_max.t_prime_scores[4][5] - (-313.559)) <= epsilon);
+  //
+  // assert(abs(mcmc_max.t_prime_sums[0] - 4.327)  <= epsilon);
+  // assert(abs(mcmc_max.t_prime_sums[1] - 3.520)  <= epsilon);
+  // assert(abs(mcmc_max.t_prime_sums[2] - 29.222)  <= epsilon);
+  // assert(abs(mcmc_max.t_prime_sums[3] - 6.987)  <= epsilon);
+  // assert(abs(mcmc_max.t_prime_sums[4] - 7.065)  <= epsilon);
+
+  // compute the root score
+  n_cells = D.size();
+  sum_root_score = 0.0;
+  for (u_int i = 0; i < n_cells; ++i) {
+      double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+      double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+      sum_root_score += root_score;
+  }
+
+  sum_root_score_gt = -1510.724;
+  // assert(abs(sum_root_score - sum_root_score_gt) <= epsilon);
+
+  t_prime_sum = accumulate( mcmc_max.t_prime_sums.begin(), mcmc_max.t_prime_sums.end(), 0.0);
+  log_post_t_prime = mcmc_max.log_tree_posterior(t_prime_sum, m, mcmc_max.t_prime);
+  mcmc_max.t_prime.posterior_score = log_post_t_prime;
+
+  // total score
+  total_score_gt = -1495.372;
+  total_score = mcmc_max.t_prime.posterior_score + sum_root_score;
+  // assert(abs(total_score - total_score_gt) <= epsilon);
+
+  std::cout<<"Expand / shrink block validation test with maximum scoring passed!"<<std::endl;
 }
 
 #endif //SC_DNA_VALIDATION_H

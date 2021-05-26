@@ -70,6 +70,8 @@ public:
     bool apply_delete_leaf(const vector<vector<double>> &D, const vector<int> &r);
     bool apply_add_remove_events(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                                  bool validation_test_mode);
+    bool apply_expand_shrink_blocks(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
+                                bool validation_test_mode);
     bool apply_insert_delete_node(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
                                   bool weighted);
     bool apply_condense_split(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
@@ -296,14 +298,14 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
 
     // check if move is weighted
     bool weighted;
-    if ((move_id %2 == 1) && (move_id <=9)) // weighted move ids
+    if ((move_id %2 == 1) && (move_id <=11)) // weighted move ids
         weighted = true;
     else
         weighted = false;
 
     // acceptance probability computations
     double score_diff = 0.0;
-    if (move_id == 11) // overdispersion change
+    if (move_id == 13) // overdispersion change
     {
         double od_score_diff = t_prime.od_score - t.od_score;
         double posterior_score_diff = t_prime.posterior_score - t.posterior_score;
@@ -334,7 +336,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
             // ro variable
             total_nbd_corr *= nbd_corr;
         }
-        else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
+        else if (move_id == 8 || move_id == 9) // insert/delete move or weighted insert/delete move
         {
 
             vector<double> chi = t.chi_insert_delete(weighted);
@@ -350,7 +352,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
             vector<double> omega_prime = t_prime.omega_insert_delete(lambda_r, lambda_c, weighted, max_scoring);
             sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
         }
-        else if (move_id == 8 || move_id == 9) // condense/split move or weighted cs
+        else if (move_id == 10 || move_id == 11) // condense/split move or weighted cs
         {
 
             vector<double> chi = t.chi_condense_split(weighted);
@@ -364,7 +366,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
             sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
         }
 
-        if (move_id == 6 || move_id == 7 || move_id == 8 || move_id == 9) // moves that require nbd correction
+        if (move_id == 8 || move_id == 9 || move_id == 10 || move_id == 11) // moves that require nbd correction
         {
             double n = static_cast<double>(t_n_nodes);
             if (t_n_nodes < t_prime_n_nodes) // insert, split
@@ -379,7 +381,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
             }
         }
 
-        if (move_id == 7 || move_id == 9) // weighted insert-delete or weighted condense-split
+        if (move_id == 9 || move_id == 11) // weighted insert-delete or weighted condense-split
         {
             if (t_n_nodes > t_prime_n_nodes) // delete
             {
@@ -648,6 +650,38 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             }
             case 6:
             {
+                // expand or shrink block
+                if (verbosity > 1)
+                    cout << "expand or shrink block" << endl;
+
+                auto func = std::bind(&Inference::apply_expand_shrink_blocks, this, _1, _2, false, false);
+                bool add_remove_success = apply_multiple_times(n_apply_move, func, D, r);
+
+                if (not add_remove_success) {
+                    rejected_before_comparison = true;
+                    if (verbosity > 1)
+                        cout << "Expand or shrink block rejected before comparison"<<endl;
+                }
+                break;
+            }
+            case 7:
+            {
+                // weighted expand or shrink block
+                if (verbosity > 1)
+                    cout << "weighted expand or shrink block" << endl;
+
+                auto func = std::bind(&Inference::apply_expand_shrink_blocks, this, _1, _2, true, false); // weighted=true
+                bool add_remove_success = apply_multiple_times(n_apply_move, func, D, r);
+
+                if (not add_remove_success) {
+                    rejected_before_comparison = true;
+                    if (verbosity > 1)
+                        cout << "Weighted expand or shrink block rejected before comparison"<<endl;
+                }
+                break;
+            }
+            case 8:
+            {
                 // insert delete node
                 if (verbosity > 1)
                     cout << "insert/delete node" << endl;
@@ -662,7 +696,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
-            case 7:
+            case 9:
             {
                 // weighted insert delete node
                 if (verbosity > 1)
@@ -678,7 +712,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
-            case 8:
+            case 10:
             {
                 // condense split move
                 if (verbosity > 1)
@@ -695,7 +729,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
-            case 9:
+            case 11:
             {
                 // weighted condense split move
                 if (verbosity > 1)
@@ -712,7 +746,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
-            case 10:
+            case 12:
             {
                 // genotype_preserving prune & reattach
                 if (verbosity > 1)
@@ -739,7 +773,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
-            case 11:
+            case 13:
             {
                 // changing overdispersion move
                 if (verbosity > 1)
@@ -756,7 +790,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
-            case 12:
+            case 14:
             {
                 // delete leaf move
                 if (verbosity > 1)
@@ -778,7 +812,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
         Tree* accepted;
 
-        if (move_id == 10) //genotype preserving prune reattach, gibbs sampling
+        if (move_id == 12) //genotype preserving prune reattach, gibbs sampling
             accepted = &t;
         else // metropolis hasting sampling
         {
@@ -812,7 +846,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             // update trees and the matrices
             if (accepted == &t_prime)
             {
-                if (move_id != 11 && std::abs(score_diff) > 0.1)
+                if (move_id != 13 && std::abs(score_diff) > 0.1)
                     gamma *= exp((1.0-alpha)*alpha);
                 acceptance_ratio_file << std::setprecision(print_precision) << static_cast<int>(move_id) << ((i==n_iters-1) ? "" : ",");
                 n_accepted++;
@@ -826,7 +860,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             else
             {
                 // print acceptance ratio
-                if (move_id != 11 && std::abs(score_diff) > 0.1)
+                if (move_id != 13 && std::abs(score_diff) > 0.1)
                     gamma *= exp((0.0-alpha)*alpha);
                 acceptance_ratio_file << std::setprecision(print_precision) << -1 << ((i==n_iters-1) ? "" : ",");
                 n_rejected++;
@@ -1158,6 +1192,31 @@ bool Inference::apply_add_remove_events(const vector<vector<double>> &D, const v
     Node* attached_node;
 
     attached_node = t_prime.add_remove_events(weighted, validation_test_mode);
+
+    if (attached_node != nullptr)
+    {
+        compute_t_prime_scores(attached_node, D, r);
+        compute_t_prime_sums(D);
+
+        return true;
+    }
+    else
+        return false;
+}
+
+
+bool Inference::apply_expand_shrink_blocks(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
+                                        bool validation_test_mode)
+{
+    /*
+     * Applies expand/shrink blocks to t_prime
+     * Updates the sums and scores tables partially
+     * */
+
+    // weighted = false
+    Node* attached_node;
+
+    attached_node = t_prime.expand_shrink_blocks(weighted);
 
     if (attached_node != nullptr)
     {
