@@ -471,7 +471,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
     if (log_acceptance_prob > 0)
     {
         if (verbosity > 1)
-            std::cout << "Move is accepted." << std::endl;
+            std::cout << "Move accepted." << std::endl;
         return &t_prime;
     }
 
@@ -488,13 +488,13 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
         if (log_acceptance_prob > rand_val)
         {
             if (verbosity > 1)
-                std::cout << "Move is accepted." << std::endl;
+                std::cout << "Move accepted." << std::endl;
             return &t_prime;
         }
         else
         {
             if (verbosity > 1)
-                std::cout << "Move is rejected." << std::endl;
+                std::cout << "Move rejected." << std::endl;
             return &t;
         }
 
@@ -561,7 +561,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (not prune_reattach_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 1)
-                        cout << "Prune and reattach is rejected before comparison"<<endl;
+                        cout << "Prune and reattach rejected before comparison"<<endl;
                 }
                 break;
             }
@@ -578,7 +578,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 {
                     rejected_before_comparison = true;
                     if (verbosity > 1)
-                        cout << "Weighted prune and reattach is rejected before comparison"<<endl;
+                        cout << "Weighted prune and reattach rejected before comparison"<<endl;
                 }
                 break;
             }
@@ -595,7 +595,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 {
                     rejected_before_comparison = true;
                     if (verbosity > 1)
-                        cout << "Swap labels is rejected before comparison" << endl;
+                        cout << "Swap labels rejected before comparison" << endl;
                 }
                 break;
             }
@@ -612,7 +612,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 {
                     rejected_before_comparison = true;
                     if (verbosity > 1)
-                        cout << "Weighted swap labels is rejected before comparison" << endl;
+                        cout << "Weighted swap labels rejected before comparison" << endl;
                 }
                 break;
             }
@@ -628,7 +628,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (not add_remove_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 1)
-                        cout << "Add or remove event is rejected before comparison"<<endl;
+                        cout << "Add or remove event rejected before comparison"<<endl;
                 }
                 break;
             }
@@ -644,7 +644,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (not add_remove_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 1)
-                        cout << "Weighted add or remove event is rejected before comparison"<<endl;
+                        cout << "Weighted add or remove event rejected before comparison"<<endl;
                 }
                 break;
             }
@@ -725,7 +725,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 {
                     rejected_before_comparison = true;
                     if (verbosity > 1)
-                        cout << "condense/split move is rejected before comparison"<<endl;
+                        cout << "condense/split move rejected before comparison"<<endl;
                 }
                 break;
             }
@@ -742,7 +742,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 {
                     rejected_before_comparison = true;
                     if (verbosity > 1)
-                        cout << "weighted condense/split move is rejected before comparison"<<endl;
+                        cout << "weighted condense/split move rejected before comparison"<<endl;
                 }
                 break;
             }
@@ -758,7 +758,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     acceptance_ratio_file << std::setprecision(print_precision) << -1 << ((i==n_iters-1) ? "" : ",");
                     rejected_before_comparison = true;
                     if (verbosity > 1)
-                        cout << "Genotype preserving prune/reattach is rejected"<<endl;
+                        cout << "Genotype preserving prune/reattach rejected"<<endl;
                 }
                 else // accepted
                 {
@@ -786,7 +786,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 {
                     rejected_before_comparison = true;
                     if (verbosity > 1)
-                        cout << "Overdispersion changing move is rejected before comparison"<<endl;
+                        cout << "Overdispersion changing move rejected before comparison"<<endl;
                 }
                 break;
             }
@@ -802,7 +802,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (not delete_leaf_success) {
                     rejected_before_comparison = true;
                     if (verbosity > 1)
-                        cout << "Delete leaf move is rejected before comparison" << endl;
+                        cout << "Delete leaf move rejected before comparison" << endl;
                 }
                 break;
             }
