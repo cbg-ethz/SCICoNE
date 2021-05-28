@@ -63,7 +63,7 @@ public:
     Node* delete_leaf();
     Node* select_node_for_common_ancestor();
     Node* create_common_ancestor(Node* parent_node);
-    Node* add_common_ancestor();
+    Node* add_common_ancestor(bool validation_test_mode=false);
     std::vector<Node*> swap_labels(bool weighted=false, bool validation_test_mode=false);
     Node *add_remove_events(bool weighted, bool validation_test_mode=false);
     Node *insert_delete_node(unsigned int size_limit, bool weighted, bool max_scoring);
@@ -1486,8 +1486,13 @@ Node* Tree::create_common_ancestor(Node* parent_node) {
     return common_ancestor;
 }
 
-Node* Tree::add_common_ancestor() {
-  Node* parent_node = select_node_for_common_ancestor();
+Node* Tree::add_common_ancestor(bool validation_test_mode) {
+  Node* parent_node;
+  if (validation_test_mode)
+    parent_node = all_nodes_vec[1];
+  else
+    parent_node = select_node_for_common_ancestor();
+
   Node* common_ancestor = create_common_ancestor(parent_node);
   return common_ancestor;
 }

@@ -68,7 +68,7 @@ public:
                               bool validation_test_mode);
     bool apply_genotype_preserving_pr(double gamma);
     bool apply_delete_leaf(const vector<vector<double>> &D, const vector<int> &r);
-    bool apply_add_common_ancestor(const vector<vector<double>> &D, const vector<int> &r);
+    bool apply_add_common_ancestor(const vector<vector<double>> &D, const vector<int> &r, bool validation_test_mode);
     bool apply_add_remove_events(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                                  bool validation_test_mode);
     bool apply_insert_delete_node(const vector<vector<double>> &D, const vector<int> &r, unsigned int size_limit,
@@ -84,7 +84,7 @@ public:
 
     void update_t_scores();
     void random_initialize(u_int n_nodes, u_int n_regions, int max_iters, int max_regions_per_node=1); // randomly initializes a tree and copies it into the other
-    void initialize_worked_example(); // initializes the trees based on the test example
+    void initialize_worked_example(int mode=1); // initializes the trees based on the test example
     void initialize_from_file(string path);
     vector<vector<int>> assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
 private:
@@ -153,15 +153,21 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters,
 
 }
 
-void Inference::initialize_worked_example() {
+void Inference::initialize_worked_example(int mode) {
 
     // build tree
     // tree that generated the data
-    t.random_insert({{0, 1}, {1, 1}});
-    t.insert_at(1,{{1, 1}, {2, 1}});
-    t.insert_at(2,{{0, -1}});
-    t.insert_at(2,{{3, -1}});
-    t.insert_at(1,{{0, 1}});
+    if (mode == 1) {
+      t.random_insert({{0, 1}, {1, 1}});
+      t.insert_at(1,{{1, 1}, {2, 1}});
+      t.insert_at(2,{{0, -1}});
+      t.insert_at(2,{{3, -1}});
+      t.insert_at(1,{{0, 1}});
+    } else {
+      t.random_insert({{0, 1}}); // 1
+      t.insert_at(1,{{1, 1}, {2, 1}, {3, -2}, {4, -2}}); // 2
+      t.insert_at(1,{{1, 1}, {2, -1}, {3, -1}}); // 3
+    }
 
     // Tree score: -2605.9655
 //    t.insert_at(0,{{0,1},{1,1}}); // 1
