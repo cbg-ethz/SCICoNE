@@ -1442,6 +1442,7 @@ Node* Tree::create_common_ancestor(Node* parent_node) {
     if (n_children < 2)
       throw std::logic_error("Can not create common ancestor from less than 2 siblings.");
 
+    // std::cout << "Creating common ancestor below " << parent_node->id << std::endl;
     // Choose a pair of siblings
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
     generator.seed(static_cast<unsigned int>(std::time(0)));
@@ -1461,12 +1462,15 @@ Node* Tree::create_common_ancestor(Node* parent_node) {
     std::vector<Node*> node_pair;
     node_pair.push_back(siblings[nodeA_idx]);
     node_pair.push_back(siblings[nodeB_idx]);
+    // std::cout << "Pulling common events from " << node_pair[0]->id << " and " << node_pair[1]->id << std::endl;
 
     // Get the intersection of the events in node_pair
     std::map<u_int, int> intersection = get_event_intersection(node_pair);
 
+    // std::cout << "Got intersection: " << std::endl;
     // Remove intersection from nodes in node_pair
     for (auto const& x : intersection)
+      // std::cout << x.first << ":" << x.second << "; ";
       for (Node* node : node_pair) {
         node->c_change[x.first] = node->c_change[x.first] - x.second;
         if (node->c_change.at(x.first) == 0)
