@@ -310,7 +310,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
 
     // acceptance probability computations
     double score_diff = 0.0;
-    if (move_id == 11) // overdispersion change
+    if (move_id == 12) // overdispersion change
     {
         double od_score_diff = t_prime.od_score - t.od_score;
         double posterior_score_diff = t_prime.posterior_score - t.posterior_score;
@@ -748,6 +748,22 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             }
             case 11:
             {
+                // add common ancestor move
+                if (verbosity > 1)
+                    cout << "Add common ancestor" << endl;
+
+                auto func = std::bind(&Inference::apply_add_common_ancestor, this, _1, _2, false);
+                bool add_common_ancestor_success = apply_multiple_times(n_apply_move, func, D, r);
+
+                if (not add_common_ancestor_success) {
+                    rejected_before_comparison = true;
+                    if (verbosity > 1)
+                        cout << "Add common ancestor move rejected before comparison" << endl;
+                }
+                break;
+            }
+            case 12:
+            {
                 // changing overdispersion move
                 if (verbosity > 1)
                     cout<<"Overdispersion changing move"<<endl;
@@ -763,7 +779,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
-            case 12:
+            case 13:
             {
                 // delete leaf move
                 if (verbosity > 1)
@@ -776,22 +792,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     rejected_before_comparison = true;
                     if (verbosity > 1)
                         cout << "Delete leaf move is rejected before comparison" << endl;
-                }
-                break;
-            }
-            case 13:
-            {
-                // add common ancestor move
-                if (verbosity > 1)
-                    cout << "Add common ancestor" << endl;
-
-                auto func = std::bind(&Inference::apply_add_common_ancestor, this, _1, _2);
-                bool add_common_ancestor_success = apply_multiple_times(n_apply_move, func, D, r);
-
-                if (not add_common_ancestor_success) {
-                    rejected_before_comparison = true;
-                    if (verbosity > 1)
-                        cout << "Add common ancestor move is rejected before comparison" << endl;
                 }
                 break;
             }
@@ -835,7 +835,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             // update trees and the matrices
             if (accepted == &t_prime)
             {
-                if (move_id != 11 && std::abs(score_diff) > 0.1)
+                if (move_id != 12 && std::abs(score_diff) > 0.1)
                     gamma *= exp((1.0-alpha)*alpha);
                 acceptance_ratio_file << std::setprecision(print_precision) << static_cast<int>(move_id) << ((i==n_iters-1) ? "" : ",");
                 n_accepted++;
@@ -849,7 +849,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             else
             {
                 // print acceptance ratio
-                if (move_id != 11 && std::abs(score_diff) > 0.1)
+                if (move_id != 12 && std::abs(score_diff) > 0.1)
                     gamma *= exp((0.0-alpha)*alpha);
                 acceptance_ratio_file << std::setprecision(print_precision) << -1 << ((i==n_iters-1) ? "" : ",");
                 n_rejected++;
@@ -1462,14 +1462,13 @@ bool Inference::apply_delete_leaf(const vector<vector<double>> &D, const vector<
 
 }
 
-bool Inference::apply_add_common_ancestor(const vector<vector<double>> &D, const vector<int> &r) {
+bool Inference::apply_add_common_ancestor(const vector<vector<double>> &D, const vector<int> &r, bool validation_test_mode) {
     /*
      * Applies the delete leaf move on t_prime.
      * */
 
     Node* tobe_computed;
-
-    tobe_computed = t_prime.add_common_ancestor();
+    tobe_computed = t_prime.add_common_ancestor(validation_test_mode);
 
     compute_t_prime_scores(tobe_computed, D, r);
     compute_t_prime_sums(D);
