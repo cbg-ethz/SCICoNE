@@ -1362,17 +1362,6 @@ void test_expand_shrink_block()
   Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
   mcmc.initialize_worked_example();
   mcmc.compute_t_table(D,r,cluster_sizes); // assignment operator changes the order
-  std::cout << "Events" << std::endl;
-  for (auto const &event_it : mcmc.t.all_nodes_vec[2]->c_change)
-  {
-    std::cout << event_it.first << ": " << event_it.second << std::endl;
-  }
-  std::cout << "Blocks" << std::endl;
-  for (auto const &event_it : mcmc.t.all_nodes_vec[2]->event_blocks)
-  {
-    std::cout << event_it.first << ": " << event_it.second.first << std::endl;
-  }
-
   mcmc.update_t_prime(); // set t_prime to t
 
   // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
