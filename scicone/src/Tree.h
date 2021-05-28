@@ -66,7 +66,7 @@ public:
     Node *insert_delete_node(unsigned int size_limit, bool weighted, bool max_scoring);
     Node *condense_split_node(unsigned int size_limit, bool weighted, bool max_scoring);
     std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
-    Node *expand_shrink_blocks(bool weighted);
+    Node *expand_shrink_blocks(bool weighted, bool validation_test_mode=false);
 
     Node* delete_node(Node* node);
     Node* find_node(int id);
@@ -1063,7 +1063,7 @@ Node* Tree::add_remove_events(bool weighted, bool validation_test_mode) {
 }
 
 
-Node* Tree::expand_shrink_blocks(bool weighted) {
+Node* Tree::expand_shrink_blocks(bool weighted, bool validation_test_mode) {
 
     /*
      * Expands and removes events in a node.
@@ -1075,25 +1075,34 @@ Node* Tree::expand_shrink_blocks(bool weighted) {
 
     // Sample a node uniformly
     Node* node;
-    if (weighted)
-        node = weighted_sample();
+
+    if (validation_test_mode)
+    {
+        node = all_nodes_vec[2];
+        node->c_change = {{3,1}};
+    }
     else
-        node = uniform_sample(false); //without the root
+    {
+      if (weighted)
+          node = weighted_sample();
+      else
+          node = uniform_sample(false); //without the root
 
-    std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
+      std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
-    // Sample a block to expand/shrink
-    int block_to_choose = MathOp::random_uniform(0, node->event_blocks.size()-1);
+      // Sample a block to expand/shrink
+      int block_to_choose = MathOp::random_uniform(0, node->event_blocks.size()-1);
 
-    boost::random::bernoulli_distribution<double> bern_from_end(0.5);
-    // Sample the start or end region of the block
-    bool from_end = bern_from_end(generator);
+      boost::random::bernoulli_distribution<double> bern_from_end(0.5);
+      // Sample the start or end region of the block
+      bool from_end = bern_from_end(generator);
 
-    boost::random::bernoulli_distribution<double> bern_expand(0.5);
-    // Sample whether to expand or shrink the block
-    bool to_expand = bern_expand(generator);
+      boost::random::bernoulli_distribution<double> bern_expand(0.5);
+      // Sample whether to expand or shrink the block
+      bool to_expand = bern_expand(generator);
 
-    bool result = node->expand_shrink_block(block_to_choose, to_expand, from_end, this->n_regions);
+      bool result = node->expand_shrink_block(block_to_choose, to_expand, from_end, this->n_regions);
+    }
 
     if (Utils::is_empty_map(node->c_change))
         return nullptr; //TODO: maybe throw a certain exception here

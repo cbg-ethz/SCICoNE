@@ -1216,7 +1216,7 @@ bool Inference::apply_expand_shrink_blocks(const vector<vector<double>> &D, cons
     // weighted = false
     Node* attached_node;
 
-    attached_node = t_prime.expand_shrink_blocks(weighted);
+    attached_node = t_prime.expand_shrink_blocks(weighted, validation_test_mode);
 
     if (attached_node != nullptr)
     {
