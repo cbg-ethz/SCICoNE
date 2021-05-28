@@ -116,8 +116,8 @@ int main( int argc, char* argv[]) {
 
     if (not result.count("move_probs"))
     {
-        move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.01f};
-        //-------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od----dl---
+        move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.01f, 1.0f, 0.01f};
+        //-------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno----ca------od----dl---
     }
     if (result.count("region_sizes_file"))
     {
