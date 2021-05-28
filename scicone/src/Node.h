@@ -391,6 +391,7 @@ bool Node::expand_shrink_block(int block_id, bool expand, bool from_end, u_int n
 
     int current = 0;
     int addition = 1;
+    int region_to_shrink = 0;
 
     if (expand) {
        if (from_end) {
@@ -416,14 +417,20 @@ bool Node::expand_shrink_block(int block_id, bool expand, bool from_end, u_int n
 
          this->c_change[block_start-1] = this->c_change[block_start];
        }
-    } else {
-       // Else:
-       //    Set sampled region to have no event
-       if (from_end) {
-         this->c_change.erase(block_end); //erase the zero instead of storing it
-       } else {
-         this->c_change.erase(block_start); //erase the zero instead of storing it
-       }
+     } else {
+        region_to_shrink = block_end;
+        if (!from_end)
+          region_to_shrink = block_start;
+
+        current = this->c_change[region_to_shrink];
+        addition = -1;
+
+        if (signbit(this->c_change[region_to_shrink]))
+          addition = 1;
+
+        this->c_change[region_to_shrink] = current + addition;
+        if (this->c_change.at(region_to_shrink) == 0)
+         this->c_change.erase(region_to_shrink); //erase the zero instead of storing it
     }
     return true;
 }
