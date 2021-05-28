@@ -1443,39 +1443,50 @@ Node* Tree::create_common_ancestor(Node* parent_node) {
       throw std::logic_error("Can not create common ancestor from less than 2 siblings.");
 
     // std::cout << "Creating common ancestor below " << parent_node->id << std::endl;
+
     // Choose a pair of siblings
+    std::vector<Node*> node_pair;
+
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
     generator.seed(static_cast<unsigned int>(std::time(0)));
     boost::random::discrete_distribution<>* dd = new boost::random::discrete_distribution<>(sib_idx.begin(), sib_idx.end());
+
     int nodeA_idx = (*dd)(generator); // this is the index of one the siblings
+    node_pair.push_back(siblings[nodeA_idx]);
+
     sib_idx.erase(sib_idx.begin() + nodeA_idx);
+    siblings.erase(siblings.begin() + nodeA_idx);
+
     boost::random::discrete_distribution<>* ddd = new boost::random::discrete_distribution<>(sib_idx.begin(), sib_idx.end());
     int nodeB_idx = (*ddd)(generator); // this is the index of another sibling
-    while (nodeA_idx == nodeB_idx) {
-      // std::cout << nodeA_idx << ", " << nodeB_idx << std::endl;
-      nodeB_idx = (*ddd)(generator);
-    }
-    std::cout << nodeA_idx << ", " << nodeB_idx << std::endl;
+    node_pair.push_back(siblings[nodeB_idx]);
+
     delete dd;
     delete ddd;
 
-    std::vector<Node*> node_pair;
-    node_pair.push_back(siblings[nodeA_idx]);
-    node_pair.push_back(siblings[nodeB_idx]);
     // std::cout << "Pulling common events from " << node_pair[0]->id << " and " << node_pair[1]->id << std::endl;
 
     // Get the intersection of the events in node_pair
     std::map<u_int, int> intersection = get_event_intersection(node_pair);
 
     // std::cout << "Got intersection: " << std::endl;
+    if (intersection.size() < 1)
+      throw std::logic_error("Can not create common ancestor from siblings with no intersection.");
+
     // Remove intersection from nodes in node_pair
-    for (auto const& x : intersection)
+    for (auto const& x : intersection) {
       // std::cout << x.first << ":" << x.second << "; ";
       for (Node* node : node_pair) {
         node->c_change[x.first] = node->c_change[x.first] - x.second;
         if (node->c_change.at(x.first) == 0)
             node->c_change.erase(x.first);
       }
+    }
+
+    for (Node* node : node_pair) {
+      if (node->c_change.size() == 0)
+        throw std::logic_error("Can not create common ancestor if a child would become empty.");
+    }
 
     // Add node below parent_node
     this->insert_child(parent_node, static_cast<map<u_int,int>&&>(intersection));
