@@ -1093,7 +1093,7 @@ Node* Tree::expand_shrink_blocks(bool weighted) {
     // Sample whether to expand or shrink the block
     bool to_expand = bern_expand(generator);
 
-    bool result = node->expand_shrink_block(block_to_choose, to_expand, from_end);
+    bool result = node->expand_shrink_block(block_to_choose, to_expand, from_end, this->n_regions);
 
     if (Utils::is_empty_map(node->c_change))
         return nullptr; //TODO: maybe throw a certain exception here

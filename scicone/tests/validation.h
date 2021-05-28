@@ -160,7 +160,7 @@ void test_reproducibility()
     mcmc.update_t_prime(); // set t_prime to t
 
     // move probabilities
-    vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.01f};
+    vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 0.1f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.01f};
     //---------------------------pr--w-pr--sw--w-sw---ar---w-ar---es---w-es---id---w-id---cs---w-cs--geno---od----dl---
 
     unsigned size_limit = std::numeric_limits<unsigned>::max();
@@ -1297,17 +1297,17 @@ void test_expand_shrink_block_operation()
 {
   Tree t_prime(ploidy, r.size(), region_neutral_states);
   t_prime.random_insert({{0, 1}}); // 1
-  t_prime.insert_at(1,{{2, 1}, {3, 2}, {4, 2}, {5, 1}, {7, -2}, {9, 1}, {10, 2}}); // 2
+  t_prime.insert_at(1,{{0, 1}, {1, 2}, {2, 2}, {3, 1}, {4, -2}}); // 2
   // t_prime.insert_at(1,{{2, 1}, {3, -1}, {4, 1}}); // 3
   t_prime.event_prior(); // to generate event_blocks
-
+  std::cout << t_prime.n_regions << std::endl;
   std::cout << "Before" << std::endl;
   for (auto const &event_it : t_prime.all_nodes_vec[2]->event_blocks)
   {
     std::cout << "Block " << event_it.first << ": (" << event_it.second.first << ", " << event_it.second.second << ")" << std::endl;
   }
-
-  t_prime.all_nodes_vec[2]->expand_shrink_block(0, true, true); // [3,4] -> [3,5]
+  std::cout << t_prime.n_regions << std::endl;
+  t_prime.all_nodes_vec[2]->expand_shrink_block(0, true, false, t_prime.n_regions); // [1,2] -> [0,2]
   t_prime.event_prior();
   std::cout << "After" << std::endl;
   for (auto const &event_it : t_prime.all_nodes_vec[2]->c_change)
@@ -1315,7 +1315,7 @@ void test_expand_shrink_block_operation()
     std::cout << event_it.first << ": " << event_it.second << std::endl;
   }
 
-  t_prime.all_nodes_vec[2]->expand_shrink_block(1, true, true); // [3,4] -> [3,5]
+  t_prime.all_nodes_vec[2]->expand_shrink_block(1, false, true, t_prime.n_regions); // [0,3] -> [0,2]
   t_prime.event_prior();
   std::cout << "After" << std::endl;
   for (auto const &event_it : t_prime.all_nodes_vec[2]->c_change)
@@ -1323,7 +1323,7 @@ void test_expand_shrink_block_operation()
     std::cout << event_it.first << ": " << event_it.second << std::endl;
   }
 
-  t_prime.all_nodes_vec[2]->expand_shrink_block(2, true, true); // [3,4] -> [3,5]
+  t_prime.all_nodes_vec[2]->expand_shrink_block(2, false, false, t_prime.n_regions); // -2*[4,4] -> -1*[4,4]
   t_prime.event_prior();
   std::cout << "After" << std::endl;
   for (auto const &event_it : t_prime.all_nodes_vec[2]->c_change)
@@ -1331,13 +1331,23 @@ void test_expand_shrink_block_operation()
     std::cout << event_it.first << ": " << event_it.second << std::endl;
   }
 
-  t_prime.all_nodes_vec[2]->expand_shrink_block(2, true, true); // [3,4] -> [3,5]
+  t_prime.all_nodes_vec[2]->expand_shrink_block(2, false, true, t_prime.n_regions); // 1*[4,4] -> 0*[4,4]
   t_prime.event_prior();
   std::cout << "After" << std::endl;
   for (auto const &event_it : t_prime.all_nodes_vec[2]->c_change)
   {
     std::cout << event_it.first << ": " << event_it.second << std::endl;
   }
+
+  t_prime.all_nodes_vec[2]->expand_shrink_block(0, false, false, t_prime.n_regions); // -> [0, 2]
+  t_prime.event_prior();
+  std::cout << "After" << std::endl;
+  for (auto const &event_it : t_prime.all_nodes_vec[2]->c_change)
+  {
+    std::cout << event_it.first << ": " << event_it.second << std::endl;
+  }
+
+  cout<<"Expand/shrink block operation test passed!"<<endl;
 
 }
 
@@ -1367,8 +1377,7 @@ void test_expand_shrink_block()
 
   // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
   std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
-  // mcmc.t_prime.event_prior(); // blocks aren't copied in update_t_prime for some reason
-  std::cout << mcmc.t_prime.all_nodes_vec[2]->event_blocks.size() << std::endl;
+
   std::cout << "Events" << std::endl;
   for (auto const &event_it : mcmc.t_prime.all_nodes_vec[2]->c_change)
   {
@@ -1432,7 +1441,6 @@ void test_expand_shrink_block()
 
   // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
   std::sort(mcmc_max.t_prime.all_nodes_vec.begin(),mcmc_max.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
-  mcmc_max.t_prime.event_prior(); // blocks aren't copied in update_t_prime for some reason
 
   begin = std::chrono::steady_clock::now();
   mcmc_max.apply_expand_shrink_blocks(D, r, false, true);

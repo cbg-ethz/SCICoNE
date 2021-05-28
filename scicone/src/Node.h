@@ -58,7 +58,7 @@ struct Node{
     inline bool first_order_children_repeat_genotype() const;
     inline double compute_event_prior(u_int n_regions) const;
     inline map<int, double> get_children_id_score() const;
-    inline bool expand_shrink_block(int block_id, bool expand, bool from_end) const;
+    inline bool expand_shrink_block(int block_id, bool expand, bool from_end, u_int n_regions) const;
 
     // copy constructor
     Node(Node& source_node): c(source_node.c), c_hash(source_node.c_hash), c_change(source_node.c_change), event_blocks(source_node.event_blocks)
@@ -380,7 +380,7 @@ map<int, double> Node::get_children_id_score() const {
 }
 
 
-bool Node::expand_shrink_block(int block_id, bool expand, bool from_end) const {
+bool Node::expand_shrink_block(int block_id, bool expand, bool from_end, u_int n_regions) const {
 /*
  * Expands/shrinks event block from end or from start
  * Throws std::logic_error
@@ -392,10 +392,9 @@ bool Node::expand_shrink_block(int block_id, bool expand, bool from_end) const {
     int current = 0;
     int addition = 1;
 
-    int n_regions = this->c.size();
     if (expand) {
        if (from_end) {
-        if (block_end == n_regions)
+        if (block_end == n_regions-1)
           throw std::logic_error("Can not expand beyond the final region");
 
         if (signbit(this->c_change[block_end+1] != signbit(this->c_change[block_end]) || abs(this->c_change[block_end+1]) > abs(this->c_change[block_end])))
