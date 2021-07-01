@@ -15,7 +15,7 @@ jobs:
           command: 'sudo apt-get update && sudo apt-get -y install software-properties-common'
       - run:
           name: Install Python
-          command:  'sudo add-apt-repository -E -y ppa:deadsnakes/ppa && apt-get update && sudo apt-get -y install build-essential python3.6'
+          command:  'sudo -E add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && sudo apt-get -y install build-essential python3.6'
       - run:
           name: Install Python utilities
           command: 'sudo apt-get install -y python3.6-dev python3-pip && python3.6 -m pip install pip --upgrade'
