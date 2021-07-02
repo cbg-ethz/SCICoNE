@@ -67,5 +67,5 @@ jobs:
           command: 'cd release && make VERBOSE=1'
       - run:
           name: Unit Tests (Release)
-          no_output_timeout: 30m
+          no_output_timeout: 60m
           command: 'cd debug && ./tests'
