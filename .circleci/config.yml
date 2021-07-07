@@ -15,7 +15,7 @@ jobs:
           command: 'sudo apt-get update && sudo apt-get -y install software-properties-common'
       - run:
           name: Install Python
-          command:  'sudo add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && sudo apt-get -y install build-essential python3.6'
+          command:  'sudo -E add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && sudo apt-get -y install build-essential python3.6'
       - run:
           name: Install Python utilities
           command: 'sudo apt-get install -y python3.6-dev python3-pip && python3.6 -m pip install pip --upgrade'
@@ -54,7 +54,7 @@ jobs:
           command: 'cd debug && make VERBOSE=1'
       - run:
           name: Unit Tests (Debug)
-          no_output_timeout: 30m
+          no_output_timeout: 60m
           command: 'cd debug && ./tests'
       - run:
           name: Creating Release Build Folder
@@ -67,5 +67,5 @@ jobs:
           command: 'cd release && make VERBOSE=1'
       - run:
           name: Unit Tests (Release)
-          no_output_timeout: 30m
+          no_output_timeout: 60m
           command: 'cd debug && ./tests'

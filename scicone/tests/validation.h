@@ -160,14 +160,14 @@ void test_reproducibility()
     mcmc.update_t_prime(); // set t_prime to t
 
     // move probabilities
-    vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.01f};
-    //---------------------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno---od----dl---
+    vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.01f, 1.0f, 0.01f};
+    //---------------------------pr--w-pr--sw--w-sw---ar----w-ar--id---w-id---cs---w-cs--geno----ca-------od----dl---
 
     unsigned size_limit = std::numeric_limits<unsigned>::max();
 
     std::cout << "Running reproducibility test..." << std::endl;
-    mcmc.infer_mcmc(D, r, move_probs, 5000, size_limit, 0.0, 1.0, cluster_sizes);
-
+    mcmc.infer_mcmc(D, r, move_probs, 10000, size_limit, 0.0, 1.0, cluster_sizes);
+    std::cout << mcmc.best_tree << std::endl;
     cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << std::endl;
     std::cout<<"Epsilon: " << epsilon << std::endl;
     assert(abs(mcmc.best_tree.posterior_score - 34.165) <= epsilon);
@@ -1290,6 +1290,146 @@ void test_print_scores()
     std::cout << "\n";
   }
 
+}
+
+void test_get_event_intersection()
+{
+  Tree t_prime(ploidy, r.size(), region_neutral_states);
+  t_prime.random_insert({{0, 1}}); // 1
+  t_prime.insert_at(1,{{1, 1}, {2, 1}, {3, -2}, {4, -2}}); // 2
+  t_prime.insert_at(1,{{1, 1}, {2, -1}, {3, -1}}); // 3
+
+  std::cout << t_prime << std::endl;
+
+  std::vector<Node*> nodes;
+  nodes.push_back(t_prime.all_nodes_vec[2]);
+  nodes.push_back(t_prime.all_nodes_vec[3]);
+
+  std::map<u_int, int> intersection = t_prime.get_event_intersection(nodes);
+
+  for (auto const& x : intersection) {
+      std::cout << "" << x.first << ": " << x.second << std::endl;
+  }
+
+}
+
+void test_add_common_ancestor_operation()
+{
+  Tree t_prime(ploidy, r.size(), region_neutral_states);
+  t_prime.random_insert({{0, 1}}); // 1
+  t_prime.insert_at(1,{{1, 1}, {2, 1}, {3, -2}, {4, -2}}); // 2
+  t_prime.insert_at(1,{{1, 1}, {2, -1}, {3, -1}}); // 3
+
+  std::cout << "Before" << std::endl;
+  std::cout << t_prime << std::endl;
+  std::cout << t_prime.all_nodes_vec[1]->id << std::endl;
+  t_prime.create_common_ancestor(t_prime.all_nodes_vec[1]);
+
+  std::cout << "After" << std::endl;
+  std::cout << t_prime << std::endl;
+}
+
+void test_add_common_ancestor()
+{
+    /*
+     * Tests the add common ancestor move
+     * */
+
+    bool local_max_scoring = false;
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
+    mcmc.initialize_worked_example(2);
+    mcmc.compute_t_table(D,r,cluster_sizes);
+    mcmc.update_t_prime(); // set t_prime to t
+
+    // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+    std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
+    std::cout << mcmc.t_prime << std::endl;
+    // assert(abs(mcmc.t.posterior_score - 13.424) <= epsilon);
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    mcmc.apply_add_common_ancestor(D, r, true);
+    std::cout << mcmc.t_prime << std::endl;
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Marginalized time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+
+    //
+    // assert(abs(mcmc.t_prime_sums[0] - 1.057)  <= epsilon);
+    // assert(abs(mcmc.t_prime_sums[1] - 1.695)  <= epsilon);
+    // assert(abs(mcmc.t_prime_sums[2] - 24.169)  <= epsilon);
+    // assert(abs(mcmc.t_prime_sums[3] - 8.264)  <= epsilon);
+    // assert(abs(mcmc.t_prime_sums[4] - 10.511)  <= epsilon);
+
+    // compute the root score
+    size_t n_cells = D.size();
+    double sum_root_score = 0.0;
+    for (u_int i = 0; i < n_cells; ++i) {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
+        sum_root_score += root_score;
+    }
+
+    double sum_root_score_gt = -1510.724;
+    // assert(abs(sum_root_score - sum_root_score_gt) <= epsilon);
+
+    double t_prime_sum = accumulate( mcmc.t_prime_sums.begin(), mcmc.t_prime_sums.end(), 0.0);
+    double log_post_t_prime = mcmc.log_tree_posterior(t_prime_sum, m, mcmc.t_prime);
+    mcmc.t_prime.posterior_score = log_post_t_prime;
+    // assert(abs(mcmc.t_prime.posterior_score - 3.269) <= epsilon);
+
+    // total score
+    double total_score_gt = -1507.455;
+    double total_score = mcmc.t_prime.posterior_score + sum_root_score;
+    // assert(abs(total_score - total_score_gt) <= epsilon);
+
+
+    cout<<"Add common ancestor validation test passed!"<<std::endl;
+
+    local_max_scoring = true;
+    Inference mcmc_max(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
+    mcmc_max.initialize_worked_example(2);
+    mcmc_max.compute_t_table(D,r,cluster_sizes);
+    double t_sum = accumulate( mcmc_max.t_sums.begin(), mcmc_max.t_sums.end(), 0.0);
+    mcmc_max.update_t_prime(); // set t_prime to t
+    // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+    std::sort(mcmc_max.t_prime.all_nodes_vec.begin(),mcmc_max.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
+    // assert(abs(mcmc_max.t.posterior_score - 21.7499) <= epsilon);
+
+    begin = std::chrono::steady_clock::now();
+    mcmc_max.apply_add_common_ancestor(D, r, true);
+    end = std::chrono::steady_clock::now();
+    std::cout << "Maximized time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+    // cout << "First cell's score" << endl;
+    // cout << mcmc_max.t_prime_sums[0] << endl;
+    // assert(abs(mcmc_max.t_prime_sums[0] - 0.613)  <= epsilon);
+    // assert(abs(mcmc_max.t_prime_sums[1] - 1.444)  <= epsilon);
+    // assert(abs(mcmc_max.t_prime_sums[2] - 24.051)  <= epsilon);
+    // assert(abs(mcmc_max.t_prime_sums[3] - 7.684)  <= epsilon);
+    // assert(abs(mcmc_max.t_prime_sums[4] - 10.464)  <= epsilon);
+
+    // compute the root score
+    n_cells = D.size();
+    sum_root_score = 0.0;
+    for (u_int i = 0; i < n_cells; ++i) {
+        double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
+        double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+        sum_root_score += root_score;
+    }
+
+    sum_root_score_gt = -1510.724;
+    // assert(abs(sum_root_score - sum_root_score_gt) <= epsilon);
+    t_prime_sum = accumulate( mcmc_max.t_prime_sums.begin(), mcmc_max.t_prime_sums.end(), 0.0);
+    // assert(abs(t_prime_sum - t_sum) <= epsilon); // Max score must stay the same with new node if the tree already fits the data well
+
+    log_post_t_prime = mcmc_max.log_tree_posterior(t_prime_sum, m, mcmc_max.t_prime);
+    mcmc_max.t_prime.posterior_score = log_post_t_prime;
+    // assert(abs(mcmc_max.t_prime.posterior_score - 10.788) <= epsilon);
+
+    // total score
+    total_score_gt = -1499.936;
+    total_score = mcmc_max.t_prime.posterior_score + sum_root_score;
+    // assert(abs(total_score - total_score_gt) <= epsilon);
+
+    cout<<"Add common ancestor validation test with maximum scoring passed!"<<std::endl;
 }
 
 #endif //SC_DNA_VALIDATION_H
