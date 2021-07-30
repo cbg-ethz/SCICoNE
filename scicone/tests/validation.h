@@ -173,26 +173,26 @@ void test_reproducibility()
     std::cout<< mcmc.best_tree << std::endl;
     assert(abs(mcmc.best_tree.posterior_score - 34.165) <= epsilon);
 
-    bool local_max_scoring = true;
-    Inference mcmc(r.size(), m, region_neutral_states, ploidy, local_verbosity, local_max_scoring);
+    local_max_scoring = true;
+    Inference mcmc_max(r.size(), m, region_neutral_states, ploidy, local_verbosity, local_max_scoring);
 
-    mcmc.initialize_worked_example();
-    mcmc.compute_t_table(D,r,cluster_sizes);
-    mcmc.update_t_prime(); // set t_prime to t
+    mcmc_max.initialize_worked_example();
+    mcmc_max.compute_t_table(D,r,cluster_sizes);
+    mcmc_max.update_t_prime(); // set t_prime to t
 
     // move probabilities
-    vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.01f, 0.1f, 0.01f, 1.0f, 0.01f};
+    move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.01f, 0.1f, 0.01f, 1.0f, 0.01f};
     //----------------------------pr--w-pr--sw--w-sw---ar---w-ar---id---w-id---cs---w-cs--geno---es----ca-----od----dl---
 
-    unsigned size_limit = std::numeric_limits<unsigned>::max();
+    size_limit = std::numeric_limits<unsigned>::max();
 
     std::cout << "Running reproducibility test with max scoring..." << std::endl;
-    mcmc.infer_mcmc(D, r, move_probs, 10000, size_limit, 0.0, 1.0, cluster_sizes);
-    std::cout << mcmc.best_tree << std::endl;
-    cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << std::endl;
+    mcmc_max.infer_mcmc(D, r, move_probs, 10000, size_limit, 0.0, 1.0, cluster_sizes);
+    std::cout << mcmc_max.best_tree << std::endl;
+    cout<<"Reproducibility score: " << mcmc_max.best_tree.posterior_score << std::endl;
     std::cout<<"Epsilon: " << epsilon << std::endl;
-    std::cout<< mcmc.best_tree << std::endl;
-    assert(abs(mcmc.best_tree.posterior_score - 41.046) <= epsilon);
+    std::cout<< mcmc_max.best_tree << std::endl;
+    assert(abs(mcmc_max.best_tree.posterior_score - 41.046) <= epsilon);
     std::cout<<"Reproducibility test is passed!"<<std::endl;
 
 }
