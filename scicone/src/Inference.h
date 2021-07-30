@@ -68,6 +68,7 @@ public:
                               bool validation_test_mode);
     bool apply_genotype_preserving_pr(double gamma);
     bool apply_delete_leaf(const vector<vector<double>> &D, const vector<int> &r);
+    bool apply_add_common_ancestor(const vector<vector<double>> &D, const vector<int> &r, bool validation_test_mode);
     bool apply_add_remove_events(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                                  bool validation_test_mode);
     bool apply_expand_shrink_blocks(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
@@ -85,7 +86,7 @@ public:
 
     void update_t_scores();
     void random_initialize(u_int n_nodes, u_int n_regions, int max_iters, int max_regions_per_node=1); // randomly initializes a tree and copies it into the other
-    void initialize_worked_example(); // initializes the trees based on the test example
+    void initialize_worked_example(int mode=1); // initializes the trees based on the test example
     void initialize_from_file(string path);
     vector<vector<int>> assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
 private:
@@ -154,15 +155,21 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters,
 
 }
 
-void Inference::initialize_worked_example() {
+void Inference::initialize_worked_example(int mode) {
 
     // build tree
     // tree that generated the data
-    t.random_insert({{0, 1}, {1, 1}});
-    t.insert_at(1,{{1, 1}, {2, 1}});
-    t.insert_at(2,{{0, -1}});
-    t.insert_at(2,{{3, -1}});
-    t.insert_at(1,{{0, 1}});
+    if (mode == 1) {
+      t.random_insert({{0, 1}, {1, 1}});
+      t.insert_at(1,{{1, 1}, {2, 1}});
+      t.insert_at(2,{{0, -1}});
+      t.insert_at(2,{{3, -1}});
+      t.insert_at(1,{{0, 1}});
+    } else {
+      t.random_insert({{0, 1}}); // 1
+      t.insert_at(1,{{1, 1}, {2, 1}, {3, -2}, {4, -2}}); // 2
+      t.insert_at(1,{{1, 1}, {2, -1}, {3, -1}}); // 3
+    }
 
     // Tree score: -2605.9655
 //    t.insert_at(0,{{0,1},{1,1}}); // 1
@@ -336,7 +343,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
             // ro variable
             total_nbd_corr *= nbd_corr;
         }
-        else if (move_id == 8 || move_id == 9) // insert/delete move or weighted insert/delete move
+        else if (move_id == 6 || move_id == 7) // insert/delete move or weighted insert/delete move
         {
 
             vector<double> chi = t.chi_insert_delete(weighted);
@@ -352,7 +359,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
             vector<double> omega_prime = t_prime.omega_insert_delete(lambda_r, lambda_c, weighted, max_scoring);
             sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
         }
-        else if (move_id == 10 || move_id == 11) // condense/split move or weighted cs
+        else if (move_id == 8 || move_id == 9) // condense/split move or weighted cs
         {
 
             vector<double> chi = t.chi_condense_split(weighted);
@@ -366,7 +373,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
             sum_omega_prime = std::accumulate(omega_prime.begin(), omega_prime.end(), 0.0);
         }
 
-        if (move_id == 8 || move_id == 9 || move_id == 10 || move_id == 11) // moves that require nbd correction
+        if (move_id == 6 || move_id == 7 || move_id == 8 || move_id == 9) // moves that require nbd correction
         {
             double n = static_cast<double>(t_n_nodes);
             if (t_n_nodes < t_prime_n_nodes) // insert, split
@@ -381,7 +388,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
             }
         }
 
-        if (move_id == 9 || move_id == 11) // weighted insert-delete or weighted condense-split
+        if (move_id == 7 || move_id == 9) // weighted insert-delete or weighted condense-split
         {
             if (t_n_nodes > t_prime_n_nodes) // delete
             {
@@ -650,38 +657,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             }
             case 6:
             {
-                // expand or shrink block
-                if (verbosity > 1)
-                    cout << "expand or shrink block" << endl;
-
-                auto func = std::bind(&Inference::apply_expand_shrink_blocks, this, _1, _2, false, false);
-                bool add_remove_success = apply_multiple_times(n_apply_move, func, D, r);
-
-                if (not add_remove_success) {
-                    rejected_before_comparison = true;
-                    if (verbosity > 1)
-                        cout << "Expand or shrink block rejected before comparison"<<endl;
-                }
-                break;
-            }
-            case 7:
-            {
-                // weighted expand or shrink block
-                if (verbosity > 1)
-                    cout << "weighted expand or shrink block" << endl;
-
-                auto func = std::bind(&Inference::apply_expand_shrink_blocks, this, _1, _2, true, false); // weighted=true
-                bool add_remove_success = apply_multiple_times(n_apply_move, func, D, r);
-
-                if (not add_remove_success) {
-                    rejected_before_comparison = true;
-                    if (verbosity > 1)
-                        cout << "Weighted expand or shrink block rejected before comparison"<<endl;
-                }
-                break;
-            }
-            case 8:
-            {
                 // insert delete node
                 if (verbosity > 1)
                     cout << "insert/delete node" << endl;
@@ -696,7 +671,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
-            case 9:
+            case 7:
             {
                 // weighted insert delete node
                 if (verbosity > 1)
@@ -712,7 +687,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
-            case 10:
+            case 8:
             {
                 // condense split move
                 if (verbosity > 1)
@@ -729,7 +704,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
-            case 11:
+            case 9:
             {
                 // weighted condense split move
                 if (verbosity > 1)
@@ -746,7 +721,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 break;
             }
-            case 12:
+            case 10:
             {
                 // genotype_preserving prune & reattach
                 if (verbosity > 1)
@@ -770,6 +745,38 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                       t_sum = t_sum + t_sums[i]*cluster_sizes[i];
                     t.posterior_score = log_tree_posterior(t_sum, m, t); // the prior score will change
                     t_prime = t; // update t_prime
+                }
+                break;
+            }
+            case 11:
+            {
+              // expand or shrink block
+              if (verbosity > 1)
+                  cout << "expand or shrink block" << endl;
+
+              auto func = std::bind(&Inference::apply_expand_shrink_blocks, this, _1, _2, false, false);
+              bool add_remove_success = apply_multiple_times(n_apply_move, func, D, r);
+
+              if (not add_remove_success) {
+                  rejected_before_comparison = true;
+                  if (verbosity > 1)
+                      cout << "Expand or shrink block rejected before comparison"<<endl;
+              }
+              break;
+            }
+            case 12:
+            {
+                // add common ancestor move
+                if (verbosity > 1)
+                    cout << "Add common ancestor" << endl;
+
+                auto func = std::bind(&Inference::apply_add_common_ancestor, this, _1, _2, false);
+                bool add_common_ancestor_success = apply_multiple_times(n_apply_move, func, D, r);
+
+                if (not add_common_ancestor_success) {
+                    rejected_before_comparison = true;
+                    if (verbosity > 1)
+                        cout << "Add common ancestor move rejected before comparison" << endl;
                 }
                 break;
             }
@@ -1490,6 +1497,21 @@ bool Inference::apply_delete_leaf(const vector<vector<double>> &D, const vector<
     Node* tobe_computed;
 
     tobe_computed = t_prime.delete_leaf();
+
+    compute_t_prime_scores(tobe_computed, D, r);
+    compute_t_prime_sums(D);
+
+    return true;
+
+}
+
+bool Inference::apply_add_common_ancestor(const vector<vector<double>> &D, const vector<int> &r, bool validation_test_mode) {
+    /*
+     * Applies the delete leaf move on t_prime.
+     * */
+
+    Node* tobe_computed;
+    tobe_computed = t_prime.add_common_ancestor(validation_test_mode);
 
     compute_t_prime_scores(tobe_computed, D, r);
     compute_t_prime_sums(D);

@@ -67,6 +67,10 @@ int main()
     test_cluster_scoring();
     test_expand_shrink_block_operation();
     test_expand_shrink_block();
+    test_get_event_intersection();
+    test_add_common_ancestor_operation();
+    test_add_common_ancestor();
+
     return EXIT_SUCCESS;
 
 }

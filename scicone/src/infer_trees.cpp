@@ -115,9 +115,8 @@ int main( int argc, char* argv[]) {
     auto result = options.parse(argc, argv);
 
     if (not result.count("move_probs"))
-    {
-        move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 0.1f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.01f};
-        //-------------pr--w-pr--sw--w-sw---ar---w-ar---es---w-es---id---w-id---cs---w-cs--geno---od----dl---
+        move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.1f, 0.01f, 1.0f, 0.01f};
+        //-------------pr--w-pr--sw--w-sw---ar---w-ar---id---w-id---cs---w-cs--geno---es----ca-----od----dl---
     }
     if (result.count("region_sizes_file"))
     {
@@ -189,8 +188,12 @@ int main( int argc, char* argv[]) {
     }
 
     std::cout << "max_scoring: " << max_scoring << std::endl;
-    if (not result.count("max_scoring"))
-	max_scoring = true;
+    if (not result.count("max_scoring")) {
+	   max_scoring = true;
+     // ES and CA moves are only available in max_scoring mode
+     move_probs[11] = 0.0f;
+     move_probs[12] = 0.0f;
+   }
 
     if (max_scoring) {
         std::cout << "Will perform maximum scoring." << std::endl;
