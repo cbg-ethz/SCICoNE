@@ -214,7 +214,7 @@ class Tree(object):
         self.tree_str = ''.join(list_tree_file)
         self.read_tree_str(self.tree_str, num_labels=num_labels)
 
-    def learn_tree(self, segmented_data, segmented_region_sizes, n_iters=1000, move_probs=[0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.01],
+    def learn_tree(self, segmented_data, segmented_region_sizes, n_iters=1000, move_probs=[0.0,1.0,0.0,1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.01, 0.1, 0.01, 1.0, 0.01],
                     n_nodes=3,  seed=42, postfix="", initial_tree=None, nu=1.0, cluster_sizes=None, region_neutral_states=None, alpha=0., max_scoring=True, copy_number_limit=2,
                     c_penalise=10.0, lambda_r=0.2, lambda_c=0.1, ploidy=2, verbosity=1, verbose=False, num_labels=False):
         if postfix == "":
