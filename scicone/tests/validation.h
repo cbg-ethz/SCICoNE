@@ -160,18 +160,18 @@ void test_reproducibility()
     mcmc.update_t_prime(); // set t_prime to t
 
     // move probabilities
-    vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.1f, 0.01f, 1.0f, 0.01f};
+    vector<float> move_probs = {0.0f,1.0f,0.0f,1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.01f, 0.1f, 0.01f, 1.0f, 0.01f};
     //----------------------------pr--w-pr--sw--w-sw---ar---w-ar---id---w-id---cs---w-cs--geno---es----ca-----od----dl---
 
     unsigned size_limit = std::numeric_limits<unsigned>::max();
 
-    std::cout << "Running reproducibility test..." << std::endl;
+    std::cout << "Running reproducibility test with max scoring..." << std::endl;
     mcmc.infer_mcmc(D, r, move_probs, 10000, size_limit, 0.0, 1.0, cluster_sizes);
     std::cout << mcmc.best_tree << std::endl;
     cout<<"Reproducibility score: " << mcmc.best_tree.posterior_score << std::endl;
     std::cout<<"Epsilon: " << epsilon << std::endl;
     std::cout<< mcmc.best_tree << std::endl;
-    assert(abs(mcmc.best_tree.posterior_score - 34.165) <= epsilon);
+    assert(abs(mcmc.best_tree.posterior_score - 41.046) <= epsilon);
     std::cout<<"Reproducibility test is passed!"<<std::endl;
 
 }
