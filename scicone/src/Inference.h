@@ -305,7 +305,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
 
     // check if move is weighted
     bool weighted;
-    if ((move_id %2 == 1) && (move_id <=11)) // weighted move ids
+    if ((move_id %2 == 1) && (move_id <=9)) // weighted move ids
         weighted = true;
     else
         weighted = false;
@@ -819,7 +819,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
         Tree* accepted;
 
-        if (move_id == 12) //genotype preserving prune reattach, gibbs sampling
+        if (move_id == 10) //genotype preserving prune reattach, gibbs sampling
             accepted = &t;
         else // metropolis hasting sampling
         {
