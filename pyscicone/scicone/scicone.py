@@ -475,7 +475,7 @@ class SCICoNE(object):
                 print('Initializing nu for full tree.')
                 # Update the nu on the full data (the nu on the clustered data is very different) with this tree
                 nu = tree.nu
-                tree = self.learn_single_tree(segmented_data, segmented_region_sizes, nu=nu, initial_tree=tree, n_iters=nu_tree_n_iters, move_probs=[0,0,0,0,0,0,0,0,0,0,0,1,0], postfix=f"nu_tree_{self.postfix}", verbose=self.verbose, **kwargs)
+                tree = self.learn_single_tree(segmented_data, segmented_region_sizes, nu=nu, initial_tree=tree, n_iters=nu_tree_n_iters, move_probs=[0,0,0,0,0,0,0,0,0,0,0,0,1,0], postfix=f"nu_tree_{self.postfix}", verbose=self.verbose, **kwargs)
                 print('Done. Will start from nu={}'.format(tree.nu))
                 print('Learning full tree...')
                 cnt = 0

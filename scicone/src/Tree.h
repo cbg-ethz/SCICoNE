@@ -69,6 +69,7 @@ public:
     Node *insert_delete_node(unsigned int size_limit, bool weighted, bool max_scoring);
     Node *condense_split_node(unsigned int size_limit, bool weighted, bool max_scoring);
     std::pair<std::vector<double>, std::vector<std::pair<int, int>>> gibbs_genotype_preserving_scores(double gamma);
+    Node *expand_shrink_blocks(bool weighted, bool validation_test_mode=false);
 
     map<u_int, int> get_event_intersection(std::vector<Node*> nodes);
     Node* delete_node(Node* node);
@@ -1064,6 +1065,62 @@ Node* Tree::add_remove_events(bool weighted, bool validation_test_mode) {
         return node;
     }
 }
+
+
+Node* Tree::expand_shrink_blocks(bool weighted, bool validation_test_mode) {
+
+    /*
+     * Expands and removes events in a node.
+     * Returns the pointer to the node being affected.
+     * */
+
+    if (all_nodes_vec.size() <= 1)
+        throw InvalidMove("Adding or removing events does not make sense when there is 1 node or less. Root has to be neutral.");
+
+    // Sample a node uniformly
+    Node* node;
+
+    if (validation_test_mode)
+    {
+        node = all_nodes_vec[2];
+        node->c_change = {{3,1}};
+    }
+    else
+    {
+      if (weighted)
+          node = weighted_sample();
+      else
+          node = uniform_sample(false); //without the root
+
+      std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
+
+      // Sample a block to expand/shrink
+      int block_to_choose = MathOp::random_uniform(0, node->event_blocks.size()-1);
+
+      boost::random::bernoulli_distribution<double> bern_from_end(0.5);
+      // Sample the start or end region of the block
+      bool from_end = bern_from_end(generator);
+
+      boost::random::bernoulli_distribution<double> bern_expand(0.5);
+      // Sample whether to expand or shrink the block
+      bool to_expand = bern_expand(generator);
+
+      bool result = node->expand_shrink_block(block_to_choose, to_expand, from_end, this->n_regions);
+    }
+
+    if (Utils::is_empty_map(node->c_change))
+        return nullptr; //TODO: maybe throw a certain exception here
+    else
+    {
+        update_desc_labels(node); // to update the labels of the descendents
+        // check if the subtrees are valid after updating the labels
+        if (!is_valid_subtree(node) || is_redundant())
+            return nullptr; //TODO: maybe throw a certain exception here
+
+        return node;
+    }
+}
+
 
 
 bool Tree::subtree_out_of_bound(Node *n) const{

@@ -62,12 +62,14 @@ int main()
     test_tree_validation(trees_to_validate_dir);
     test_overdispersed_score();
     test_genotype_preserving_move_scores();
-    test_apply_multiple_times();
-    test_reproducibility();
     test_cluster_scoring();
+    test_expand_shrink_block_operation();
+    test_expand_shrink_block();
     test_get_event_intersection();
     test_add_common_ancestor_operation();
     test_add_common_ancestor();
+    test_apply_multiple_times();
+    test_reproducibility();
 
     return EXIT_SUCCESS;
 
