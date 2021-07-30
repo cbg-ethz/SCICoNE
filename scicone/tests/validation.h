@@ -1474,6 +1474,7 @@ void test_expand_shrink_block()
   // assert(abs(total_score - total_score_gt) <= epsilon);
 
   std::cout<<"Expand / shrink block validation test with maximum scoring passed!"<<std::endl;
+}
 
 void test_get_event_intersection()
 {
