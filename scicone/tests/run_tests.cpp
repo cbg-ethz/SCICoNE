@@ -24,9 +24,12 @@ double eta;
 // endof globals
 
 
-int main()
+int main(int argc, char** argv)
 {
-    std::cout << "Hey! " << SOURCE_DIR << std::endl;
+    int do_test_reproducibility = 1;
+    if (argc > 1)
+        do_test_reproducibility = atoi(argv[1]);
+
     std::string bp_detection_dir = std::string(SOURCE_DIR) + "/tests/bp_detection";
     std::string trees_to_validate_dir = std::string(SOURCE_DIR) + "/tests/trees_to_validate";
 
@@ -42,7 +45,7 @@ int main()
     eta = 1e-4;
 
     std::cout<<"UNIT TESTS" <<std::endl;
-//     set a seed number for reproducibility
+    // set a seed number for reproducibility
     SingletonRandomGenerator::get_instance(42);
     test_mathop();
     test_xxhash();
@@ -69,7 +72,8 @@ int main()
     test_add_common_ancestor_operation();
     test_add_common_ancestor();
     test_apply_multiple_times();
-    test_reproducibility();
+    if (do_test_reproducibility)
+        test_reproducibility();
 
     return EXIT_SUCCESS;
 

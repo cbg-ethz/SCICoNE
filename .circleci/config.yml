@@ -55,7 +55,7 @@ jobs:
       - run:
           name: Unit Tests (Debug)
           no_output_timeout: 60m
-          command: 'cd debug && ./tests'
+          command: 'cd debug && ./tests 0'
       - run:
           name: Creating Release Build Folder
           command: 'mkdir release'
@@ -68,4 +68,4 @@ jobs:
       - run:
           name: Unit Tests (Release)
           no_output_timeout: 60m
-          command: 'cd debug && ./tests'
+          command: 'cd debug && ./tests 0'
