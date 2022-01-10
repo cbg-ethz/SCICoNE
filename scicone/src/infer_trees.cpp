@@ -73,6 +73,7 @@ int main( int argc, char* argv[]) {
 
     // move probabilities
     vector<float> move_probs;
+    string move_probs_str = "0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.0,1.0,0.01,0.1,0.01,1.0,0.01";
 
     // scoring mode
     bool max_scoring = true;
@@ -107,8 +108,8 @@ int main( int argc, char* argv[]) {
             ("alpha","alpha parameter, the constant in the learning rate",cxxopts::value(alpha))
             ("gamma","gamma parameter, the initial learning rate value",cxxopts::value(gamma))
             ("random_init","Boolean parameter to enable random initialisation of the tree", cxxopts::value(random_init))
-            ("move_probs","The vector of move probabilities",cxxopts::value(move_probs))
-            ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value<bool>(max_scoring))
+            ("move_probs","The vector of move probabilities",cxxopts::value(move_probs)->default_value(move_probs_str))
+            ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value<bool>(max_scoring)->default_value("true"))
             ("region_neutral_states_file", "Path to the file containing the neutral state of each region to use as the root of the tree", cxxopts::value(region_neutral_states_file))
             ;
 
@@ -187,18 +188,16 @@ int main( int argc, char* argv[]) {
         std::cout << "Warning: there are only " << n_cells <<  " observations. If these are clusters, the cluster_sizes_file parameter should be specified for accurate tree scoring." << std::endl;
     }
 
-    std::cout << "max_scoring: " << max_scoring << std::endl;
-    if (not result.count("max_scoring")) {
-	   max_scoring = true;
-     // ES and CA moves are only available in max_scoring mode
-     move_probs[11] = 0.0f;
-     move_probs[12] = 0.0f;
+    if (not max_scoring) {
+       std::cout << "Will perform sum scoring." << std::endl;
+	   max_scoring = false;
+       // ES and CA moves are only available in max_scoring mode
+       move_probs[11] = 0.0f;
+       move_probs[12] = 0.0f;
+   } else {
+       std::cout << "Will perform maximum scoring." << std::endl;
+       move_probs.back() = 0.0f; // no need to prune tree;
    }
-
-    if (max_scoring) {
-        std::cout << "Will perform maximum scoring." << std::endl;
-        move_probs.back() = 0.0f; // no need to prune tree
-    }
 
     vector<int> region_neutral_states;
     bool read_region_neutral_states = false;
