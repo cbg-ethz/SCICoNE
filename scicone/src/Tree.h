@@ -707,6 +707,8 @@ void Tree::load_from_file(string file) {
     std::getline(infile, line); // root score
     std::getline(infile, line); // tree score
     std::getline(infile, line); // nu value
+    std::string token = line.substr(line.find(" "), line.size());
+    this->nu = stod(token); // store nu
     std::getline(infile, line); // pass the first 5 lines, including the root
     while (std::getline(infile, line))
     {
