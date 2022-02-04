@@ -232,7 +232,7 @@ int main( int argc, char* argv[]) {
     if (result.count("tree_file")) // starting tree is specified
         mcmc.initialize_from_file(tree_file);
 
-    bool learn_nu = static_cast<bool>(move_probs[11]); // if move 11 is probable
+    bool learn_nu = static_cast<bool>(move_probs[13]); // if move is probable
 
     if(learn_nu)
     {
