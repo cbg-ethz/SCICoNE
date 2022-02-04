@@ -191,6 +191,7 @@ int main( int argc, char* argv[]) {
     if (not max_scoring) {
        std::cout << "Will perform sum scoring." << std::endl;
 	   max_scoring = false;
+       cf = 1.0;
        // ES and CA moves are only available in max_scoring mode
        move_probs[11] = 0.0f;
        move_probs[12] = 0.0f;
