@@ -956,14 +956,15 @@ double Inference::log_tree_prior(int m, int n) {
 
 //    double log_prior = - (n -1 + m) * log(n+1) -m * n * log(2); // tree prior
     double combinatorial_penalization = 0.0;
-    if (max_scoring) {
-      combinatorial_penalization = 0.;
-      m = 0.;
-    } else {
-      combinatorial_penalization = - cf*m*n*log(2);
-    }
+    combinatorial_penalization = - cf*m*n*log(2);
 
-    double log_prior = -(n-1+m)*log(n+1) + combinatorial_penalization;
+    double tree_prior = 0.0;
+    if (max_scoring) {
+      m = 0.;
+    }
+    tree_prior = -(n-1+m)*log(n+1);
+
+    double log_prior = tree_prior + combinatorial_penalization;
 
     return log_prior;
 }
