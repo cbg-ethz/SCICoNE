@@ -54,7 +54,7 @@ int main( int argc, char* argv[]) {
     int n_nodes = 3;
     lambda_r = 0.1;
     lambda_c = 0.2;
-    cf = 1.0;
+    cf = 0.0;
     c_penalise = 10.0;
     is_overdispersed = 1;
     eta = 1e-4;
