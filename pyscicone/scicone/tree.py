@@ -84,7 +84,8 @@ class Tree(object):
 
     def set_node_cnvs(self):
         # Set root state
-        self.node_dict['0']['cnv'] = np.ones(self.outputs['inferred_cnvs'].shape[1],)
+        n_bins = np.sum(self.outputs['region_sizes'].astype(int))
+        self.node_dict['0']['cnv'] = np.ones(n_bins,)
         bin_start = 0
         bin_end = 0
         for region, state in enumerate(self.outputs['region_neutral_states']):
