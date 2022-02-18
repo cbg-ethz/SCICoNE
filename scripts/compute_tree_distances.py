@@ -15,9 +15,9 @@ max_dist = args.max_dist
 def tree_dist(pdist1, pdist2, max_dist=1):
     n_cells = pdist1.shape[0]
 
-    # Fraction of cells with distance smaller than max_dist
+    # Fraction of cells with distance bigger than max_dist
     dists = np.abs(pdist1-pdist2)
-    return np.sum(dists[-1] < max_dist) / n_cells
+    return np.sum(dists[-1] > max_dist) / n_cells
 
 # Load cell-cell distance matrices
 pcdists = []
