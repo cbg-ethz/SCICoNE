@@ -6,22 +6,22 @@ import sys
 
 region_sizes_file = sys.argv[1]
 tree_file = sys.argv[2]
-cnvs_file = sys.argv[3]
+cell_node_ids_file = sys.argv[3]
 
 tree_name = tree_file.split('_')[0]
 
 region_sizes = np.loadtxt(region_sizes_file, delimiter=',').ravel()
 n_regions = region_sizes.shape[0]
+n_bins = np.sum(region_sizes)
 
-cnvs = np.loadtxt(cnvs_file, delimiter=',')
-n_bins = cnvs.shape[1]
+cell_node_ids = np.loadtxt(cell_node_ids_file, delimiter='\t')
 
 tree = Tree('', '')
-tree.outputs['inferred_cnvs'] = cnvs 
 tree.outputs['region_sizes'] =  region_sizes
 tree.outputs['region_neutral_states'] = np.ones((n_regions,)) * 2
+tree.outputs['cell_node_ids'] = cell_node_ids
 tree.read_from_file(tree_file)
-tree.create_cell_node_ids()
+#tree.create_cell_node_ids()
 tree.count_nodes_bins()
 
 #n_regions = np.sum(np.any(np.abs(np.diff(cnvs, axis=1)) > 0, axis=0))
@@ -34,5 +34,5 @@ tree.count_nodes_bins()
 
 dist = tree.get_pairwise_cell_distances(distance='events')
 dist *= n_regions/n_bins
-dist = dist / n_regions
+
 np.savetxt(tree_name + '_pdist.txt', dist, delimiter=',')
