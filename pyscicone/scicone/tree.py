@@ -175,33 +175,37 @@ class Tree(object):
         # node_ids = pd.DataFrame({'depth':node_depths, 'mal':node_mals}).sort_values(
         #                         ['depth', 'mal'], ascending=[True, True]).index.tolist()
 
+        try:
+            # Label the non-empty nodes
+            node_ids = np.array(list(self.node_dict.keys())).astype(int)
+            node_ids = list(node_ids.astype(str))
+            nodes, counts = np.unique(self.outputs['cell_node_ids'][:,-1], return_counts=True)
+            node_sizes = dict(zip(nodes.astype(int).astype(str), counts))
+            i = 0
+            for node in node_ids:
+                self.node_dict[node]['label'] = ""
+                self.node_dict[node]['size'] = 0
+                try: # only add label if node has cells attached
+                    if node_sizes[node] > 0:
+                        self.node_dict[node]['size'] = int(node_sizes[node])
+                        if num_labels:
+                            self.node_dict[node]['label'] = str(i)
+                        else:
+                            self.node_dict[node]['label'] = list(string.ascii_uppercase)[i]
+                        i += 1
+                except KeyError:
+                    pass
 
-        # Label the non-empty nodes
-        node_ids = np.array(list(self.node_dict.keys())).astype(int)
-        node_ids = list(node_ids.astype(str))
-        nodes, counts = np.unique(self.outputs['cell_node_ids'][:,-1], return_counts=True)
-        node_sizes = dict(zip(nodes.astype(int).astype(str), counts))
-        i = 0
-        for node in node_ids:
-            self.node_dict[node]['label'] = ""
-            self.node_dict[node]['size'] = 0
-            try: # only add label if node has cells attached
-                if node_sizes[node] > 0:
-                    self.node_dict[node]['size'] = int(node_sizes[node])
-                    if num_labels:
-                        self.node_dict[node]['label'] = str(i)
-                    else:
-                        self.node_dict[node]['label'] = list(string.ascii_uppercase)[i]
-                    i += 1
-            except KeyError:
-                pass
+            # Indicate cell node assignments via labels
+            self.cell_node_labels = [self.node_dict[str(int(node))]['label'] for node in self.outputs['cell_node_ids'][:,-1]]
 
-        # Indicate cell node assignments via labels
-        self.cell_node_labels = [self.node_dict[str(int(node))]['label'] for node in self.outputs['cell_node_ids'][:,-1]]
+            self.num_nodes = len(list(self.node_dict.keys()))
 
-        self.num_nodes = len(list(self.node_dict.keys()))
-
-        self.num_labels = num_labels
+            self.num_labels = num_labels
+        except Exception as e:
+            print(e)
+            print('Could not set labels. Missing outputs.')
+            pass
 
     def read_from_file(self, file, num_labels=False):
         """
@@ -213,6 +217,18 @@ class Tree(object):
 
         self.tree_str = ''.join(list_tree_file)
         self.read_tree_str(self.tree_str, num_labels=num_labels)
+
+    def read_inferred_cnvs(self, file):
+        self.outputs['inferred_cnvs'] = np.loadtxt(file, delimiter=',')
+
+    def create_cell_node_ids(self):
+        nodes = list(self.node_dict.keys())
+        n_cells = self.outputs['inferred_cnvs'].shape[0]
+        self.outputs['cell_node_ids'] = np.zeros((n_cells, 2))
+        self.outputs['cell_node_ids'][:,0] = np.arange(n_cells)
+        for node in nodes:
+            idx = np.where(np.all(self.outputs['inferred_cnvs'] == self.node_dict[node]['cnv'], axis=1))
+            self.outputs['cell_node_ids'][idx] = node
 
     def learn_tree(self, segmented_data, segmented_region_sizes, n_iters=1000, move_probs=[0.0,1.0,0.0,1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.01, 0.1, 0.01, 1.0, 0.01],
                     n_nodes=3,  seed=42, postfix="", initial_tree=None, nu=1.0, cluster_sizes=None, region_neutral_states=None, alpha=0., max_scoring=True, copy_number_limit=2,
@@ -590,3 +606,88 @@ class Tree(object):
                     i += 1
             except KeyError:
                 pass
+
+
+    def path_to_node(self, node_id):
+        path = []
+        path.append(node_id)
+        parent_id = self.node_dict[node_id]['parent_id']
+        while parent_id != 'NULL':
+            path.append(parent_id)
+            parent_id = self.node_dict[parent_id]['parent_id']
+        return path[::-1][:]
+
+    def path_between_nodes(self, nodeA, nodeB):
+        pathA = np.array(self.path_to_node(nodeA))
+        pathB = np.array(self.path_to_node(nodeB))
+        path = []
+        # Get MRCA
+        i = -1
+        for node in pathA:
+            if node in pathB:
+                i += 1
+            else:
+                break
+        mrca = pathA[i]
+        pathA = np.array(pathA[::-1])
+        # Get path from A to MRCA
+        path = path + list(pathA[:np.where(pathA == mrca)[0][0]])
+        # Get path from MRCA to B
+        path = path + list(pathB[np.where(pathB == mrca)[0][0]:])
+        return path
+
+    def count_nodes_blocks(self):
+        nodes = list(self.node_dict.keys())
+        for node in nodes:
+            n_blocks = self.count_node_blocks(node)
+            self.node_dict[node]['n_events'] = n_blocks
+
+    def count_node_blocks(self, node_id):
+        n_regions = len(self.outputs['region_sizes'])
+        v = np.zeros((n_regions+2))
+        for region in self.node_dict[node_id]['region_event_dict']:
+            v[int(region)+1] = self.node_dict[node_id]['region_event_dict'][region]
+        n_blocks = 0
+        for k in range(1, n_regions+2):
+            n_blocks += int((v[k] - v[k-1])*(v[k] > v[k-1]))
+        return n_blocks
+
+    def count_nodes_bins(self):
+        nodes = list(self.node_dict.keys())
+        for node in nodes:
+            n_bins = self.count_node_bins(node)
+            self.node_dict[node]['n_bins'] = n_bins
+
+    def count_node_bins(self, node_id):
+        n_bins = 0
+        for region in self.node_dict[node_id]['region_event_dict']:
+            n_bins += self.outputs['region_sizes'][int(region)]
+        return n_bins
+
+    def get_distance(self, id1, id2, distance='n_nodes'):
+        path = self.path_between_nodes(id1, id2)
+
+        dist = 0
+        if distance == 'n_nodes':
+            dist = len(path)
+        elif distance == 'events':
+            for i, node in enumerate(path):
+                if i <= len(path) - 2:
+                    dist += np.sum(np.abs(self.node_dict[node]['cnv'] - self.node_dict[path[i+1]]['cnv']))
+        else:
+            for node in path:
+                dist += self.node_dict[node][distance]
+
+        return dist
+
+    def get_pairwise_cell_distances(self, distance='n_nodes'):
+        n_cells = len(self.outputs['cell_node_ids'])
+        mat = np.zeros((n_cells, n_cells))
+
+        for i in range(1, n_cells):
+            id1 = self.outputs['cell_node_ids'][i, 1]
+            for j in range(i):
+                id2 = self.outputs['cell_node_ids'][j, 1]
+                mat[i][j] = self.get_distance(str(int(id1)), str(int(id2)), distance=distance)
+
+        return mat
