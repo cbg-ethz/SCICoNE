@@ -121,7 +121,7 @@ void Inference::random_initialize(u_int n_nodes, u_int n_regions, int max_iters,
                 Utils::random_initialize_labels_map(distinct_regions, n_regions, max_regions_per_node, lambda_r); // modifies the distinct_regions
             }catch (const std::out_of_range& e)
             {
-                if (verbosity > 1)
+                if (verbosity > 2)
                     std::cout << " an out of range error was caught during the initialize labels map method, with message '"
                               << e.what() << "'\n";
                 delete random_tree; // delete the tree
@@ -472,12 +472,12 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
     if (std::isnan(log_acceptance_prob) || std::isinf(log_acceptance_prob))
         return &t;
 
-    if (verbosity > 1)
+    if (verbosity > 2)
         cout << "log acceptance prob: " << log_acceptance_prob << endl;
 
     if (log_acceptance_prob > 0)
     {
-        if (verbosity > 1)
+        if (verbosity > 2)
             std::cout << "Move accepted." << std::endl;
         return &t_prime;
     }
@@ -489,18 +489,18 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
         double rand_val = distribution(gen);
         rand_val = std::log(rand_val); // take the log
 
-        if (verbosity > 1)
+        if (verbosity > 2)
             cout<<"log rand_val: "<<rand_val<<endl;
 
         if (log_acceptance_prob > rand_val)
         {
-            if (verbosity > 1)
+            if (verbosity > 2)
                 std::cout << "Move accepted." << std::endl;
             return &t_prime;
         }
         else
         {
-            if (verbosity > 1)
+            if (verbosity > 2)
                 std::cout << "Move rejected." << std::endl;
             return &t;
         }
@@ -522,7 +522,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     std::ofstream acceptance_ratio_file;
     std::ofstream gamma_file;
 
-    if (verbosity > 0)
+    if (verbosity > 1)
     {
         mcmc_scores_file.open(f_name_posfix + "_markov_chain.csv", std::ios_base::out);
         rel_mcmc_scores_file.open(f_name_posfix + "_rel_markov_chain.csv", std::ios_base::out);
@@ -536,11 +536,11 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
     unsigned n_apply_move = 50; // number of times move is applied
     for (int i = 0; i < n_iters; ++i) {
 
-        if (verbosity > 1)
+        if (verbosity > 2)
             std::cout << "MCMC iteration " << i << ":" <<std::endl;
 
 
-        if (verbosity > 0 && (i % 10000 == 0))
+        if (verbosity > 1 && (i % 10000 == 0))
         {
             std::cout << "iteration" << i <<  "tree score" << t.posterior_score + t.od_score  << std::endl;
             std::cout << "nu: " << t.nu << "od score: " << t.od_score << std::endl;
@@ -559,7 +559,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 0:
             {
                 // prune & reattach
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout << "Prune and reattach" << endl;
 
                 auto func = std::bind(&Inference::apply_prune_reattach, this, _1, _2, false, false);
@@ -567,7 +567,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
                 if (not prune_reattach_success) {
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "Prune and reattach rejected before comparison"<<endl;
                 }
                 break;
@@ -575,7 +575,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 1:
             {
                 // weighted prune & reattach
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout<<"Weighted prune and reattach"<<endl;
 
                 auto func = std::bind(&Inference::apply_prune_reattach, this, _1, _2, true, false);
@@ -584,7 +584,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (not weighted_prune_reattach_success)
                 {
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "Weighted prune and reattach rejected before comparison"<<endl;
                 }
                 break;
@@ -592,7 +592,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 2:
             {
                 // swap labels
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout << "swap labels" << endl;
 
                 auto func = std::bind(&Inference::apply_swap, this, _1, _2, false, false);
@@ -601,7 +601,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (not swap_success)
                 {
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "Swap labels rejected before comparison" << endl;
                 }
                 break;
@@ -609,7 +609,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 3:
             {
                 // weighted swap labels
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout << "weighted swap labels" << endl;
 
                 auto func = std::bind(&Inference::apply_swap, this, _1, _2, true, false); // weighted: true
@@ -618,7 +618,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (not weighted_swap_success)
                 {
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "Weighted swap labels rejected before comparison" << endl;
                 }
                 break;
@@ -626,7 +626,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 4:
             {
                 // add or remove event
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout << "add or remove event" << endl;
 
                 auto func = std::bind(&Inference::apply_add_remove_events, this, _1, _2, false, false);
@@ -634,7 +634,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
                 if (not add_remove_success) {
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "Add or remove event rejected before comparison"<<endl;
                 }
                 break;
@@ -642,7 +642,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 5:
             {
                 // weighted add or remove event
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout << "weighted add or remove event" << endl;
 
                 auto func = std::bind(&Inference::apply_add_remove_events, this, _1, _2, true, false); // weighted=true
@@ -650,7 +650,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
                 if (not add_remove_success) {
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "Weighted add or remove event rejected before comparison"<<endl;
                 }
                 break;
@@ -658,7 +658,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 6:
             {
                 // insert delete node
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout << "insert/delete node" << endl;
 
                 auto func = std::bind(&Inference::apply_insert_delete_node, this, _1, _2, _3, false); // weighted=false
@@ -666,7 +666,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
                 if (not insert_delete_success) {
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "insert/delete rejected before comparison" << endl;
                 }
                 break;
@@ -674,7 +674,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 7:
             {
                 // weighted insert delete node
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout << "weighted insert/delete node" << endl;
 
                 auto func = std::bind(&Inference::apply_insert_delete_node, this, _1, _2, _3, true); // weighted=true
@@ -682,7 +682,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
                 if (not insert_delete_success) {
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "weighted insert/delete rejected before comparison" << endl;
                 }
                 break;
@@ -690,7 +690,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 8:
             {
                 // condense split move
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout << "condense split move " <<endl;
 
                 auto func = std::bind(&Inference::apply_condense_split, this, _1, _2, _3, false); // weighted=false
@@ -699,7 +699,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (not condense_split_success)
                 {
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "condense/split move rejected before comparison"<<endl;
                 }
                 break;
@@ -707,7 +707,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 9:
             {
                 // weighted condense split move
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout << "weighted condense split move " <<endl;
 
                 auto func = std::bind(&Inference::apply_condense_split, this, _1, _2, _3, true); // weighted=true
@@ -716,7 +716,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (not condense_split_success)
                 {
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "weighted condense/split move rejected before comparison"<<endl;
                 }
                 break;
@@ -724,7 +724,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 10:
             {
                 // genotype_preserving prune & reattach
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout<<"Genotype preserving prune and reattach"<<endl;
                 bool genotype_prune_reattach_success = apply_genotype_preserving_pr(gamma);
                 if (not genotype_prune_reattach_success)
@@ -732,7 +732,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     n_rejected++;
                     acceptance_ratio_file << std::setprecision(print_precision) << -1 << ((i==n_iters-1) ? "" : ",");
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "Genotype preserving prune/reattach rejected"<<endl;
                 }
                 else // accepted
@@ -751,7 +751,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 11:
             {
               // expand or shrink block
-              if (verbosity > 1)
+              if (verbosity > 2)
                   cout << "expand or shrink block" << endl;
 
               auto func = std::bind(&Inference::apply_expand_shrink_blocks, this, _1, _2, false, false);
@@ -759,7 +759,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
               if (not add_remove_success) {
                   rejected_before_comparison = true;
-                  if (verbosity > 1)
+                  if (verbosity > 2)
                       cout << "Expand or shrink block rejected before comparison"<<endl;
               }
               break;
@@ -767,7 +767,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 12:
             {
                 // add common ancestor move
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout << "Add common ancestor" << endl;
 
                 auto func = std::bind(&Inference::apply_add_common_ancestor, this, _1, _2, false);
@@ -775,7 +775,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
                 if (not add_common_ancestor_success) {
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "Add common ancestor move rejected before comparison" << endl;
                 }
                 break;
@@ -783,7 +783,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 13:
             {
                 // changing overdispersion move
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout<<"Overdispersion changing move"<<endl;
 
                 auto func = std::bind(&Inference::apply_overdispersion_change, this, _1, _2, _3);
@@ -792,7 +792,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (not od_change_success)
                 {
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "Overdispersion changing move rejected before comparison"<<endl;
                 }
                 break;
@@ -800,7 +800,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             case 14:
             {
                 // delete leaf move
-                if (verbosity > 1)
+                if (verbosity > 2)
                     cout << "Delete leaf move" << endl;
 
                 auto func = std::bind(&Inference::apply_delete_leaf, this, _1, _2);
@@ -808,7 +808,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
                 if (not delete_leaf_success) {
                     rejected_before_comparison = true;
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                         cout << "Delete leaf move rejected before comparison" << endl;
                 }
                 break;
@@ -832,7 +832,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                     accepted = comparison(m, gamma, move_id, cluster_sizes);
                 } catch (const std::out_of_range& e)
                 {
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                     {
                         std::cout << " an out of range error was caught during the comparison function, with message '"
                                   << e.what() << '\'' << std::endl;
@@ -841,7 +841,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 }
                 catch (const std::exception &e)
                 {
-                    if (verbosity > 1)
+                    if (verbosity > 2)
                     {
                         std::cout << " an exception was caught during the comparison function, with message '"
                                   << e.what() << '\'' << std::endl;
@@ -883,7 +883,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             t_prime_scores.clear();
         }
 
-        if (verbosity > 0)
+        if (verbosity > 1)
         {
             static double first_score = accepted->posterior_score + accepted->od_score; // the first value will be kept in whole program
             // print accepted log_posterior
@@ -923,12 +923,12 @@ bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, con
         if (log_t_prime_nu > 10.0)
             return false; // reject the move
 
-        if (verbosity > 1)
+        if (verbosity > 2)
         std::cout<<"Old nu value: " << t_prime.nu << ",\t";
 
         t_prime.nu = std::exp(log_t_prime_nu); // real space
 
-        if (verbosity > 1)
+        if (verbosity > 2)
         std::cout<<"new nu value: " << t_prime.nu << std::endl;
 
 
@@ -937,7 +937,7 @@ bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, con
         compute_t_prime_sums(D);
     }
     catch (const std::exception& e) { // caught by reference to base
-        if (verbosity > 1)
+        if (verbosity > 2)
             std::cout << " a standard exception was caught during the apply overdispersion change move, with message '"
                       << e.what() << "'\n";
         return false;
@@ -1317,7 +1317,7 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
 
     std::ofstream cell_node_ids_file;
     std::ofstream cell_region_cnvs_file;
-    if (verbosity > 0)
+    if (verbosity > 1)
     {
         cell_node_ids_file.open(f_name_posfix + "_cell_node_ids.tsv");
         cell_region_cnvs_file.open(f_name_posfix + "_cell_region_cnvs.csv");
@@ -1342,7 +1342,7 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
         {
             return p1.second < p2.second;
         }) ;
-        if (verbosity > 0)
+        if (verbosity > 1)
             cell_node_ids_file << j << '\t' << max_pair.first << '\n';
 
         Node* max_node = hash_map[max_pair.first];
@@ -1353,7 +1353,7 @@ vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>
         }
 
     }
-    if (verbosity > 0)
+    if (verbosity > 1)
     {
         for (size_t k = 0; k < n_cells; ++k) {
             for (u_int i = 0; i < n_regions; ++i) {
@@ -1443,7 +1443,7 @@ bool Inference::apply_genotype_preserving_pr(double gamma) {
         this->t.genotype_preserving_prune_reattach(gamma);
     }
     catch (const std::exception& e) { // caught by reference to base
-        if (verbosity > 1)
+        if (verbosity > 2)
             std::cout << " a standard exception was caught during the genotype preserving prune and reattach move,"
                          " with message '" << e.what() << '\'' << std::endl;
         return false;
@@ -1469,14 +1469,14 @@ bool Inference::apply_multiple_times(unsigned n, AnyFunction func, Ts &...args) 
         }
         catch (const InvalidMove& e) // don't try again if the move is invalid
         {
-            if (verbosity > 1)
+            if (verbosity > 2)
                 std::cout << " an invalid move has occurred, with message '"
                           << e.what() << "'\n";
             break;
         }
         catch (const std::exception& e)
         {
-            if (verbosity > 1)
+            if (verbosity > 2)
                 std::cout << " a standard exception was caught during apply_multiple_times, with message '"
                           << e.what() << "'\n";
             t_prime = t; // undo the changes made on t_prime

@@ -1048,6 +1048,10 @@ Node* Tree::add_remove_events(bool weighted, bool validation_test_mode) {
             int n_copies = copy_dist(generator) + 1;
             bool sign = bernoulli(generator);
 
+            if (verbosity > 2) {
+                std::cout << "Trying to add event in node " << node->id << ": [" << elem << ": " << (sign? n_copies : -n_copies) << "]" << std::endl;
+            }
+
             node->c_change[elem] += (sign? n_copies : -n_copies);
 
             if (node->c_change.at(elem) == 0)
@@ -1507,7 +1511,6 @@ Node* Tree::create_common_ancestor(Node* parent_node) {
     std::vector<Node*> node_pair;
 
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
-    generator.seed(static_cast<unsigned int>(std::time(0)));
     boost::random::discrete_distribution<>* dd = new boost::random::discrete_distribution<>(sib_idx.begin(), sib_idx.end());
 
     int nodeA_idx = (*dd)(generator); // this is the index of one the siblings
