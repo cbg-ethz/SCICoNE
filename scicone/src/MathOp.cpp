@@ -33,7 +33,17 @@ double MathOp::mat_moment(const vector<vector<T>> &v, int moment) {
     return average;
 }
 
-double MathOp::breakpoint_log_likelihood(std::vector<double> v, double lambda, double nu)
+double MathOp::breakpoint_log_likelihood(std::vector<double> v, double lambda, double nu, bool normal)
+{
+  double ll = 0;
+  if (normal)
+    ll = normal_log_likelihood(v, lambda, nu);
+  else
+    ll = nb_log_likelihood(v, lambda, nu);
+  return ll;
+}
+
+double MathOp::nb_log_likelihood(std::vector<double> v, double lambda, double nu)
 {
     /*
      * Returns the log likelihood for the Negative binomial distribution with mean: lambda and overdispersion: nu
@@ -57,9 +67,32 @@ double MathOp::breakpoint_log_likelihood(std::vector<double> v, double lambda, d
     return ll;
 }
 
+double MathOp::normal_log_likelihood(std::vector<double> v, double mu, double sigma)
+{
+    /*
+     * Returns the log likelihood for the Normal distribution with mean: mu and stddev: sigma
+     * Mean lambda is inferred by maximum likelihood approach.
+     *
+     */
+    // max likelihood:  std::log(lambda) * sum(v) - (v.size() * lambda)
+
+    double term1,term2;
+    // to avoid log(0) * 0
+    double v_sum = accumulate( v.begin(), v.end(), 0.0);
+    if (v_sum == 0 && lambda==0)
+        term1 = 0.0;
+    else
+        term1 = (log(lambda) - log(lambda+nu)) * v_sum;
+
+    term2 = (v.size() * nu * log(lambda+nu));
+    double ll =  term1 - term2;
+
+    assert(!std::isnan(ll));
+    return ll;
+}
 
 
-vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int window_size, vector<int> &known_breakpoints) {
+vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int window_size, vector<int> &known_breakpoints, bool normal) {
     /*
      *
      * Computes the difference of the likelihood_break and likelihood_segment cases to tell whether to break or not
@@ -68,7 +101,11 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
     // Estimate nu with method of moments, assuming all cells are in the same state
     double global_mean = mat_moment(mat, 1);
     double global_moment_2 = mat_moment(mat, 2);
-    double nu = pow(global_mean, 2) / global_moment_2;
+    double nu = 0.;
+    if (not normal)
+      nu = pow(global_mean, 2) / global_moment_2;
+    else
+      nu = global_moment_2 - pow(global_mean, 2)
     std::cout << "Method of moments estimated nu=" << nu << std::endl;
 
     //MathOp mo = MathOp();
@@ -110,7 +147,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
                 //   The mean across the bins in the window can change according to a linear model,
                 //   which includes the case where all the bins have the same min (if the slope is zero)
                 vector<double> lambdas_segment(n_bins);
-                vector<double> regression_parameters = compute_linear_regression_parameters(all_bins, window_size, nu);
+                vector<double> regression_parameters = compute_linear_regression_parameters(all_bins, window_size, nu, normal);
                 double alpha = regression_parameters[0];
                 double beta = regression_parameters[1];
 
@@ -123,7 +160,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
 
                 double ll_segment = 0;
                 for (size_t m = 0; m < n_bins; ++m) {
-                    ll_segment += breakpoint_log_likelihood(vector<double>(all_bins.begin()+m, all_bins.begin()+m+1), lambdas_segment[m], nu);
+                    ll_segment += breakpoint_log_likelihood(vector<double>(all_bins.begin()+m, all_bins.begin()+m+1), lambdas_segment[m], nu, normal);
                 }
 
                 // 2. Likelihood of breakpoint model, where left and right bin segments have different means
@@ -160,8 +197,8 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
                 if (lambda_l == 0)
                     lambda_l = 0.0001;
 
-                double ll_break = breakpoint_log_likelihood(lbins, lambda_l, nu) +
-                                  breakpoint_log_likelihood(rbins, lambda_r, nu);
+                double ll_break = breakpoint_log_likelihood(lbins, lambda_l, nu, normal) +
+                                  breakpoint_log_likelihood(rbins, lambda_r, nu, normal);
 
                 // 3. Output the difference between the two models' likelihoods
                 lr_vec[i][j] = 2*(ll_break - ll_segment);
@@ -848,7 +885,7 @@ double MathOp::huber_mean(vector<double> &z, double nu) {
     }
 }
 
-double MathOp::ll_linear_model(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
+double MathOp::ll_linear_model_nb(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
 {
     segment_counts *d = reinterpret_cast<segment_counts*>(my_func_data);
     vector<double> z = d->z;
@@ -867,7 +904,26 @@ double MathOp::ll_linear_model(const std::vector<double> &x, std::vector<double>
     return res;
 }
 
-vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z, int window_size, double nu) {
+double MathOp::ll_linear_model_normal(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
+{
+    segment_counts *d = reinterpret_cast<segment_counts*>(my_func_data);
+    vector<double> z = d->z;
+    double nu = d->nu;
+
+    int size = z.size();
+    double lambda = 0;
+    double res = 0;
+
+    for (size_t l = 0; l < size; ++l) {
+      lambda = x[0] + (l+1)*x[1];
+      // lambda = x[0];
+      res = res - (z[l] - lambda)^2 / (2*pi^2);
+    }
+
+    return res;
+}
+
+vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z, int window_size, double nu, bool normal) {
     /*
      * Computes the alpha and beta of y = alpha + beta * x for z = NB(mean=y, idisp=nu)
      * */
@@ -886,8 +942,12 @@ vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z, i
     std::vector<double> ub(2);
     ub[0] = HUGE_VAL; ub[1] = 1.0/8.0 * 1.0/window_size; // upper bounds on alpha, beta
     opt.set_upper_bounds(ub);
-    opt.set_max_objective(ll_linear_model, &func_data);
+    if (normal)
+      opt.set_max_objective(ll_linear_model_normal, &func_data);
+    else
+      opt.set_max_objective(ll_linear_model_nb, &func_data);
     opt.set_xtol_rel(1e-4);
+
     std::vector<double> x(2);
     x[0] = vec_avg(z); x[1] = 0.; // initial alpha, beta
     double minf;

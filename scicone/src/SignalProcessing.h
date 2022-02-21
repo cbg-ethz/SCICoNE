@@ -31,8 +31,8 @@ public:
     void attenuate_values_below(vector<double> &signal, double threshold);
     vector<bool> filter_by_val(vector<double> &signal, double val);
     vector<int> create_region_sizes(vector<bool> peaks);
-    vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star, vector<int> &known_breakpoints, bool compute_lr=true, bool lr_only=false);
-    vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star, vector<int> &known_breakpoints, vector<vector<double>> &lr_vec, bool compute_lr=true, bool lr_only=false);
+    vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star, vector<int> &known_breakpoints, bool smoothed, bool compute_lr=true, bool lr_only=false);
+    vector<double> breakpoint_detection(vector<vector<double>> &mat, int window_size, int k_star, vector<int> &known_breakpoints, bool smoothed, vector<vector<double>> &lr_vec, bool compute_lr=true, bool lr_only=false);
 };
 
 
