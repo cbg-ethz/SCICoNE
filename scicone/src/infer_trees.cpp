@@ -81,6 +81,12 @@ int main( int argc, char* argv[]) {
     // region neutral states
     string region_neutral_states_file;
 
+    // data type
+    bool smoothed = true;
+
+    // baseline file
+    string baseline_file;
+
     cxxopts::Options options("Single cell CNV inference", "finds the maximum likelihood tree given cellsxregions matrix or the simulated matrix with params specified");
     options.add_options()
             ("region_sizes_file", "Path to the file containing the region sizes, each line contains one region size", cxxopts::value(region_sizes_file))
@@ -111,6 +117,8 @@ int main( int argc, char* argv[]) {
             ("move_probs","The vector of move probabilities",cxxopts::value(move_probs)->default_value(move_probs_str))
             ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value<bool>(max_scoring)->default_value("true"))
             ("region_neutral_states_file", "Path to the file containing the neutral state of each region to use as the root of the tree", cxxopts::value(region_neutral_states_file))
+            ("smoothed","Boolean parameter to indicate whether the data consists of raw or smoothed counts",cxxopts::value<bool>(smoothed)->default_value("true"))
+            ("baseline_file", "Path to the file containing the baseline smoothed expression", cxxopts::value(baseline_file))
             ;
 
     auto result = options.parse(argc, argv);
@@ -224,8 +232,30 @@ int main( int argc, char* argv[]) {
       region_neutral_states = std::vector<int>(n_regions, ploidy);
     }
 
+    if (smoothed) {
+       if (verbosity > 0)
+           std::cout << "Will use likelihood for smoothed data." << std::endl;
+    }
+
+    vector<double> baseline;
+    if (result.count("baseline_file"))
+    {
+        baseline_file = result["baseline_file"].as<string>();
+        if (verbosity > 0)
+            std::cout << "Reading the baseline vector..." << std::endl;
+        Utils::read_vector(baseline, baseline_file);
+    }
+    else
+    {
+        if (verbosity > 0)
+          std::cout << "The baseline file is not provided. Assuming 1 for all regions"<<endl;
+        baseline = std::vector<double>(n_regions, 1);
+
+    }
+
     // run mcmc inference
-    Inference mcmc(n_regions, n_cells, region_neutral_states, ploidy, verbosity, max_scoring);
+    Inference mcmc(n_regions, n_cells, region_neutral_states, ploidy, verbosity, max_scoring, smoothed);
+    mcmc.t.baseline = mcmc.t_prime.baseline = baseline;
 
     if (random_init)
     {

@@ -44,6 +44,7 @@ public:
     std::vector<std::pair<int, double>> t_prime_maxs;
     int verbosity;
     bool max_scoring;
+    bool smoothed;
     int n_cells;
     std::vector<int> region_neutral_states;
 
@@ -51,10 +52,10 @@ public:
     Inference(u_int n_regions, int n_cells, vector<int> &region_neutral_states, int ploidy=2, int verbosity=2, bool max_scoring=false);
     ~Inference();
     void destroy();
-    void compute_t_od_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
-    void compute_t_prime_od_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
+    void compute_t_root_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
+    void compute_t_prime_root_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
     std::vector<double>
-    get_tree_od_root_scores(const vector<vector<double>> &D, const vector<int> &r, const Tree &tree);
+    get_tree_root_scores(const vector<vector<double>> &D, const vector<int> &r, const Tree &tree);
     void compute_t_table(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
     void compute_t_prime_scores(Node *attached_node, const vector<vector<double>> &D, const vector<int> &r);
     void compute_t_prime_sums(const vector<vector<double>> &D);
@@ -180,7 +181,7 @@ void Inference::initialize_worked_example(int mode) {
 
 }
 
-Inference::Inference(u_int n_regions, int n_cells, vector<int> &region_neutral_states, int ploidy, int verbosity, bool max_scoring) : t(ploidy, n_regions, region_neutral_states),
+Inference::Inference(u_int n_regions, int n_cells, vector<int> &region_neutral_states, int ploidy, int verbosity, bool max_scoring, bool smoothed) : t(ploidy, n_regions, region_neutral_states),
                                                                    t_prime(ploidy, n_regions, region_neutral_states),
                                                                    best_tree(ploidy, n_regions, region_neutral_states),
                                                                    t_prime_sums(n_cells),
@@ -195,6 +196,7 @@ Inference::Inference(u_int n_regions, int n_cells, vector<int> &region_neutral_s
     this->max_scoring = max_scoring;
     this->n_cells = n_cells;
     this->region_neutral_states = region_neutral_states;
+    this->smoothed = smoothed;
 }
 
 Inference::~Inference() {
@@ -312,12 +314,12 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
 
     // acceptance probability computations
     double score_diff = 0.0;
-    if (move_id == 13) // overdispersion change
+    if (move_id == 13) // dispersion change
     {
-        double od_score_diff = t_prime.od_score - t.od_score;
+        double root_score_diff = t_prime.root_score - t.root_score;
         double posterior_score_diff = t_prime.posterior_score - t.posterior_score;
 
-        score_diff = od_score_diff + posterior_score_diff;
+        score_diff = root_score_diff + posterior_score_diff;
     }
     else
         score_diff = t_prime.posterior_score - t.posterior_score;
@@ -542,8 +544,11 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
         if (verbosity > 1 && (i % 10000 == 0))
         {
-            std::cout << "iteration" << i <<  "tree score" << t.posterior_score + t.od_score  << std::endl;
-            std::cout << "nu: " << t.nu << "od score: " << t.od_score << std::endl;
+            std::cout << "iteration" << i <<  "tree score" << t.posterior_score + t.root_score  << std::endl;
+            if (smoothed)
+              std::cout << "sigma: " << t.sigma << "root score: " << t.root_score << std::endl;
+            else
+              std::cout << "nu: " << t.nu << "root score: " << t.root_score << std::endl;
         }
 
 
@@ -782,18 +787,21 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             }
             case 13:
             {
-                // changing overdispersion move
+                // changing dispersion (overdispersion or standard deviation) move
                 if (verbosity > 2)
-                    cout<<"Overdispersion changing move"<<endl;
+                    cout<<"Update dispersion move"<<endl;
 
-                auto func = std::bind(&Inference::apply_overdispersion_change, this, _1, _2, _3);
-                bool od_change_success = apply_multiple_times(n_apply_move, func, D, r, cluster_sizes);
+                if (smoothed)
+                    auto func = std::bind(&Inference::apply_sigma_change, this, _1, _2, _3);
+                else
+                  auto func = std::bind(&Inference::apply_overdispersion_change, this, _1, _2, _3);
+                bool disp_change_success = apply_multiple_times(n_apply_move, func, D, r, cluster_sizes);
 
-                if (not od_change_success)
+                if (not disp_change_success)
                 {
                     rejected_before_comparison = true;
                     if (verbosity > 2)
-                        cout << "Overdispersion changing move rejected before comparison"<<endl;
+                        cout << "Update dispersion move rejected before comparison"<<endl;
                 }
                 break;
             }
@@ -861,7 +869,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 t_maxs = t_prime_maxs;
                 update_t_scores(); // this should be called before t=tprime, because it checks the tree sizes in both.
                 t = t_prime;
-                if ((t_prime.posterior_score + t_prime.od_score)  > (best_tree.posterior_score + best_tree.od_score))
+                if ((t_prime.posterior_score + t_prime.root_score)  > (best_tree.posterior_score + best_tree.root_score))
                     best_tree = t_prime;
             }
             else
@@ -885,19 +893,19 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
         if (verbosity > 1)
         {
-            static double first_score = accepted->posterior_score + accepted->od_score; // the first value will be kept in whole program
+            static double first_score = accepted->posterior_score + accepted->root_score; // the first value will be kept in whole program
             // print accepted log_posterior
 
             if (i == n_iters - 1)
             {
-                mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score;
-                rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score;
+                mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->root_score;
+                rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->root_score - first_score;
                 gamma_file << gamma;
             }
             else
             {
-                mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score << ',';
-                rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score << ',';
+                mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->root_score << ',';
+                rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->root_score - first_score << ',';
                 gamma_file << gamma << ',';
             }
 
@@ -924,21 +932,62 @@ bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, con
             return false; // reject the move
 
         if (verbosity > 2)
-        std::cout<<"Old nu value: " << t_prime.nu << ",\t";
+          std::cout<<"Old nu value: " << t_prime.nu << ",\t";
 
         t_prime.nu = std::exp(log_t_prime_nu); // real space
 
         if (verbosity > 2)
-        std::cout<<"new nu value: " << t_prime.nu << std::endl;
+          std::cout<<"new nu value: " << t_prime.nu << std::endl;
 
 
-        this->compute_t_prime_od_scores(D,r, cluster_sizes);
+        this->compute_t_prime_root_scores(D,r, cluster_sizes);
         compute_t_prime_scores(t_prime.root, D, r);
         compute_t_prime_sums(D);
     }
     catch (const std::exception& e) { // caught by reference to base
         if (verbosity > 2)
             std::cout << " a standard exception was caught during the apply overdispersion change move, with message '"
+                      << e.what() << "'\n";
+        return false;
+    }
+
+    return true;
+}
+
+
+bool Inference::apply_sigma_change(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes) {
+    /*
+     * Changes the current standard deviation parameter sigma using gaussian random walk.
+     * */
+
+    try
+    {
+        std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
+        double rand_val = 0.0;
+        boost::random::normal_distribution<double> distribution(0.0,0.02);
+        rand_val = distribution(gen);
+
+        double log_t_prime_sigma = std::log(t_prime.sigma) + rand_val;
+
+        if (log_t_prime_sigma > 10.0)
+            return false; // reject the move
+
+        if (verbosity > 2)
+          std::cout<<"Old sigma value: " << t_prime.sigma << ",\t";
+
+        t_prime.sigma = std::exp(log_t_prime_sigma); // real space
+
+        if (verbosity > 2)
+          std::cout<<"new sigma value: " << t_prime.sigma << std::endl;
+
+
+        this->compute_t_prime_root_scores(D,r, cluster_sizes);
+        compute_t_prime_scores(t_prime.root, D, r);
+        compute_t_prime_sums(D);
+    }
+    catch (const std::exception& e) { // caught by reference to base
+        if (verbosity > 2)
+            std::cout << " a standard exception was caught during the apply sigma change move, with message '"
                       << e.what() << "'\n";
         return false;
     }
@@ -1380,9 +1429,9 @@ void Inference::initialize_from_file(string path) {
 }
 
 std::vector<double>
-Inference::get_tree_od_root_scores(const vector<vector<double>> &D, const vector<int> &r, const Tree &tree) {
+Inference::get_tree_root_scores(const vector<vector<double>> &D, const vector<int> &r, const Tree &tree) {
     /*
-     * Returns the vector of overdispersed root scores for every cell
+     * Returns the vector of root scores for every cell
      * */
 
     u_int n_cells = D.size();
@@ -1390,39 +1439,39 @@ Inference::get_tree_od_root_scores(const vector<vector<double>> &D, const vector
     vector<double> scores(n_cells);
     for (u_int i = 0; i < n_cells; ++i) {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        scores[i] = tree.get_od_root_score(r, sum_d, D[i]);
+        scores[i] = tree.get_root_score(r, sum_d, D[i]);
     }
 
     return scores;
 }
 
-void Inference::compute_t_od_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes) {
+void Inference::compute_t_root_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes) {
 /*
  * Computes and stores the overdispersed root sum for tree t across all cells
  * */
-    vector<double> t_od_root_scores = get_tree_od_root_scores(D,r,this->t);
+    vector<double> t_od_root_scores = get_tree_root_scores(D,r,this->t);
 
     double sum_t_od_root_scores = 0.;
     int m = D.size();
     for (int i=0; i < m; i++)
       sum_t_od_root_scores = sum_t_od_root_scores + t_od_root_scores[i]*cluster_sizes[i];
 
-    this->t.od_score = sum_t_od_root_scores;
+    this->t.root_score = sum_t_od_root_scores;
 
 }
 
-void Inference::compute_t_prime_od_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes) {
+void Inference::compute_t_prime_root_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes) {
 /*
  * Computes and stores the overdispersed root sum for tree t prime across all cells
  * */
-    vector<double> t_prime_od_root_scores = get_tree_od_root_scores(D,r,this->t_prime);
+    vector<double> t_prime_od_root_scores = get_tree_root_scores(D,r,this->t_prime);
 
     double sum_t_prime_od_root_scores = 0.;
     int m = D.size();
     for (int i=0; i < m; i++)
       sum_t_prime_od_root_scores = sum_t_prime_od_root_scores + t_prime_od_root_scores[i]*cluster_sizes[i];
 
-    this->t_prime.od_score = sum_t_prime_od_root_scores;
+    this->t_prime.root_score = sum_t_prime_od_root_scores;
 }
 
 void Inference::update_t_prime() {

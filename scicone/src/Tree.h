@@ -45,11 +45,15 @@ public:
     u_int n_regions; // number of regions
     double posterior_score; // log posterior score of the tree
     double prior_score; // log prior score of the tree
-    double od_score; // overdispersed score of the tree
+    double root_score; // root score of the tree
     double total_attachment_score;
 
+    vector<double> baseline;
+    double sigma;
     // overdispersed params
     double nu;
+
+    const double pi = boost::math::constants::pi<double>();
 public:
     // constructor
     Tree(u_int ploidy, u_int n_regions, vector<int> &region_neutral_states);
@@ -100,7 +104,7 @@ public:
     vector<double> chi_insert_delete(bool weighted);
 
     void load_from_file(string file);
-    double get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) const;
+    double get_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) const;
     double event_prior();
 private:
     void update_label(std::map<u_int,int>& c_parent, Node* node);
@@ -130,9 +134,12 @@ std::ostream& operator<<(std::ostream& os, Tree& t) {
     os << "Tree prior: " << setprecision(print_precision) << t.prior_score  << std::endl;
     os << "Event prior: " << setprecision(print_precision )<< t.event_prior() << std::endl;
     os << "Log likelihood: " << setprecision(print_precision) << t.total_attachment_score << std::endl;
-    os << "Root score: " << setprecision(print_precision) << t.od_score << std::endl;
-    os << "Tree score: " << setprecision(print_precision) << t.posterior_score + t.od_score << std::endl;
-    os << "Nu: " << setprecision(print_precision) << t.nu<< std::endl;
+    os << "Root score: " << setprecision(print_precision) << t.root_score << std::endl;
+    os << "Tree score: " << setprecision(print_precision) << t.posterior_score + t.root_score << std::endl;
+    if (smoothed)
+      os << "Sigma: " << setprecision(print_precision) << t.sigma<< std::endl;
+    else
+      os << "Nu: " << setprecision(print_precision) << t.nu<< std::endl;
 
     for (auto const &x : nodes)
     {
@@ -209,32 +216,44 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
             double parent_cn = (cp_f+p)==0?(eta):(cp_f+p);
 
             // option for the overdispersed version
-            if (is_overdispersed)
+            if (smoothed)
             {
-                log_likelihood += lgamma(D[x.first] + nu*(node_cn)*r[x.first]);
-                log_likelihood -= lgamma(D[x.first] + nu*(parent_cn)*r[x.first]);
-
-                log_likelihood -= lgamma(nu*(node_cn)*r[x.first]);
-                log_likelihood += lgamma(nu*(parent_cn)*r[x.first]);
+              double parent_mean = (parent_cn)*r[x.first]*baseline[x.first];
+              double mean = (node_cn)*r[x.first]*baseline[x.first];
+              log_likelihood += (D[x.first] - mean)^2;
+              log_likelihood -= (D[x.first] - parent_mean)^2;
             }
             else
-                log_likelihood += D[x.first] * (log(node_cn) - log(parent_cn));
+            {
+              if (is_overdispersed)
+              {
+                  log_likelihood += lgamma(D[x.first] + nu*(node_cn)*r[x.first]);
+                  log_likelihood -= lgamma(D[x.first] + nu*(parent_cn)*r[x.first]);
+
+                  log_likelihood -= lgamma(nu*(node_cn)*r[x.first]);
+                  log_likelihood += lgamma(nu*(parent_cn)*r[x.first]);
+              }
+              else
+                  log_likelihood += D[x.first] * (log(node_cn) - log(parent_cn));
+            }
         }
 
-        if (is_overdispersed)
-        {
-            // updates c independent parts
-            log_likelihood += lgamma(nu*z);
-            log_likelihood -= lgamma(nu*z_parent);
+        if (not smoothed) {
+          if (is_overdispersed)
+          {
+              // updates c independent parts
+              log_likelihood += lgamma(nu*z);
+              log_likelihood -= lgamma(nu*z_parent);
 
-            log_likelihood -= lgamma(sum_D+nu*z);
-            log_likelihood += lgamma(sum_D+nu*z_parent);
-        }
-        else
-        {
-            // this quantity is smt. to subtract, that's why signs are reversed
-            log_likelihood -= sum_D*log(z);
-            log_likelihood += sum_D*log(node->parent->z);
+              log_likelihood -= lgamma(sum_D+nu*z);
+              log_likelihood += lgamma(sum_D+nu*z_parent);
+          }
+          else
+          {
+              // this quantity is smt. to subtract, that's why signs are reversed
+              log_likelihood -= sum_D*log(z);
+              log_likelihood += sum_D*log(node->parent->z);
+          }
         }
 
         node->attachment_score = log_likelihood;
@@ -305,7 +324,7 @@ Tree::Tree(u_int ploidy, u_int n_regions, vector<int> &region_neutral_states)
     prior_score = 0.0;
     total_attachment_score = 0.0;
     posterior_score = 0.0;
-    od_score = 0.0;
+    root_score = 0.0;
     // creates a copy of the root ptr and stores it in the vector
 
     nu = 1.0 / static_cast<double>(n_regions);
@@ -508,9 +527,11 @@ void Tree::copy_tree(const Tree& source_tree) {
     this->counter = source_tree.counter;
     this->prior_score = source_tree.prior_score;
     this->posterior_score = source_tree.posterior_score;
-    this->od_score = source_tree.od_score;
+    this->root_score = source_tree.root_score;
     this->n_regions = source_tree.n_regions;
     this->nu = source_tree.nu;
+    this->sigma = source_tree.sigma;
+    this->baseline = source_tree.baseline;
 
     // copy the nodes using struct copy constructor
     this->root = new Node(*source_tree.root);
@@ -1760,39 +1781,51 @@ double Tree::cost() {
 }
 
 
-double Tree::get_od_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) const{
+double Tree::get_root_score(const vector<int> &r, double &sum_D, const vector<double> &D) const{
     /*
      * Returns the overdispersed root score
      * */
 
     double od_root_score = 0.0;
 
-    if (is_overdispersed)
-    {
-        int z = 0;
-        int k = 0;
-        for (auto const &x : r) {
-            z += x * this->region_neutral_states[k];
-            k = k + 1;
-        }
-        od_root_score += lgamma(nu*z);
-        od_root_score -= lgamma(sum_D+nu*z);
+    if (smoothed) {
+      double term1 = -0.5*std::log(2*pi*sigma^2);
+      double term2 = 0.0;
+      for (u_int i = 0; i < r.size(); ++i)
+          term2 += (D[i] - this->region_neutral_states[i]*r[i]*baseline[i])^2;
+      term2 *= -1/(2*pi*sigma^2)
 
-        for (u_int i = 0; i < r.size(); ++i)
-        {
-            od_root_score += lgamma(D[i] + nu*this->region_neutral_states[i]*r[i]);
-            od_root_score -= lgamma(nu*this->region_neutral_states[i]*r[i]);
-        }
+      od_root_score += term1+term2;
     }
     else
     {
-        int sum_r = std::accumulate(r.begin(),r.end(),0);
-        double term1 = -sum_D*std::log(sum_r);
-        double term2 = 0.0;
-        for (u_int i = 0; i < r.size(); ++i)
-            term2 += D[i]*std::log(r[i]);
+      if (is_overdispersed)
+      {
+          int z = 0;
+          int k = 0;
+          for (auto const &x : r) {
+              z += x * this->region_neutral_states[k];
+              k = k + 1;
+          }
+          od_root_score += lgamma(nu*z);
+          od_root_score -= lgamma(sum_D+nu*z);
 
-        od_root_score += term1+term2;
+          for (u_int i = 0; i < r.size(); ++i)
+          {
+              od_root_score += lgamma(D[i] + nu*this->region_neutral_states[i]*r[i]);
+              od_root_score -= lgamma(nu*this->region_neutral_states[i]*r[i]);
+          }
+      }
+      else
+      {
+          int sum_r = std::accumulate(r.begin(),r.end(),0);
+          double term1 = -sum_D*std::log(sum_r);
+          double term2 = 0.0;
+          for (u_int i = 0; i < r.size(); ++i)
+              term2 += D[i]*std::log(r[i]);
+
+          od_root_score += term1+term2;
+      }
     }
     return od_root_score;
 
