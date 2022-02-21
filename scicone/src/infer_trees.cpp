@@ -82,7 +82,7 @@ int main( int argc, char* argv[]) {
     string region_neutral_states_file;
 
     // data type
-    bool smoothed = true;
+    bool smoothed = false;
 
     // baseline file
     string baseline_file;
@@ -117,7 +117,7 @@ int main( int argc, char* argv[]) {
             ("move_probs","The vector of move probabilities",cxxopts::value(move_probs)->default_value(move_probs_str))
             ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value<bool>(max_scoring)->default_value("true"))
             ("region_neutral_states_file", "Path to the file containing the neutral state of each region to use as the root of the tree", cxxopts::value(region_neutral_states_file))
-            ("smoothed","Boolean parameter to indicate whether the data consists of raw or smoothed counts",cxxopts::value<bool>(smoothed)->default_value("true"))
+            ("smoothed","Boolean parameter to indicate whether the data consists of raw or smoothed counts",cxxopts::value<bool>(smoothed)->default_value("false"))
             ("baseline_file", "Path to the file containing the baseline smoothed expression", cxxopts::value(baseline_file))
             ;
 
