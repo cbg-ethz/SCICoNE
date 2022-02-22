@@ -149,7 +149,7 @@ int main( int argc, char* argv[]) {
       if (compute_lr)
         s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells, input_breakpoints, smoothed);
       else
-        s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells, input_breakpoints, lr_vec, compute_lr);
+        s_p = dsp.breakpoint_detection(d_bins, window_size, evidence_min_cells, input_breakpoints, lr_vec, smoothed, compute_lr);
       std::cout<<"Computed probabilities for all regions."<<std::endl;
     }
 

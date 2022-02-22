@@ -5,6 +5,8 @@
 #ifndef SC_DNA_TREE_H
 #define SC_DNA_TREE_H
 
+#define _USE_MATH_DEFINES
+
 #include <iostream>
 #include <vector>
 #include <queue>
@@ -23,6 +25,7 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm> // std::remove
+#include <cmath>
 #include "globals.cpp"
 #include "Lgamma.h"
 #include "CustomExceptions.h"
@@ -52,8 +55,6 @@ public:
     double sigma;
     // overdispersed params
     double nu;
-
-    const double pi = boost::math::constants::pi<double>();
 public:
     // constructor
     Tree(u_int ploidy, u_int n_regions, vector<int> &region_neutral_states);
@@ -220,8 +221,8 @@ void Tree::compute_score(Node *node, const vector<double> &D, double &sum_D, con
             {
               double parent_mean = (parent_cn)*r[x.first]*baseline[x.first];
               double mean = (node_cn)*r[x.first]*baseline[x.first];
-              log_likelihood += (D[x.first] - mean)^2;
-              log_likelihood -= (D[x.first] - parent_mean)^2;
+              log_likelihood += pow(D[x.first] - mean,2);
+              log_likelihood -= pow(D[x.first] - parent_mean,2);
             }
             else
             {
@@ -1785,15 +1786,16 @@ double Tree::get_root_score(const vector<int> &r, double &sum_D, const vector<do
     /*
      * Returns the overdispersed root score
      * */
+     double var = pow(sigma,2);
 
     double od_root_score = 0.0;
 
     if (smoothed) {
-      double term1 = -0.5*std::log(2*pi*sigma^2);
+      double term1 = -r.size()*0.5*std::log(2*M_PI*var);
       double term2 = 0.0;
       for (u_int i = 0; i < r.size(); ++i)
-          term2 += (D[i] - this->region_neutral_states[i]*r[i]*baseline[i])^2;
-      term2 *= -1/(2*pi*sigma^2)
+          term2 += pow(D[i] - this->region_neutral_states[i]*r[i]*baseline[i],2);
+      term2 *= -1/(2*var);
 
       od_root_score += term1+term2;
     }

@@ -71,21 +71,16 @@ double MathOp::normal_log_likelihood(std::vector<double> v, double mu, double si
 {
     /*
      * Returns the log likelihood for the Normal distribution with mean: mu and stddev: sigma
-     * Mean lambda is inferred by maximum likelihood approach.
-     *
      */
-    // max likelihood:  std::log(lambda) * sum(v) - (v.size() * lambda)
 
-    double term1,term2;
-    // to avoid log(0) * 0
-    double v_sum = accumulate( v.begin(), v.end(), 0.0);
-    if (v_sum == 0 && lambda==0)
-        term1 = 0.0;
-    else
-        term1 = (log(lambda) - log(lambda+nu)) * v_sum;
+    double var = pow(sigma,2);
+    double term1 = -v.size() * 0.5 * log(2*M_PI*var);
+    double term2 = 0;
+    for (size_t i = 0; i < v.size(); ++i)
+      term2 += pow(v[i] - mu, 2);
+    term2 *= -1/(2*var);
 
-    term2 = (v.size() * nu * log(lambda+nu));
-    double ll =  term1 - term2;
+    double ll =  term1 + term2;
 
     assert(!std::isnan(ll));
     return ll;
@@ -105,7 +100,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
     if (not normal)
       nu = pow(global_mean, 2) / global_moment_2;
     else
-      nu = global_moment_2 - pow(global_mean, 2)
+      nu = global_moment_2 - pow(global_mean, 2);
     std::cout << "Method of moments estimated nu=" << nu << std::endl;
 
     //MathOp mo = MathOp();
@@ -877,12 +872,11 @@ double MathOp::huber_mean(vector<double> &z, double nu) {
 
     try{
         nlopt::result result = opt.optimize(x, minf);
-
-        return x[0]; // optimized alpha, beta
     }
     catch(std::exception &e) {
         std::cout << "nlopt failed: " << e.what() << std::endl;
     }
+    return x[0]; // optimized alpha, beta
 }
 
 double MathOp::ll_linear_model_nb(const std::vector<double> &x, std::vector<double> &grad, void *my_func_data)
@@ -910,6 +904,7 @@ double MathOp::ll_linear_model_normal(const std::vector<double> &x, std::vector<
     vector<double> z = d->z;
     double nu = d->nu;
 
+    double var = pow(nu,2);
     int size = z.size();
     double lambda = 0;
     double res = 0;
@@ -917,7 +912,7 @@ double MathOp::ll_linear_model_normal(const std::vector<double> &x, std::vector<
     for (size_t l = 0; l < size; ++l) {
       lambda = x[0] + (l+1)*x[1];
       // lambda = x[0];
-      res = res - (z[l] - lambda)^2 / (2*pi^2);
+      res = res - pow(z[l] - lambda, 2) / (2*var);
     }
 
     return res;
@@ -954,12 +949,11 @@ vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z, i
 
     try{
         nlopt::result result = opt.optimize(x, minf);
-
-        return x; // optimized alpha, beta
     }
     catch(std::exception &e) {
         std::cout << "nlopt failed: " << e.what() << std::endl;
     }
+    return x; // optimized alpha, beta
 }
 
 

@@ -49,7 +49,7 @@ public:
     std::vector<int> region_neutral_states;
 
 public:
-    Inference(u_int n_regions, int n_cells, vector<int> &region_neutral_states, int ploidy=2, int verbosity=2, bool max_scoring=false);
+    Inference(u_int n_regions, int n_cells, vector<int> &region_neutral_states, int ploidy=2, int verbosity=2, bool max_scoring=false, bool smoothed=false);
     ~Inference();
     void destroy();
     void compute_t_root_scores(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
@@ -81,6 +81,7 @@ public:
     bool apply_swap(const vector<vector<double>> &D, const vector<int> &r, bool weighted,
                     bool test_mode);
     bool apply_overdispersion_change(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
+    bool apply_sigma_change(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
     Tree *comparison(int m, double gamma, unsigned move_id, const vector<int> &cluster_sizes);
     void infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs,
                     int n_iters, unsigned int size_limit, double alpha, double gamma, const vector<int> &cluster_sizes);
@@ -791,10 +792,9 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 if (verbosity > 2)
                     cout<<"Update dispersion move"<<endl;
 
+                auto func = std::bind(&Inference::apply_overdispersion_change, this, _1, _2, _3);
                 if (smoothed)
-                    auto func = std::bind(&Inference::apply_sigma_change, this, _1, _2, _3);
-                else
-                  auto func = std::bind(&Inference::apply_overdispersion_change, this, _1, _2, _3);
+                    func = std::bind(&Inference::apply_sigma_change, this, _1, _2, _3);
                 bool disp_change_success = apply_multiple_times(n_apply_move, func, D, r, cluster_sizes);
 
                 if (not disp_change_success)

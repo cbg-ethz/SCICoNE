@@ -17,6 +17,7 @@ extern double lambda_c; // lambda param for the poisson that generates the copy 
 extern double cf; // the cluster fraction variable to be used in tree prior
 extern double c_penalise; // the penalisation term for cancelling events
 extern unsigned is_overdispersed; // param to specify if tree scoring will use the overdispersed model
+extern unsigned smoothed; // param to specify if tree scoring will use the overdispersed model
 extern int verbosity; // the verbosity of the output
 extern string f_name_posfix; // posfix for the output files created
 extern double eta; // a small value to replace 0 when needed, for log(0) case for example

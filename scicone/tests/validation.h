@@ -230,7 +230,7 @@ void test_swap_label()
     double sum_root_score = 0.0;
     for (u_int i = 0; i < n_cells; ++i) {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
+        double root_score = mcmc.t_prime.get_root_score(r,sum_d,D[i]);
         sum_root_score += root_score;
     }
 
@@ -272,7 +272,7 @@ void test_swap_label()
     sum_root_score = 0.0;
     for (u_int i = 0; i < n_cells; ++i) {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+        double root_score = mcmc_max.t_prime.get_root_score(r,sum_d,D[i]);
         sum_root_score += root_score;
     }
 
@@ -369,7 +369,7 @@ void test_condense_split_weights()
     for (size_t i = 0; i < n_cells; ++i)
     {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
+        double root_score = mcmc.t_prime.get_root_score(r,sum_d,D[i]);
         sum_root_score = sum_root_score + root_score * cluster_sizes[i];
     }
 
@@ -459,7 +459,7 @@ void test_condense_split_weights()
     for (size_t i = 0; i < n_cells; ++i)
     {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+        double root_score = mcmc_max.t_prime.get_root_score(r,sum_d,D[i]);
         sum_root_score = sum_root_score + root_score * cluster_sizes[i];
     }
 
@@ -533,7 +533,7 @@ void test_insert_delete_weights()
     double sum_root_score = 0.0;
     for (u_int i = 0; i < n_cells; ++i) {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
+        double root_score = mcmc.t_prime.get_root_score(r,sum_d,D[i]);
         sum_root_score += root_score;
     }
 
@@ -605,7 +605,7 @@ void test_insert_delete_weights()
     sum_root_score = 0.0;
     for (u_int i = 0; i < n_cells; ++i) {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+        double root_score = mcmc_max.t_prime.get_root_score(r,sum_d,D[i]);
         sum_root_score += root_score;
     }
 
@@ -765,7 +765,7 @@ void test_prune_reattach()
     double sum_root_score = 0.0;
     for (u_int i = 0; i < n_cells; ++i) {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
+        double root_score = mcmc.t_prime.get_root_score(r,sum_d,D[i]);
         sum_root_score += root_score;
     }
 
@@ -814,7 +814,7 @@ void test_prune_reattach()
     sum_root_score = 0.0;
     for (u_int i = 0; i < n_cells; ++i) {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+        double root_score = mcmc_max.t_prime.get_root_score(r,sum_d,D[i]);
         sum_root_score += root_score;
     }
 
@@ -924,7 +924,7 @@ void test_add_remove_event()
     double sum_root_score = 0.0;
     for (u_int i = 0; i < n_cells; ++i) {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
+        double root_score = mcmc.t_prime.get_root_score(r,sum_d,D[i]);
         sum_root_score += root_score;
     }
 
@@ -977,7 +977,7 @@ void test_add_remove_event()
     sum_root_score = 0.0;
     for (u_int i = 0; i < n_cells; ++i) {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+        double root_score = mcmc_max.t_prime.get_root_score(r,sum_d,D[i]);
         sum_root_score += root_score;
     }
 
@@ -1101,7 +1101,7 @@ void test_overdispersed_score()
     for (u_int i = 0; i < n_cells; ++i)
     {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc.t_prime.get_od_root_score(r, sum_d, D[i]);
+        double root_score = mcmc.t_prime.get_root_score(r, sum_d, D[i]);
         root_scores[i] = root_score;
     }
     assert(abs(root_scores[0] - (-323.687)) <= epsilon);
@@ -1138,7 +1138,7 @@ void test_overdispersed_score()
     for (u_int i = 0; i < n_cells; ++i)
     {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc_max.t_prime.get_od_root_score(r, sum_d, D[i]);
+        double root_score = mcmc_max.t_prime.get_root_score(r, sum_d, D[i]);
         root_scores_max[i] = root_score;
     }
     assert(abs(root_scores_max[0] - (-323.687)) <= epsilon);
@@ -1425,7 +1425,7 @@ void test_expand_shrink_block()
   double sum_root_score = 0.0;
   for (u_int i = 0; i < n_cells; ++i) {
       double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-      double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
+      double root_score = mcmc.t_prime.get_root_score(r,sum_d,D[i]);
       sum_root_score += root_score;
   }
 
@@ -1478,7 +1478,7 @@ void test_expand_shrink_block()
   sum_root_score = 0.0;
   for (u_int i = 0; i < n_cells; ++i) {
       double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-      double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+      double root_score = mcmc_max.t_prime.get_root_score(r,sum_d,D[i]);
       sum_root_score += root_score;
   }
 
@@ -1569,7 +1569,7 @@ void test_add_common_ancestor()
     double sum_root_score = 0.0;
     for (u_int i = 0; i < n_cells; ++i) {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc.t_prime.get_od_root_score(r,sum_d,D[i]);
+        double root_score = mcmc.t_prime.get_root_score(r,sum_d,D[i]);
         sum_root_score += root_score;
     }
 
@@ -1616,7 +1616,7 @@ void test_add_common_ancestor()
     sum_root_score = 0.0;
     for (u_int i = 0; i < n_cells; ++i) {
         double sum_d = std::accumulate(D[i].begin(), D[i].end(), 0.0);
-        double root_score = mcmc_max.t_prime.get_od_root_score(r,sum_d,D[i]);
+        double root_score = mcmc_max.t_prime.get_root_score(r,sum_d,D[i]);
         sum_root_score += root_score;
     }
 

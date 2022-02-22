@@ -18,6 +18,7 @@ double lambda_c;
 double cf;
 double c_penalise;
 unsigned is_overdispersed;
+unsigned smoothed;
 string f_name_posfix;
 int verbosity;
 double eta;
@@ -41,6 +42,7 @@ int main(int argc, char** argv)
     cf = 0.0;
     c_penalise = 10.0;
     is_overdispersed = 0;
+    smoothed = 0;
     verbosity = 0;
     eta = 1e-4;
 

@@ -21,6 +21,7 @@ double lambda_c;
 double cf;
 double c_penalise;
 unsigned is_overdispersed;
+unsigned smoothed;
 string f_name_posfix;
 int verbosity;
 double eta;
@@ -68,7 +69,7 @@ void save_root_by_nu(int ploidy, size_t n_regions, int n_cells, const vector<vec
         vector<double> scores(n_cells);
         for (u_int i = 0; i < n_cells; ++i) {
             double sum_d = std::accumulate(d_regions[i].begin(), d_regions[i].end(), 0.0);
-            scores[i] = t.get_od_root_score(region_sizes, sum_d, d_regions[i]);
+            scores[i] = t.get_root_score(region_sizes, sum_d, d_regions[i]);
         }
         double root_score = std::accumulate(scores.begin(), scores.end(), 0.0);
 

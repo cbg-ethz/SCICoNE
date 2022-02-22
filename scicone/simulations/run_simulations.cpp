@@ -18,6 +18,7 @@ double lambda_s;
 double cf;
 double c_penalise;
 unsigned is_overdispersed;
+unsigned smoothed;
 string f_name_posfix;
 int verbosity;
 double eta;

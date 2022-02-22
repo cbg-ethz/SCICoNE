@@ -19,6 +19,7 @@ double cf;
 double c_penalise;
 int copy_number_limit;
 unsigned is_overdispersed;
+unsigned smoothed;
 string f_name_posfix;
 int verbosity;
 double eta;
@@ -112,7 +113,7 @@ int main( int argc, char* argv[]) {
     mcmc.t.nu = nu;
     //mcmc.compute_neutral_table(d_regions, region_sizes);
     mcmc.compute_t_table(d_regions,region_sizes,cluster_sizes);
-    mcmc.compute_t_od_scores(d_regions, region_sizes,cluster_sizes);
+    mcmc.compute_t_root_scores(d_regions, region_sizes,cluster_sizes);
     mcmc.update_t_prime(); // set t_prime to t
 
     // write the tree

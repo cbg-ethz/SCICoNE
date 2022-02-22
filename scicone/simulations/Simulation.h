@@ -208,7 +208,7 @@ public:
 
             // compute the tree and store it in this->tree
             mcmc.compute_t_table(D_regions,region_sizes,cluster_sizes);
-            mcmc.compute_t_od_scores(D_regions, region_sizes,cluster_sizes);
+            mcmc.compute_t_root_scores(D_regions, region_sizes,cluster_sizes);
         }
 
         this->tree = mcmc.t;

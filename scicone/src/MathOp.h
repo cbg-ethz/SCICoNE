@@ -23,7 +23,6 @@
 #endif //SC_DNA_NODE_H
 
 
-
 using namespace std;
 
 typedef struct {

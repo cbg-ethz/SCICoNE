@@ -24,6 +24,7 @@ double lambda_c;
 double cf;
 double c_penalise;
 unsigned is_overdispersed;
+unsigned smoothed;
 string f_name_posfix;
 int verbosity;
 double eta;
@@ -57,6 +58,7 @@ int main( int argc, char* argv[]) {
     cf = 0.0;
     c_penalise = 10.0;
     is_overdispersed = 1;
+    smoothed = 0;
     eta = 1e-4;
 
     // set the globals
@@ -312,7 +314,7 @@ int main( int argc, char* argv[]) {
     if (verbosity > 0)
         std::cout << "Computing the t table and overdispersion scores for the initial tree..." << std::endl;
     mcmc.compute_t_table(d_regions,region_sizes,cluster_sizes);
-    mcmc.compute_t_od_scores(d_regions, region_sizes,cluster_sizes);
+    mcmc.compute_t_root_scores(d_regions, region_sizes,cluster_sizes);
 
     mcmc.update_t_prime(); // set t_prime to t
 
