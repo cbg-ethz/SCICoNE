@@ -182,7 +182,7 @@ class SCICoNE(object):
         return output
 
     def detect_breakpoints(self, data=None, window_size=30, threshold=3.0, bp_limit=300, bp_min=0, lr=None, sp=None,
-                            evaluate_peaks=True, compute_lr=True, compute_sp=True, input_breakpoints=None, verbosity=1):
+                            evaluate_peaks=True, compute_lr=True, compute_sp=True, input_breakpoints=None, smoothed=False, verbosity=1):
         if data is None:
             data = self.data['filtered_counts']
 
@@ -229,7 +229,7 @@ class SCICoNE(object):
                 f"--n_cells={n_cells}", f"--window_size={window_size}", f"--threshold={threshold}",\
                 f"--bp_limit={bp_limit}", f"--bp_min={bp_min}", f"--compute_lr={compute_lr}", f"--lr_file={lr_file}",\
                 f"--compute_sp={compute_sp}", f"--sp_file={sp_file}", f"--verbosity={verbosity}",\
-                f"--evaluate_peaks={evaluate_peaks}", f"--postfix={postfix}",\
+                f"--evaluate_peaks={evaluate_peaks}", f"--smoothed={smoothed}", f"--postfix={postfix}",\
                 f"--input_breakpoints_file={input_breakpoints_file}"]
             if self.verbose:
                 print(' '.join(cmd))
