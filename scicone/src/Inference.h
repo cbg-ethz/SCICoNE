@@ -794,7 +794,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
 
                 auto func = std::bind(&Inference::apply_overdispersion_change, this, _1, _2, _3);
                 if (smoothed)
-                    func = std::bind(&Inference::apply_sigma_change, this, _1, _2, _3);
+                    auto func = std::bind(&Inference::apply_sigma_change, this, _1, _2, _3);
                 bool disp_change_success = apply_multiple_times(n_apply_move, func, D, r, cluster_sizes);
 
                 if (not disp_change_success)
