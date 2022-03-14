@@ -148,8 +148,10 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
                 for (size_t k = 0; k < n_bins; ++k)
                 {
                     lambdas_segment[k] = alpha + beta*bin_positions[k]; // prediction
-                    if (lambdas_segment[k] <= 0)
-                        lambdas_segment[k] = 0.0001;
+                    if (!normal) {
+                      if (lambdas_segment[k] <= 0)
+                          lambdas_segment[k] = 0.0001;
+                    }
                 }
 
                 double ll_segment = 0;
@@ -186,10 +188,12 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
                     lambda_r = lambda_all - scaling*(lambda_all-lambda_r);
                   }
                 }
-                if (lambda_r == 0)
-                    lambda_r = 0.0001;
-                if (lambda_l == 0)
-                    lambda_l = 0.0001;
+                if (!normal) {
+                  if (lambda_r == 0)
+                      lambda_r = 0.0001;
+                  if (lambda_l == 0)
+                      lambda_l = 0.0001;
+                }
 
                 double ll_break = breakpoint_log_likelihood(lbins, lambda_l, nu, normal) +
                                   breakpoint_log_likelihood(rbins, lambda_r, nu, normal);
@@ -931,7 +935,11 @@ vector<double> MathOp::compute_linear_regression_parameters(vector<double> &z, i
 
     nlopt::opt opt(nlopt::LN_BOBYQA, 2);
     std::vector<double> lb(2);
-    lb[0] = 0; lb[1] = - 1.0/8.0 * 1.0/window_size; // lower bounds on alpha, beta
+    if (normal)
+      lb[0] = -HUGE_VAL;
+    else
+      lb[0] = 0;
+    lb[1] = - 1.0/8.0 * 1.0/window_size; // lower bounds on alpha, beta
     opt.set_lower_bounds(lb);
     std::vector<double> ub(2);
     ub[0] = HUGE_VAL; ub[1] = 1.0/8.0 * 1.0/window_size; // upper bounds on alpha, beta
