@@ -74,14 +74,13 @@ double MathOp::normal_log_likelihood(std::vector<double> v, double mu, double si
      */
 
     double var = pow(sigma,2);
-    double term1 = -v.size() * 0.5 * log(2*M_PI*var);
+    double term1 = v.size() * 0.5 * log(2*M_PI*var);
     double term2 = 0;
     for (size_t i = 0; i < v.size(); ++i)
       term2 += pow(v[i] - mu, 2);
     term2 *= -1/(2*var);
 
-    double ll =  term1 + term2;
-
+    double ll =  -term1 + term2;
     assert(!std::isnan(ll));
     return ll;
 }
