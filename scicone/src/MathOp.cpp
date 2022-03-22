@@ -99,7 +99,7 @@ vector<vector<double>> MathOp::likelihood_ratio(vector<vector<double>> &mat, int
     if (not normal)
       nu = pow(global_mean, 2) / global_moment_2;
     else
-      nu = global_moment_2 - pow(global_mean, 2);
+      nu = sqrt(global_moment_2 - pow(global_mean, 2));
     std::cout << "Method of moments estimated nu=" << nu << std::endl;
 
     //MathOp mo = MathOp();
