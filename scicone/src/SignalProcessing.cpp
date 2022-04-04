@@ -371,6 +371,8 @@ SignalProcessing::breakpoint_detection(vector<vector<double>> &mat, int window_s
 //        double max_local = std::max(max_local, max_local_ub);
         for (int j = 0; j < log_posterior[l].size(); ++j) {
             posterior[l][j] = exp(log_posterior[l][j] - max_local);
+            if (posterior[l][j] == 0)
+              posterior[l][j] = 1e-8;
         }
 
         double sp_num_total = std::accumulate(posterior[l].begin(), posterior[l].begin() + k_star - 1, 0.0);

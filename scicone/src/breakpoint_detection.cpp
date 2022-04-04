@@ -180,6 +180,19 @@ int main( int argc, char* argv[]) {
 
     vector<double> sp_cropped = dsp.crop(s_p, window_size); // may remove some known breakpoints
 
+    double min = MathOp::minimum(sp_cropped);
+    for (int l = 0; l < sp_cropped.size(); ++l)
+        if(sp_cropped[l] < 0.0)
+        {
+            if (l > 0)
+                sp_cropped[l] = sp_cropped[l - 1];
+            else // if zero is the first element
+                sp_cropped[l] = 1e-8; // a small positive number
+        }
+
+    double med = MathOp::median(sp_cropped);
+    std::cout << "Sp median: " << med << std::endl;
+
     // median normalise sp_cropped
     dsp.median_normalise(sp_cropped);
 
