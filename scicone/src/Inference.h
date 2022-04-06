@@ -1001,7 +1001,7 @@ double Inference::genotype_penalty(Tree &tree) {
           n_genotypes = get_t_n_genotypes();
         else if (&tree == &t_prime)
           n_genotypes = get_t_prime_n_genotypes();
-        pen = -beta*n_genotypes;
+        pen = -beta*(n_genotypes-1);
       }
     }
     return pen;
