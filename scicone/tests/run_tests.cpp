@@ -21,6 +21,7 @@ unsigned is_overdispersed;
 string f_name_posfix;
 int verbosity;
 double eta;
+double beta;
 // endof globals
 
 
@@ -43,6 +44,7 @@ int main(int argc, char** argv)
     is_overdispersed = 0;
     verbosity = 0;
     eta = 1e-4;
+    beta = 0.0;
 
     std::cout<<"UNIT TESTS" <<std::endl;
     // set a seed number for reproducibility
@@ -52,6 +54,8 @@ int main(int argc, char** argv)
     test_breakpoint_detection(bp_detection_dir);
     test_tree_prior();
     test_event_prior();
+    test_genotype_prior();
+    test_add_common_ancestor_operation();
     test_n_descendents_computation();
     test_tree_attachment();
     test_prune_reattach();

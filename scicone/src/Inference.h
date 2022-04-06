@@ -89,6 +89,9 @@ public:
     void initialize_worked_example(int mode=1); // initializes the trees based on the test example
     void initialize_from_file(string path);
     vector<vector<int>> assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
+    double genotype_penalty(Tree &tree);
+    int get_t_n_genotypes();
+    int get_t_prime_n_genotypes();
 private:
     int deleted_node_idx();
 };
@@ -983,7 +986,25 @@ double Inference::log_tree_posterior(double tree_sum, int m, Tree &tree) {
     double PV = tree.event_prior();
     log_posterior += PV;
 
+    double pen = genotype_penalty(tree);
+    log_posterior += pen;
+
     return log_posterior;
+}
+
+double Inference::genotype_penalty(Tree &tree) {
+    double pen = 0.0;
+    if (max_scoring) {
+      if (beta != 0) {
+        int n_genotypes = 0;
+        if (&tree == &t)
+          n_genotypes = get_t_n_genotypes();
+        else if (&tree == &t_prime)
+          n_genotypes = get_t_prime_n_genotypes();
+        pen = -beta*n_genotypes;
+      }
+    }
+    return pen;
 }
 
 void Inference::update_t_scores() {
@@ -1299,6 +1320,38 @@ bool Inference::apply_condense_split(const vector<vector<double>> &D, const vect
     }
     else
         return false;
+}
+
+int Inference::get_t_n_genotypes() {
+  vector<int> node_ids;
+  for (size_t j = 0; j < n_cells; ++j) {
+      node_ids.push_back(t_maxs[j].first);
+  }
+
+  sort(node_ids.begin(), node_ids.end());
+  vector<int>::iterator it;
+  it = unique(node_ids.begin(), node_ids.end());
+
+  node_ids.resize(distance(node_ids.begin(),it));
+  size_t n_genotypes = node_ids.size();
+
+  return n_genotypes;
+}
+
+int Inference::get_t_prime_n_genotypes() {
+  vector<int> node_ids;
+  for (size_t j = 0; j < n_cells; ++j) {
+      node_ids.push_back(t_prime_maxs[j].first);
+  }
+
+  sort(node_ids.begin(), node_ids.end());
+  vector<int>::iterator it;
+  it = unique(node_ids.begin(), node_ids.end());
+
+  node_ids.resize(distance(node_ids.begin(),it));
+  size_t n_genotypes = node_ids.size();
+
+  return n_genotypes;
 }
 
 vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes) {

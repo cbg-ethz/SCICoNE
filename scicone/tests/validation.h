@@ -664,6 +664,95 @@ void test_tree_prior()
 
 }
 
+void test_genotype_prior()
+{
+    /*
+     * Validation test for the number of genotypes penalty computation
+     * */
+
+    vector<vector<double>> D = {
+         {20, 20, 20, 20, 20},
+         {30, 30, 20, 20, 20},
+         {30, 40, 30, 0, 0},
+         {30, 40, 10, 10, 0},
+         {30, 40, 10, 10, 0}
+     };
+
+    vector<int> r = {2,2,2,2,2};
+
+    int t_n_genotypes = 0;
+    int t_prime_n_genotypes = 0;
+
+    bool local_max_scoring = true;
+    Inference mcmc(r.size(), m, region_neutral_states, ploidy, verbosity, local_max_scoring);
+    mcmc.t.random_insert({{0, 1}, {1, 1}});
+    mcmc.t.insert_at(1,{{1, 1}, {2, 1}, {3, -2}, {4, -2}}); // 2
+
+    mcmc.compute_t_table(D,r,cluster_sizes);
+    mcmc.update_t_prime();
+    // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+    std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
+    mcmc.compute_t_prime_scores(mcmc.t_prime.root, D, r);
+    mcmc.compute_t_prime_sums(D);
+
+    std::cout << mcmc.t_prime << std::endl;
+
+    for (size_t i = 0; i < mcmc.t_sums.size(); ++i)
+            std::cout << mcmc.t_prime_maxs[i].first << ", ";
+    std::cout << std::endl;
+
+    for (size_t i = 0; i < mcmc.t_prime_maxs.size(); ++i)
+            std::cout << mcmc.t_prime_maxs[i].first << ", ";
+
+    t_n_genotypes = mcmc.get_t_n_genotypes();
+    t_prime_n_genotypes = mcmc.get_t_prime_n_genotypes();
+    std::cout << "Number of genotypes in t and t_prime: (" << t_n_genotypes << ", " << t_prime_n_genotypes << ")" << std::endl;
+
+    // Add node
+    std::cout << "Adding node!" << std::endl;
+    mcmc.t_prime.insert_at(1,{{1, 1}, {2, -1}, {3, -1}}); // 3
+    mcmc.t.insert_at(1,{{1, 1}, {2, -1}, {3, -1}}); // 3
+    Node* new_node = mcmc.t_prime.all_nodes_vec.back(); // the last inserted elem, e.g. new node
+    mcmc.compute_t_prime_scores(new_node, D, r);
+    mcmc.compute_t_prime_sums(D);
+
+    std::cout << mcmc.t_prime << std::endl;
+
+    for (size_t i = 0; i < mcmc.t_prime_maxs.size(); ++i)
+            std::cout << mcmc.t_prime_maxs[i].first << ", ";
+
+    t_n_genotypes = mcmc.get_t_n_genotypes();
+    t_prime_n_genotypes = mcmc.get_t_prime_n_genotypes();
+    std::cout << "Number of genotypes in t and t_prime: (" << t_n_genotypes << ", " << t_prime_n_genotypes << ")" << std::endl;
+
+
+
+    // Add common ancestor node
+    std::cout << "Adding common ancestor!" << std::endl;
+    mcmc.compute_t_table(D,r,cluster_sizes);
+    mcmc.update_t_prime();
+    // re-ordering is needed since the copy_tree method does not preserve the order in the all_nodes vector
+    std::sort(mcmc.t_prime.all_nodes_vec.begin(),mcmc.t_prime.all_nodes_vec.end(), [](Node* a, Node* b) { return *a < *b; });
+    mcmc.compute_t_prime_scores(mcmc.t_prime.root, D, r);
+    mcmc.compute_t_prime_sums(D);
+
+    mcmc.apply_add_common_ancestor(D, r, true);
+
+    std::cout << mcmc.t_prime << std::endl;
+
+    for (size_t i = 0; i < mcmc.t_prime_maxs.size(); ++i)
+            std::cout << mcmc.t_prime_maxs[i].first << ", ";
+
+    t_n_genotypes = mcmc.get_t_n_genotypes();
+    t_prime_n_genotypes = mcmc.get_t_prime_n_genotypes();
+    std::cout << "Number of genotypes in t and t_prime: (" << t_n_genotypes << ", " << t_prime_n_genotypes << ")" << std::endl;
+
+
+
+    std::cout<<"Genotype prior validation test passed!"<<std::endl;
+
+}
+
 void test_event_prior()
 {
     /*
