@@ -3,7 +3,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: "ubuntu:16.04"
+      - image: "ubuntu:20.04"
     steps:
       - run: apt-get -qq update; apt-get -y install git
       - checkout
@@ -15,10 +15,10 @@ jobs:
           command: 'sudo apt-get update && sudo apt-get -y install software-properties-common'
       - run:
           name: Install Python
-          command:  'sudo -E add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && sudo apt-get -y install build-essential python3.6'
+          command:  'sudo -E add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && sudo apt-get -y install build-essential python3'
       - run:
           name: Install Python utilities
-          command: 'sudo apt-get install -y python3.6-dev python3-pip && python3.6 -m pip install pip --upgrade'
+          command: 'sudo apt-get install -y python3-dev python3-pip && python3 -m pip install pip --upgrade'
       - run:
           name: Installing GCC
           command: 'apt-get update && apt-get install -y gcc g++'
@@ -42,7 +42,7 @@ jobs:
           command: 'cd pyscicone && pip install -e .[test]'
       - run:
           name: Test pyscicone
-          command: 'cd pyscicone && python3.6 -m pytest -s'
+          command: 'cd pyscicone && python3 -m pytest -s'
       - run:
           name: Creating Debug Build Folder
           command: 'mkdir debug'
