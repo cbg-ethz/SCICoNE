@@ -9,10 +9,17 @@ jobs:
       - checkout
       - run:
           name: Installing SUDO
-          command: 'apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*'
+          command: |
+            apt-get update
+            apt-get install -y sudo
+            rm -rf /var/lib/apt/lists/*
       - run:
           name: Installing software-properties-common
-          command: 'sudo apt-get update && sudo apt-get -y install software-properties-common'
+          command: |
+            sudo apt-get update
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get install -y tzdata
+            sudo apt-get -y install software-properties-common
       - run:
           name: Install Python
           command:  'sudo -E add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && sudo apt-get -y install build-essential python3'
