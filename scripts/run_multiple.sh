@@ -5,13 +5,19 @@ input_tree=$4
 scripts_dir=$5
 region_sizes_file=$6
 
+maximum_target=$7
+initial_target=5
+step_size=4
+initial_beta=1
+beta_rate=0.001
+
 infer() {
-    $command --postfix=$1 --tree_file=$2 > $1_logs.out
+    $command --postfix=$1 --tree_file=$2 --beta_rate=${beta_rate} --n_genotypes_target=$3 --beta=$4 > $1_logs.out
 }
 
 run_parallel() {
     for i in `seq 0 $(($2-1))`; do
-        infer "$1-$i" "$3" "$i" &
+        infer "$4-$1-$i" "$3" "$4" "$5" &
     done
     wait
 }
@@ -60,27 +66,55 @@ evaluate_robustness_2() {
     python ${scripts_dir}/compute_tree_distances.py ${files} --scores ${scores}
 }
 
-for i in `seq 0 $((${n_tries}-1))`; do
-    block="$i"
-    echo "Running block $i from ${input_tree}..."
+# Achieve convergence for each target until maximum_target is reached
+target=${initial_target}
+converged_tree=$input_tree
+while true; do
+    echo "Searching convergence on trees with maximum $target genotypes..."
+    t=0
+    while true; do
+        block="$t"
+        prefix="$target-$t"
+        echo "Running block $t/$(($n_tries-1)) from ${input_tree} with maximum ${target} genotypes and beta=${initial_beta}..."
 
-    # Run trees
-    run_parallel "$i" "${n_trees}" "${input_tree}"
+        # Run trees
+        run_parallel "$t" "${n_trees}" "${input_tree}" "${target}" "${initial_beta}"
 
-    # Check robustness
-    rscore=$(evaluate_robustness "$block" | grep Robustness | cut -d " " -f 2)
-    input_tree="$(evaluate_robustness "$block" | grep Maximum | cut -d " " -f 2)_tree_inferred.txt"
+        # Check robustness
+        rscore=$(evaluate_robustness "$prefix" | grep Robustness | cut -d " " -f 2)
+        input_tree="$(evaluate_robustness "$prefix" | grep Maximum | cut -d " " -f 2)_tree_inferred.txt"
+        best_prefix="$(echo $input_tree | cut -d_ -f1)"
+        initial_beta="$(cat ${best_prefix}_beta_values.csv | rev | cut -d, -f1 | rev)"
 
-    evaluate_robustness "$block"
+        evaluate_robustness "$prefix"
 
-    # Check robustness
-    score=$(evaluate_robustness_2 "$block")
-    echo "Tree-distance-based robustness: ${score}" 
-    echo ${score} >> "tree_distances.txt"
+        # # Check robustness
+        # score=$(evaluate_robustness_2 "$block")
+        # echo "Tree-distance-based robustness: ${score}" 
+        # echo ${score} >> "tree_distances.txt"
 
-    if [[ $rscore == "1" ]]; then
+        if (( $(echo "$rscore > 0.5" | bc) )); then
+            converged_tree=$input_tree
+            echo "Achieved convergence ($rscore)."
+            break
+        fi
+
+        if [[ $t == $(($n_tries-1)) ]]; then
+            echo "Could not converge in $n_tries tries for maximum $target genotypes."
+            break 2
+        fi
+
+        t=$((t+1))
+
+    done
+
+    target=$((target+${step_size}))
+    
+    if [[ $target -gt ${maximum_target} ]]; then
+        echo "Finished increasing the maximum number of genotypes."
         break
     fi
+
 done
 
-
+echo "\nLast converged tree: $converged_tree"
