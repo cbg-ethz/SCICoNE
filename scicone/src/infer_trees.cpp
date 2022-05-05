@@ -61,6 +61,9 @@ int main( int argc, char* argv[]) {
     eta = 1e-4;
     // Penalty on number of genotypes
     beta = 0.0;
+    // And its adaptation through iterations
+    double beta_rate = 0.1;
+    double n_genotypes_target = 10;
 
     // set the globals
     print_precision = 15;
@@ -115,6 +118,8 @@ int main( int argc, char* argv[]) {
             ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value<bool>(max_scoring)->default_value("true"))
             ("region_neutral_states_file", "Path to the file containing the neutral state of each region to use as the root of the tree", cxxopts::value(region_neutral_states_file))
             ("beta", "term that penalises the number of genotypes in the tree", cxxopts::value(beta))
+            ("beta_rate", "term that specifies how beta is updated across iterations", cxxopts::value(beta_rate))
+            ("n_genotypes_target", "number of genotypes that beta penalty should favor", cxxopts::value(n_genotypes_target))
             ;
 
     auto result = options.parse(argc, argv);
@@ -297,7 +302,7 @@ int main( int argc, char* argv[]) {
 
     if (verbosity > 0)
         std::cout << "Inferring the tree using MCMC with " << n_iters << " iterations..." << std::endl;
-    mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters, size_limit, alpha, gamma, cluster_sizes);
+    mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters, size_limit, alpha, gamma, beta_rate, n_genotypes_target, cluster_sizes);
 
     // Get ending timepoint
     auto stop = high_resolution_clock::now();
