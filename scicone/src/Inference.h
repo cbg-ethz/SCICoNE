@@ -82,7 +82,7 @@ public:
     bool apply_overdispersion_change(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
     Tree *comparison(int m, double gamma, unsigned move_id, const vector<int> &cluster_sizes);
     void infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs,
-                    int n_iters, unsigned int size_limit, double alpha, double gamma, const vector<int> &cluster_sizes);
+                    int n_iters, unsigned int size_limit, double alpha, double gamma, double beta_rate, int n_genotypes_target, const vector<int> &cluster_sizes);
 
     void update_t_scores();
     void random_initialize(u_int n_nodes, u_int n_regions, int max_iters, int max_regions_per_node=1); // randomly initializes a tree and copies it into the other
@@ -512,7 +512,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
 }
 
 void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs,
-                           int n_iters, unsigned int size_limit, double alpha, double gamma, const vector<int> &cluster_sizes) {
+                           int n_iters, unsigned int size_limit, double alpha, double gamma, double beta_rate, int n_genotypes_target, const vector<int> &cluster_sizes) {
 
     int m = static_cast<int>(D.size());
 
