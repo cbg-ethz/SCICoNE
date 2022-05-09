@@ -55,6 +55,7 @@ public:
     double sigma;
     // overdispersed params
     double nu;
+    double sigma;
 public:
     // constructor
     Tree(u_int ploidy, u_int n_regions, vector<int> &region_neutral_states);

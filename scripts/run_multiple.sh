@@ -5,6 +5,15 @@ input_tree=$4
 scripts_dir=$5
 region_sizes_file=$6
 
+<<<<<<< Updated upstream
+=======
+maximum_target=$7
+initial_target=5
+step_size=4
+initial_beta=1
+beta_rate=0.0001
+
+>>>>>>> Stashed changes
 infer() {
     $command --postfix=$1 --tree_file=$2 > $1_logs.out
 }
