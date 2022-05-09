@@ -62,11 +62,15 @@ def gini(array):
     # Gini coefficient:
     return ((np.sum((2 * index - n  - 1) * array)) / (n * np.sum(array)))
 
-def sort_chromosomes(chromosome_list):
+def sort_chromosomes(chromosome_list, prefix=None):
     """
     Sorts a list of unordered chromosome names
     :param chromosome_list: list of unordered characters denoting chromosomes '1', '2', ..., 'X', 'Y'
     """
+    if prefix is not None:
+        # Remove prefix before sorting
+        chromosome_list = [chr[len(prefix):] for chr in chromosome_list]
+
     # Replace X and Y with 23 and 24
     sorted_chromosome_list = np.array(chromosome_list)
     sorted_chromosome_list[np.where(sorted_chromosome_list == "X")[0]] = 23
@@ -82,6 +86,9 @@ def sort_chromosomes(chromosome_list):
     sorted_chromosome_list = sorted_chromosome_list.astype(str)
     sorted_chromosome_list[np.where(sorted_chromosome_list == "23")[0]] = "X"
     sorted_chromosome_list[np.where(sorted_chromosome_list == "24")[0]] = "Y"
+
+    if prefix is not None:
+        sorted_chromosome_list = [f'{prefix}{chr}' for chr in sorted_chromosome_list]
 
     return sorted_chromosome_list
 

@@ -4,29 +4,29 @@ import numpy as np
 
 DEFAULT_BIN_SIZE_KB=20 # the 10x Genomics setting
 
-def read_hdf5(h5f_path, bins_to_exclude=None, downsampling_factor=1, remove_noisy_cells=True):
+def read_hdf5(h5f_path, bins_to_exclude=None, downsampling_factor=1, remove_noisy_cells=True, prefix=None):
     extracted_data = dict()
     with h5py.File(h5f_path, 'r') as h5f:
-        res = extract_corrected_counts_matrix(h5f, downsampling_factor=downsampling_factor, filter=False, remove_noisy_cells=remove_noisy_cells)
+        res = extract_corrected_counts_matrix(h5f, downsampling_factor=downsampling_factor, filter=False, remove_noisy_cells=remove_noisy_cells, prefix=prefix)
         extracted_data['unfiltered_counts'] = res['unfiltered_counts']
-        extracted_data['unfiltered_chromosome_stops'] = extract_chromosome_stops(h5f, downsampling_factor=downsampling_factor)
-        filtered_res = extract_corrected_counts_matrix(h5f, bins_to_exclude=bins_to_exclude, downsampling_factor=downsampling_factor, filter=True, remove_noisy_cells=remove_noisy_cells)
+        extracted_data['unfiltered_chromosome_stops'] = extract_chromosome_stops(h5f, downsampling_factor=downsampling_factor, prefix=prefix)
+        filtered_res = extract_corrected_counts_matrix(h5f, bins_to_exclude=bins_to_exclude, downsampling_factor=downsampling_factor, filter=True, remove_noisy_cells=remove_noisy_cells, prefix=prefix)
         extracted_data['filtered_counts'] = filtered_res['filtered_counts']
         extracted_data['excluded_bins'] = filtered_res['excluded_bins']
-        res = extract_cnvs(h5f, bins_to_exclude=bins_to_exclude, downsampling_factor=downsampling_factor, filter=True, remove_noisy_cells=remove_noisy_cells)
+        res = extract_cnvs(h5f, bins_to_exclude=bins_to_exclude, downsampling_factor=downsampling_factor, filter=True, remove_noisy_cells=remove_noisy_cells, prefix=prefix)
         extracted_data['filtered_cnvs'] = res['filtered_cnvs']
-        extracted_data['filtered_chromosome_stops'] = extract_chromosome_stops(h5f, bins_to_exclude=extracted_data['excluded_bins'], downsampling_factor=downsampling_factor)
+        extracted_data['filtered_chromosome_stops'] = extract_chromosome_stops(h5f, bins_to_exclude=extracted_data['excluded_bins'], downsampling_factor=downsampling_factor, prefix=prefix)
         extracted_data['bin_size'] = DEFAULT_BIN_SIZE_KB*downsampling_factor*10**3
 
     return extracted_data
 
-def merge_data_by_chromosome(h5f, key="normalized_counts", downsampling_factor=1, method='sum'):
+def merge_data_by_chromosome(h5f, key="normalized_counts", downsampling_factor=1, method='sum', prefix=None):
     if method not in ['sum', 'median']:
         raise Exception('Method must be sum or median.')
 
     downsampling_factor = np.max([1, downsampling_factor])
     n_cells = h5f["cell_barcodes"][:].shape[0]
-    sorted_chromosome_list = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str))
+    sorted_chromosome_list = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str), prefix=prefix)
 
     matrix_list = []
     for ch in sorted_chromosome_list:
@@ -61,10 +61,10 @@ def merge_data_by_chromosome(h5f, key="normalized_counts", downsampling_factor=1
     return merged_matrix
 
 
-def extract_corrected_counts_matrix(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True, remove_noisy_cells=True):
+def extract_corrected_counts_matrix(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True, remove_noisy_cells=True, prefix=None):
     downsampling_factor = np.max([1, downsampling_factor])
     unfiltered_counts = merge_data_by_chromosome(h5f, key='normalized_counts', downsampling_factor=downsampling_factor, method='sum')
-    sorted_chromosomes = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str))
+    sorted_chromosomes = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str), prefix=prefix)
 
     # Keep only single cells
     n_cells = h5f["cell_barcodes"].shape[0]
@@ -112,9 +112,9 @@ def extract_corrected_counts_matrix(h5f, bins_to_exclude=None, downsampling_fact
     else:
         return dict(unfiltered_counts=filtered_counts)
 
-def extract_chromosome_stops(h5f, bins_to_exclude=None, downsampling_factor=1):
+def extract_chromosome_stops(h5f, bins_to_exclude=None, downsampling_factor=1, prefix=None):
     downsampling_factor = np.max([1, downsampling_factor])
-    sorted_chromosomes = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str))
+    sorted_chromosomes = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str), prefix=prefix)
 
     if downsampling_factor > 1:
         chr_ends = np.cumsum([len(np.arange(0, n_bins, downsampling_factor)) for n_bins in h5f["constants"]["num_bins_per_chrom"]])
@@ -132,10 +132,10 @@ def extract_chromosome_stops(h5f, bins_to_exclude=None, downsampling_factor=1):
 
     return chr_stops
 
-def extract_cnvs(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True, remove_noisy_cells=True):
+def extract_cnvs(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True, remove_noisy_cells=True, prefix=None):
     downsampling_factor = np.max([1, downsampling_factor])
     unfiltered_cnvs = merge_data_by_chromosome(h5f, key='cnvs', downsampling_factor=downsampling_factor, method='median')
-    sorted_chromosomes = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str))
+    sorted_chromosomes = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str), prefix=prefix)
 
     # Keep only single cells
     n_cells = h5f["cell_barcodes"].shape[0]
