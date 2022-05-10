@@ -63,7 +63,7 @@ def merge_data_by_chromosome(h5f, key="normalized_counts", downsampling_factor=1
 
 def extract_corrected_counts_matrix(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True, remove_noisy_cells=True, prefix=None):
     downsampling_factor = np.max([1, downsampling_factor])
-    unfiltered_counts = merge_data_by_chromosome(h5f, key='normalized_counts', downsampling_factor=downsampling_factor, method='sum')
+    unfiltered_counts = merge_data_by_chromosome(h5f, key='normalized_counts', downsampling_factor=downsampling_factor, method='sum', prefix=prefix)
     sorted_chromosomes = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str), prefix=prefix)
 
     # Keep only single cells
@@ -134,7 +134,7 @@ def extract_chromosome_stops(h5f, bins_to_exclude=None, downsampling_factor=1, p
 
 def extract_cnvs(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True, remove_noisy_cells=True, prefix=None):
     downsampling_factor = np.max([1, downsampling_factor])
-    unfiltered_cnvs = merge_data_by_chromosome(h5f, key='cnvs', downsampling_factor=downsampling_factor, method='median')
+    unfiltered_cnvs = merge_data_by_chromosome(h5f, key='cnvs', downsampling_factor=downsampling_factor, method='median', prefix=prefix)
     sorted_chromosomes = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str), prefix=prefix)
 
     # Keep only single cells
