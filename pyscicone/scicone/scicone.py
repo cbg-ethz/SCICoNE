@@ -182,7 +182,7 @@ class SCICoNE(object):
         return output
 
     def detect_breakpoints(self, data=None, window_size=30, threshold=3.0, bp_limit=300, bp_min=0, lr=None, sp=None,
-                            evaluate_peaks=True, compute_lr=True, compute_sp=True, input_breakpoints=None, verbosity=1):
+                            evaluate_peaks=True, compute_lr=True, compute_sp=True, input_breakpoints=None, verbosity=1, prefix=''):
         if data is None:
             data = self.data['filtered_counts']
 
@@ -267,7 +267,7 @@ class SCICoNE(object):
         if 'unfiltered_chromosome_stops' in self.data.keys():
             print('Mapping to genes...')
             self.region_gene_map = utils.get_region_gene_map(self.data['bin_size'], self.data['unfiltered_chromosome_stops'],
-                                    self.bps['segmented_regions'], self.data['excluded_bins'])
+                                    self.bps['segmented_regions'], self.data['excluded_bins'], prefix=prefix)
             print('Done.')
 
         return output

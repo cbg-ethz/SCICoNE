@@ -179,7 +179,8 @@ def get_bin_gene_region_df(
     bin_size,
     chr_stops,
     region_stops,
-    excluded_bins
+    excluded_bins,
+    prefix='',
     ):
     """
         Creates a pands.DataFrame with the gene and region corresponding to each bin
@@ -187,6 +188,7 @@ def get_bin_gene_region_df(
         :param chromosome_stops: dictionary indicating final unfiltered bin of each chromosome
         :param region_stops: df indicating the final filtered bin of each region
         :param excluded_bins: list of excluded bins
+        :param prefix: prefix on the chromosome names in chromosome_stops
         :return: DataFrame of (gene, chr, region, filtered_bin)
     """
 
@@ -197,7 +199,7 @@ def get_bin_gene_region_df(
                         filters={'chromosome_name':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,'X','Y']},
                         use_attr_names=True)
 
-    bin_gene_region_df = pd.DataFrame(index=range(chr_stops['Y']+1))
+    bin_gene_region_df = pd.DataFrame(index=range(f"{prefix}{chr_stops['Y']}"+1))
     chr_stops_df = pd.DataFrame({'chr':list(chr_stops.keys()),
                                 'stop':list(chr_stops.values())})
 
@@ -209,9 +211,9 @@ def get_bin_gene_region_df(
     for index, row in gene_coordinates.iterrows():
         start_bin = int(row["start_position"] / bin_size)
         stop_bin = int(row["end_position"] / bin_size)
-        chromosome = str(row["chromosome_name"])
+        chromosome = prefix+str(row["chromosome_name"])
 
-        if chromosome != "1":  # coordinates are given by chromosome
+        if chromosome != f"{prefix}1":  # coordinates are given by chromosome
             chr_start = (
                 chr_stops_df.iloc[np.where(chr_stops_df["chr"] == chromosome)[0][0] - 1].stop
                 + 1
@@ -254,8 +256,8 @@ def get_bin_gene_region_df(
 
     return bin_gene_region_df
 
-def get_region_gene_map(bin_size, chr_stops, region_stops, excluded_bins, filter_list=None):
-    df = get_bin_gene_region_df(bin_size, chr_stops, region_stops, excluded_bins)
+def get_region_gene_map(bin_size, chr_stops, region_stops, excluded_bins, filter_list=None, prefix=''):
+    df = get_bin_gene_region_df(bin_size, chr_stops, region_stops, excluded_bins, prefix=prefix)
 
     region_gene_map = dict()
     for region in range(len(region_stops)):
