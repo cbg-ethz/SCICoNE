@@ -260,7 +260,7 @@ def get_region_gene_map(bin_size, chr_stops, region_stops, excluded_bins, filter
     df = get_bin_gene_region_df(bin_size, chr_stops, region_stops, excluded_bins, prefix=prefix)
 
     region_gene_map = dict()
-    for region in range(len(region_stops)):
+    for region in range(len(region_stops)+1):
         gene_list = []
         for row in df.loc[df['region']==region]['gene']:
             r = row.split(',')
