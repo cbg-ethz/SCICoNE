@@ -4,7 +4,7 @@ import numpy as np
 
 DEFAULT_BIN_SIZE_KB=20 # the 10x Genomics setting
 
-def read_hdf5(h5f_path, bins_to_exclude=None, downsampling_factor=1, remove_noisy_cells=True, prefix=None):
+def read_hdf5(h5f_path, bins_to_exclude=None, downsampling_factor=1, remove_noisy_cells=True, prefix=''):
     extracted_data = dict()
     with h5py.File(h5f_path, 'r') as h5f:
         res = extract_corrected_counts_matrix(h5f, downsampling_factor=downsampling_factor, filter=False, remove_noisy_cells=remove_noisy_cells, prefix=prefix)
@@ -20,7 +20,7 @@ def read_hdf5(h5f_path, bins_to_exclude=None, downsampling_factor=1, remove_nois
 
     return extracted_data
 
-def merge_data_by_chromosome(h5f, key="normalized_counts", downsampling_factor=1, method='sum', prefix=None):
+def merge_data_by_chromosome(h5f, key="normalized_counts", downsampling_factor=1, method='sum', prefix=''):
     if method not in ['sum', 'median']:
         raise Exception('Method must be sum or median.')
 
@@ -61,7 +61,7 @@ def merge_data_by_chromosome(h5f, key="normalized_counts", downsampling_factor=1
     return merged_matrix
 
 
-def extract_corrected_counts_matrix(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True, remove_noisy_cells=True, prefix=None):
+def extract_corrected_counts_matrix(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True, remove_noisy_cells=True, prefix=''):
     downsampling_factor = np.max([1, downsampling_factor])
     unfiltered_counts = merge_data_by_chromosome(h5f, key='normalized_counts', downsampling_factor=downsampling_factor, method='sum', prefix=prefix)
     sorted_chromosomes = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str), prefix=prefix)
@@ -112,7 +112,7 @@ def extract_corrected_counts_matrix(h5f, bins_to_exclude=None, downsampling_fact
     else:
         return dict(unfiltered_counts=filtered_counts)
 
-def extract_chromosome_stops(h5f, bins_to_exclude=None, downsampling_factor=1, prefix=None):
+def extract_chromosome_stops(h5f, bins_to_exclude=None, downsampling_factor=1, prefix=''):
     downsampling_factor = np.max([1, downsampling_factor])
     sorted_chromosomes = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str), prefix=prefix)
 
@@ -125,14 +125,14 @@ def extract_chromosome_stops(h5f, bins_to_exclude=None, downsampling_factor=1, p
     if bins_to_exclude is not None:
         bins_to_exclude = np.array(bins_to_exclude)
         for idx, pos in enumerate(chr_ends):
-            chr_stops[sorted_chromosomes[idx]] = pos-1 - len(bins_to_exclude[np.where(bins_to_exclude < pos)[0]])
+            chr_stops[sorted_chromosomes[idx]] = pos-1 - len(np.where(bins_to_exclude < pos)[0])
     else:
         for idx, pos in enumerate(chr_ends):
             chr_stops[sorted_chromosomes[idx]] = pos-1
 
     return chr_stops
 
-def extract_cnvs(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True, remove_noisy_cells=True, prefix=None):
+def extract_cnvs(h5f, bins_to_exclude=None, downsampling_factor=1, filter=True, remove_noisy_cells=True, prefix=''):
     downsampling_factor = np.max([1, downsampling_factor])
     unfiltered_cnvs = merge_data_by_chromosome(h5f, key='cnvs', downsampling_factor=downsampling_factor, method='median', prefix=prefix)
     sorted_chromosomes = utils.sort_chromosomes(h5f["constants"]["chroms"][()].astype(str), prefix=prefix)

@@ -72,6 +72,7 @@ class SCICoNE(object):
         self.data = dict()
         self.bps = dict()
         self.region_gene_map = None
+        self.chr_prefix = ""
 
         self.output_path = output_path
         self.persistence = persistence
@@ -93,8 +94,9 @@ class SCICoNE(object):
         except subprocess.SubprocessError as e:
             print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
 
-    def read_10x(self, h5f_path, bins_to_exclude=None, downsampling_factor=1, prefix=None):
-        self.data = utils_10x.read_hdf5(h5f_path, bins_to_exclude=bins_to_exclude, downsampling_factor=downsampling_factor, prefix=None)
+    def read_10x(self, h5f_path, bins_to_exclude=None, downsampling_factor=1, prefix=''):
+        self.chr_prefix = prefix
+        self.data = utils_10x.read_hdf5(h5f_path, bins_to_exclude=bins_to_exclude, downsampling_factor=downsampling_factor, prefix=prefix)
 
     def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, min_reg_size=10, max_regions_per_node=1, ploidy=2, region_neutral_states=None, verbosity=2, seed=42):
         if verbosity < 1:
@@ -209,6 +211,8 @@ class SCICoNE(object):
 
         input_breakpoints_file = ""
         if input_breakpoints is not None:
+            if isinstance(input_breakpoints, dict):
+                input_breakpoints = list(input_breakpoints.values())
             input_breakpoints_new = []
             if input_breakpoints[0] != 0:
                 input_breakpoints_new.append(0)
@@ -267,7 +271,7 @@ class SCICoNE(object):
         if 'unfiltered_chromosome_stops' in self.data.keys():
             print('Mapping to genes...')
             self.region_gene_map = utils.get_region_gene_map(self.data['bin_size'], self.data['unfiltered_chromosome_stops'],
-                                    self.bps['segmented_regions'], self.data['excluded_bins'], prefix=prefix)
+                                    self.bps['segmented_regions'], self.data['excluded_bins'], prefix=self.chr_prefix)
             print('Done.')
 
         return output

@@ -62,14 +62,13 @@ def gini(array):
     # Gini coefficient:
     return ((np.sum((2 * index - n  - 1) * array)) / (n * np.sum(array)))
 
-def sort_chromosomes(chromosome_list, prefix=None):
+def sort_chromosomes(chromosome_list, prefix=''):
     """
     Sorts a list of unordered chromosome names
     :param chromosome_list: list of unordered characters denoting chromosomes '1', '2', ..., 'X', 'Y'
     """
-    if prefix is not None:
-        # Remove prefix before sorting
-        chromosome_list = [chr[len(prefix):] for chr in chromosome_list]
+    # Remove prefix before sorting
+    chromosome_list = [chr[len(prefix):] for chr in chromosome_list]
 
     # Replace X and Y with 23 and 24
     sorted_chromosome_list = np.array(chromosome_list)
@@ -87,8 +86,7 @@ def sort_chromosomes(chromosome_list, prefix=None):
     sorted_chromosome_list[np.where(sorted_chromosome_list == "23")[0]] = "X"
     sorted_chromosome_list[np.where(sorted_chromosome_list == "24")[0]] = "Y"
 
-    if prefix is not None:
-        sorted_chromosome_list = [f'{prefix}{chr}' for chr in sorted_chromosome_list]
+    sorted_chromosome_list = [f'{prefix}{chr}' for chr in sorted_chromosome_list]
 
     return sorted_chromosome_list
 
@@ -199,7 +197,9 @@ def get_bin_gene_region_df(
                         filters={'chromosome_name':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,'X','Y']},
                         use_attr_names=True)
 
-    bin_gene_region_df = pd.DataFrame(index=range(f"{prefix}{chr_stops['Y']}"+1))
+    chrY = f'{prefix}Y'
+    bin_gene_region_df = pd.DataFrame(index=range(int(f"{chr_stops[chrY]}")+1))
+
     chr_stops_df = pd.DataFrame({'chr':list(chr_stops.keys()),
                                 'stop':list(chr_stops.values())})
 
