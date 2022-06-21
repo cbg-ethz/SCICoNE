@@ -167,7 +167,7 @@ def create_fusion_tree(learned_tree, region_neutral_states):
 
     for node in list(fusion_tree.node_dict):
         new_node_id = str(int(node) + 1000)
-        fusion_tree.node_dict[new_node_id] = dict(parent_id=node, event_dict=new_event_dict)
+        fusion_tree.node_dict[new_node_id] = dict(parent_id=node, region_event_dict=new_event_dict)
 
     fusion_tree.update_tree_str()
 
