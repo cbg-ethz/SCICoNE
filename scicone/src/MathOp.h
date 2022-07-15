@@ -14,7 +14,6 @@
 #include <map>
 #include <algorithm>
 #include "SingletonRandomGenerator.h"
-#include <boost/random/uniform_int_distribution.hpp>
 #include <nlopt.hpp>
 #include <cfloat>
 
