@@ -35,7 +35,9 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif(OPENMP_FOUND)
 
-# Search for nlopt
+# Search for boost and nlopt
+find_package(Boost 1.47 COMPONENTS random REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
 find_package(NLopt REQUIRED)
 include_directories(${NLOPT_INCLUDE_DIRS})
 

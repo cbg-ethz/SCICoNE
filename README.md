@@ -21,6 +21,7 @@ SCICoNE takes a read counts matrix of cells by genomic bins and outputs the copy
 ## Requirements
 * C++ compiler that supports C++14 standards (e.g. `gcc>=5.2.0`, `clang>=5.0.0)`)
 * CMake >= 3.9
+* Boost >= 1.6.x
 * OpenMP >= 4.5
 * NLopt >= 2.6.2
 
