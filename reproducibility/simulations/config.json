@@ -1,58 +1,58 @@
 {
-    "output":"/cluster/work/bewi/members/pedrof/sc-dna/sims2020/results/",
+    "binaries_path":"/cluster/work/bewi/members/pedrof/tupro_code/SCICoNE/build2",
+    "output":"/cluster/work/bewi/members/pedrof/sc-dna/sims2020_20_nodes/nood_results/",
+    "other_methods": ['conet', 'scope', 'hmm_copy', 'ginkgo', 'phenograph', 'hclust'],
     "simulate":
     {
       "n_cells":400,
-      "n_nodes":10,
+      "n_nodes":20,
       "n_bins":10000,
-      "n_reads":80000,
-      "nu":4.0,
+      "n_regions":40,
+      "nu":5.0,
       "n_reps":40,
       "prefix":"",
-      "bin":"/cluster/work/bewi/members/pedrof/sc-dna/build/simulation"
+      "is_overdispersed":0,
+      "coverages": [2, 4, 8, 20, 66, 100],
+      "bin":"/cluster/work/bewi/members/pedrof/tupro_code/SCICoNE/build2/simulation"
     },
     "bp_detection":
     {
       "window_size":20,
-      "threshold":2,
-      "bp_limit":300,
+      "threshold":3,
+      "bp_limit":200,
       "verbosity":1,
-      "bin":"/cluster/work/bewi/members/pedrof/sc-dna/build/breakpoint_detection"
+      "bin":"/cluster/work/bewi/members/pedrof/sc-dna/build2/breakpoint_detection"
     },
     "inference":
     {
-      "learn_nu":
-      {
-        "n_iters":2000,
-        "n_nodes":0,
-        "move_probs":[0,0,0,0,0,0,0,0,0,0,0,1,0]
-      },
-      "learn_nu_cluster_trees":
-      {
-        "n_iters":2000,
-        "move_probs":[0,0,0,0,0,0,0,0,0,0,0,1,0]
-      },
       "cluster_trees":
       {
         "n_reps":10,
         "n_iters":40000,
         "n_nodes":0,
-        "move_probs":[0,1,0,1,0,10,0,1,0,1,0.4,1,0.01],
+        "move_probs":[0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.01, 0.1, 0.01, 1.0, 0.01],
+        "n_tries":3
+      },
+      "learn_nu_cluster_trees":
+      {
+        "n_iters": 40000,
+        "move_probs": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
       },
       "full_trees":
       {
         "n_reps":10,
-        "n_iters":1000000,
+        "n_iters":200000,
         "cluster_fraction":1.0,
         "n_nodes": 0,
-        "move_probs": [0,1,0,1,0,10,0,1,0,1,0.4,0,0.01]
+        "move_probs":[0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.01, 0.1, 0.01, 1.0, 0.01],
       },
       "ploidy":2,
-      "verbosity":0,
-      "copy_number_limit":6,
+      "verbosity":1,
+      "copy_number_limit":4,
       "seed":42,
-      "bin":"/cluster/work/bewi/members/pedrof/sc-dna/build/inference"
-    },
+      "bin":"/cluster/work/bewi/members/pedrof/tupro_code/SCICoNE/build2/inference",
+      "output_temp":"/cluster/work/bewi/members/pedrof/sc-dna/sims2020_20_nodes/nood_results_temp/"
+    }, 
     "phenograph":
     {
       "threads":1
@@ -72,5 +72,55 @@
         "mem":"3200",
         "time": "600",
         "script": "/cluster/work/bewi/members/pedrof/cna_other_methods/HierarchicalCopyInference.R"
+    },
+    "ginkgo":
+    {
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time": "600",
+        "script":"/cluster/work/bewi/members/pedrof/cna_other_methods/ginkgo.R"
+    },
+    "scope":
+    {
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time": "600",
+        "script":"/cluster/work/bewi/members/pedrof/cna_other_methods/scope.R"
+    },
+    "medalt":
+    {
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time": "600",
+        "script":"/cluster/work/bewi/members/pedrof/cna_other_methods/medalt/medalt.py"
+    },
+    "medalt_tree_distances":
+    {
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time": "600",
+        "script":"/cluster/work/bewi/members/pedrof/cna_other_methods/medalt/medalt_tree_distances.py"
+    },
+    "conet":
+    {
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time":"600",
+        "bin_path":"/cluster/work/bewi/members/pedrof/CONET/src/CONET", 
+        "script":"/cluster/work/bewi/members/pedrof/cna_other_methods/run_conet.py"
+    },
+    "conet_tree_distances":
+    {
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time":"600",
+        "bin_path":"/cluster/work/bewi/members/pedrof/CONET/src/CONET",
+        "script":"/cluster/work/bewi/members/pedrof/cna_other_methods/run_conet_tree_distances.py"
     }
 }

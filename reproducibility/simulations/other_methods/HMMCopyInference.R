@@ -6,14 +6,12 @@ args = commandArgs(trailingOnly=TRUE)
 print(args)
 file_name <- args[1]
 
-
 # HMMCopy script
 suppressWarnings(library(HMMcopy))
 
 # build fake data frame for HMMcopy
 
 rfile <- system.file("extdata", "normal.wig", package = "HMMcopy")
-
 mfile <- system.file("extdata", "map.wig", package = "HMMcopy")
 gfile <- system.file("extdata", "gc.wig", package = "HMMcopy")
 
@@ -24,45 +22,42 @@ tumour_copy <- correctReadcount(wigsToRangedData(tfile, gfile, mfile))
 
 # read in the simulated data
 
-sim_data <- read.table(file_name,header=FALSE)
-
+sim_data <- as.matrix(read.table(file_name,header=FALSE, sep=','))
 sim_data <- t(t(sim_data)) # make it numeric!
 
 # size of the data
-
 n_cells <- nrow(sim_data)
 n_bins <- ncol(sim_data)
 
+normalized_data <- log2((sim_data / rowSums(sim_data)) * n_bins + 1)
+normalized_data <- normalized_data - rowMeans(normalized_data)
+
 inferred_states <- matrix(NA, nrow=n_cells, ncol=n_bins) # to store the output
 
-# use the HMM copy example to make the fake data frame
-
-tumour_copy_small <- tumour_copy[1:n_bins,] 
-
-tumour_copy_small$gc <- 1
-tumour_copy_small$map <- 1
-tumour_copy_small$valid <- TRUE
-tumour_copy_small$ideal <- FALSE
-tumour_copy_small$cor.gc <- 1
-tumour_copy_small$cor.map <- 1
-
 for(ii in 1:n_cells){ # run over all cells
-
   print(paste("Cell number",ii, "being processed"))
+
+  tumour_copy_small <- tumour_copy[1:n_bins,]
+  tumour_copy_small$gc <- 1
+  tumour_copy_small$map <- 1
+  tumour_copy_small$valid <- TRUE
+  tumour_copy_small$ideal <- FALSE
+  tumour_copy_small$cor.gc <- 1
+  tumour_copy_small$cor.map <- 1
+  tumour_copy_small$copy <- normalized_data[ii,]
   
-  tumour_copy_small$copy <- sim_data[ii,] # put the ii cell in there instead
+  longseq_param <- HMMsegment(tumour_copy_small, getparam = TRUE)
+  longseq_param$e <- 0.999999999999999
+  longseq_param$nu <- 4
+  longseq_param$strength <- 10e6
 
-  tumour_segments <- HMMsegment(tumour_copy_small, verbose=FALSE) # get the parameters
+  tumour_segments <- HMMsegment(tumour_copy_small, longseq_param, verbose=FALSE) # get the parameters
 
-  inferred_states[ii,] <- tumour_segments$state
+  inferred_states[ii,] <- tumour_segments$state - 1
 }
 
 # write the output inferred states
-
-file_name = substr(file_name, 1, nchar(file_name)-10)
-print(file_name)
-
-write.table(inferred_states, paste0(file_name, "_HMMcopy_inferred.txt"), col.names=FALSE, row.names=FALSE)
+write.table(inferred_states, args[2], col.names=FALSE, row.names=FALSE)
 
 # check the distance
 
@@ -75,3 +70,4 @@ write.table(inferred_states, paste0(file_name, "_HMMcopy_inferred.txt"), col.nam
 #HMM_result <- t(t(HMM_result)) # make it numeric
 
 #mean((sim_truth-HMM_result)^2)
+
