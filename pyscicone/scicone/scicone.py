@@ -72,7 +72,6 @@ class SCICoNE(object):
         self.data = dict()
         self.bps = dict()
         self.region_gene_map = None
-        self.chr_prefix = ""
 
         self.output_path = output_path
         self.persistence = persistence
@@ -94,11 +93,10 @@ class SCICoNE(object):
         except subprocess.SubprocessError as e:
             print("SubprocessError: ", e.returncode, e.output, e.stdout, e.stderr)
 
-    def read_10x(self, h5f_path, bins_to_exclude=None, downsampling_factor=1, prefix=''):
-        self.chr_prefix = prefix
-        self.data = utils_10x.read_hdf5(h5f_path, bins_to_exclude=bins_to_exclude, downsampling_factor=downsampling_factor, prefix=prefix)
+    def read_10x(self, h5f_path, bins_to_exclude=None, downsampling_factor=1):
+        self.data = utils_10x.read_hdf5(h5f_path, bins_to_exclude=bins_to_exclude, downsampling_factor=downsampling_factor)
 
-    def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, min_reg_size=10, max_regions_per_node=1, ploidy=2, region_neutral_states=None, verbosity=2, seed=42):
+    def simulate_data(self, n_cells=200, n_nodes=5, n_bins=1000, n_regions=40, n_reads=10000, nu=1.0, min_reg_size=10, max_regions_per_node=1, ploidy=2, region_neutral_states=None, verbosity=1, seed=42):
         if verbosity < 1:
             verbosity = 1
 
@@ -184,7 +182,7 @@ class SCICoNE(object):
         return output
 
     def detect_breakpoints(self, data=None, window_size=30, threshold=3.0, bp_limit=300, bp_min=0, lr=None, sp=None,
-                            evaluate_peaks=True, compute_lr=True, compute_sp=True, input_breakpoints=None, verbosity=1, prefix=''):
+                            evaluate_peaks=True, compute_lr=True, compute_sp=True, input_breakpoints=None, verbosity=1):
         if data is None:
             data = self.data['filtered_counts']
 
@@ -211,8 +209,6 @@ class SCICoNE(object):
 
         input_breakpoints_file = ""
         if input_breakpoints is not None:
-            if isinstance(input_breakpoints, dict):
-                input_breakpoints = list(input_breakpoints.values())
             input_breakpoints_new = []
             if input_breakpoints[0] != 0:
                 input_breakpoints_new.append(0)
@@ -271,7 +267,7 @@ class SCICoNE(object):
         if 'unfiltered_chromosome_stops' in self.data.keys():
             print('Mapping to genes...')
             self.region_gene_map = utils.get_region_gene_map(self.data['bin_size'], self.data['unfiltered_chromosome_stops'],
-                                    self.bps['segmented_regions'], self.data['excluded_bins'], prefix=self.chr_prefix)
+                                    self.bps['segmented_regions'], self.data['excluded_bins'])
             print('Done.')
 
         return output
@@ -349,11 +345,11 @@ class SCICoNE(object):
         tree.learn_tree(segmented_data, segmented_region_sizes, **tree_kwargs)
         return tree
 
-    def learn_tree_parallel(self, segmented_data, segmented_region_sizes, n_reps=10, **tree_kwargs):
+    def learn_tree_parallel(self, segmented_data, segmented_region_sizes, new_postfix="", n_reps=10, **tree_kwargs):
         pool = Pool(n_reps)
         results = []
         for i in range(n_reps):
-            kwargs = dict(seed=i+42, postfix=f"rep{i}_PYSCICONETREETEMP_{self.postfix}")
+            kwargs = dict(seed=i+42, postfix=f"rep{i}_{new_postfix}_PYSCICONETREETEMP_{self.postfix}")
             kwargs.update(tree_kwargs)
             results.append(pool.apply_async(self.learn_single_tree, (segmented_data, segmented_region_sizes), kwargs))
 
@@ -421,7 +417,7 @@ class SCICoNE(object):
                 if cnt >= max_tries:
                     break
                 nu = tree.nu if tree is not None else 1.0
-                tree, robustness_score, trees = self.learn_tree_parallel(clustered_segmented_data, segmented_region_sizes, n_reps=n_reps, nu=nu, cluster_sizes=cluster_sizes, initial_tree=tree, n_iters=cluster_tree_n_iters, verbose=self.verbose, **kwargs)
+                tree, robustness_score, trees = self.learn_tree_parallel(clustered_segmented_data, segmented_region_sizes, new_postfix=f"try{cnt}", n_reps=n_reps, nu=nu, cluster_sizes=cluster_sizes, initial_tree=tree, n_iters=cluster_tree_n_iters, verbose=self.verbose, **kwargs)
                 cnt += 1
 
                 print(f"Cluster tree finished with a robustness score of {robustness_score} after {cnt} tries")
@@ -479,16 +475,19 @@ class SCICoNE(object):
                 print('Initializing nu for full tree.')
                 # Update the nu on the full data (the nu on the clustered data is very different) with this tree
                 nu = tree.nu
-                tree = self.learn_single_tree(segmented_data, segmented_region_sizes, nu=nu, initial_tree=tree, n_iters=nu_tree_n_iters, move_probs=[0,0,0,0,0,0,0,0,0,0,0,0,1,0], postfix=f"nu_tree_{self.postfix}", verbose=self.verbose, **kwargs)
+                move_probs = kwargs['move_probs']
+                kwargs.pop('move_probs', None)
+                tree = self.learn_single_tree(segmented_data, segmented_region_sizes, nu=nu, initial_tree=tree, n_iters=nu_tree_n_iters, move_probs=[0,0,0,0,0,0,0,0,0,0,0,0,0,1,0], postfix=f"nu_tree_{self.postfix}", verbose=self.verbose, **kwargs)
                 print('Done. Will start from nu={}'.format(tree.nu))
                 print('Learning full tree...')
                 cnt = 0
                 robustness_score = 0.
+                kwargs['move_probs'] = move_probs
                 while robustness_score < robustness_thr:
                     if cnt >= max_tries:
                         break
                     nu = tree.nu
-                    tree, robustness_score, trees = self.learn_tree_parallel(segmented_data, segmented_region_sizes, n_reps=n_reps, nu=nu, initial_tree=tree, n_iters=full_tree_n_iters, verbose=self.verbose)
+                    tree, robustness_score, trees = self.learn_tree_parallel(segmented_data, segmented_region_sizes, new_postfix=f"try{cnt}", n_reps=n_reps, nu=nu, initial_tree=tree, n_iters=full_tree_n_iters, verbose=self.verbose, **kwargs)
                     cnt += 1
 
                 cell_bin_genotypes = tree.outputs['inferred_cnvs']

@@ -82,16 +82,13 @@ public:
     bool apply_overdispersion_change(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
     Tree *comparison(int m, double gamma, unsigned move_id, const vector<int> &cluster_sizes);
     void infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs,
-                    int n_iters, unsigned int size_limit, double alpha, double gamma, double beta_rate, int n_genotypes_target, const vector<int> &cluster_sizes);
+                    int n_iters, unsigned int size_limit, double alpha, double gamma, const vector<int> &cluster_sizes);
 
     void update_t_scores();
     void random_initialize(u_int n_nodes, u_int n_regions, int max_iters, int max_regions_per_node=1); // randomly initializes a tree and copies it into the other
     void initialize_worked_example(int mode=1); // initializes the trees based on the test example
     void initialize_from_file(string path);
     vector<vector<int>> assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes);
-    double genotype_penalty(Tree &tree);
-    int get_t_n_genotypes();
-    int get_t_prime_n_genotypes();
 private:
     int deleted_node_idx();
 };
@@ -512,22 +509,18 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
 }
 
 void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r, const vector<float> &move_probs,
-                           int n_iters, unsigned int size_limit, double alpha, double gamma, double beta_rate, int n_genotypes_target, const vector<int> &cluster_sizes) {
+                           int n_iters, unsigned int size_limit, double alpha, double gamma, const vector<int> &cluster_sizes) {
 
     int m = static_cast<int>(D.size());
 
     u_int n_rejected = 0;
     u_int n_accepted = 0;
 
-    int n_genotypes = 0;
-
     // for writing the posteriors on file
     std::ofstream mcmc_scores_file;
     std::ofstream rel_mcmc_scores_file;
     std::ofstream acceptance_ratio_file;
     std::ofstream gamma_file;
-    std::ofstream beta_file;
-    std::ofstream n_genotypes_file;
 
     if (verbosity > 1)
     {
@@ -535,8 +528,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         rel_mcmc_scores_file.open(f_name_posfix + "_rel_markov_chain.csv", std::ios_base::out);
         acceptance_ratio_file.open(f_name_posfix + "_acceptance_ratio.csv", std::ios_base::out);
         gamma_file.open(f_name_posfix + "_gamma_values.csv", std::ios_base::out);
-        beta_file.open(f_name_posfix + "_beta_values.csv", std::ios_base::out);
-        n_genotypes_file.open(f_name_posfix + "_n_genotypes.csv", std::ios_base::out);
     }
 
     best_tree = t; //start with the t
@@ -892,27 +883,6 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
             t_prime_scores.clear();
         }
 
-        double prev_beta = beta;
-        if (max_scoring) {
-          n_genotypes = get_t_n_genotypes();
-          // Update beta and score of current tree with new beta
-          t.posterior_score += (n_genotypes) * beta;
-          beta *= exp(beta_rate*(n_genotypes-n_genotypes_target));
-          t.posterior_score -= (n_genotypes) * beta;
-
-          if (beta_rate > 0.0) {
-            if (beta < 1.0/1000.0)
-              beta = 1.0/1000.0;
-            if (beta > 1000000)
-              beta = 1000000;
-          }
-
-          // Only consider the accepted tree after the last beta change
-          if (beta != prev_beta)
-            best_tree = t;
-
-        }
-
         if (verbosity > 1)
         {
             static double first_score = accepted->posterior_score + accepted->od_score; // the first value will be kept in whole program
@@ -923,16 +893,12 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
                 mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score;
                 rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score;
                 gamma_file << gamma;
-                beta_file << beta;
-                n_genotypes_file << n_genotypes;
             }
             else
             {
                 mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score << ',';
                 rel_mcmc_scores_file << std::setprecision(print_precision) << accepted->posterior_score + accepted->od_score - first_score << ',';
                 gamma_file << gamma << ',';
-                beta_file << beta << ',';
-                n_genotypes_file << n_genotypes << ',';
             }
 
 
@@ -1012,34 +978,12 @@ double Inference::log_tree_posterior(double tree_sum, int m, Tree &tree) {
     // n: n_nodes
     int n = tree.get_n_nodes();
     double log_posterior = 0.0;
-    double log_tree_prior = 0.0;
-
-    log_tree_prior = this->log_tree_prior(m, n);
-    log_posterior = tree_sum + log_tree_prior; // initialise posterior with prior then add posterior
+    log_posterior = tree_sum + this->log_tree_prior(m, n); // initialise posterior with prior then add posterior
 
     double PV = tree.event_prior();
     log_posterior += PV;
 
-    double pen = genotype_penalty(tree);
-    log_posterior += pen;
-    // std::cout << tree_sum << ", " << log_tree_prior << ", " << PV << ", " << pen << ": " << log_posterior << std::endl;
-
     return log_posterior;
-}
-
-double Inference::genotype_penalty(Tree &tree) {
-    double pen = 0.0;
-    if (max_scoring) {
-      if (beta != 0) {
-        int n_genotypes = 0;
-        if (&tree == &t)
-          n_genotypes = get_t_n_genotypes();
-        else if (&tree == &t_prime)
-          n_genotypes = get_t_prime_n_genotypes();
-        pen = -beta*n_genotypes;
-      }
-    }
-    return pen;
 }
 
 void Inference::update_t_scores() {
@@ -1357,40 +1301,6 @@ bool Inference::apply_condense_split(const vector<vector<double>> &D, const vect
         return false;
 }
 
-int Inference::get_t_n_genotypes() {
-  vector<int> node_ids;
-  for (size_t j = 0; j < n_cells; ++j) {
-      if (t_maxs[j].first != 0) // Don't include root
-        node_ids.push_back(t_maxs[j].first);
-  }
-
-  sort(node_ids.begin(), node_ids.end());
-  vector<int>::iterator it;
-  it = unique(node_ids.begin(), node_ids.end());
-
-  node_ids.resize(distance(node_ids.begin(),it));
-  size_t n_genotypes = node_ids.size();
-
-  return n_genotypes;
-}
-
-int Inference::get_t_prime_n_genotypes() {
-  vector<int> node_ids;
-  for (size_t j = 0; j < n_cells; ++j) {
-      if (t_prime_maxs[j].first != 0) // Don't include root
-        node_ids.push_back(t_prime_maxs[j].first);
-  }
-
-  sort(node_ids.begin(), node_ids.end());
-  vector<int>::iterator it;
-  it = unique(node_ids.begin(), node_ids.end());
-
-  node_ids.resize(distance(node_ids.begin(),it));
-  size_t n_genotypes = node_ids.size();
-
-  return n_genotypes;
-}
-
 vector<vector<int>> Inference::assign_cells_to_nodes(const vector<vector<double>> &D, const vector<int> &r, const vector<int> &cluster_sizes) {
 
 
@@ -1604,10 +1514,15 @@ bool Inference::apply_add_common_ancestor(const vector<vector<double>> &D, const
     Node* tobe_computed;
     tobe_computed = t_prime.add_common_ancestor(validation_test_mode);
 
-    compute_t_prime_scores(tobe_computed, D, r);
-    compute_t_prime_sums(D);
+    if (tobe_computed != nullptr)
+    {
+        compute_t_prime_scores(tobe_computed, D, r);
+        compute_t_prime_sums(D);
 
-    return true;
+        return true;
+    }
+    else
+        return false;
 
 }
 

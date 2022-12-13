@@ -27,7 +27,6 @@ unsigned is_overdispersed;
 string f_name_posfix;
 int verbosity;
 double eta;
-double beta;
 
 // endof globals
 
@@ -59,11 +58,6 @@ int main( int argc, char* argv[]) {
     c_penalise = 10.0;
     is_overdispersed = 1;
     eta = 1e-4;
-    // Penalty on number of genotypes
-    beta = 0.0;
-    // And its adaptation through iterations
-    double beta_rate = 0.1;
-    double n_genotypes_target = 10;
 
     // set the globals
     print_precision = 15;
@@ -117,9 +111,6 @@ int main( int argc, char* argv[]) {
             ("move_probs","The vector of move probabilities",cxxopts::value(move_probs)->default_value(move_probs_str))
             ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value<bool>(max_scoring)->default_value("true"))
             ("region_neutral_states_file", "Path to the file containing the neutral state of each region to use as the root of the tree", cxxopts::value(region_neutral_states_file))
-            ("beta", "term that penalises the number of genotypes in the tree", cxxopts::value(beta))
-            ("beta_rate", "term that specifies how beta is updated across iterations", cxxopts::value(beta_rate))
-            ("n_genotypes_target", "number of genotypes that beta penalty should favor", cxxopts::value(n_genotypes_target))
             ;
 
     auto result = options.parse(argc, argv);
@@ -175,8 +166,6 @@ int main( int argc, char* argv[]) {
             std::cout<<"gamma value is not specified, the default value is: " << gamma <<std::endl;
         if (result.count("cf"))
             std::cout<<"Cluster fraction in tree prior is: " << cf << std::endl;
-        if (result.count("beta"))
-            std::cout<<"beta in tree prior is: " << beta << std::endl;
     }
 
     if (verbosity > 0)
@@ -302,7 +291,7 @@ int main( int argc, char* argv[]) {
 
     if (verbosity > 0)
         std::cout << "Inferring the tree using MCMC with " << n_iters << " iterations..." << std::endl;
-    mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters, size_limit, alpha, gamma, beta_rate, n_genotypes_target, cluster_sizes);
+    mcmc.infer_mcmc(d_regions, region_sizes, move_probs, n_iters, size_limit, alpha, gamma, cluster_sizes);
 
     // Get ending timepoint
     auto stop = high_resolution_clock::now();

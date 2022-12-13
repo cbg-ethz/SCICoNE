@@ -1,4 +1,6 @@
 import os
+import pathlib
+import shutil
 import string
 import subprocess, re
 import numpy as np
@@ -232,11 +234,19 @@ class Tree(object):
             self.outputs['cell_node_ids'][idx] = node
 
     def learn_tree(self, segmented_data, segmented_region_sizes, n_iters=1000, move_probs=[0.0,1.0,0.0,1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.01, 0.1, 0.01, 1.0, 0.01],
-                    n_nodes=3,  seed=42, postfix="", initial_tree=None, nu=1.0, cluster_sizes=None, region_neutral_states=None, alpha=0., max_scoring=True, copy_number_limit=2,
-                    c_penalise=10.0, lambda_r=0.2, lambda_c=0.1, ploidy=2, verbosity=2, verbose=False, num_labels=False):
+                    n_nodes=3,  seed=42, postfix="", initial_tree=None, nu=1.0, cluster_sizes=None, region_neutral_states=None, alpha=0., gamma=1., max_scoring=True, copy_number_limit=2,
+                    c_penalise=10.0, lambda_r=0.2, lambda_c=0.1, ploidy=2, verbosity=1, verbose=False, num_labels=False):
         if postfix == "":
             postfix = self.postfix
 
+        outpath = os.path.join(self.output_path, postfix)
+        print(f"Creating {outpath}...")
+        pathlib.Path(outpath).mkdir(parents=True, exist_ok=False)
+        print(f"Created {outpath}!")
+        cwd_original = os.getcwd()
+        print(f"Trying to move to {outpath} with os.chdir")
+        os.chdir(outpath)
+        print(f"Creating temporary files...")
         n_cells, n_regions = segmented_data.shape
         move_probs_str = ",".join(str(p) for p in move_probs)
 
@@ -263,6 +273,7 @@ class Tree(object):
             f = open(temp_tree_file, "w")
             f.write(initial_tree.tree_str)
             f.close()
+            print("Initial:::" + initial_tree.tree_str)
             nu = initial_tree.nu
 
             try:
@@ -271,7 +282,7 @@ class Tree(object):
                     f"--copy_number_limit={copy_number_limit}", f"--n_iters={n_iters}", f"--n_nodes={n_nodes}",\
                     f"--move_probs={move_probs_str}", f"--seed={seed}", f"--region_sizes_file={temp_segmented_region_sizes_file}",\
                     f"--tree_file={temp_tree_file}", f"--nu={nu}", f"--cluster_sizes_file={temp_cluster_sizes_file}", f"--alpha={alpha}",\
-                    f"--max_scoring={max_scoring}", f"--c_penalise={c_penalise}", f"--lambda_r={lambda_r}",
+                    f"--max_scoring={max_scoring}", f"--c_penalise={c_penalise}", f"--lambda_r={lambda_r}", f"--gamma={gamma}",\
                     f"--lambda_c={lambda_c}", f"--region_neutral_states_file={temp_region_neutral_states_file}"]
                 if verbose:
                     print(' '.join(cmd))
@@ -283,7 +294,10 @@ class Tree(object):
                 # print(f"subprocess out: {cmd_output}")
                 # print(f"stdout: {cmd_output.stdout}\n stderr: {cmd_output.stderr}")
 
-            os.remove(temp_tree_file)
+            try:
+                os.remove(temp_tree_file)
+            except Exception as e:
+                print(f'Could not delete {temp_tree_file}: {e}')
         else:
             try:
                 cmd = [self.binary_path, f"--d_matrix_file={temp_segmented_data_file}", f"--n_regions={n_regions}",\
@@ -291,7 +305,7 @@ class Tree(object):
                     f"--copy_number_limit={copy_number_limit}", f"--n_iters={n_iters}", f"--n_nodes={n_nodes}",\
                     f"--move_probs={move_probs_str}", f"--seed={seed}", f"--region_sizes_file={temp_segmented_region_sizes_file}",\
                     f"--nu={nu}", f"--cluster_sizes_file={temp_cluster_sizes_file}", f"--alpha={alpha}", f"--max_scoring={max_scoring}",\
-                    f"--c_penalise={c_penalise}", f"--lambda_r={lambda_r}", f"--lambda_c={lambda_c}",
+                    f"--c_penalise={c_penalise}", f"--lambda_r={lambda_r}", f"--lambda_c={lambda_c}", f"--gamma={gamma}",\
                     f"--region_neutral_states_file={temp_region_neutral_states_file}"]
                 if verbose:
                     print(' '.join(cmd))
@@ -347,6 +361,14 @@ class Tree(object):
         except Exception as e:
             print(f'Could not load {fn}: {e}')
             # print("OSError: ", e.output, e.stdout, e.stderr)
+
+        print("Learned:::" + self.tree_str)
+
+        os.chdir(cwd_original)
+
+        if not self.persistence:
+            print(f"Removing {outpath}...")
+            shutil.rmtree(outpath)
 
         return cmd_output
 

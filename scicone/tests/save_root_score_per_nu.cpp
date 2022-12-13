@@ -24,7 +24,6 @@ unsigned is_overdispersed;
 string f_name_posfix;
 int verbosity;
 double eta;
-double beta;
 // endof globals
 
 struct double_iota

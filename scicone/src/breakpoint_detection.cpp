@@ -166,9 +166,9 @@ int main( int argc, char* argv[]) {
         if (b != 0 && b != n_bins) {
           s_p[b] = max * 100;
     	  for (int i = 1; i < window_size; ++i) {
-            s_p[b-i] = 1e-8;//s_p[b-window_size];
-            if (b+i < n_bins)
-      		    s_p[b+i] = 1e-8;//s_p[b+window_size];
+    	  	  std::cout << b-i << ", " << b+i  << std::endl;
+    		  s_p[b-i] = 1e-8;//s_p[b-window_size];
+    		  s_p[b+i] = 1e-8;//s_p[b+window_size];
     	  }
           std::cout << "Adding " << b << ": " << s_p[b] << std::endl;
         }

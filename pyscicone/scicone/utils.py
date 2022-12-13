@@ -62,14 +62,11 @@ def gini(array):
     # Gini coefficient:
     return ((np.sum((2 * index - n  - 1) * array)) / (n * np.sum(array)))
 
-def sort_chromosomes(chromosome_list, prefix=''):
+def sort_chromosomes(chromosome_list):
     """
     Sorts a list of unordered chromosome names
     :param chromosome_list: list of unordered characters denoting chromosomes '1', '2', ..., 'X', 'Y'
     """
-    # Remove prefix before sorting
-    chromosome_list = [chr[len(prefix):] for chr in chromosome_list]
-
     # Replace X and Y with 23 and 24
     sorted_chromosome_list = np.array(chromosome_list)
     sorted_chromosome_list[np.where(sorted_chromosome_list == "X")[0]] = 23
@@ -85,8 +82,6 @@ def sort_chromosomes(chromosome_list, prefix=''):
     sorted_chromosome_list = sorted_chromosome_list.astype(str)
     sorted_chromosome_list[np.where(sorted_chromosome_list == "23")[0]] = "X"
     sorted_chromosome_list[np.where(sorted_chromosome_list == "24")[0]] = "Y"
-
-    sorted_chromosome_list = [f'{prefix}{chr}' for chr in sorted_chromosome_list]
 
     return sorted_chromosome_list
 
@@ -167,7 +162,7 @@ def create_fusion_tree(learned_tree, region_neutral_states):
 
     for node in list(fusion_tree.node_dict):
         new_node_id = str(int(node) + 1000)
-        fusion_tree.node_dict[new_node_id] = dict(parent_id=node, region_event_dict=new_event_dict)
+        fusion_tree.node_dict[new_node_id] = dict(parent_id=node, event_dict=new_event_dict)
 
     fusion_tree.update_tree_str()
 
@@ -177,8 +172,7 @@ def get_bin_gene_region_df(
     bin_size,
     chr_stops,
     region_stops,
-    excluded_bins,
-    prefix='',
+    excluded_bins
     ):
     """
         Creates a pands.DataFrame with the gene and region corresponding to each bin
@@ -186,7 +180,6 @@ def get_bin_gene_region_df(
         :param chromosome_stops: dictionary indicating final unfiltered bin of each chromosome
         :param region_stops: df indicating the final filtered bin of each region
         :param excluded_bins: list of excluded bins
-        :param prefix: prefix on the chromosome names in chromosome_stops
         :return: DataFrame of (gene, chr, region, filtered_bin)
     """
 
@@ -197,9 +190,7 @@ def get_bin_gene_region_df(
                         filters={'chromosome_name':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,'X','Y']},
                         use_attr_names=True)
 
-    chrY = f'{prefix}Y'
-    bin_gene_region_df = pd.DataFrame(index=range(int(f"{chr_stops[chrY]}")+1))
-
+    bin_gene_region_df = pd.DataFrame(index=range(chr_stops['Y']+1))
     chr_stops_df = pd.DataFrame({'chr':list(chr_stops.keys()),
                                 'stop':list(chr_stops.values())})
 
@@ -211,9 +202,9 @@ def get_bin_gene_region_df(
     for index, row in gene_coordinates.iterrows():
         start_bin = int(row["start_position"] / bin_size)
         stop_bin = int(row["end_position"] / bin_size)
-        chromosome = prefix+str(row["chromosome_name"])
+        chromosome = str(row["chromosome_name"])
 
-        if chromosome != f"{prefix}1":  # coordinates are given by chromosome
+        if chromosome != "1":  # coordinates are given by chromosome
             chr_start = (
                 chr_stops_df.iloc[np.where(chr_stops_df["chr"] == chromosome)[0][0] - 1].stop
                 + 1
@@ -256,11 +247,11 @@ def get_bin_gene_region_df(
 
     return bin_gene_region_df
 
-def get_region_gene_map(bin_size, chr_stops, region_stops, excluded_bins, filter_list=None, prefix=''):
-    df = get_bin_gene_region_df(bin_size, chr_stops, region_stops, excluded_bins, prefix=prefix)
+def get_region_gene_map(bin_size, chr_stops, region_stops, excluded_bins, filter_list=None):
+    df = get_bin_gene_region_df(bin_size, chr_stops, region_stops, excluded_bins)
 
     region_gene_map = dict()
-    for region in range(len(region_stops)+1):
+    for region in range(len(region_stops)):
         gene_list = []
         for row in df.loc[df['region']==region]['gene']:
             r = row.split(',')

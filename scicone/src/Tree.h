@@ -770,8 +770,12 @@ void Tree::load_from_file(string file) {
         insert_child(parent, child);
     }
 
-    if (!is_valid_subtree(this->root) || is_redundant())
+    if (!is_valid_subtree(this->root))
         throw InvalidTree("The loaded tree is invalid!");
+
+    if (is_redundant())
+        throw InvalidTree("The loaded tree is redundant!");
+
 
     compute_weights();
 
@@ -979,11 +983,13 @@ bool Tree::is_valid_subtree(Node *node) const{
      * Returns true if the subtree is valid
      * */
 
-    if (subtree_out_of_bound(node)) // does it for the subtree
+    if (subtree_out_of_bound(node)) {// does it for the subtree
         return false;
+    }
 
-    if (zero_ploidy_changes(node)) // does it for the subtree
+    if (zero_ploidy_changes(node)) { // does it for the subtree
         return false;
+    }
 
     return true;
 
@@ -1555,10 +1561,7 @@ Node* Tree::create_common_ancestor(Node* parent_node) {
     Node* common_ancestor = all_nodes_vec.back(); // the last inserted elem, e.g. new node
 
     // and set it as new parent of nodes in node_pair
-    for (Node* child : node_pair) {
-      if (verbosity > 2)
-          std::cout << "Reattaching " << child->id << " to " << common_ancestor->id << std::endl;
-
+    for (Node* child : siblings) {
       Node* pruned_child = prune(child); // prune from the old parent
       insert_child(common_ancestor, pruned_child); // insert into new common ancestor
     }
@@ -1574,6 +1577,11 @@ Node* Tree::add_common_ancestor(bool validation_test_mode) {
     parent_node = select_node_for_common_ancestor();
 
   Node* common_ancestor = create_common_ancestor(parent_node);
+
+  // check if the subtrees are valid after updating the labels
+  if (!is_valid_subtree(parent_node) || is_redundant())
+      return nullptr;
+
   return common_ancestor;
 }
 

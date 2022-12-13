@@ -20,5 +20,4 @@ extern unsigned is_overdispersed; // param to specify if tree scoring will use t
 extern int verbosity; // the verbosity of the output
 extern string f_name_posfix; // posfix for the output files created
 extern double eta; // a small value to replace 0 when needed, for log(0) case for example
-extern double beta; // penalty for number of genotypes
 #endif //SC_DNA_GLOBALS_H
