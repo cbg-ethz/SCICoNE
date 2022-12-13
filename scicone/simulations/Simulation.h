@@ -9,7 +9,7 @@
 #include "Inference.h"
 #include "SingletonRandomGenerator.h"
 
-#include <boost/random/discrete_distribution.hpp>
+#include <random>
 
 using namespace std;
 
@@ -176,7 +176,7 @@ public:
         for (std::size_t i = 0; i < D.size(); ++i) // for each cell
         {
             // assign the read to region by sampling from the dist
-            boost::random::discrete_distribution<> d(p_read_bin_cell[i].begin(), p_read_bin_cell[i].end()); // distribution will be different for each cell
+            std::discrete_distribution<> d(p_read_bin_cell[i].begin(), p_read_bin_cell[i].end()); // distribution will be different for each cell
 
             for (int j = 0; j < n_reads; ++j) // distribute the reads to regions
             {

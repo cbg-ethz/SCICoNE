@@ -20,10 +20,6 @@
 #include "globals.cpp"
 #include "Lgamma.h"
 
-#include <boost/random/uniform_real_distribution.hpp>
-#include <boost/random/discrete_distribution.hpp>
-#include <boost/random/normal_distribution.hpp>
-
 class Inference {
 /*
  * Contains functionality to perform Markov chain Monte Carlo (mcmc) inference
@@ -485,7 +481,7 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
     else
     {
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
-        boost::random::uniform_real_distribution<double> distribution(0.0,1.0);
+        std::uniform_real_distribution<double> distribution(0.0,1.0);
         double rand_val = distribution(gen);
         rand_val = std::log(rand_val); // take the log
 
@@ -550,7 +546,7 @@ void Inference::infer_mcmc(const vector<vector<double>> &D, const vector<int> &r
         bool rejected_before_comparison = false;
 
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
-        boost::random::discrete_distribution<> d(move_probs.begin(), move_probs.end());
+        std::discrete_distribution<> d(move_probs.begin(), move_probs.end());
 
         unsigned move_id = d(gen);
 
@@ -915,7 +911,7 @@ bool Inference::apply_overdispersion_change(const vector<vector<double>> &D, con
     {
         std::mt19937 &gen = SingletonRandomGenerator::get_instance().generator;
         double rand_val = 0.0;
-        boost::random::normal_distribution<double> distribution(0.0,0.02);
+        std::normal_distribution<double> distribution(0.0,0.02);
         rand_val = distribution(gen);
 
         double log_t_prime_nu = std::log(t_prime.nu) + rand_val;

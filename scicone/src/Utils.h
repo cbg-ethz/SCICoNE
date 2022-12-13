@@ -15,9 +15,6 @@
 #include <fstream>
 #include <sstream>
 
-#include <boost/random/poisson_distribution.hpp>
-#include <boost/random/bernoulli_distribution.hpp>
-
 using namespace std;
 
 #define SC_DNA_UTILS_H
