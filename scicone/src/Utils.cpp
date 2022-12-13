@@ -42,12 +42,12 @@ void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions,
     std::mt19937 &generator = SingletonRandomGenerator::get_instance().generator;
 
     // n_regions from Poisson(lambda_R)+1
-    std::poisson_distribution<int> poisson_r(lambda_r);
+    boost::random::poisson_distribution<int> poisson_r(lambda_r);
 
     // n_copies from Poisson(lambda_c)+1
-    // std::poisson_distribution<int> poisson_c(lambda_c); // the param is to be specified later
+    // boost::random::poisson_distribution<int> poisson_c(lambda_c); // the param is to be specified later
     // sign
-    std::bernoulli_distribution bernoulli_05(0.5);
+    boost::random::bernoulli_distribution<double> bernoulli_05(0.5);
 
     int r = std::min(max_regions_per_node, poisson_r(generator) + 1); //n_regions to sample
     // sample r distinct regions uniformly
