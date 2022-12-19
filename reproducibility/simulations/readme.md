@@ -1,5 +1,5 @@
 # Benchmarking SCICoNE
-This directory contains a Snakemake workflow to benchmark SCICoNE against other single-cell copy number calling methods. The main workflow is defined in `benchmark.smk` and requires a configuration file containing the parameters used for all methods, `config.json`. After following the installation instructions, you can run this workflow on a HPC cluster using slurm with this command (with appropriately set `<your-path-to>` both in the command and in `config.json`):
+This directory contains a Snakemake workflow to benchmark SCICoNE against other single-cell copy number calling methods. The main workflow is defined in `benchmark.smk` and requires a configuration file containing the parameters used for all methods, `benchmark.json`. After following the installation instructions, you can run this workflow on a HPC cluster using slurm with this command (with appropriately set `<your-path-to>` both in the command and in `benchmark.json`):
 
 ```
 sbatch -n 10 --time 119:00:00 --wrap="snakemake -s <your-path-to>/SCICoNE/reproducibility/workflows/benchmark.smk --configfile <your-path-to>/SCICoNE/reproducibility/workflows/benchmark.json -j 500 -k --cluster 'sbatch -n 10 --time 23:57:00 --mem-per-cpu=10000' "
