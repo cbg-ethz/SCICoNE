@@ -355,6 +355,8 @@ rule conet_ginkgo_inference:
         script_inp = str(n_nodes)+"nodes_{rep_id}",
         intermediate_dir = CONET_GINKGO_OUTPUT +'/'+ str(n_nodes) + 'nodes' + '/' + '{rep_id}' + '/',
         bin_path = config["conet"]["bin_path"]
+        em_iters = config["conet"]["em_iters"]
+        pt_iters = config["conet"]["pt_iters"]
     input:
         d_mat = SIM_OUTPUT+ '_' + sim_prefix +'/'+ str(n_nodes) + 'nodes' + '/' + '{rep_id}' + '_d_mat.txt',
         init_cnvs = GINKGO_OUTPUT +'/'+ str(n_nodes) + 'nodes' + '/'+ '{rep_id}' + '_ginkgo_inferred.txt',
@@ -364,7 +366,7 @@ rule conet_ginkgo_inference:
         conet_inferred_tree = CONET_GINKGO_OUTPUT +'/'+ str(n_nodes) + 'nodes' + '/'+ '{rep_id}' + '_conet_ginkgo_tree.txt',
         conet_inferred_attachments = CONET_GINKGO_OUTPUT +'/'+ str(n_nodes) + 'nodes' + '/' + '{rep_id}' + '_conet_ginkgo_attachments.txt'
     shell:
-        "python {params.script} --bin_path {params.bin_path} --counts {input.d_mat} --cnvs {input.init_cnvs} --intermediate_dir {params.intermediate_dir} --seed {wildcards.rep_id} --out_cnvs {output.conet_inferred_cnvs} --out_tree {output.conet_inferred_tree} --out_attachments {output.conet_inferred_attachments}"
+        "python {params.script} --bin_path {params.bin_path} --counts {input.d_mat} --cnvs {input.init_cnvs} --intermediate_dir {params.intermediate_dir} --seed {wildcards.rep_id} --em_iters {params.em_iters} --pt_iters {params.pt_iters} --out_cnvs {output.conet_inferred_cnvs} --out_tree {output.conet_inferred_tree} --out_attachments {output.conet_inferred_attachments}"
 
 
 rule compute_deltas:

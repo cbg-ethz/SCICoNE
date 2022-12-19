@@ -34,6 +34,8 @@ parser.add_argument('--cnvs', required=True, type=str)
 parser.add_argument('--intermediate_dir', required=True, type=str)
 parser.add_argument('--delim', type=str, default=" ")
 parser.add_argument('--seed', type=int, default=42)
+parser.add_argument('--em_iters', type=int, default=100000)
+parser.add_argument('--pt_iters', type=int, default=200000)
 parser.add_argument('--out_cnvs', required=True, type=str)
 parser.add_argument('--out_tree', required=True, type=str)
 parser.add_argument('--out_attachments', required=True, type=str)
@@ -48,6 +50,8 @@ if __name__ == "__main__":
     intermediate_dir = args.intermediate_dir
     delim = args.delim
     seed = args.seed
+    em_iters = args.em_iters
+    pt_iters = args.pt_iters
     out_cnvs = args.out_cnvs
     out_tree = args.out_tree
     out_attachments = args.out_attachments
@@ -96,8 +100,8 @@ if __name__ == "__main__":
     conet = CONET(bin_path, intermediate_dir)
     params = CONETParameters(
         data_dir=intermediate_dir,
-        param_inf_iters=100000,
-        pt_inf_iters=100000,
+        param_inf_iters=em_iters,
+        pt_inf_iters=pt_iters,
         counts_penalty_s1=100000,
         counts_penalty_s2=100000,
         event_length_penalty_k0=1.0,
@@ -116,13 +120,12 @@ if __name__ == "__main__":
     inferred_cnvs = np.transpose(result.get_inferred_copy_numbers(neutral_cn=int(params.neutral_cn)))
     np.savetxt(out_cnvs, inferred_cnvs, delimiter=",")
 
-    
 
     result = InferenceResult(intermediate_dir, cc)
 
     result.dump_results_to_dir(intermediate_dir, neutral_cn=2)
 
-    # Move results to proper output 
+    # Move results to proper output
     shutil.copy(os.path.join(intermediate_dir, "inferred_attachment"), out_attachments)
     shutil.copy(os.path.join(intermediate_dir, "inferred_tree"), out_tree)
 
@@ -132,4 +135,3 @@ if __name__ == "__main__":
         f.write(
             newick
         )
-
