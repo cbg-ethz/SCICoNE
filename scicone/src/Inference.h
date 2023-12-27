@@ -475,6 +475,13 @@ Tree * Inference::comparison(int m, double gamma, unsigned move_id, const vector
     if (verbosity > 2)
         cout << "log acceptance prob: " << log_acceptance_prob << endl;
 
+    bool is_valid = t_prime.is_valid_subtree(t_prime.root);
+    if (!is_valid){
+       if (verbosity > 2)
+          std::cout << "Move rejected." << std::endl;
+      return &t;
+    }
+
     if (log_acceptance_prob > 0)
     {
         if (verbosity > 2)
