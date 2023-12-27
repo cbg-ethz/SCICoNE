@@ -107,6 +107,7 @@ int main( int argc, char* argv[]) {
             ("nu","nu parameter, the overdispersion variable",cxxopts::value(nu))
             ("alpha","alpha parameter, the constant in the learning rate",cxxopts::value(alpha))
             ("gamma","gamma parameter, the initial learning rate value",cxxopts::value(gamma))
+            ("eta","eta parameter, expected number of reads for copy number zero",cxxopts::value(eta))
             ("random_init","Boolean parameter to enable random initialisation of the tree", cxxopts::value(random_init))
             ("move_probs","The vector of move probabilities",cxxopts::value(move_probs)->default_value(move_probs_str))
             ("max_scoring","Boolean parameter to decide whether to take the maximum score or to marginalize over all assignments during inference",cxxopts::value<bool>(max_scoring)->default_value("true"))
