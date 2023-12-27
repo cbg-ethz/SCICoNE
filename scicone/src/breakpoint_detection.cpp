@@ -212,17 +212,20 @@ int main( int argc, char* argv[]) {
       // start with the 0.0 value, it will be removed from the map before other values are inserted
       q_map.emplace(0.0 , std::make_pair(lb,ub)); // initial boundaries
 
-      int smaller_window_size = static_cast<int>(window_size * 0.4);
+      int smaller_window_size = 1;
+      float approx_smaller_window_size = window_size * 0.4;
+      if (approx_smaller_window_size >= 1)
+        smaller_window_size = static_cast<int>(approx_smaller_window_size);
 
       while(!q_map.empty())
       {
           pair<int,int> elem = q_map.rbegin()->second; // use the rbegin to get the largest val
           q_map.erase(q_map.rbegin()->first); // remove the largest val by its key
-
           if (elem.second - elem.first > smaller_window_size)
           {
               int max_idx = dsp.evaluate_peak(sp_cropped, sp_cropped_copy, elem.first, elem.second, threshold_coefficient,
                                               window_size); // here the big window size otherwise the output ids would not match the effective_break_points (ground truth)
+
               if (max_idx != -1) // -1 means rejected
               {
 
@@ -243,18 +246,23 @@ int main( int argc, char* argv[]) {
 
                   if ((max_idx - smaller_window_size) - elem.first > smaller_window_size + 1) // +1 to make sure the size of vector is at least 2
                   {
+                      int left = elem.first;
+                      int right = max_idx - smaller_window_size;
+                      if (window_size == 1)
+                        right = max_idx;
+
                       // compute the left median
-                      vector<double> left_vec(sp_cropped.begin() + elem.first, sp_cropped.begin() + max_idx - smaller_window_size);
+                      vector<double> left_vec(sp_cropped.begin() + left, sp_cropped.begin() + right);
 
                       double median_left = MathOp::median(left_vec);
                       // normalise bins on the left by left median
-                      for (int i = elem.first; i < max_idx - smaller_window_size; ++i) {
+                      for (int i = left; i < right; ++i) {
                           sp_cropped[i] /= median_left;
                       }
                       try
                       {
-                          int max_left_idx = dsp.find_highest_peak(sp_cropped, elem.first, max_idx - smaller_window_size);
-                          q_map.emplace(sp_cropped[max_left_idx] , std::make_pair(elem.first,max_idx - smaller_window_size));
+                          int max_left_idx = dsp.find_highest_peak(sp_cropped, left, right);
+                          q_map.emplace(sp_cropped[max_left_idx] , std::make_pair(left,right));
                       }
                       catch (const std::runtime_error& e)
                       {
@@ -265,18 +273,23 @@ int main( int argc, char* argv[]) {
 
                   if (elem.second - (max_idx+1+smaller_window_size) > smaller_window_size + 1)
                   {
+                      int left = max_idx + smaller_window_size + 1;
+                      int right = elem.second;
+                      if (window_size == 1)
+                        left = max_idx + smaller_window_size;
+
                       // the right median
-                      vector<double> right_vec(sp_cropped.begin() + max_idx + 1  + smaller_window_size, sp_cropped.begin() + elem.second);
+                      vector<double> right_vec(sp_cropped.begin() + left, sp_cropped.begin() + right);
                       double median_right = MathOp::median(right_vec);
                       // normalise bins on the right by right median
-                      for (int j = max_idx + smaller_window_size; j < elem.second; ++j) {
+                      for (int j = max_idx + smaller_window_size; j < right; ++j) {
                           sp_cropped[j] /= median_right;
                       }
 
                       try
                       {
-                          int max_right_idx = dsp.find_highest_peak(sp_cropped, max_idx + 1 + smaller_window_size, elem.second);
-                          q_map.emplace(sp_cropped[max_right_idx] , std::make_pair(max_idx + 1 + smaller_window_size,elem.second));
+                          int max_right_idx = dsp.find_highest_peak(sp_cropped, left, right);
+                          q_map.emplace(sp_cropped[max_right_idx] , std::make_pair(left,right));
                       }
                       catch (const std::runtime_error& e)
                       {
