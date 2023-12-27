@@ -19,8 +19,8 @@ vector<double> SignalProcessing::diff(vector<double> &signal) {
 
     vector<double> res(signal.size()-1); // -1 because the first one cannot have a diff
 
-    for (int i = 1; i < signal.size()-1; ++i) {
-        res[i] = signal[i]-signal[i-1];
+    for (int i = 1; i < signal.size(); ++i) {
+        res[i-1] = signal[i]-signal[i-1];
     }
     return res;
 }
@@ -197,7 +197,7 @@ int SignalProcessing::evaluate_peak(vector<double> signal, vector<double> sp_cro
     // use log of max_val
     max_val = log(max_val);
 
-    if (threshold == 0) // reject the breakpoint if stdev is zero
+    if (range == 0) // reject the breakpoint if stdev is zero
         return -1;
 
     if (verbosity > 0)
@@ -250,7 +250,7 @@ int SignalProcessing::find_highest_peak(vector<T> &signal, int lb, int ub) {
 
     for (int i = 0; i < breakpoints.size(); ++i) {
         if (breakpoints[i])
-            bp_indices.push_back(i-1); // push i-1 because that's the real peak
+            bp_indices.push_back(i+1); // push i-1 because that's the real peak
     }
 
 
