@@ -10,57 +10,58 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
-      - run:
-          name: Installing GCC
-          command: 'apt-get update && apt-get install -y gcc g++'
-      - run:
-          name: Installing Boost
-          command: 'apt-get install -y libboost-all-dev'
-      - run:
-          name: Install CMAKE
-          command: 'pip install cmake --upgrade'
-      - run:
-          name: Get NLOpt
-          command: 'git clone https://github.com/stevengj/nlopt.git'
-      - run:
-          name: Create NLOpt folders
-          command: 'cd nlopt && mkdir build'
-      - run:
-          name: Install NLOpt
-          command: 'cd nlopt/build/ && cmake .. && make && sudo make install'
-      - run:
-          name: Install pyscicone
-          command: 'cd pyscicone && pip install -e .[test]'
-      - run:
-          name: Test pyscicone
-          command: 'cd pyscicone && python3 -m pytest -s'
-      - run:
-          name: Creating Debug Build Folder
-          command: 'mkdir debug'
-      - run:
-          name: Running CMAKE
-          command: 'cd debug && cmake -DCMAKE_BUILD_TYPE=Debug ../scicone/'
-      - run:
-          name: Running MAKE
-          command: 'cd debug && make VERBOSE=1'
-      - run:
-          name: Unit Tests (Debug)
-          no_output_timeout: 60m
-          command: 'cd debug && ./tests 0'
-      - run:
-          name: Creating Release Build Folder
-          command: 'mkdir release'
-      - run:
-          name: Running CMAKE
-          command: 'cd release && cmake -DCMAKE_BUILD_TYPE=Release ../scicone/'
-      - run:
-          name: Running MAKE
-          command: 'cd release && make VERBOSE=1'
-      - run:
-          name: Unit Tests (Release)
-          no_output_timeout: 60m
-          command: 'cd debug && ./tests 0'
+
+      - name: Installing GCC
+        run: 'apt-get update && apt-get install -y gcc g++'
+
+      - name: Installing Boost
+        run: 'apt-get install -y libboost-all-dev'
+
+      - name: Install CMAKE
+        run: 'pip install cmake --upgrade'
+
+      - name: Get NLOpt
+        run: 'git clone https://github.com/stevengj/nlopt.git'
+
+      - name: Create NLOpt folders
+        run: 'cd nlopt && mkdir build'
+
+      - name: Install NLOpt
+        run: 'cd nlopt/build/ && cmake .. && make && sudo make install'
+
+      - name: Install pyscicone
+        run: 'cd pyscicone && pip install -e .[test]'
+
+      - name: Test pyscicone
+        run: 'cd pyscicone && python3 -m pytest -s'
+
+      - name: Creating Debug Build Folder
+        run: 'mkdir debug'
+
+      - name: Running CMAKE
+        run: 'cd debug && cmake -DCMAKE_BUILD_TYPE=Debug ../scicone/'
+
+      - name: Running MAKE
+        run: 'cd debug && make VERBOSE=1'
+
+      - name: Unit Tests (Debug)
+        no_output_timeout: 60m
+        run: 'cd debug && ./tests 0'
+
+      - name: Creating Release Build Folder
+        run: 'mkdir release'
+
+      - name: Running CMAKE
+        run: 'cd release && cmake -DCMAKE_BUILD_TYPE=Release ../scicone/'
+
+      - name: Running MAKE
+        run: 'cd release && make VERBOSE=1'
+
+      - name: Unit Tests (Release)
+        no_output_timeout: 60m
+        run: 'cd debug && ./tests 0'
