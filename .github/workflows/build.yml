@@ -25,9 +25,6 @@ jobs:
           platform: x64
           configuration: Release
 
-      - name: Installing Boost
-        run: 'apt-get install -y libboost-all-dev'
-
       - name: Get NLOpt
         run: 'git clone https://github.com/stevengj/nlopt.git'
 
