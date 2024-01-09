@@ -1532,6 +1532,32 @@ void test_add_common_ancestor_operation()
 
   std::cout << "After" << std::endl;
   std::cout << t_prime << std::endl;
+
+  if (!t_prime.is_valid_subtree(t_prime.all_nodes_vec[1]))
+      std::cout << "Tree is invalid after adding common ancestor!";
+
+  if (t_prime.is_redundant())
+      std::cout << "Tree is redundant after adding common ancestor!";
+
+  // Same thing but try adding below root
+  Tree t_prime_new(ploidy, r.size(), region_neutral_states);
+  t_prime_new.random_insert({{1, 1}, {2, -1}, {3, -1}}); // 1
+  t_prime_new.insert_at(0,{{1, 1}, {2, 1}, {3, -2}, {4, -2}}); // 2
+
+  std::cout << "Before" << std::endl;
+  std::cout << t_prime_new << std::endl;
+  std::cout << t_prime_new.all_nodes_vec[0]->id << std::endl;
+
+  t_prime_new.create_common_ancestor(t_prime_new.all_nodes_vec[0]);
+
+  std::cout << "After" << std::endl;
+  std::cout << t_prime_new << std::endl;
+
+  if (!t_prime_new.is_valid_subtree(t_prime_new.all_nodes_vec[0]))
+      std::cout << "Tree is invalid after adding common ancestor!";
+
+  if (t_prime_new.is_redundant())
+      std::cout << "Tree is redundant after adding common ancestor!";
 }
 
 void test_add_common_ancestor()

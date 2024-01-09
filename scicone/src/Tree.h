@@ -1561,7 +1561,7 @@ Node* Tree::create_common_ancestor(Node* parent_node) {
     Node* common_ancestor = all_nodes_vec.back(); // the last inserted elem, e.g. new node
 
     // and set it as new parent of nodes in node_pair
-    for (Node* child : siblings) {
+    for (Node* child : node_pair) {
       Node* pruned_child = prune(child); // prune from the old parent
       insert_child(common_ancestor, pruned_child); // insert into new common ancestor
     }
