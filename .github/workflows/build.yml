@@ -28,12 +28,6 @@ jobs:
       - name: Install NLOpt
         run: 'cd nlopt/build/ && cmake .. && make && sudo make install'
 
-      - name: Install pyscicone
-        run: 'cd pyscicone && pip install -e .[test]'
-
-      - name: Test pyscicone
-        run: 'cd pyscicone && python3 -m pytest -s'
-
       - name: Creating Debug Build Folder
         run: 'mkdir debug'
 
@@ -59,3 +53,9 @@ jobs:
       - name: Unit Tests (Release)
         timeout-minutes: 60
         run: 'cd debug && ./tests 0'
+
+      - name: Install pyscicone
+        run: 'cd pyscicone && pip install -e .[test]'
+
+      - name: Test pyscicone
+        run: 'cd pyscicone && python3 -m pytest -s'
