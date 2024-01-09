@@ -16,14 +16,8 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Installing GCC
-        run: 'apt-get update && apt-get install -y gcc g++'
-
       - name: Installing Boost
         run: 'apt-get install -y libboost-all-dev'
-
-      - name: Install CMAKE
-        run: 'pip install cmake --upgrade'
 
       - name: Get NLOpt
         run: 'git clone https://github.com/stevengj/nlopt.git'
