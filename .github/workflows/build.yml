@@ -16,14 +16,8 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Build Boost
-        id: boost
-        uses: egor-tensin/build-boost@v1
-        with:
-          version: 1.71.0
-          libraries: filesystem program_options system
-          platform: x64
-          configuration: Release
+      - name: Installing Boost
+        run: 'sudo apt-get install -y libboost-all-dev'
 
       - name: Get NLOpt
         run: 'git clone https://github.com/stevengj/nlopt.git'
