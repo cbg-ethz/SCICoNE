@@ -2,7 +2,7 @@
   <img src="logo.png" >
 </div>
 
-[![Build](https://github.com/cbg-ethz/SCICoNE/actions/workflows/build.yaml/badge.svg)](https://github.com/cbg-ethz/SCICoNE/actions/workflows/build.yaml)
+[![Build](https://github.com/cbg-ethz/SCICoNE/actions/workflows/build.yml/badge.svg)](https://github.com/cbg-ethz/SCICoNE/actions/workflows/build.yml)
 [![C++ Standard](https://img.shields.io/badge/c++-14-blueviolet?style=flat&logo=c%2B%2B)](https://en.wikipedia.org/wiki/C%2B%2B14)
 [![License](https://img.shields.io/:license-GPLv3-blueviolet.svg?style=flat&logo=gnu)](http://www.gnu.org/licenses/gpl-3.0.html)
 
