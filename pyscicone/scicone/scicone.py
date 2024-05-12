@@ -10,6 +10,7 @@ from multiprocessing.pool import ThreadPool
 import numpy as np
 import pandas as pd
 import phenograph
+from scipy.cluster.hierarchy import linkage
 from collections import Counter
 
 class SCICoNE(object):
@@ -373,6 +374,80 @@ class SCICoNE(object):
 
         return best_tree, robustness_score, trees
 
+    def initialize_cluster_tree(self, data=None, segmented_region_sizes=None, min_cluster_size=1, **kwargs):
+        if segmented_region_sizes is None:
+            segmented_region_sizes = self.bps['segmented_region_sizes']
+        if data is None:
+            data = self.data['filtered_counts']
+
+        if data.shape[1] != segmented_region_sizes.shape[0]:
+            print('Condensing regions...')
+            segmented_data = self.condense_regions(data, segmented_region_sizes)
+            print('Done.')
+        else:
+            segmented_data = data
+
+        if "region_neutral_states" in kwargs:
+            region_neutral_states = np.array(kwargs['region_neutral_states'])
+
+            if np.any(region_neutral_states) < 0:
+                raise Exception("Neutral states can not be negative!")
+
+            # If there is a region with neutral state = 0, remove it to facilitate tree inference
+            zero_neutral_regions = np.where(region_neutral_states==0)[0]
+            if len(zero_neutral_regions) > 0:
+                full_segmented_region_sizes = segmented_region_sizes.astype(int)
+                full_segmented_data = segmented_data
+                full_region_neutral_states = region_neutral_states
+                segmented_data = np.delete(segmented_data, zero_neutral_regions, axis=1)
+                segmented_region_sizes = np.delete(segmented_region_sizes, zero_neutral_regions)
+                region_neutral_states = np.delete(region_neutral_states, zero_neutral_regions)
+
+                kwargs['region_neutral_states'] = region_neutral_states
+        else:
+            region_neutral_states = np.ones((segmented_region_sizes.shape[0],)) * 2 # assume diploid
+
+        # Get the average read counts
+        clustered_segmented_data, cluster_sizes, cluster_assignments, Q = self.condense_segmented_clusters(segmented_data, 
+                                                                                                            min_cluster_size=min_cluster_size)
+
+        # Normalize by region size
+        clustered_segmented_data = clustered_segmented_data/segmented_region_sizes[:,None]
+
+        # Center at 2
+        clustered_segmented_data = clustered_segmented_data/np.mean(clustered_segmented_data,axis=1)[:,None] * 2
+
+        # Round to integers
+        region_cnvs = np.round(clustered_segmented_data)
+
+        # Get events wrt root
+        region_events = region_cnvs - region_neutral_states
+
+        # Put the clusters on a tree as direct children of the root
+        tree = Tree(self.inference_binary, self.output_path)
+        tree.node_dict['0'] = dict(parent_id='NULL', region_event_dict={})
+        for cluster_idx, cluster_region_events in enumerate(region_events):
+            region_event_dict = {}
+            for region, event in enumerate(cluster_region_events):
+                if event != 0:
+                    region_event_dict[region] = int(event)
+            tree.node_dict[str(int(cluster_idx)+1)] = dict(parent_id='0', region_event_dict=region_event_dict)
+        
+        # Get dendrogram of clusters
+        Z = linkage(region_cnvs, 'ward')
+        Z[:,:2] += 1 # because root is 0
+        n = Z.shape[0]+1
+        # Go through the dendrogram and extract common ancestors
+        for nodepair_idx in range(n-1):
+            node1 = str(int(Z[nodepair_idx][0]))
+            node2 = str(int(Z[nodepair_idx][1]))
+            new_node_id = str(int(n+nodepair_idx+1))
+            tree.extract_common_ancestor([node1, node2], new_node_id)
+
+        tree.update_tree_str()
+
+        return tree, clustered_segmented_data, cluster_sizes, cluster_assignments
+
     def learn_tree(self, data=None, segmented_region_sizes=None, n_reps=10, cluster=True, full=True, cluster_tree_n_iters=4000, nu_tree_n_iters=4000, full_tree_n_iters=4000, max_tries=2, robustness_thr=0.5, min_cluster_size=1, **kwargs):
         if segmented_region_sizes is None:
             segmented_region_sizes = self.bps['segmented_region_sizes']
@@ -417,6 +492,11 @@ class SCICoNE(object):
                 if cnt >= max_tries:
                     break
                 nu = tree.nu if tree is not None else 1.0
+
+                if tree is not None:
+                    print("Running inference from this initial tree:")
+                    print(tree.tree_str)
+
                 tree, robustness_score, trees = self.learn_tree_parallel(clustered_segmented_data, segmented_region_sizes, new_postfix=f"try{cnt}", n_reps=n_reps, nu=nu, cluster_sizes=cluster_sizes, initial_tree=tree, n_iters=cluster_tree_n_iters, verbose=self.verbose, **kwargs)
                 cnt += 1
 
@@ -475,14 +555,17 @@ class SCICoNE(object):
                 print('Initializing nu for full tree.')
                 # Update the nu on the full data (the nu on the clustered data is very different) with this tree
                 nu = tree.nu
-                move_probs = kwargs['move_probs']
-                kwargs.pop('move_probs', None)
+                move_probs = None
+                if 'move_probs' in kwargs:
+                    move_probs = kwargs['move_probs']
+                    kwargs.pop('move_probs', None)
                 tree = self.learn_single_tree(segmented_data, segmented_region_sizes, nu=nu, initial_tree=tree, n_iters=nu_tree_n_iters, move_probs=[0,0,0,0,0,0,0,0,0,0,0,0,0,1,0], postfix=f"nu_tree_{self.postfix}", verbose=self.verbose, **kwargs)
                 print('Done. Will start from nu={}'.format(tree.nu))
                 print('Learning full tree...')
                 cnt = 0
                 robustness_score = 0.
-                kwargs['move_probs'] = move_probs
+                if move_probs is not None:
+                    kwargs['move_probs'] = move_probs
                 while robustness_score < robustness_thr:
                     if cnt >= max_tries:
                         break
