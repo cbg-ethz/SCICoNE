@@ -1,0 +1,84 @@
+{
+    "binaries_path":"/cluster/work/bewi/members/pedrof/tupro_code/SCICoNE/build3",
+    "output":"/cluster/work/bewi/members/pedrof/sc-dna/sims2020_20_nodes/results2023_boxplot3/",
+    "simulate":
+    {
+      "n_cells":200,
+      "n_nodes":20,
+      "n_bins":1500,
+      "n_reps":40,
+      "prefix":"",
+      "bin":"/cluster/work/bewi/members/pedrof/tupro_code/SCICoNE/build3/simulation"
+    },
+    "bp_detection":
+    {
+      "window_size":20,
+      "threshold":3,
+      "bp_limit":300,
+      "verbosity":1,
+      "bin":"/cluster/work/bewi/members/pedrof/sc-dna/build3/breakpoint_detection"
+    },
+    "inference":
+    {
+      "cluster_trees":
+      {
+        "n_reps":10,
+        "n_iters":40000,
+        "n_nodes":0,
+        "move_probs":[0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.01, 0.1, 0.01, 1.0, 0.01],
+        "n_tries":3
+      },
+      "full_trees":
+      {
+        "n_reps":10,
+        "n_iters":200000,
+        "cluster_fraction":1.0,
+        "n_nodes": 0,
+        "move_probs":[0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.01, 0.1, 0.01, 1.0, 0.01],
+      },
+      "ploidy":2,
+      "verbosity":1,
+      "copy_number_limit":4,
+      "seed":42,
+      "bin":"/cluster/work/bewi/members/pedrof/tupro_code/SCICoNE/build3/inference",
+      "output_temp":"/cluster/work/bewi/members/pedrof/sc-dna/sims2020_20_nodes/results2023_boxplot3_temp/"
+    },
+    "hmm_copy":
+    {
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time": "600",
+        "script":"/cluster/work/bewi/members/pedrof/cna_other_methods/HMMCopyInference.R"
+    },
+    "ginkgo":
+    {
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time": "600",
+        "script":"/cluster/work/bewi/members/pedrof/cna_other_methods/ginkgo.R"
+    },
+    "conet":
+    {
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time":"600",
+        "bin_path":"/cluster/work/bewi/members/pedrof/sc-dna/sims2020_20_nodes/snake_analysis_files_2023/CONET-reproducibility/src/CONET",
+        "script":"/cluster/work/bewi/members/pedrof/cna_other_methods/run_conet.py",
+        "cbs_script":"/cluster/work/bewi/members/pedrof/cna_other_methods/CBS_MergeLevels.R",
+        "em_iters": 500000,
+        "pt_iters": 1000000
+    },
+    "conet_tree_distances":
+    {
+        "threads":1,
+        "scratch":20000,
+        "mem":"3200",
+        "time":"600",
+        "bin_path":"/cluster/work/bewi/members/pedrof/CONET/src/CONET",
+        "script":"/cluster/work/bewi/members/pedrof/cna_other_methods/run_conet_tree_distances.py"
+    }
+}
+

@@ -64,6 +64,8 @@ CONET_OUTPUT = os.path.join(config["output"], "conet")
 CONET_GINKGO_OUTPUT = os.path.join(config["output"], "conet_ginkgo")
 CONET_TREE_OUTPUT = os.path.join(config["output"], "conet_tree_distances")
 CONET_GINKGO_TREE_OUTPUT = os.path.join(config["output"], "conet_ginkgo_tree_distances")
+CONET_CBS_OUTPUT = os.path.join(config["output"], "conet_cbs")
+CONET_CBS_TREE_OUTPUT = os.path.join(config["output"], "conet_cbs_tree_distances")
 
 try:
     other_cnv_methods = config["other_methods"]
@@ -557,6 +559,79 @@ rule conet_ginkgo_inference:
     shell:
         "python {params.script} --bin_path {params.bin_path} --counts {input.d_mat} --cnvs {input.init_cnvs} --intermediate_dir {params.intermediate_dir} --seed {wildcards.rep_id} --out_cnvs {output.conet_inferred_cnvs} --out_tree {output.conet_inferred_tree} --out_attachments {output.conet_inferred_attachments}"
 
+rule conet_cbs_inference:
+    params:
+        script = config["conet"]["script"],
+        n_nodes = n_nodes,
+        scratch = config["conet"]["scratch"],
+        mem = config["conet"]["mem"],
+        time = config["conet"]["time"],
+        script_inp = str(n_nodes)+"nodes_{rep_id}",
+        intermediate_dir = CONET_CBS_OUTPUT +'/'+ str(n_nodes) + 'nodes' + '/' + '{rep_id}' + '/',
+        bin_path = config["conet"]["bin_path"],
+        em_iters = config["conet"]["em_iters"],
+        pt_iters = config["conet"]["pt_iters"],
+    input:
+        d_mat = SIM_OUTPUT+ '_' + sim_prefix +'/'+ str(n_nodes) + 'nodes' + '/' + '{rep_id}' + '_d_mat.txt',
+    output:
+        conet_inferred_cnvs = CONET_CBS_OUTPUT +'/'+ str(n_nodes) + 'nodes' + '/'+ '{rep_id}' + '_conet_cbs_inferred.txt',
+        conet_inferred_tree = CONET_CBS_OUTPUT +'/'+ str(n_nodes) + 'nodes' + '/'+ '{rep_id}' + '_conet_cbs_tree.txt',
+        conet_inferred_attachments = CONET_CBS_OUTPUT +'/'+ str(n_nodes) + 'nodes' + '/' + '{rep_id}' + '_conet_cbsattachments.txt'
+    threads: 10
+    # shell:
+        # "python {params.script} --bin_path {params.bin_path} --counts {input.d_mat} --cnvs {input.init_cnvs} --intermediate_dir {params.intermediate_dir} --seed {wildcards.rep_id} --em_iters {params.em_iters} --pt_iters {params.pt_iters} --out_cnvs {output.conet_inferred_cnvs} --out_tree {output.conet_inferred_tree} --out_attachments {output.conet_inferred_attachments}"
+    run:
+        real_ind = list(map(lambda x: x.start, list(tree.nodes)))
+        real_ind.extend(list(map(lambda x: x.end, list(tree.nodes))))
+        real_ind = list(set(real_ind))
+        real_ind.sort()
+        if wildcards.known_breakpoints:
+            # Extract real breakpoints indices
+            candidates = real_ind
+            save_counts_in_CONET_format(dirpath + "counts_synthetic", corr_reads, candidates)
+        else:
+            save_counts_in_CONET_format(dirpath + "counts_synthetic", corr_reads, [])
+            subprocess.run(["Rscript", "CBS_MergeLevels.R", "--mincells=5",
+                            f"--output={dirpath}cbs_out", f"--dataset={dirpath}counts_synthetic"])
+            X = np.loadtxt(dirpath + "cbs_out", delimiter=",")
+            candidates = []
+            for i in range(X.shape[0]):
+                if X[i, 4] == 1.0:
+                    candidates.append(i)
+            save_counts_in_CONET_format(dirpath + "counts_synthetic", corr_reads, candidates)
+            print(f"Found {len(candidates)} breakpoint candidates...")
+
+        # Convert model data to CONET format
+        data_converter = dc.DataConverter(dirpath + "counts_synthetic",
+                                          delimiter=';',
+                                          default_bin_length=1,
+                                          event_length_normalizer=corr_reads.shape[1],  # number of loci
+                                          add_chromosome_ends=False,
+                                          neutral_cn=2.0)
+        data_converter.create_CoNET_input_files(dirpath, add_chr_ends_to_indices=False)
+
+        # Perform CONET inference
+        conet = c.CONET(str(Path(conf.conet_binary_dir) / Path("CONET")))
+        params = cp.CONETParameters(tree_structure_prior_k1=0.01,
+                                    data_dir=dirpath, counts_penalty_s1=100000, counts_penalty_s2=100000,
+                                    param_inf_iters=500000, seed=random.randint(0, 1000), mixture_size=2, pt_inf_iters=1000000,
+                                    use_event_lengths_in_attachment=False,
+                                    event_length_penalty_k0=1)
+        conet.infer_tree(params)
+        print(f"CONET inference finished on model {i}")
+        result = ir.InferenceResult(conf.conet_binary_dir, corr_reads.T)
+
+        inferred_cn = result.get_inferred_copy_numbers(2, conf.bins, conf.cells)
+        inferred_brkp = result.bp_matrix.astype(int)
+        inferred_nodes = set(result.tree.nodes)
+        inferred_edges = set(result.tree.edges)
+
+        real_cn = data[0]
+        real_brkp = data[4][:, real_ind].astype(int)
+        real_nodes = set((n.start, n.end) for n in tree.nodes)
+        real_edges = set(((e[0].start, e[0].end), (e[1].start, e[1].end)) for e in tree.edges)
+
+
 rule run_medalt:
     params:
         script = config["medalt"]["script"],
@@ -610,3 +685,160 @@ rule compute_medalt_ginkgo_tree_distances:
         medalt_tree_distance = f'{MEDALT_TREE_OUTPUT}/{str(n_nodes)}nodes_' + '{regions}regions_{reads}reads/{rep_id}_medalt_ginkgo_tree_distance.txt'
     shell:
         "python {params.script} {input.medalt_tree} {input.cnvs} {output.medalt_tree_distance}"
+
+rule compute_deltas:
+    input:
+        simulations = expand(f'{SIM_OUTPUT}_{sim_prefix}/{str(n_nodes)}nodes_' + '{regions}regions_{reads}reads/{rep_id}_d_mat.txt',
+                                        regions=[x for x in n_regions], reads=[x for x in n_reads], rep_id=[x for x in range(0,all_n_tps)]),
+        best_full_tree = expand(f'{TREES_OUTPUT}_best_full_tree/{str(n_nodes)}nodes_' + '{regions}regions_{reads}reads/{rep_id}_full_tree.txt',
+                        regions=[x for x in n_regions], reads=[x for x in n_reads], rep_id=[x for x in range(0,all_n_tps)], tree_rep_id=[x for x in range(0,tree_rep)]),
+
+        best_cluster_tree = expand(f'{TREES_OUTPUT}_best_cluster_tree/{str(n_nodes)}nodes_' + '{regions}regions_{reads}reads/{rep_id}_cluster_tree.txt',
+                            regions=[x for x in n_regions], reads=[x for x in n_reads], rep_id=[x for x in range(0,all_n_tps)]),
+
+        best_full_tree_sum = expand(f'{TREES_OUTPUT}_best_full_tree_sum/{str(n_nodes)}nodes_' + '{regions}regions_{reads}reads/{rep_id}_full_tree.txt',
+                        regions=[x for x in n_regions], reads=[x for x in n_reads], rep_id=[x for x in range(0,all_n_tps)], tree_rep_id=[x for x in range(0,tree_rep)]),
+
+        best_cluster_tree_sum = expand(f'{TREES_OUTPUT}_best_cluster_tree_sum/{str(n_nodes)}nodes_' + '{regions}regions_{reads}reads/{rep_id}_cluster_tree.txt',
+                            regions=[x for x in n_regions], reads=[x for x in n_reads], rep_id=[x for x in range(0,all_n_tps)]),
+
+        other_cnvs = expand(os.path.join(config["output"], '{method}') +'/'+ str(n_nodes) + 'nodes_' + '{regions}'+'regions_'+ '{reads}'+'reads'+ '/' + '{rep_id}' + '_{method}_inferred.txt',
+                                regions=[x for x in n_regions], reads=[x for x in n_reads], rep_id=[x for x in range(0,all_n_tps)], method=other_cnv_methods),
+    output:
+        out_fname = os.path.join(output_path, 'deltas_sims.csv')
+    run:
+        rows = []
+        rows.append('index,rep_id,method,delta')
+        i = 0
+        for true_cnvs in input.simulations:
+            # True
+            rep_id = true_cnvs.split('/')[-1].split('_')[0]
+            gt = np.loadtxt(true_cnvs, delimiter=',')
+            if gt.shape[0] == n_bins: # should be cells by bins
+                gt = np.transpose(gt)
+
+            # Diploid
+            i+=1
+            method = 'diploid'
+            inf = np.ones(gt.shape) * 2
+            error = np.sqrt(np.mean((gt-inf)**2))
+            rows.append(f'{i},{rep_id},{method},{error}')
+
+            # i += 1
+            # method = 'ginkgo'
+            # inf_cnvs = f'{GINKGO_OUTPUT}/{n_nodes}nodes/{rep_id}_ginkgo_inferred.txt'
+            # inf = np.loadtxt(inf_cnvs, delimiter=' ')
+            # error = np.sqrt(np.mean((gt-inf)**2))
+            # rows.append(f'{i},{rep_id},{method},{error}')
+            #
+            # i += 1
+            # method = 'conet_ginkgo'
+            # inf_cnvs = f'{CONET_GINKGO_OUTPUT}/{n_nodes}nodes/{rep_id}_conet_ginkgo_inferred.txt'
+            # inf = np.loadtxt(inf_cnvs, delimiter=',')
+            # error = np.sqrt(np.mean((gt-inf)**2))
+            # rows.append(f'{i},{rep_id},{method},{error}')
+
+            # i += 1
+            # method = 'conet_knownbp'
+            # inf_cnvs = f'{CONET_KNOWNBP_OUTPUT}/{n_nodes}nodes/{rep_id}_conet_knownbp_inferred.txt'
+            # inf = np.loadtxt(inf_cnvs, delimiter=';').T
+            # error = np.sqrt(np.mean((gt-inf)**2))
+            # rows.append(f'{i},{rep_id},{method},{error}')
+
+            for other_cnvs_file in other_cnvs:
+                i += 1
+                method = other_cnvs_file.split('')
+                inf = np.loadtxt(other_cnvs_file, delimiter=',')
+                if inf.shape != gt.shape:
+                    inf = inf.T
+                error = np.sqrt(np.mean((gt-inf)**2))
+                rows.append(f'{i},{rep_id},{method},{error}')
+
+            for fairness in ['unfair', 'fair']:
+                i += 1
+                method = f'cluster_tree_{fairness}'
+                inf_cnvs = f'{TREES_OUTPUT}_best_cluster_tree/{fairness}/{n_nodes}nodes/{rep_id}_cluster_tree_cnvs.csv'
+                inf = np.loadtxt(inf_cnvs, delimiter=',')
+                error = np.sqrt(np.mean((gt-inf)**2))
+                rows.append(f'{i},{rep_id},{method},{error}')
+
+                i += 1
+                method = f'cluster_tree_sum_{fairness}'
+                inf_cnvs = f'{TREES_OUTPUT}_best_cluster_tree_sum/{fairness}/{n_nodes}nodes/{rep_id}_cluster_tree_cnvs.csv'
+                inf = np.loadtxt(inf_cnvs, delimiter=',')
+                error = np.sqrt(np.mean((gt-inf)**2))
+                rows.append(f'{i},{rep_id},{method},{error}')
+
+                i += 1
+                method = f'full_tree_{fairness}'
+                inf_cnvs = f'{TREES_OUTPUT}_best_full_tree/{fairness}/{n_nodes}nodes/{rep_id}_full_tree_cnvs.csv'
+                inf = np.loadtxt(inf_cnvs, delimiter=',')
+                error = np.sqrt(np.mean((gt-inf)**2))
+                rows.append(f'{i},{rep_id},{method},{error}')
+
+                i += 1
+                method = f'full_tree_sum_{fairness}'
+                inf_cnvs = f'{TREES_OUTPUT}_best_full_tree_sum/{fairness}/{n_nodes}nodes/{rep_id}_full_tree_cnvs.csv'
+                inf = np.loadtxt(inf_cnvs, delimiter=',')
+                error = np.sqrt(np.mean((gt-inf)**2))
+                rows.append(f'{i},{rep_id},{method},{error}')
+
+                # i += 1
+                # method = f'cluster_tree_{fairness}_knownbps'
+                # inf_cnvs = f'{TREES_OUTPUT}_best_cluster_tree/{fairness}/{n_nodes}nodes/{rep_id}_cluster_tree_cnvs_knownbps.csv'
+                # inf = np.loadtxt(inf_cnvs, delimiter=',')
+                # error = np.sqrt(np.mean((gt-inf)**2))
+                # rows.append(f'{i},{rep_id},{method},{error}')
+                #
+                # i += 1
+                # method = f'cluster_tree_sum_{fairness}_knownbps'
+                # inf_cnvs = f'{TREES_OUTPUT}_best_cluster_tree_sum/{fairness}/{n_nodes}nodes/{rep_id}_cluster_tree_cnvs_knownbps.csv'
+                # inf = np.loadtxt(inf_cnvs, delimiter=',')
+                # error = np.sqrt(np.mean((gt-inf)**2))
+                # rows.append(f'{i},{rep_id},{method},{error}')
+                #
+                # i += 1
+                # method = f'full_tree_{fairness}_knownbps'
+                # inf_cnvs = f'{TREES_OUTPUT}_best_full_tree/{fairness}/{n_nodes}nodes/{rep_id}_full_tree_cnvs_knownbps.csv'
+                # inf = np.loadtxt(inf_cnvs, delimiter=',')
+                # error = np.sqrt(np.mean((gt-inf)**2))
+                # rows.append(f'{i},{rep_id},{method},{error}')
+                #
+                # i += 1
+                # method = f'full_tree_sum_{fairness}_knownbps'
+                # inf_cnvs = f'{TREES_OUTPUT}_best_full_tree_sum/{fairness}/{n_nodes}nodes/{rep_id}_full_tree_cnvs_knownbps.csv'
+                # inf = np.loadtxt(inf_cnvs, delimiter=',')
+                # error = np.sqrt(np.mean((gt-inf)**2))
+                # rows.append(f'{i},{rep_id},{method},{error}')
+
+                i += 1
+                method = f'cluster_tree_{fairness}_adapted'
+                inf_cnvs = f'{TREES_OUTPUT}_best_cluster_tree/{fairness}/{n_nodes}nodes/{rep_id}_cluster_tree_cnvs_adapted.csv'
+                inf = np.loadtxt(inf_cnvs, delimiter=',')
+                error = np.sqrt(np.mean((gt-inf)**2))
+                rows.append(f'{i},{rep_id},{method},{error}')
+
+                i += 1
+                method = f'cluster_tree_sum_{fairness}_adapted'
+                inf_cnvs = f'{TREES_OUTPUT}_best_cluster_tree_sum/{fairness}/{n_nodes}nodes/{rep_id}_cluster_tree_cnvs_adapted.csv'
+                inf = np.loadtxt(inf_cnvs, delimiter=',')
+                error = np.sqrt(np.mean((gt-inf)**2))
+                rows.append(f'{i},{rep_id},{method},{error}')
+
+                i += 1
+                method = f'full_tree_{fairness}_adapted'
+                inf_cnvs = f'{TREES_OUTPUT}_best_full_tree/{fairness}/{n_nodes}nodes/{rep_id}_full_tree_cnvs_adapted.csv'
+                inf = np.loadtxt(inf_cnvs, delimiter=',')
+                error = np.sqrt(np.mean((gt-inf)**2))
+                rows.append(f'{i},{rep_id},{method},{error}')
+
+                i += 1
+                method = f'full_tree_sum_{fairness}_adapted'
+                inf_cnvs = f'{TREES_OUTPUT}_best_full_tree_sum/{fairness}/{n_nodes}nodes/{rep_id}_full_tree_cnvs_adapted.csv'
+                inf = np.loadtxt(inf_cnvs, delimiter=',')
+                error = np.sqrt(np.mean((gt-inf)**2))
+                rows.append(f'{i},{rep_id},{method},{error}')
+
+
+        with open(output.out_fname, 'w') as f:
+            f.write('\n'.join(rows))
