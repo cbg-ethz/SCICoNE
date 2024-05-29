@@ -9,7 +9,7 @@ from graphviz import Source
 from scicone.constants import *
 
 class Tree(object):
-    def __init__(self, binary_path, output_path, postfix='PYSCICONETREETEMP', persistence=False, ploidy=2, copy_number_limit=6):
+    def __init__(self, binary_path, output_path, postfix='PYSCICONETREETEMP', persistence=False, ploidy=2, copy_number_limit=6, n_bins=-1):
         self.binary_path = binary_path
 
         self.output_path = output_path
@@ -42,6 +42,60 @@ class Tree(object):
 
         self.cell_node_labels = []
         self.num_labels = True
+
+        self.n_bins = n_bins
+
+    def get_event_intersection(self, nodes):
+        intersection = {}
+        anchor_node = nodes[0]
+        other_nodes = nodes[1:]
+
+        for key, value in self.node_dict[anchor_node]['region_event_dict'].items():
+            direction = 1 if value >= 0 else -1
+            minimum = abs(value)
+            has_intersection = True
+            for node in other_nodes:
+                if key in self.node_dict[node]['region_event_dict']:
+                    if (self.node_dict[node]['region_event_dict'][key] >= 0) == (value >= 0):
+                        minimum = min(minimum, abs(self.node_dict[node]['region_event_dict'][key]))
+                    else:
+                        has_intersection = False
+                        break
+                else:
+                    has_intersection = False
+                    break
+
+            if has_intersection:
+                if value >= 0:
+                    direction = 1
+                else:
+                    direction = -1
+                intersection[key] = direction * minimum 
+
+        return intersection               
+
+    def extract_common_ancestor(self, node_pair, new_node_id=None):
+        parent_node = self.node_dict[node_pair[0]]['parent_id']
+        intersection = self.get_event_intersection(node_pair)
+        
+        # Remove intersection from nodes in node_pair
+        for key, val in intersection.items():
+            for node in node_pair:
+                self.node_dict[node]['region_event_dict'][key] = self.node_dict[node]['region_event_dict'][key] - val
+                if self.node_dict[node]['region_event_dict'][key] == 0:
+                    del self.node_dict[node]['region_event_dict'][key]
+
+        # Add node below parent
+        if new_node_id is None:                    
+            new_node_id = str(np.max(np.array(list(self.node_dict.keys())).astype(int)) + 1)
+        
+        self.node_dict[new_node_id] = dict(parent_id=parent_node,
+                                           region_event_dict=intersection)
+        
+        # Update parent
+        for node in node_pair:
+            self.node_dict[node]['parent_id'] = new_node_id
+
 
     def get_n_children_per_node(self):
         n_children = dict()
@@ -86,8 +140,13 @@ class Tree(object):
 
     def set_node_cnvs(self):
         # Set root state
-        n_bins = np.sum(self.outputs['region_sizes'].astype(int))
-        self.node_dict['0']['cnv'] = np.ones(n_bins,)
+        n_bins = self.n_bins
+        if n_bins == -1:
+            n_bins = np.sum(self.outputs['region_sizes'].astype(int))
+        else:
+            if np.sum(self.outputs['region_sizes'].astype(int)) == n_bins - 1:
+                self.outputs['region_sizes'][-1] += 1
+        self.node_dict['0']['cnv'] = 2*np.ones(n_bins,)
         bin_start = 0
         bin_end = 0
         for region, state in enumerate(self.outputs['region_neutral_states']):
@@ -230,12 +289,12 @@ class Tree(object):
         self.outputs['cell_node_ids'] = np.zeros((n_cells, 2))
         self.outputs['cell_node_ids'][:,0] = np.arange(n_cells)
         for node in nodes:
-            idx = np.where(np.all(self.outputs['inferred_cnvs'] == self.node_dict[node]['cnv'], axis=1))
-            self.outputs['cell_node_ids'][idx] = node
+            idx = np.where(np.all(self.outputs['inferred_cnvs'] == self.node_dict[node]['cnv'], axis=1))[0]
+            self.outputs['cell_node_ids'][idx,1] = node
 
     def learn_tree(self, segmented_data, segmented_region_sizes, n_iters=1000, move_probs=[0.0,1.0,0.0,1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.01, 0.1, 0.01, 1.0, 0.01],
                     n_nodes=3,  seed=42, postfix="", initial_tree=None, nu=1.0, cluster_sizes=None, region_neutral_states=None, alpha=0., gamma=1., max_scoring=True, copy_number_limit=2,
-                    c_penalise=10.0, lambda_r=0.2, lambda_c=0.1, ploidy=2, verbosity=2, verbose=False, num_labels=False):
+                    c_penalise=10.0, lambda_r=0.2, lambda_c=0.1, ploidy=2, eta=1e-4, verbosity=2, verbose=False, num_labels=False):
         if postfix == "":
             postfix = self.postfix
 
@@ -283,7 +342,7 @@ class Tree(object):
                     f"--move_probs={move_probs_str}", f"--seed={seed}", f"--region_sizes_file={temp_segmented_region_sizes_file}",\
                     f"--tree_file={temp_tree_file}", f"--nu={nu}", f"--cluster_sizes_file={temp_cluster_sizes_file}", f"--alpha={alpha}",\
                     f"--max_scoring={max_scoring}", f"--c_penalise={c_penalise}", f"--lambda_r={lambda_r}", f"--gamma={gamma}",\
-                    f"--lambda_c={lambda_c}", f"--region_neutral_states_file={temp_region_neutral_states_file}"]
+                    f"--lambda_c={lambda_c}", f"--eta={eta}", f"--region_neutral_states_file={temp_region_neutral_states_file}"]
                 if verbose:
                     print(' '.join(cmd))
                 cmd_output = subprocess.run(cmd)
@@ -306,7 +365,7 @@ class Tree(object):
                     f"--move_probs={move_probs_str}", f"--seed={seed}", f"--region_sizes_file={temp_segmented_region_sizes_file}",\
                     f"--nu={nu}", f"--cluster_sizes_file={temp_cluster_sizes_file}", f"--alpha={alpha}", f"--max_scoring={max_scoring}",\
                     f"--c_penalise={c_penalise}", f"--lambda_r={lambda_r}", f"--lambda_c={lambda_c}", f"--gamma={gamma}",\
-                    f"--region_neutral_states_file={temp_region_neutral_states_file}"]
+                    f"--eta={eta}", f"--region_neutral_states_file={temp_region_neutral_states_file}"]
                 if verbose:
                     print(' '.join(cmd))
                 cmd_output = subprocess.run(cmd)
