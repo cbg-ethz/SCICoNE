@@ -1,0 +1,19 @@
+name: Scicone
+channels:
+  - defaults
+dependencies:
+  - python
+  - ipykernel
+  - numpy
+  - scipy
+  - h5py
+  - tqdm
+  - seaborn
+  - graphviz
+  - pygraphviz
+  - conda-forge::matplotlib=3.3.2 
+  
+  - pip
+  - pip:
+    - git+https://github.com/cbg-ethz/SCICoNE.git@master#egg=scicone&subdirectory=pyscicone
+  #pip install pyscicone/
