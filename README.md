@@ -28,7 +28,7 @@ SCICoNE takes a read counts matrix of cells by genomic bins and outputs the copy
 ## Installation
 Once the requirements are in place, downloading and installing SCICoNE takes about 5 minutes.
 ```bash
-git clone git@github.com:cbg-ethz/SCICoNE.git # Clone the repository
+git clone https://github.com/cbg-ethz/SCICoNE.git # Clone the repository
 cd SCICoNE
 mkdir build && cd build                       # Create and enter the build directory
 cmake ../scicone/                             # Compile the program with cmake
