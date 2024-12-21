@@ -7,6 +7,7 @@
 
 #include <map>
 #include <string>
+#include <cstdint>
 using namespace std;
 extern int print_precision; // the precision for the printed double/float values
 extern int copy_number_limit; // the limit on max copy number state a region/bin can have
