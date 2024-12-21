@@ -139,10 +139,8 @@ def plot_matrix(data, cbar_title="", mode='data', chr_stops_dict=None,
         ax.vlines(list(chr_stops_dict.values())[:-1], *ax.get_ylim(), ls='--', linewidth=2.5)
         plt.xlabel('Chromosomes', fontsize=textfontsize)
 
-    for tick in ax.xaxis.get_major_ticks():
-        tick.label.set_fontsize(tickfontsize)
-    for tick in ax.yaxis.get_major_ticks():
-        tick.label.set_fontsize(tickfontsize)
+    ax.tick_params(which='minor', labelsize=tickfontsize)
+    ax.tick_params(which='major', labelsize=tickfontsize)
     if labels is not None:
         plt.yticks([])
 
