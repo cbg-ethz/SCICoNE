@@ -1,19 +1,12 @@
-name: Scicone
+# An environment to use SCICoNE in, equivalent to
+#   conda create -n scicone -c conda-forge -c bioconda scicone
+# The scicone package brings both the command line executables and this Python
+# package; see ../conda-recipe/README.md for building it from the working tree.
+name: scicone
 channels:
-  - defaults
+  - conda-forge
+  - bioconda
 dependencies:
-  - python
+  - python >=3.8
+  - scicone
   - ipykernel
-  - numpy
-  - scipy
-  - h5py
-  - tqdm
-  - seaborn
-  - graphviz
-  - pygraphviz
-  - conda-forge::matplotlib=3.3.2 
-  
-  - pip
-  - pip:
-    - git+https://github.com/cbg-ethz/SCICoNE.git@master#egg=scicone&subdirectory=pyscicone
-  #pip install pyscicone/

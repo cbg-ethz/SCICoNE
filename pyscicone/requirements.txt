@@ -1,8 +1,9 @@
 numpy
 scipy
-h5py
-tqdm
+pandas
+matplotlib
 seaborn
+h5py
 graphviz
-Phenograph
+PhenoGraph
 pybiomart
