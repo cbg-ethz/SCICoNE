@@ -1,7 +1,11 @@
 name: build
 
 on:
+  # Restricted to master: an unqualified `push` also fires for branches that
+  # have a pull request open, running every job twice.
   push:
+    branches:
+      - master
   pull_request:
 
 jobs:
