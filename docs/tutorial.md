@@ -3,12 +3,12 @@ Here is an example run from the command line on simulated data. Please see [refe
 
 __Step 1__: First we generate the data:
 ```
-./build/simulation --n_cells=200 --n_nodes=5 --n_regions=10 --n_bins=1000 --n_reads=10000 --nu=10.0 --min_reg_size=10 --max_regions_per_node=1 --ploidy=2 --postfix=test --seed=42
+./build/scicone-simulation --n_cells=200 --n_nodes=5 --n_regions=10 --n_bins=1000 --n_reads=10000 --nu=10.0 --min_reg_size=10 --max_regions_per_node=1 --ploidy=2 --postfix=test --seed=42
 ```
 
 __Step 2__: Then we detect potential breakpoints from the cells by bins counts matrix:
 ```
-./build/breakpoint_detection --d_matrix_file=5nodes_10regions_10000reads_test_d_mat.csv --n_bins=1000 --n_cells=200 --window_size=30 --threshold=6.0 --postfix=test
+./build/scicone-breakpoint_detection --d_matrix_file=5nodes_10regions_10000reads_test_d_mat.csv --n_bins=1000 --n_cells=200 --window_size=30 --threshold=6.0 --postfix=test
 ```
 This command creates files containing the region stops and their sizes.
 
@@ -19,7 +19,7 @@ python ./scripts/segment_counts.py 5nodes_10regions_10000reads_test_d_mat.csv te
 
 __Step 4__: We can now use the output file to infer a copy number event tree:
 ```
-./build/inference --d_matrix_file=5nodes_10regions_10000reads_test_d_mat_segmented_counts.txt --region_sizes_file=test_segmented_region_sizes.txt --n_regions=8 --n_cells=200 --ploidy=2 --copy_number_limit=2 --n_iters=4000 --seed=42 --postfix=test
+./build/scicone-inference --d_matrix_file=5nodes_10regions_10000reads_test_d_mat_segmented_counts.txt --region_sizes_file=test_segmented_region_sizes.txt --n_regions=8 --n_cells=200 --ploidy=2 --copy_number_limit=2 --n_iters=4000 --seed=42 --postfix=test
 ```
 This will create a file containing the tree in an in-house format. To visualise the tree, convert it to `graphviz` and generate the figure:
 ```
@@ -40,7 +40,7 @@ python ./scripts/condense_clusters.py 5nodes_10regions_10000reads_test_d_mat_seg
 
 We are now ready to run the tree inference on the condensed data. The command is similar to the one in __Step 4__, except that now we use the `--cluster_sizes_file` parameter as well and we adjust `--n_cells` to the number of clusters:
 ```
-./build/inference --d_matrix_file=5nodes_10regions_10000reads_test_d_mat_segmented_counts_condensed.txt  --region_sizes_file=test_segmented_region_sizes.txt --cluster_sizes_file=5nodes_10regions_10000reads_test_d_mat_segmented_counts_cluster_sizes.txt --n_regions=8 --n_cells=6 --ploidy=2 --copy_number_limit=2 --n_iters=4000 --seed=42 --postfix=cluster
+./build/scicone-inference --d_matrix_file=5nodes_10regions_10000reads_test_d_mat_segmented_counts_condensed.txt  --region_sizes_file=test_segmented_region_sizes.txt --cluster_sizes_file=5nodes_10regions_10000reads_test_d_mat_segmented_counts_cluster_sizes.txt --n_regions=8 --n_cells=6 --ploidy=2 --copy_number_limit=2 --n_iters=4000 --seed=42 --postfix=cluster
 ```
 
 We can again visualise this tree:

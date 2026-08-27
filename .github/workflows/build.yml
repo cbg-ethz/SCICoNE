@@ -1,7 +1,11 @@
 name: build
 
 on:
+  # Restricted to master: an unqualified `push` also fires for branches that
+  # have a pull request open, running every job twice.
   push:
+    branches:
+      - master
   pull_request:
 
 jobs:
@@ -9,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
@@ -32,14 +36,14 @@ jobs:
         run: 'mkdir debug'
 
       - name: Running CMAKE
-        run: 'cd debug && cmake -DCMAKE_BUILD_TYPE=Debug ../scicone/'
+        run: 'cd debug && cmake -DCMAKE_BUILD_TYPE=Debug -DSCICONE_ENABLE_SANITIZERS=ON ../scicone/'
 
       - name: Running MAKE
         run: 'cd debug && make VERBOSE=1'
 
       - name: Unit Tests (Debug)
         timeout-minutes: 60
-        run: 'cd debug && ./tests 0'
+        run: 'cd debug && ./scicone-tests 0'
 
       - name: Creating Release Build Folder
         run: 'mkdir release'
@@ -52,10 +56,35 @@ jobs:
 
       - name: Unit Tests (Release)
         timeout-minutes: 60
-        run: 'cd debug && ./tests 0'
+        run: 'cd release && ./scicone-tests 0'
 
       - name: Install pyscicone
         run: 'cd pyscicone && pip install -e .[test]'
 
       - name: Test pyscicone
+        env:
+          SCICONE_BINARY_PATH: ${{ github.workspace }}/release
         run: 'cd pyscicone && python3 -m pytest -s'
+
+  conda:
+    name: conda package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          channels: conda-forge,bioconda
+          conda-remove-defaults: "true"
+
+      - name: Install conda-build
+        shell: bash -el {0}
+        run: conda install -y conda-build
+
+      - name: Build the conda package from the working tree
+        shell: bash -el {0}
+        timeout-minutes: 60
+        run: conda-recipe/build-local.sh

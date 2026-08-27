@@ -25,7 +25,7 @@ Find the breakpoints defining copy number regions from a cells by bins matrix.
 
 ### *Sample run* :
 ```shell
-$ ./breakpoint_detection --d_matrix_file ./d_mat.txt --n_bins 1000 --n_cells 400 --window_size 10 --threshold 3.0 --bp_limit 300 --verbosity=1 --evaluate_peaks=True
+$ scicone-breakpoint_detection --d_matrix_file ./d_mat.txt --n_bins 1000 --n_cells 400 --window_size 10 --threshold 3.0 --bp_limit 300 --verbosity=1 --evaluate_peaks=True
 ```
 
 ## Inference
@@ -53,7 +53,7 @@ Finds the maximum a posteriori tree given a cells by regions matrix.
 
 ### *Sample run* :
 ```shell
-$ ./inference --n_cells 400 --n_regions 10 --n_iters 100 --n_nodes 10 --ploidy 2 --verbosity 2 --seed 42 --d_matrix_file ./30_d_mat.txt --region_sizes_file ./30_region_sizes.txt
+$ scicone-inference --n_cells 400 --n_regions 10 --n_iters 100 --n_nodes 10 --ploidy 2 --verbosity 2 --seed 42 --d_matrix_file ./30_d_mat.txt --region_sizes_file ./30_region_sizes.txt
 ```
 
 ## Simulation
@@ -76,12 +76,12 @@ Simulates the count matrix. Outputs the count matrix, region sizes, ground truth
 
 ### *Sample run* :
 ```shell
-$ ./simulation --n_cells 400 --n_bins 1000 --n_regions 10 --n_nodes 10 --n_reads 100000 --ploidy 2 --verbosity 2  --seed 42 --print_precision 32
+$ scicone-simulation --n_cells 400 --n_bins 1000 --n_regions 10 --n_nodes 10 --n_reads 100000 --ploidy 2 --verbosity 2  --seed 42 --print_precision 32
 ```
 
 ## Test
 Runs the validation tests and writes the results to the standard output and error streams.
 ### *Sample run* :
 ```shell
-$ ./tests
+$ scicone-tests
 ```

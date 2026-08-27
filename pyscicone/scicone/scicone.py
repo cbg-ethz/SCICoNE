@@ -13,6 +13,50 @@ import phenograph
 from scipy.cluster.hierarchy import linkage
 from collections import Counter
 
+def find_binary(name, binary_path=None):
+    """Locate one of the SCICoNE executables.
+
+    When ``binary_path`` is given, only that directory is searched. Otherwise the
+    search order is:
+
+    1. the directory named by the ``SCICONE_BINARY_PATH`` environment variable;
+    2. ``scicone-<name>`` on ``PATH``, which is how ``make install`` and the
+       conda package lay the executables out;
+    3. the binaries bundled with this package, if there are any.
+
+    Returns ``None`` when the executable cannot be found.
+    """
+    if sys.platform.startswith("linux"):
+        candidates = [f"scicone-{name}", f"linux-{name}", name]
+    elif sys.platform == "darwin":
+        candidates = [f"scicone-{name}", name]
+    else:
+        raise RuntimeError("Operating system could not be determined or is not "
+                           "supported. sys.platform == {}".format(sys.platform))
+
+    def look_in(directory):
+        for candidate in candidates:
+            path = os.path.join(directory, candidate)
+            if os.path.isfile(path) and os.access(path, os.X_OK):
+                return path
+        return None
+
+    if binary_path is not None:
+        return look_in(binary_path)
+
+    env_dir = os.environ.get("SCICONE_BINARY_PATH")
+    if env_dir:
+        found = look_in(env_dir)
+        if found is not None:
+            return found
+
+    on_path = shutil.which(f"scicone-{name}")
+    if on_path is not None:
+        return on_path
+
+    return look_in(os.path.join(os.path.dirname(__file__), "bin"))
+
+
 class SCICoNE(object):
     """
     This class  provides an interface to interact with the outputs from the C++
@@ -26,49 +70,37 @@ class SCICoNE(object):
     def __init__(self, binary_path=None, output_path='', persistence=False, postfix="PYSCICONETEMP", verbose=False):
         """Create a SCICoNE object.
         binary_path : type
-            Path to SCICoNE binaries.
+            Path to the directory containing the SCICoNE binaries. If None, they
+            are looked up in $SCICONE_BINARY_PATH, then on $PATH, then among the
+            binaries bundled with this package.
         output_path : type
             Path to SCICoNE output files.
         persistence : boolean
             Wether to delete output files from C++ after loading them into the class.
         """
-        if binary_path is None:
-            bpath = os.path.join(os.path.dirname(__file__), 'bin')
-            try:
-                assert os.path.isdir(bpath)
-            except AssertionError:
-                print("Could not find binaries, tried: {}".format(bpath), flush=True)
+        self.binary_path = binary_path
+        self.simulation_binary = find_binary("simulation", binary_path)
+        self.bp_binary = find_binary("breakpoint_detection", binary_path)
+        self.inference_binary = find_binary("inference", binary_path)
+        self.score_binary = find_binary("score", binary_path)
+        # The test binary reads its input data from the source tree, so it is
+        # only present in a build directory and never gets installed.
+        self.tests_binary = find_binary("tests", binary_path)
 
-            # Determine if we're using Linux or Mac
-            if sys.platform.startswith("linux"):
-                simulation_binary = "linux-simulation"
-                bp_binary = "linux-breakpoint_detection"
-                inference_binary = "linux-inference"
-                score_binary = "linux-score"
-                tests_binary = "linux-tests"
-            elif sys.platform == "darwin":
-                simulation_binary = "simulation"
-                bp_binary = "breakpoint_detection"
-                inference_binary = "inference"
-                score_binary = "score"
-                tests_binary = "tests"
-            else:
-                raise RuntimeError("Operating system could not be determined or is not supported. "
-                                   "sys.platform == {}".format(sys.platform), flush=True)
-            # Prepend appropriate path separator
-            self.simulation_binary = os.path.join(bpath, simulation_binary)
-            self.bp_binary = os.path.join(bpath, bp_binary)
-            self.inference_binary = os.path.join(bpath, inference_binary)
-            self.score_binary = os.path.join(bpath, score_binary)
-            self.tests_binary = os.path.join(bpath, tests_binary)
-        else:
-            print(f'Using binaries at {binary_path}')
-            self.binary_path = binary_path
-            self.simulation_binary = os.path.join(self.binary_path, 'simulation')
-            self.bp_binary = os.path.join(self.binary_path, 'breakpoint_detection')
-            self.inference_binary = os.path.join(self.binary_path, 'inference')
-            self.score_binary = os.path.join(self.binary_path, 'score')
-            self.tests_binary = os.path.join(self.binary_path, 'tests')
+        missing = [name for name, path in (("simulation", self.simulation_binary),
+                                           ("breakpoint_detection", self.bp_binary),
+                                           ("inference", self.inference_binary),
+                                           ("score", self.score_binary))
+                   if path is None]
+        if missing:
+            raise RuntimeError(
+                "Could not find the SCICoNE executables: {}. Install them with "
+                "`conda install -c bioconda scicone`, pass the directory holding "
+                "them as `binary_path`, or point $SCICONE_BINARY_PATH at it."
+                .format(", ".join(missing)))
+
+        if verbose:
+            print("Using binaries: {}".format(os.path.dirname(self.inference_binary)), flush=True)
 
         self.data = dict()
         self.bps = dict()
@@ -89,6 +121,12 @@ class SCICoNE(object):
         self.verbose = verbose
 
     def run_tests(self):
+        if self.tests_binary is None:
+            raise RuntimeError(
+                "The SCICoNE test binary is not available. It reads its input "
+                "data from the source tree, so it is not installed alongside the "
+                "other executables; run `scicone-tests` from a build directory "
+                "instead.")
         try:
             cmd_output = subprocess.run([self.tests_binary])
         except subprocess.SubprocessError as e:
