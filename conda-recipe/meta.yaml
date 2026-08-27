@@ -7,7 +7,7 @@ package:
 
 source:
   url: https://github.com/cbg-ethz/SCICoNE/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: 0000000000000000000000000000000000000000000000000000000000000000
+  sha256: b98b819a1b7b7b5052f85e434e4adcb8c5f56f44e9f4b8f0342b2d50e4aacd9f
 
 build:
   number: 0
