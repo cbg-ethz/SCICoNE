@@ -3,6 +3,20 @@
 The recipe that builds SCICoNE — the C++ executables and the `scicone` Python
 package — into a single conda package for [bioconda](https://bioconda.github.io/).
 
+> **The copy in bioconda-recipes is the authoritative one.** Once the recipe is
+> merged there, `recipes/scicone/` in
+> [bioconda-recipes](https://github.com/bioconda/bioconda-recipes) is what builds
+> the package people install, and bioconda's maintainers and bots edit it
+> directly — bumping the build number to rebuild against new dependency
+> versions, adjusting pinnings, extending the Python version matrix. Those edits
+> do not come back here.
+>
+> This copy exists so the recipe can be built from the working tree, locally and
+> in CI, which catches a dependency or build-step problem before it reaches
+> bioconda's review queue rather than days later. Treat it as the starting point
+> for the next submission, not as a record of what bioconda currently has: check
+> `recipes/scicone/` there before assuming the two agree.
+
 | File | Purpose |
 | --- | --- |
 | `meta.yaml` | The recipe. Source is a released tarball, which is what bioconda requires. |
@@ -38,13 +52,20 @@ conda create -n scicone-test -c local -c conda-forge -c bioconda scicone
    curl -sL https://github.com/cbg-ethz/SCICoNE/archive/refs/tags/v1.0.0.tar.gz | sha256sum
    ```
 
-4. Open a pull request against
+4. Diff this copy against `recipes/scicone/` in bioconda-recipes and carry over
+   anything they changed since the last submission, so their edits are not
+   reverted.
+5. Open a pull request against
    [bioconda-recipes](https://github.com/bioconda/bioconda-recipes) that copies
    `meta.yaml` and `build.sh` to `recipes/scicone/`. Bioconda's CI builds them
    for linux-64 and osx-64 and merges on green.
 
 For a change to the recipe alone, leave `version` where it is and increment
 `build: number:` instead.
+
+Any change to what the package needs — a new import in `pyscicone`, a new build
+dependency, a new executable — has to land in **both** copies. The one here
+keeps CI honest; the one in bioconda-recipes is what users actually install.
 
 ## What the package installs
 
