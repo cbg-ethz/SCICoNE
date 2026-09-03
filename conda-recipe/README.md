@@ -3,11 +3,10 @@
 The recipe that builds SCICoNE — the C++ executables and the `scicone` Python
 package — into a single conda package for [bioconda](https://bioconda.github.io/).
 
-> **The copy in bioconda-recipes is the authoritative one.** Once the recipe is
-> merged there, `recipes/scicone/` in
-> [bioconda-recipes](https://github.com/bioconda/bioconda-recipes) is what builds
-> the package people install, and bioconda's maintainers and bots edit it
-> directly — bumping the build number to rebuild against new dependency
+> **The copy in bioconda-recipes is the authoritative one.**
+> [`recipes/scicone/`](https://github.com/bioconda/bioconda-recipes/tree/master/recipes/scicone)
+> is what builds the package people install, and bioconda's maintainers and bots
+> edit it directly — bumping the build number to rebuild against new dependency
 > versions, adjusting pinnings, extending the Python version matrix. Those edits
 > do not come back here.
 >

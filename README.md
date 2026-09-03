@@ -5,6 +5,7 @@
 [![Build](https://github.com/cbg-ethz/SCICoNE/actions/workflows/build.yml/badge.svg)](https://github.com/cbg-ethz/SCICoNE/actions/workflows/build.yml)
 [![C++ Standard](https://img.shields.io/badge/c++-14-blueviolet?style=flat&logo=c%2B%2B)](https://en.wikipedia.org/wiki/C%2B%2B14)
 [![License](https://img.shields.io/:license-GPLv3-blueviolet.svg?style=flat&logo=gnu)](http://www.gnu.org/licenses/gpl-3.0.html)
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/scicone/README.html)
 
 
 Single-cell copy number calling and event history reconstruction.
@@ -25,7 +26,8 @@ conda install -c bioconda -c conda-forge scicone
 ```
 This installs the command line executables (`scicone-simulation`,
 `scicone-breakpoint_detection`, `scicone-inference`, `scicone-score`) and the
-`scicone` Python package, which finds them on your `PATH`.
+`scicone` Python package, which finds them on your `PATH`. Builds are published
+for Linux and macOS on x86-64, for Python 3.10 to 3.13.
 
 ### From source
 Requirements:
