@@ -336,8 +336,20 @@ class SCICoNE(object):
 
         return condensed_mat
 
-    def condense_segmented_clusters(self, segmented_data, min_cluster_size=1):
-        # Cluster the segmented counts
+    def condense_segmented_clusters(self, segmented_data, min_cluster_size=1, clustering_algo="leiden", seed=None):
+        # Cluster the segmented counts.
+        #
+        # Leiden is the default because PhenoGraph's Louvain shells out to executables it
+        # bundles prebuilt, and in PhenoGraph 1.5.7 -- the version on bioconda -- the Linux
+        # one crashes even on well-formed input. PhenoGraph then finds no modularity score
+        # and fails with an IndexError. Leiden runs through leidenalg, a regular PhenoGraph
+        # dependency, and takes a seed, which makes the clustering reproducible.
+        # Pass clustering_algo="louvain" for the previous behaviour.
+        if clustering_algo not in ("leiden", "louvain"):
+            # PhenoGraph returns only the graph for anything else, which would fail
+            # further down in a far less obvious way.
+            raise ValueError(f"clustering_algo must be 'leiden' or 'louvain', not {clustering_algo!r}")
+
         n_cells = segmented_data.shape[0]
         n_regions = segmented_data.shape[1]
         n_neighbours = max(int(n_cells / 10), 2) # avoid errors
@@ -349,7 +361,16 @@ class SCICoNE(object):
 
         # Cluster the normalised segmented data
         normalised_segmented_data = segmented_data/np.sum(segmented_data, axis=1)[:,np.newaxis]
-        communities, graph, Q = phenograph.cluster(data=normalised_segmented_data, k=n_neighbours, n_jobs=1, jaccard=True, min_cluster_size=min_cluster_size)
+        try:
+            communities, graph, Q = phenograph.cluster(data=normalised_segmented_data, clustering_algo=clustering_algo,
+                                                       k=n_neighbours, n_jobs=1, jaccard=True,
+                                                       min_cluster_size=min_cluster_size, seed=seed)
+        except IndexError as e:
+            if clustering_algo != "louvain":
+                raise
+            raise RuntimeError("PhenoGraph's Louvain step returned no result: the executables it bundles for "
+                               "community detection did not run on this system. "
+                               "Use clustering_algo='leiden' instead.") from e
         communities_df = pd.DataFrame(communities, columns=["cluster"])
         communities_df["cell_barcode"] = communities_df.index
         communities_df = communities_df[["cell_barcode", "cluster"]]
@@ -412,7 +433,7 @@ class SCICoNE(object):
 
         return best_tree, robustness_score, trees
 
-    def initialize_cluster_tree(self, data=None, segmented_region_sizes=None, min_cluster_size=1, **kwargs):
+    def initialize_cluster_tree(self, data=None, segmented_region_sizes=None, min_cluster_size=1, clustering_algo="leiden", **kwargs):
         if segmented_region_sizes is None:
             segmented_region_sizes = self.bps['segmented_region_sizes']
         if data is None:
@@ -446,8 +467,10 @@ class SCICoNE(object):
             region_neutral_states = np.ones((segmented_region_sizes.shape[0],)) * 2 # assume diploid
 
         # Get the average read counts
-        clustered_segmented_data, cluster_sizes, cluster_assignments, Q = self.condense_segmented_clusters(segmented_data, 
-                                                                                                            min_cluster_size=min_cluster_size)
+        clustered_segmented_data, cluster_sizes, cluster_assignments, Q = self.condense_segmented_clusters(segmented_data,
+                                                                                                            min_cluster_size=min_cluster_size,
+                                                                                                            clustering_algo=clustering_algo,
+                                                                                                            seed=kwargs.get("seed"))
 
         # Normalize by region size
         clustered_segmented_data = clustered_segmented_data/segmented_region_sizes[:,None]
@@ -486,7 +509,7 @@ class SCICoNE(object):
 
         return tree, clustered_segmented_data, cluster_sizes, cluster_assignments
 
-    def learn_tree(self, data=None, segmented_region_sizes=None, n_reps=10, cluster=True, full=True, cluster_tree_n_iters=4000, nu_tree_n_iters=4000, full_tree_n_iters=4000, max_tries=2, robustness_thr=0.5, min_cluster_size=1, **kwargs):
+    def learn_tree(self, data=None, segmented_region_sizes=None, n_reps=10, cluster=True, full=True, cluster_tree_n_iters=4000, nu_tree_n_iters=4000, full_tree_n_iters=4000, max_tries=2, robustness_thr=0.5, min_cluster_size=1, clustering_algo="leiden", **kwargs):
         if segmented_region_sizes is None:
             segmented_region_sizes = self.bps['segmented_region_sizes']
         if data is None:
@@ -521,7 +544,8 @@ class SCICoNE(object):
             print('Learning cluster tree...')
 
             # Get the average read counts
-            clustered_segmented_data, cluster_sizes, cluster_assignments, Q = self.condense_segmented_clusters(segmented_data, min_cluster_size=min_cluster_size)
+            clustered_segmented_data, cluster_sizes, cluster_assignments, Q = self.condense_segmented_clusters(segmented_data, min_cluster_size=min_cluster_size,
+                                                                                                                clustering_algo=clustering_algo, seed=kwargs.get("seed"))
 
             cnt = 0
             robustness_score = 0.

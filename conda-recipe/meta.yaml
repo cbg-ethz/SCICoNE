@@ -57,6 +57,10 @@ test:
     - test -x ${PREFIX}/bin/scicone-score
     # The Python package must find the executables it just got installed with.
     - python -c "from scicone import SCICoNE; SCICoNE()"
+    # learn_tree clusters cells through PhenoGraph. That step once shipped broken with
+    # every check above still passing, so exercise it directly, with the defaults a
+    # user gets: on 1.0.0 this call fails with the IndexError reported in #135.
+    - python -c "import numpy as np; from scicone import SCICoNE; SCICoNE().condense_segmented_clusters(np.random.RandomState(0).poisson(50, (60, 10)).astype(float))"
 
 about:
   home: https://github.com/cbg-ethz/SCICoNE
