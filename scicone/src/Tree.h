@@ -294,7 +294,7 @@ Tree::Tree(u_int ploidy, u_int n_regions, vector<int> &region_neutral_states)
     vector<int> keys_values = {};
 
     uint64_t size_for_hash = keys_values.size() * sizeof(keys_values[0]);
-    uint64_t c_hash = Utils::calculate_hash(&keys_values[0], size_for_hash);
+    uint64_t c_hash = Utils::calculate_hash(keys_values.data(), size_for_hash);
     root->c_hash = c_hash;
 
     this->region_neutral_states = region_neutral_states;
@@ -481,7 +481,7 @@ void Tree::update_label(std::map<u_int, int>& c_parent, Node *node) {
         keys_values.push_back(it.second);
     };
     unsigned long size_for_hash = keys_values.size() * sizeof(keys_values[0]);
-    uint64_t c_hash = Utils::calculate_hash(&keys_values[0], size_for_hash);
+    uint64_t c_hash = Utils::calculate_hash(keys_values.data(), size_for_hash);
 
     node->c_hash = c_hash;
 }
