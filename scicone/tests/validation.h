@@ -10,6 +10,8 @@
 #include "SignalProcessing.h"
 #include <vector>
 #include <numeric>
+#include <stdexcept>
+#include <string>
 #include <algorithm>
 #include "xxhash.h"
 #include <chrono>
@@ -116,6 +118,37 @@ void test_mathop()
     assert(abs(med1 - 10.0) <= epsilon);
     assert(abs(med2 - 11.25) <= epsilon);
 
+}
+
+void test_read_counts(const std::string& read_counts_dir)
+{
+    /*
+     * read_counts must fill a correctly shaped matrix, and must refuse a file whose
+     * shape does not match by throwing -- not by writing past the end of the matrix,
+     * which it used to do.
+     * */
+
+    vector<vector<double>> ok(3, vector<double>(4));
+    Utils::read_counts(ok, read_counts_dir + "/ok.csv");
+    assert(ok[0][0] == 1 && ok[2][3] == 12);
+
+    auto throws = [](const std::string& path, size_t rows, size_t cols, const std::string& expected) {
+        vector<vector<double>> mat(rows, vector<double>(cols));
+        try {
+            Utils::read_counts(mat, path);
+        } catch (const std::runtime_error& e) {
+            return std::string(e.what()).find(expected) != std::string::npos;
+        }
+        return false;
+    };
+
+    assert(throws(read_counts_dir + "/transposed.csv", 3, 4, "It looks transposed"));
+    assert(throws(read_counts_dir + "/header.csv", 3, 4, "not a number"));
+    assert(throws(read_counts_dir + "/ok.csv", 3, 3, "but found 3 rows by 4 columns"));
+    assert(throws(read_counts_dir + "/ok.csv", 2, 4, "but found 3 rows"));
+    assert(throws(read_counts_dir + "/does_not_exist.csv", 3, 4, "could not open"));
+
+    cout<<"read_counts validation test passed!"<<endl;
 }
 
 void test_xxhash()

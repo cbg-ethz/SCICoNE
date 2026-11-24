@@ -18,7 +18,11 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          # Pinned rather than '3.x': a new Python lands before its dependencies
+          # publish wheels for it, and pip then compiles them from source -- h5py
+          # needs an HDF5 library the runner does not have. 3.13 is the newest
+          # Python the bioconda package is built for.
+          python-version: '3.13'
 
       - name: Installing Boost
         run: 'sudo apt-get install -y libboost-all-dev'

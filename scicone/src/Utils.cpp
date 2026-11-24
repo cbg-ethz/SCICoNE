@@ -4,6 +4,9 @@
 
 #include "Utils.h"
 
+#include <algorithm>
+#include <stdexcept>
+
 uint64_t Utils::calculate_hash(const void *buffer, size_t length) {
 
     /*
@@ -74,31 +77,65 @@ void Utils::random_initialize_labels_map(std::map<u_int, int> &distinct_regions,
 void Utils::read_counts(vector<vector<double>> &mat, const string &path) {
 
     /*
-     * Parses the input data into a default filled double vector of vector.
+     * Parses a comma-separated matrix into mat, which the caller has already sized to
+     * the shape it expects: one line of the file per row of mat.
+     *
+     * Every value is bounds-checked before it is written. A file with more rows or
+     * columns than mat used to be written past the end of it, which is undefined
+     * behaviour: depending on heap layout it either tripped an assertion or crashed
+     * outright. A mismatch now throws std::runtime_error naming the expected and the
+     * found shape. Callers know what the rows and columns mean, so they add that.
+     *
+     * A row with fewer columns than expected is tolerated, as before -- probabilities do
+     * not always sum to one, so a column of empty bins can be missing -- and its
+     * remaining entries keep their default value.
      * */
 
     ifstream filein(path);
+    if (!filein.is_open())
+        throw std::runtime_error("could not open " + path);
 
-    unsigned i = 0;
+    const size_t n_rows = mat.size();
+    const size_t n_cols = n_rows > 0 ? mat[0].size() : 0;
+
+    size_t i = 0;         // rows found
+    size_t max_cols = 0;  // widest row found
     for (std::string line; std::getline(filein, line); )
     {
+        if (line.find_first_not_of(" \t\r") == std::string::npos)
+            continue; // a blank line, such as a trailing one, is not a row
 
         std::istringstream fline(line);
         std::string val;
-        int j = 0;
+        size_t j = 0;
         while (std::getline(fline, val, ','))
         {
-            mat[i][j] = stod(val);
+            if (i < n_rows && j < n_cols)
+            {
+                try {
+                    mat[i][j] = std::stod(val);
+                } catch (const std::logic_error&) {
+                    throw std::runtime_error(
+                        path + ": row " + std::to_string(i + 1) + ", column " + std::to_string(j + 1) +
+                        " is '" + val + "', which is not a number. The matrix must hold only numbers, "
+                        "with no header row and no row names.");
+                }
+            }
             j++;
         }
-        // assert(j == mat[i].size()); probabilities don't always sum up to one, we can get 1 column of empty bins here
+        max_cols = std::max(max_cols, j);
         i++;
     }
 
-    assert(i == mat.size());
-
-
-
+    if (i != n_rows || max_cols > n_cols)
+    {
+        std::string msg = path + ": expected " + std::to_string(n_rows) + " rows by " +
+                          std::to_string(n_cols) + " columns, but found " + std::to_string(i) +
+                          " rows by " + std::to_string(max_cols) + " columns.";
+        if (n_rows != n_cols && i == n_cols && max_cols == n_rows)
+            msg += " It looks transposed.";
+        throw std::runtime_error(msg);
+    }
 }
 
 vector<vector<double>> Utils::condense_matrix(vector<vector<double>>& D, vector<int>& region_sizes) {
