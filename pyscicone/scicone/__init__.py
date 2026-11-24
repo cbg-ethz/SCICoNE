@@ -1,4 +1,4 @@
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 from scicone.scicone import SCICoNE
 from scicone.tree import Tree
