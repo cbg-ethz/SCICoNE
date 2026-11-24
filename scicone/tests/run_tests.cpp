@@ -32,6 +32,7 @@ int main(int argc, char** argv)
 
     std::string bp_detection_dir = std::string(SOURCE_DIR) + "/tests/bp_detection";
     std::string trees_to_validate_dir = std::string(SOURCE_DIR) + "/tests/trees_to_validate";
+    std::string read_counts_dir = std::string(SOURCE_DIR) + "/tests/read_counts";
 
     print_precision = 15;
     copy_number_limit = 5;
@@ -49,6 +50,7 @@ int main(int argc, char** argv)
     SingletonRandomGenerator::get_instance(42);
     test_mathop();
     test_xxhash();
+    test_read_counts(read_counts_dir);
     test_breakpoint_detection(bp_detection_dir);
     test_tree_prior();
     test_event_prior();

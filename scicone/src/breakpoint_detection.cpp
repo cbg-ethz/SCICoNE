@@ -92,7 +92,14 @@ int main( int argc, char* argv[]) {
     if (result.count("lr_file")) {
       if (lr_file.compare("") != 0) {
         std::cout << "Reading provided LR: " << lr_file << std::endl;
-        Utils::read_counts(lr_vec, lr_file);
+        try {
+            Utils::read_counts(lr_vec, lr_file);
+        } catch (const std::runtime_error& e) {
+            std::cerr << "Error: " << e.what() << std::endl
+                      << "The LR file needs one row per bin (--n_bins=" << n_bins
+                      << ") and one column per cell (--n_cells=" << n_cells << ")." << std::endl;
+            return EXIT_FAILURE;
+        }
         std::cout << "Done." << std::endl;
         compute_lr = false;
       } else {
@@ -120,7 +127,14 @@ int main( int argc, char* argv[]) {
 
     std::cout<<"Reading the input matrix: " << d_matrix_file <<std::endl;
     vector<vector<double>> d_bins(n_cells, vector<double>(n_bins));
-    Utils::read_counts(d_bins, d_matrix_file);
+    try {
+        Utils::read_counts(d_bins, d_matrix_file);
+    } catch (const std::runtime_error& e) {
+        std::cerr << "Error: " << e.what() << std::endl
+                  << "The counts matrix needs one row per cell (--n_cells=" << n_cells
+                  << ") and one column per bin (--n_bins=" << n_bins << ")." << std::endl;
+        return EXIT_FAILURE;
+    }
     std::cout<<"Input matrix is read."<<std::endl;
 
     // create the region_sizes

@@ -172,7 +172,14 @@ int main( int argc, char* argv[]) {
     if (verbosity > 0)
         std::cout << "Reading the input matrix..." << std::endl;
     vector<vector<double>> d_regions(n_cells, vector<double>(n_regions));
-    Utils::read_counts(d_regions, d_matrix_file);
+    try {
+        Utils::read_counts(d_regions, d_matrix_file);
+    } catch (const std::runtime_error& e) {
+        std::cerr << "Error: " << e.what() << std::endl
+                  << "The counts matrix needs one row per cell or cluster (--n_cells=" << n_cells
+                  << ") and one column per region (--n_regions=" << n_regions << ")." << std::endl;
+        return EXIT_FAILURE;
+    }
 
     if (verbosity > 0)
         std::cout << "Reading the region_sizes file..." << std::endl;
